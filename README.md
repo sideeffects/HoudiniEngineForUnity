@@ -9,12 +9,9 @@ Houdini's procedural engine will then "cook" the asset and the results will be
 available right inside Unity.
 
 The easiest way for artists to access the plug-in is to download the latest
-production build of Houdini or the [FREE Houdini Apprentice Learning
-Edition](https://www.sidefx.com/products/houdini-apprentice/)
-and install the Unity plug-in along with the Houdini interactive software.
-Houdini Digital Assets created in either Houdini or Apprentice can then be
-loaded into Unity through the plug-in. A growing library of Digital Assets for
-use in Unity will be available at the [Orbolt Smart 3D Asset
+production build of Houdini and install the Unity plug-in along with the Houdini interactive software.
+Houdini Digital Assets created in Houdini can then be loaded into Unity through the plug-in. 
+A growing library of Digital Assets for use in Unity will be available at the [Orbolt Smart 3D Asset
 Store](http://www.orbolt.com/unity).
 
 For more information:
