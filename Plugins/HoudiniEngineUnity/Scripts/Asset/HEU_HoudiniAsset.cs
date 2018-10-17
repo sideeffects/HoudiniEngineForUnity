@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) <2018> Side Effects Software Inc.
 * All rights reserved.
 *
@@ -214,7 +214,7 @@ namespace HoudiniEngineUnity
 		private bool _bForceUpdate;
 
 		[SerializeField]
-		private long _sessionID;
+		private long _sessionID = HEU_SessionData.INVALID_SESSION_ID;
 
 		public long SessionID { get { return _sessionID; } }
 
@@ -735,7 +735,23 @@ namespace HoudiniEngineUnity
 			// Save parameter preset
 			_savedAssetPreset = GetAssetPreset();
 
+			if (_assetID != HEU_Defines.HEU_INVALID_NODE_ID && !IsAssetValidInHoudini(session))
+			{
+				// Invalidate asset ID since this is not valid in the current session.
+				InternalSetAssetID(HEU_Defines.HEU_INVALID_NODE_ID);
+			}
+
+			if(_assetID == HEU_Defines.HEU_INVALID_NODE_ID)
+			{
+				// Invalidating the session ID while calling DeleteAllGeneratedData next 
+				// so that it doesn't modify the session that it doesn't exist in.
+				_sessionID = HEU_SessionData.INVALID_SESSION_ID;
+			}
+
 			DeleteAllGeneratedData();
+
+			// Setting the session ID to the session that this asset will now be created in.
+			_sessionID = session.GetSessionData().SessionID;
 
 			Debug.Assert(_assetID == HEU_Defines.HEU_INVALID_NODE_ID, "Asset must be new or cleaned up! Missing call to CleanUpAsset?");
 			Debug.Assert(_objectNodes.Count == 0, "Object list must be empty! Missing call to DeleteAllPersistentData?");
@@ -1116,6 +1132,8 @@ namespace HoudiniEngineUnity
 				UploadUnityTransform(session, !_isCookingAssetReloaded);
 			}
 
+			bool bParamsUpdated = false;
+
 			// Let's try to upload existing parameter values.
 			// It might fail if the parameters have changed in the HDA since last loaded in Unity.
 			if (_parameters != null && !_parameters.RequiresRegeneration && bUploadParameters)
@@ -1135,6 +1153,8 @@ namespace HoudiniEngineUnity
 					{
 						Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}", AssetName);
 					}
+
+					bParamsUpdated = true;
 				}
 			}
 
@@ -1163,7 +1183,7 @@ namespace HoudiniEngineUnity
 			UploadAttributeValues(session);
 
 			// Upload asset inputs
-			UploadInputNodes(session, _bForceUpdate);
+			UploadInputNodes(session, _bForceUpdate, !bParamsUpdated);
 
 			bResult = StartHoudiniCookNode(session);
 			if (!bResult)
@@ -1427,11 +1447,9 @@ namespace HoudiniEngineUnity
 		{
 			if (_assetID != HEU_Defines.HEU_INVALID_NODE_ID)
 			{
-				//Debug.LogFormat(HEU_Defines.HEU_NAME + ": Deleting asset {0}'s persistent data.", _assetName);
+				DeleteSessionDataOnly();
+				_assetID = HEU_Defines.HEU_INVALID_NODE_ID;
 			}
-
-			DeleteSessionDataOnly();
-			_assetID = HEU_Defines.HEU_INVALID_NODE_ID;
 
 			// Clean up object nodes which in turns cleans up meshes.
 			if (_objectNodes != null)
@@ -1884,12 +1902,12 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		private void UploadInputNodes(HEU_SessionBase session, bool bForceUpdate)
+		private void UploadInputNodes(HEU_SessionBase session, bool bForceUpdate, bool bUpdateAll)
 		{
 			foreach (HEU_InputNode inputNode in _inputNodes)
 			{
 				// Upload all but parameter types, as those are taken care of in the parameter update
-				if(inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER && (bForceUpdate || inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged())
+				if((inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER || bUpdateAll) && (bForceUpdate || inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged())
 					&& inputNode.InputNodeID != HEU_Defines.HEU_INVALID_NODE_ID)
 				{
 					if(bForceUpdate)
@@ -3356,6 +3374,7 @@ namespace HoudiniEngineUnity
 		public HEU_SessionBase GetAssetSession(bool bCreateIfInvalid)
 		{
 			HEU_SessionBase session = HEU_SessionManager.GetSessionWithID(_sessionID);
+			
 			if ((session == null || !session.IsSessionValid()) && bCreateIfInvalid)
 			{
 				// Invalid session could either mean that this asset hasn't been created in any session (after a Scene load)
@@ -3855,7 +3874,7 @@ namespace HoudiniEngineUnity
 			{
 				foreach(HEU_InputPreset inputPreset in assetPreset.inputPresets)
 				{
-					HEU_InputNode inputNode = GetInputNodeByIndex(inputPreset._inputIndex);
+					HEU_InputNode inputNode = GetInputNode(inputPreset._inputName);
 					if(inputNode != null)
 					{
 						inputNode.LoadPreset(session, inputPreset);
