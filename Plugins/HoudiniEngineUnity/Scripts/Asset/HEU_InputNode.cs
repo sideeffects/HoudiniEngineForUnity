@@ -783,6 +783,11 @@ namespace HoudiniEngineUnity
 
 					// Tag whether scene or project input object
 					inputObjectPreset._isSceneObject = !HEU_GeneralUtility.IsGameObjectInProject(inputObject._gameObject);
+					if (!inputObjectPreset._isSceneObject)
+					{
+						// For inputs in project, use the project path as name
+						inputObjectPreset._gameObjectName = HEU_AssetDatabase.GetAssetOrScenePath(inputObject._gameObject);
+					}
 				}
 				else
 				{
@@ -819,7 +824,12 @@ namespace HoudiniEngineUnity
 						}
 						else
 						{
-							inputGO = HEU_GeneralUtility.GetGameObjectByNameInProjectOnly(inputPreset._inputObjectPresets[i]._gameObjectName);
+							// Use the _gameObjectName as path to find in scene
+							inputGO = HEU_AssetDatabase.LoadAssetAtPath(inputPreset._inputObjectPresets[i]._gameObjectName, typeof(GameObject)) as GameObject;
+							if(inputGO == null)
+							{
+								Debug.LogErrorFormat("Unable to find input at {0}", inputPreset._inputObjectPresets[i]._gameObjectName);
+							}
 						}
 
 						if (inputGO != null)
