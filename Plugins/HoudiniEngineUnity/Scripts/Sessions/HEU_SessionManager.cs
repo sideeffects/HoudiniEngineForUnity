@@ -590,10 +590,11 @@ namespace HoudiniEngineUnity
 					HEU_EditorUtility.RevealInFinder(filePath);
 				}
 			}
+			return bResult;
 #else
 			session.SetSessionErrorMsg("Save session only supported in Unity Editor!", true);
+			return false;
 #endif
-			return bResult;
 		}
 
 		/// <summary>
