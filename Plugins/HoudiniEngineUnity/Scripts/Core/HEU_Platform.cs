@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) <2018> Side Effects Software Inc.
 * All rights reserved.
 *
@@ -142,10 +142,10 @@ namespace HoudiniEngineUnity
 			string appPath = GetHoudiniEnginePath();
 			string binPath = appPath + HEU_HoudiniVersion.HAPI_BIN_PATH;
 
-			bool bFoundLib = false;
 			_pathSet = false;
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+			bool bFoundLib = false;
 
 			// Add path to system path if not already in there
 			string systemPath = System.Environment.GetEnvironmentVariable("PATH", System.EnvironmentVariableTarget.Machine);
