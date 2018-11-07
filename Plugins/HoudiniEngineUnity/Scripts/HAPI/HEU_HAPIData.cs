@@ -195,7 +195,6 @@ namespace HoudiniEngineUnity
 		HAPI_PARMTYPE_FOLDER,
 		HAPI_PARMTYPE_LABEL,
 		HAPI_PARMTYPE_SEPARATOR,
-		HAPI_PARMTYPE_PATH_FILE_DIR,
 
 		// Helpers
 
@@ -695,6 +694,16 @@ namespace HoudiniEngineUnity
 			for (int n = 0; n < HEU_Defines.HAPI_SHEAR_VECTOR_SIZE; n++)
 				shear[n] = 0.0f;
 		}
+
+		public void CopyTo(ref HAPI_Transform dest)
+		{
+			position.CopyToWithResize<float>(ref dest.position);
+			rotationQuaternion.CopyToWithResize<float>(ref dest.rotationQuaternion);
+			scale.CopyToWithResize<float>(ref dest.scale);
+			shear.CopyToWithResize<float>(ref dest.shear);
+
+			dest.rstOrder = rstOrder;
+		}
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -944,8 +953,7 @@ namespace HoudiniEngineUnity
 		{
 			return (type >= HAPI_ParmType.HAPI_PARMTYPE_INT_START &&
 				type <= HAPI_ParmType.HAPI_PARMTYPE_INT_END)
-				|| type == HAPI_ParmType.HAPI_PARMTYPE_MULTIPARMLIST
-				|| type == HAPI_ParmType.HAPI_PARMTYPE_FOLDERLIST_RADIO;
+				|| type == HAPI_ParmType.HAPI_PARMTYPE_MULTIPARMLIST;
 		}
 		public bool isFloat()
 		{
@@ -955,15 +963,12 @@ namespace HoudiniEngineUnity
 		public bool isString()
 		{
 			return (type >= HAPI_ParmType.HAPI_PARMTYPE_STRING_START &&
-				type <= HAPI_ParmType.HAPI_PARMTYPE_STRING_END)
-				|| type == HAPI_ParmType.HAPI_PARMTYPE_LABEL
-				|| type == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR;
+				type <= HAPI_ParmType.HAPI_PARMTYPE_STRING_END);
 		}
 		public bool isPath()
 		{
 			return (type >= HAPI_ParmType.HAPI_PARMTYPE_PATH_START &&
-				type <= HAPI_ParmType.HAPI_PARMTYPE_PATH_END)
-				|| type == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR;
+				type <= HAPI_ParmType.HAPI_PARMTYPE_PATH_END);
 		}
 		public bool isNode()
 		{
