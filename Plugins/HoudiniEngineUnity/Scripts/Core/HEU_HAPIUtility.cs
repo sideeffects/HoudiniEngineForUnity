@@ -787,7 +787,7 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		/// <param name="hapiTransform">Houdini Engine transform to get data from</param>
 		/// <param name="unityTransform">The Unity transform to apply data to</param>
-		public static void ApplyLocalTransfromFromHoudiniToUnity(in HAPI_Transform hapiTransform, Transform unityTransform)
+		public static void ApplyLocalTransfromFromHoudiniToUnity(ref HAPI_Transform hapiTransform, Transform unityTransform)
 		{
 			// Houdini uses right-handed coordinate system, while Unity uses left-handed.
 			// Note: we always use global transform space when communicating with Houdini

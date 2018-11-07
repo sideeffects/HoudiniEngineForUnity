@@ -440,7 +440,7 @@ namespace HoudiniEngineUnity
 		{
 			foreach(HEU_GeoNode geoNode in _geoNodes)
 			{
-				geoNode.ApplyHAPITransform(in _objectTransform);
+				geoNode.ApplyHAPITransform(ref _objectTransform);
 			}
 		}
 

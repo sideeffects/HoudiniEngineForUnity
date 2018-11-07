@@ -261,7 +261,7 @@ namespace HoudiniEngineUnity
 		/// Apply given HAPI transform to this part's gameobject
 		/// </summary>
 		/// <param name="hapiTransform">The HAPI transform to apply</param>
-		public void ApplyHAPITransform(in HAPI_Transform hapiTransform)
+		public void ApplyHAPITransform(ref HAPI_Transform hapiTransform)
 		{
 			GameObject outputGO = OutputGameObject;
 			if(outputGO == null)
@@ -278,11 +278,11 @@ namespace HoudiniEngineUnity
 				hapiTransformVolume.position[1] += _terrainOffsetPosition[1];
 				hapiTransformVolume.position[2] += _terrainOffsetPosition[2];
 
-				HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(in hapiTransformVolume, outputGO.transform);
+				HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransformVolume, outputGO.transform);
 			}
 			else
 			{
-				HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(in hapiTransform, outputGO.transform);
+				HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransform, outputGO.transform);
 			}
 		}
 
@@ -571,7 +571,7 @@ namespace HoudiniEngineUnity
 
 					newInstanceGO.isStatic = OutputGameObject.isStatic;
 
-					HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(in instanceTransforms[j], newInstanceGO.transform);
+					HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref instanceTransforms[j], newInstanceGO.transform);
 
 					// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
 					HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
@@ -958,7 +958,7 @@ namespace HoudiniEngineUnity
 			newInstanceGO.isStatic = OutputGameObject.isStatic;
 
 			Transform instanceTransform = newInstanceGO.transform;
-			HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(in hapiTransform, instanceTransform);
+			HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransform, instanceTransform);
 
 			// Apply offsets
 			Vector3 rotation = instanceTransform.localRotation.eulerAngles;

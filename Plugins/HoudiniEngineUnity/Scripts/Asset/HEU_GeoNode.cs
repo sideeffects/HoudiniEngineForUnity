@@ -674,11 +674,11 @@ namespace HoudiniEngineUnity
 		/// Apply the given HAPI transform to all parts of this node.
 		/// </summary>
 		/// <param name="hapiTransform">HAPI transform to apply</param>
-		public void ApplyHAPITransform(in HAPI_Transform hapiTransform)
+		public void ApplyHAPITransform(ref HAPI_Transform hapiTransform)
 		{
 			foreach(HEU_PartData part in _parts)
 			{
-				part.ApplyHAPITransform(in hapiTransform);
+				part.ApplyHAPITransform(ref hapiTransform);
 			}
 		}
 
