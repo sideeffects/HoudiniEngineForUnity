@@ -1404,6 +1404,23 @@ namespace HoudiniEngineUnity
 				}
 			}
 		}
+
+		public static void CopyToWithResize<T>(this T[] srcArray, ref T[] destArray)
+		{
+			if (srcArray == null)
+			{
+				destArray = null;
+			}
+			else
+			{
+				if (destArray == null || destArray.Length != srcArray.Length)
+				{
+					destArray = new T[srcArray.Length];
+				}
+
+				Array.Copy(srcArray, destArray, srcArray.Length);
+			}
+		}
 	}
 
 	public class ReverseCompare : IComparer
