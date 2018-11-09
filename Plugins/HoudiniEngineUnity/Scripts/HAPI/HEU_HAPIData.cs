@@ -1130,6 +1130,7 @@ namespace HoudiniEngineUnity
 		public HAPI_StringHandle assetParmNameSH;
 
 		public HAPI_ParmId assetParmId;
+		public int assetParmIndex;
 	};
 
 	// OBJECTS ------------------------------------------------------------------------------------------------------
