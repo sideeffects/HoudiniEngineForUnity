@@ -1873,6 +1873,16 @@ namespace HoudiniEngineUnity
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 
+		public override bool SetParamStringValue(HAPI_NodeId nodeID, string parmName, string parmValue, int index)
+		{
+			HAPI_NodeId parmID = HEU_Defines.HAPI_INVALID_PARM_ID;
+			if (GetParmIDFromName(nodeID, parmName, out parmID))
+			{
+				return SetParamStringValue(nodeID, parmValue, parmID, index);
+			}
+			return false;
+		}
+
 		public override bool SetParamNodeValue(HAPI_NodeId nodeID, string paramName, HAPI_NodeId nodeValue)
 		{
 			HAPI_Result result = HEU_HAPIImports.HAPI_SetParmNodeValue(ref _sessionData._HAPISession, nodeID, paramName, nodeValue);
@@ -1938,6 +1948,22 @@ namespace HoudiniEngineUnity
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 
+		public override bool CreateHeightfieldInputNode(HAPI_NodeId parentNodeID, string name, int xSize, int ySize, float voxelSize,
+			out HAPI_NodeId heightfieldNodeID, out HAPI_NodeId heightNodeID, out HAPI_NodeId maskNodeID, out HAPI_NodeId mergeNodeID)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_CreateHeightfieldInputNode(ref _sessionData._HAPISession, parentNodeID, name, xSize, ySize, voxelSize,
+				out heightfieldNodeID, out heightNodeID, out maskNodeID, out mergeNodeID);
+			HandleStatusResult(result, "Creating Heightfield Input Node", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool CreateHeightfieldInputVolumeNode(HAPI_NodeId parentNodeID, out HAPI_NodeId newNodeID, string name, int xSize, int ySize, float voxelSize)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_CreateHeightfieldInputVolumeNode(ref _sessionData._HAPISession, parentNodeID, out newNodeID, name, xSize, ySize, voxelSize);
+			HandleStatusResult(result, "Creating Heightfield Input Volume Node", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
 		// PRESETS ----------------------------------------------------------------------------------------------------
 
 		/// <summary>
@@ -1993,12 +2019,33 @@ namespace HoudiniEngineUnity
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 
+		public override bool SetVolumeInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_VolumeInfo volumeInfo)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_SetVolumeInfo(ref _sessionData._HAPISession, nodeID, partID, ref volumeInfo);
+			HandleStatusResult(result, "Setting VolumeInfo Data", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool SetVolumeTileFloatData(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_VolumeTileInfo tileInfo, float[] valuesArray, int length)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_SetVolumeTileFloatData(ref _sessionData._HAPISession, nodeID, partID, ref tileInfo, valuesArray, length);
+			HandleStatusResult(result, "Setting VolumeInfo Data", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
 		public override bool GetVolumeBounds(HAPI_NodeId nodeID, HAPI_PartId partID, out float x_min, out float y_min, out float z_min,
 			out float x_max, out float y_max, out float z_max, out float x_center, out float y_center, out float z_center)
 		{
 			HAPI_Result result = HEU_HAPIImports.HAPI_GetVolumeBounds(ref _sessionData._HAPISession, nodeID, partID, out x_min, out y_min, out z_min,
 				out x_max, out y_max, out z_max, out x_center, out y_center, out z_center);
 			HandleStatusResult(result, "Getting Volume Bounds", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool SetHeightFieldData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, float[] valuesArray, int start, int length)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_SetHeightFieldData(ref _sessionData._HAPISession, nodeID, partID, name, valuesArray, start, length);
+			HandleStatusResult(result, "Setting VolumeInfo Data", false, true);
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 

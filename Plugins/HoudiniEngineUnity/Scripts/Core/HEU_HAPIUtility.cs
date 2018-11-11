@@ -1033,6 +1033,26 @@ namespace HoudiniEngineUnity
 		{
 			return partType == HAPI_PartType.HAPI_PARTTYPE_MESH || partType == HAPI_PartType.HAPI_PARTTYPE_BOX || partType == HAPI_PartType.HAPI_PARTTYPE_SPHERE;
 		}
+
+		/// <summary>
+		/// Returns the parent node's ID of the given node.
+		/// </summary>
+		/// <param name="session"></param>
+		/// <param name="nodeID"></param>
+		/// <returns></returns>
+		public static HAPI_NodeId GetParentNodeID(HEU_SessionBase session, HAPI_NodeId nodeID)
+		{
+			HAPI_NodeId parentNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+			if (nodeID != HEU_Defines.HEU_INVALID_NODE_ID)
+			{
+				HAPI_NodeInfo nodeInfo = new HAPI_NodeInfo();
+				if (session.GetNodeInfo(nodeID, ref nodeInfo))
+				{
+					parentNodeID = nodeInfo.parentId;
+				}
+			}
+			return parentNodeID;
+		}
 	}
 
 }   // HoudiniEngineUnity

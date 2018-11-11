@@ -101,16 +101,20 @@ public class HEU_ScriptMeshInputUVLayoutExample
 		foreach (GameObject currentGO in gameObjects)
 		{
 			// Process the current gameobject to get the potential list of input mesh data.
-			// HEU_InputMeshUtility contains helper functions for uploading mesh data into Houdini.
+			// HEU_InputUtility contains helper functions for uploading mesh data into Houdini.
 			// Also handles LOD meshes.
 			bool bHasLODGroup = false;
-			List<HEU_InputMeshUtility.HEU_UploadMeshData> uploadMeshDatas = HEU_InputMeshUtility.GenerateMeshDatasFromInputObject(currentGO, out bHasLODGroup);
-			if (uploadMeshDatas == null || uploadMeshDatas.Count == 0)
+
+			HEU_InputInterfaceMesh inputMeshInterface = HEU_InputUtility.GetInputInterfaceByType(typeof(HEU_InputInterfaceMesh)) as HEU_InputInterfaceMesh;
+
+			HEU_InputInterfaceMesh.HEU_InputDataMeshes inputMeshes = inputMeshInterface.GenerateMeshDatasFromGameObject(currentGO);
+			if (inputMeshes == null || inputMeshes._inputMeshes.Count == 0)
 			{
 				Debug.LogWarningFormat("Failed to generate input mesh data for: {0}", currentGO.name);
 				continue;
 			}
 
+			
 			// Create the input node in Houdini.
 			// Houdini Engine automatically creates a new object to contain the input node.
 			string inputName = null;
@@ -138,10 +142,10 @@ public class HEU_ScriptMeshInputUVLayoutExample
 			}
 
 			// Now upload the mesh data into the input node.
-			if (!HEU_InputMeshUtility.UploadInputMeshData(session, inputNodeID, uploadMeshDatas, bHasLODGroup))
+			if (!inputMeshInterface.UploadData(session, inputNodeID, inputMeshes))
 			{
 				session.DeleteNode(nodeInfo.parentId);
-				Debug.LogErrorFormat("Failed to upload input mesh data!");
+				Debug.LogErrorFormat("Failed to upload input mesh data");
 				break;
 			}
 
