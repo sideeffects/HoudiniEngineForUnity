@@ -1166,6 +1166,11 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool SetParamStringValue(HAPI_NodeId nodeID, string parmName, string parmValue, int index)
+		{
+			return false;
+		}
+
 		public virtual bool SetParamNodeValue(HAPI_NodeId nodeID, string paramName, HAPI_NodeId nodeValueID)
 		{
 			return false;
@@ -1216,6 +1221,22 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool CreateHeightfieldInputNode(HAPI_NodeId parentNodeID, string name, int xSize, int ySize, float voxelSize,
+			out HAPI_NodeId heightfieldNodeID, out HAPI_NodeId heightNodeID, out HAPI_NodeId maskNodeID, out HAPI_NodeId mergeNodeID)
+		{
+			heightfieldNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+			heightNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+			maskNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+			mergeNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+			return false;
+		}
+
+		public virtual bool CreateHeightfieldInputVolumeNode(HAPI_NodeId parentNodeID, out HAPI_NodeId newNodeID, string name, int xSize, int ySize, float voxelSize)
+		{
+			newNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+			return false;
+		}
+
 		// PRESETS ----------------------------------------------------------------------------------------------------
 
 		/// <summary>
@@ -1254,10 +1275,26 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool SetVolumeInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_VolumeInfo volumeInfo)
+		{
+			return false;
+		}
+
+		public virtual bool SetVolumeTileFloatData(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_VolumeTileInfo tileInfo, float[] valuesArray, int length)
+		{
+			valuesArray = new float[0];
+			return false;
+		}
+
 		public virtual bool GetVolumeBounds(HAPI_NodeId nodeID, HAPI_PartId partID, out float x_min, out float y_min, out float z_min,
 			out float x_max, out float y_max, out float z_max, out float x_center, out float y_center, out float z_center)
 		{
 			x_min = y_min = z_min = x_max = y_max = z_max = x_center = y_center = z_center = 0;
+			return false;
+		}
+
+		public virtual bool SetHeightFieldData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, float[] valuesArray, int start, int length)
+		{
 			return false;
 		}
 
