@@ -158,11 +158,6 @@ namespace HoudiniEngineUnity
 			mesh.tangents = tangents;
 		}
 
-		public static int VolumeSizeToTerrainSize(int length, float scale)
-		{
-			return Mathf.RoundToInt(length * scale) * 2;
-		}
-
 		public static bool GenerateTerrainFromVolume(HEU_SessionBase session, ref HAPI_VolumeInfo volumeInfo, HAPI_NodeId geoID, HAPI_PartId partID, 
 			GameObject gameObject, out TerrainData terrainData, out Vector3 volumePositionOffset)
 		{
@@ -185,8 +180,16 @@ namespace HoudiniEngineUnity
 
 				// Calculate real terrain size in both Houdini and Unity.
 				// The height values will be mapped over this terrain size.
-				int terrainSizeX = VolumeSizeToTerrainSize(volumeInfo.xLength, scale.x);
-				int terrainSizeY = VolumeSizeToTerrainSize(volumeInfo.yLength, scale.z);
+				float gridSpacingX = scale.x * 2f;
+				float gridSpacingY = scale.y * 2f;
+				//float gridSpacingZ = scale.z * 2f;
+				float multiplierOffsetX = Mathf.Round(scale.x);
+				float multiplierOffsetY = Mathf.Round(scale.y);
+				//float multiplierOffsetZ = Mathf.Round(scale.z);
+				float terrainSizeX = Mathf.Round(volumeInfo.xLength * gridSpacingX - multiplierOffsetX);
+				float terrainSizeY = Mathf.Round(volumeInfo.yLength * gridSpacingY - multiplierOffsetY);
+
+				//Debug.LogFormat("GS = {0},{1},{2}. SX = {1}. SY = {2}", gridSpacingX, gridSpacingY, gridSpacingZ, terrainSizeX, terrainSizeY);
 
 				//Debug.LogFormat("HeightField Pos:{0}, Scale:{1}", position, scale.ToString("{0.00}"));
 				//Debug.LogFormat("HeightField tileSize:{0}, xLength:{1}, yLength:{2}", volumeInfo.tileSize.ToString("{0.00}"), volumeInfo.xLength.ToString("{0.00}"), volumeInfo.yLength.ToString("{0.00}"));
@@ -313,7 +316,7 @@ namespace HoudiniEngineUnity
 				// the internal terrain size will not change after setting the size.
 				terrainData.SetHeights(0, 0, unityHeights);
 
-				terrainData.size = new Vector3(terrainSizeX - 2, heightRange, terrainSizeY - 2);
+				terrainData.size = new Vector3(terrainSizeX, heightRange, terrainSizeY);
 
 				terrain.Flush();
 
@@ -334,7 +337,7 @@ namespace HoudiniEngineUnity
 				//Debug.LogFormat("position.x: {0}, position.z: {1}", position.x, position.z);
 
 				//volumePositionOffset = new Vector3(-position.x * offsetX, minHeight + position.y, position.z * offsetZ);
-				volumePositionOffset = new Vector3((terrainSizeX - 2 + xmin) * offsetX, minHeight + position.y, zmin * offsetZ);
+				volumePositionOffset = new Vector3((terrainSizeX + xmin) * offsetX, minHeight + position.y, zmin * offsetZ);
 
 				return true;
 			}

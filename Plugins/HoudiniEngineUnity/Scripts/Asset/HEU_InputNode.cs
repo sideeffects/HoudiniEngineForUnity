@@ -301,7 +301,7 @@ namespace HoudiniEngineUnity
 				{
 					DisconnectAndDestroyInputAssets(session);
 
-					bool bResult = HEU_InputMeshUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref _inputObjects, ref _inputObjectsConnectedAssetIDs, _keepWorldTransform);
+					bool bResult = HEU_InputUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref _inputObjects, ref _inputObjectsConnectedAssetIDs, _keepWorldTransform);
 					if(!bResult)
 					{
 						DisconnectAndDestroyInputAssets(session);
@@ -661,7 +661,7 @@ namespace HoudiniEngineUnity
 					continue;
 				}
 
-				HEU_InputMeshUtility.UploadInputObjectTransform(session, _inputObjects[i], _inputObjectsConnectedAssetIDs[i], _keepWorldTransform);
+				HEU_InputUtility.UploadInputObjectTransform(session, _inputObjects[i], _inputObjectsConnectedAssetIDs[i], _keepWorldTransform);
 			}
 
 			return false;
@@ -934,6 +934,8 @@ namespace HoudiniEngineUnity
 		[FormerlySerializedAs("_scaleOverride")]
 		public Vector3 _scaleOffset = Vector3.one;
 
+		public System.Type _inputInterfaceType;
+
 		public void CopyTo(HEU_InputObjectInfo destObject)
 		{
 			destObject._gameObject = _gameObject;
@@ -942,6 +944,7 @@ namespace HoudiniEngineUnity
 			destObject._translateOffset = _translateOffset;
 			destObject._rotateOffset = _rotateOffset;
 			destObject._scaleOffset = _scaleOffset;
+			destObject._inputInterfaceType = _inputInterfaceType;
 		}
 	}
 

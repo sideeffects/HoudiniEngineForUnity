@@ -401,6 +401,31 @@ namespace HoudiniEngineUnity
 
 		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 		public static extern HAPI_Result
+		HAPI_CreateHeightfieldInputNode(
+			ref HAPI_Session session,
+			HAPI_NodeId parent_node_id,
+			string name,
+			int xsize,
+			int ysize,
+			float voxelsize,
+			out HAPI_NodeId heightfield_node_id,
+			out HAPI_NodeId height_node_id,
+			out HAPI_NodeId mask_node_id,
+			out HAPI_NodeId merge_node_id);
+
+		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+		public static extern HAPI_Result
+		HAPI_CreateHeightfieldInputVolumeNode(
+			ref HAPI_Session session,
+			HAPI_NodeId parent_node_id,
+			out HAPI_NodeId new_node_id,
+			string name,
+			int xsize,
+			int ysize,
+			float voxelsize);
+
+		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+		public static extern HAPI_Result
 		HAPI_CookNode(
 			ref HAPI_Session session,
 			HAPI_NodeId node_id,
@@ -1352,9 +1377,9 @@ namespace HoudiniEngineUnity
 		HAPI_SetHeightFieldData(
 			ref HAPI_Session session,
 			HAPI_NodeId node_id, HAPI_PartId part_id,
+			string name,
 			[Out] float[] values_array,
-			int start, int length,
-			string name);
+			int start, int length);
 
 		// CURVES ---------------------------------------------------------------------------------------------------
 
