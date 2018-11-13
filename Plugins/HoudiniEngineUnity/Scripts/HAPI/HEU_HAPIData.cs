@@ -1080,9 +1080,9 @@ namespace HoudiniEngineUnity
 
 		public HAPI_RampType rampType;
 
-		HAPI_StringHandle visibilityConditionSH;
+		public HAPI_StringHandle visibilityConditionSH;
 
-		HAPI_StringHandle disabledConditionSH;
+		public HAPI_StringHandle disabledConditionSH;
 	}
 
 	// Used for input parameters.
