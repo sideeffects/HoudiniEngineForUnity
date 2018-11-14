@@ -720,13 +720,13 @@ namespace HoudiniEngineUnity
 				int length = strIndex >= 0 ? sessionBase.GetStringBufferLength(strIndex) : 0;
 				if (length > 0)
 				{
-					// Set capacity
-					stringBuilder.Length = length;
+					// Set stringbuild capacity
+					stringBuilder.EnsureCapacity(length);
 
 					sessionBase.GetString(strIndex, stringBuilder, length);
 					strValues[i] = stringBuilder.ToString();
 
-					// Clear the stringbuilder
+					// Clear the stringbuilder for reuse
 					stringBuilder.Length = 0;
 				}
 				else

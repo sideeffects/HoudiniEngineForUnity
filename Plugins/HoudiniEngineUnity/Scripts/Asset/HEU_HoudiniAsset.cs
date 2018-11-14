@@ -689,21 +689,29 @@ namespace HoudiniEngineUnity
 		{
 			bool bResult = false;
 
-			if(_cookStatus == AssetCookStatus.PRELOAD)
+			try
 			{
-				// Start the Rebuild.
-				bResult = StartRebuild(bPromptForSubasset, desiredSubassetIndex);
+				if (_cookStatus == AssetCookStatus.PRELOAD)
+				{
+					// Start the Rebuild.
+					bResult = StartRebuild(bPromptForSubasset, desiredSubassetIndex);
+				}
+
+				if (_cookStatus == AssetCookStatus.LOADING)
+				{
+					// Continue rebuild
+					bResult = FinishRebuild();
+				}
 			}
-			
-			if(_cookStatus == AssetCookStatus.LOADING)
+			catch (System.Exception ex)
 			{
-				// Continue rebuild
-				bResult = FinishRebuild();
+				Debug.LogErrorFormat("Rebuild error: " + ex.ToString());
+				bResult = false;
 			}
 
 			if (!bResult)
 			{
-				SetCookStatus(AssetCookStatus.LOADING, AssetCookResult.ERRORED);
+				SetCookStatus(AssetCookStatus.POSTLOAD, AssetCookResult.ERRORED);
 
 				if (_reloadEvent != null)
 				{
@@ -940,8 +948,18 @@ namespace HoudiniEngineUnity
 #endif
 			//Debug.Log("RecookAsync");
 
-			bool bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
-			if(!bStarted)
+			bool bStarted = false;
+			try
+			{
+				 bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
+			}
+			catch (System.Exception ex)
+			{
+				Debug.LogError("Recook error: " + ex.ToString());
+				bStarted = false;
+			}
+
+			if (!bStarted)
 			{
 				SetCookStatus(AssetCookStatus.NONE, AssetCookResult.ERRORED);
 				ExecutePostCookCallbacks();
@@ -964,7 +982,18 @@ namespace HoudiniEngineUnity
 			_cookStartTime = Time.realtimeSinceStartup;
 #endif
 
-			bool bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
+			bool bStarted = false;
+
+			try
+			{
+				bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
+			}
+			catch (System.Exception ex)
+			{
+				Debug.LogError("Recook error: " + ex.ToString());
+				bStarted = false;
+			}
+
 			if (!bStarted)
 			{
 				SetCookStatus(AssetCookStatus.NONE, AssetCookResult.ERRORED);
@@ -1375,7 +1404,15 @@ namespace HoudiniEngineUnity
 
 					SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.SUCCESS);
 
-					ProcessPoskCook();
+					try
+					{
+						ProcessPoskCook();
+					}
+					catch (System.Exception ex)
+					{
+						Debug.LogError("Recook error: " + ex.ToString());
+						SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.ERRORED);
+					}
 				}
 			}
 
