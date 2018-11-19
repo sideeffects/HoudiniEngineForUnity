@@ -119,6 +119,7 @@ namespace HoudiniEngineUnity
 		public Vector3 _colliderSize;
 		public float _colliderRadius;
 		public Mesh _colliderMesh;
+		public bool _convexCollider;
 
 		public List<HEU_MaterialData> _materialCache;
 		public Dictionary<int, HEU_MaterialData> _materialIDToDataMap;
@@ -587,6 +588,7 @@ namespace HoudiniEngineUnity
 				{
 					MeshCollider meshCollider = HEU_GeneralUtility.GetOrCreateComponent<MeshCollider>(outputGameObject);
 					meshCollider.sharedMesh = geoCache._colliderMesh;
+					meshCollider.convex = geoCache._convexCollider;
 				}
 			}
 		}
@@ -1228,6 +1230,7 @@ namespace HoudiniEngineUnity
 
 						geoCache._colliderType = ColliderType.MESH;
 						geoCache._colliderMesh = collisionMesh;
+						geoCache._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
 					}
 
 					numCollisionMeshes++;
@@ -1638,7 +1641,7 @@ namespace HoudiniEngineUnity
 
 						geoCache._colliderType = HEU_GenerateGeoCache.ColliderType.MESH;
 						geoCache._colliderMesh = collisionMesh;
-					
+						geoCache._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
 					}
 
 					numCollisionMeshes++;
