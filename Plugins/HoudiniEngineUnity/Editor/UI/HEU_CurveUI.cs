@@ -764,6 +764,17 @@ namespace HoudiniEngineUnity
 							{
 								SerializedProperty pointProperty = curvePointsProperty.GetArrayElementAtIndex(pointIndex);
 								Vector3 updatedPosition = pointProperty.vector3Value + deltaMove;
+
+								HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
+								if (curve != null)
+								{
+									// Localize the movement vector to the curve point's transform,
+									// since deltaMove is based on the transformed curve point,
+									// and we're adding to the local curve point.
+									Vector3 localDeltaMove = curve.GetInvertedTransformedDirection(deltaMove);
+									updatedPosition = pointProperty.vector3Value + localDeltaMove;
+								}
+
 								pointProperty.vector3Value = updatedPosition;
 							}
 
