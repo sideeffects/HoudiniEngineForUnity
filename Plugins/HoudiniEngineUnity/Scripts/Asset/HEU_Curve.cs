@@ -485,6 +485,11 @@ namespace HoudiniEngineUnity
 			return this._targetGameObject.transform.InverseTransformPoint(inPosition);
 		}
 
+		public Vector3 GetInvertedTransformedDirection(Vector3 inPosition)
+		{
+			return this._targetGameObject.transform.InverseTransformVector(inPosition);
+		}
+
 		public Vector3[] GetVertices()
 		{
 			return _vertices;
