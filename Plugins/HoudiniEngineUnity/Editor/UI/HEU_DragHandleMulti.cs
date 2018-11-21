@@ -232,22 +232,10 @@ namespace HoudiniEngineUnity
 						{
 							// Linear movement (constraint to current axis)
 
-							// Get the delta between the original handle position and the original mouse down position
-							// This is used to substract from relative mouse movement to counter the handle jump when dragging
-							Vector3 originalDragStartSS = HEU_EditorUI.GetHandleWorldToScreenPosition(axisInfo._dragWorldStart, camera);
-							Vector3 deltaOriginalDragOffset = axisInfo._dragMouseStart - new Vector2(originalDragStartSS.x, originalDragStartSS.y);
+							axisInfo._dragMouseCurrent += new Vector2(currentEvent.delta.x, currentEvent.delta.y);
 
-							Vector3 startPosSS = HEU_EditorUI.GetHandleWorldToScreenPosition(position, camera);
-							Vector3 constraintSS = HEU_EditorUI.GetHandleWorldToScreenPosition(position + axisInfo._direction, camera) - startPosSS;
-
-							Vector3 mousePosV3 = mousePos;
-							Vector3 relativeMousePos = mousePosV3 - startPosSS - deltaOriginalDragOffset;
-							float projection = Vector3.Dot(relativeMousePos, constraintSS.normalized);
-
-							float normalization = 1 / constraintSS.magnitude;
-							float scale = projection * normalization;
-
-							position += axisInfo._direction * scale;
+							float mag = HandleUtility.CalcLineTranslation(axisInfo._dragMouseStart, axisInfo._dragMouseCurrent, axisInfo._dragWorldStart, axisInfo._direction);
+							position = axisInfo._dragWorldStart + axisInfo._direction * mag;
 						}
 
 						if (mouseButtonID == 0)
