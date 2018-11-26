@@ -53,6 +53,7 @@ namespace HoudiniEngineUnity
 		/// Registers this input inteface for Unity meshes on
 		/// the callback after scripts are reloaded in Unity.
 		/// </summary>
+		[InitializeOnLoadMethod]
 		[UnityEditor.Callbacks.DidReloadScripts]
 		private static void OnScriptsReloaded()
 		{
