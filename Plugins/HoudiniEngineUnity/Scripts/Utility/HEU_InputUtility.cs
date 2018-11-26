@@ -63,6 +63,13 @@ namespace HoudiniEngineUnity
 		/// <param name="inputInterface">Interface to register</param>
 		public static void RegisterInputInterface(HEU_InputInterface inputInterface)
 		{
+			System.Type inputType = inputInterface.GetType();
+
+			if (GetInputInterfaceByType(inputType) != null)
+			{
+				return;
+			}
+
 			if (!_inputInterfaces.Contains(inputInterface))
 			{
 				// Add to ordered list based on priority
