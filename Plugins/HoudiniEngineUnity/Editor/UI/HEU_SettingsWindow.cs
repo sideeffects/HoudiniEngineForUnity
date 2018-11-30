@@ -68,6 +68,12 @@ namespace HoudiniEngineUnity
 			_refreshContent = new GUIContent("", _refreshIcon, "Reload the file.");
 		}
 
+		private void OnDisable()
+		{
+			// Turn off auto repaint as otherwise get null access after this closes
+			this.autoRepaintOnSceneChange = false;
+		}
+
 		public void OnGUI()
 		{
 			bool guiEnabled = GUI.enabled;
@@ -430,6 +436,37 @@ namespace HoudiniEngineUnity
 					bChanged = true;
 				}
 			}
+			HEU_EditorUI.DrawSeparator();
+			{
+				string oldValue = HEU_PluginSettings.DefaultStandardShader;
+				string newValue = EditorGUILayout.DelayedTextField("Default Standard Shader", oldValue);
+				if (!newValue.Equals(oldValue))
+				{
+					HEU_PluginSettings.DefaultStandardShader = newValue;
+					bChanged = true;
+				}
+			}
+			HEU_EditorUI.DrawSeparator();
+			{
+				string oldValue = HEU_PluginSettings.DefaultTransparentShader;
+				string newValue = EditorGUILayout.DelayedTextField("Default Transparent Shader", oldValue);
+				if (!newValue.Equals(oldValue))
+				{
+					HEU_PluginSettings.DefaultTransparentShader = newValue;
+					bChanged = true;
+				}
+			}
+			HEU_EditorUI.DrawSeparator();
+			{
+				string oldValue = HEU_PluginSettings.DefaultVertexColorShader;
+				string newValue = EditorGUILayout.DelayedTextField("Default Vertex Color Shader", oldValue);
+				if (!newValue.Equals(oldValue))
+				{
+					HEU_PluginSettings.DefaultVertexColorShader = newValue;
+					bChanged = true;
+				}
+			}
+
 			HEU_EditorUI.DrawSeparator();
 
 			EditorGUIUtility.labelWidth = 0;

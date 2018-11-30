@@ -225,7 +225,7 @@ namespace HoudiniEngineUnity
 		public const string UNITY_EDITORONLY_TAG = "EditorOnly";
 		public const string UNITY_HDADATA_NAME = "HDA_Data";
 
-		//public const string DEFAULT_STANDARD_SHADER = "Standard";
+		public const string HOUDINI_SHADER_PREFIX = "Houdini/";
 		public const string DEFAULT_STANDARD_SHADER = "SpecularVertexColor";
 		public const string DEFAULT_VERTEXCOLOR_SHADER = "SpecularVertexColor";
 		public const string DEFAULT_TRANSPARENT_SHADER = "AlphaSpecularVertexColor";

@@ -63,15 +63,10 @@ namespace HoudiniEngineUnity
 #endif
 		}
 
-		public static string GetHoudiniShaderPath(string shaderName)
-		{
-			return "Houdini/" + shaderName;
-		}
-
 		public static Shader FindPluginShader(string shaderName)
 		{
 #if UNITY_EDITOR
-			return FindShader(GetHoudiniShaderPath(shaderName));
+			return FindShader(shaderName);
 #else
 			// TODO RUNTIME: Shader.Find is not available in non-Editor mode, so need to figure out a replacement in runtime.
 			Debug.LogWarning("Houdini Engine is unable to load shaders in non-Editor mode!");
@@ -106,7 +101,7 @@ namespace HoudiniEngineUnity
 
 		public static Material CreateNewHoudiniStandardMaterial(string assetCacheFolderPath, string materialName, bool bWriteToFile)
 		{
-			return GetNewMaterialWithShader(assetCacheFolderPath, GetHoudiniShaderPath(HEU_Defines.DEFAULT_STANDARD_SHADER), materialName, bWriteToFile);
+			return GetNewMaterialWithShader(assetCacheFolderPath, HEU_PluginSettings.DefaultStandardShader, materialName, bWriteToFile);
 		}
 
 		public static void WriteMaterialToAssetCache(Material material, string assetCacheFolderPath, string materialName)

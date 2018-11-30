@@ -255,7 +255,7 @@ namespace HoudiniEngineUnity
 					MeshRenderer meshRenderer = _outputGameObject.GetComponent<MeshRenderer>();
 					if(meshRenderer != null)
 					{
-						_localMaterial = HEU_MaterialFactory.GetNewMaterialWithShader(null, HEU_MaterialFactory.GetHoudiniShaderPath(HEU_Defines.DEFAULT_VERTEXCOLOR_SHADER), HEU_Defines.EDITABLE_MATERIAL, false);
+						_localMaterial = HEU_MaterialFactory.GetNewMaterialWithShader(null, HEU_PluginSettings.DefaultVertexColorShader, HEU_Defines.EDITABLE_MATERIAL, false);
 					}
 				}
 			}

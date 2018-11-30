@@ -582,6 +582,69 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public static string DefaultStandardShader
+		{
+			get
+			{
+				string path = HEU_Defines.DEFAULT_STANDARD_SHADER;
+				HEU_PluginStorage.Instance.Get("HAPI_DefaultStandardShader", out path, path);
+
+				// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
+				if (path.Equals(HEU_Defines.DEFAULT_STANDARD_SHADER))
+				{
+					path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
+				}
+
+				return path;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_DefaultStandardShader", value);
+			}
+		}
+
+		public static string DefaultVertexColorShader
+		{
+			get
+			{
+				string path = HEU_Defines.DEFAULT_VERTEXCOLOR_SHADER;
+				HEU_PluginStorage.Instance.Get("HAPI_DefaultVertexColorShader", out path, path);
+
+				// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
+				if (path.Equals(HEU_Defines.DEFAULT_VERTEXCOLOR_SHADER))
+				{
+					path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
+				}
+
+				return path;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_DefaultVertexColorShader", value);
+			}
+		}
+
+		public static string DefaultTransparentShader
+		{
+			get
+			{
+				string path = HEU_Defines.DEFAULT_TRANSPARENT_SHADER;
+				HEU_PluginStorage.Instance.Get("HAPI_DefaultTransparentShader", out path, path);
+
+				// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
+				if (path.Equals(HEU_Defines.DEFAULT_TRANSPARENT_SHADER))
+				{
+					path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
+				}
+
+				return path;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_DefaultTransparentShader", value);
+			}
+		}
+
 		public static bool SupportHoudiniBoxType
 		{
 			get
