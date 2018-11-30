@@ -68,6 +68,12 @@ namespace HoudiniEngineUnity
 			_refreshContent = new GUIContent("", _refreshIcon, "Reload the file.");
 		}
 
+		private void OnDisable()
+		{
+			// Turn off auto repaint as otherwise get null access after this closes
+			this.autoRepaintOnSceneChange = false;
+		}
+
 		public void OnGUI()
 		{
 			bool guiEnabled = GUI.enabled;
