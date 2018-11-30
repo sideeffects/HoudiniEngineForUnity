@@ -96,11 +96,11 @@ namespace HoudiniEngineUnity
 			// Assign transparency shader or non-transparent.
 			if (IsTransparentMaterial(session, materialInfo.nodeId, parmInfos))
 			{
-				_material.shader = HEU_MaterialFactory.FindPluginShader(HEU_Defines.DEFAULT_TRANSPARENT_SHADER);
+				_material.shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultTransparentShader);
 			}
 			else
 			{
-				_material.shader = HEU_MaterialFactory.FindPluginShader(HEU_Defines.DEFAULT_STANDARD_SHADER);
+				_material.shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultStandardShader);
 			}
 
 			// Diffuse texture - render & extract

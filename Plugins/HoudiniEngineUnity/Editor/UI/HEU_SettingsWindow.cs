@@ -431,6 +431,37 @@ namespace HoudiniEngineUnity
 				}
 			}
 			HEU_EditorUI.DrawSeparator();
+			{
+				string oldValue = HEU_PluginSettings.DefaultStandardShader;
+				string newValue = EditorGUILayout.DelayedTextField("Default Standard Shader", oldValue);
+				if (!newValue.Equals(oldValue))
+				{
+					HEU_PluginSettings.DefaultStandardShader = newValue;
+					bChanged = true;
+				}
+			}
+			HEU_EditorUI.DrawSeparator();
+			{
+				string oldValue = HEU_PluginSettings.DefaultTransparentShader;
+				string newValue = EditorGUILayout.DelayedTextField("Default Transparent Shader", oldValue);
+				if (!newValue.Equals(oldValue))
+				{
+					HEU_PluginSettings.DefaultTransparentShader = newValue;
+					bChanged = true;
+				}
+			}
+			HEU_EditorUI.DrawSeparator();
+			{
+				string oldValue = HEU_PluginSettings.DefaultVertexColorShader;
+				string newValue = EditorGUILayout.DelayedTextField("Default Vertex Color Shader", oldValue);
+				if (!newValue.Equals(oldValue))
+				{
+					HEU_PluginSettings.DefaultVertexColorShader = newValue;
+					bChanged = true;
+				}
+			}
+
+			HEU_EditorUI.DrawSeparator();
 
 			EditorGUIUtility.labelWidth = 0;
 
