@@ -421,9 +421,9 @@ namespace HoudiniEngineUnity
 							// New attribute, so create and populate
 
 							HAPI_AttributeInfo attributeInfo = new HAPI_AttributeInfo();
-							if (!session.GetAttributeInfo(geoID, partID, attributeNames[i], ownerType, ref attributeInfo))
+							if (!session.GetAttributeInfo(geoID, partID, attributeNames[i], ownerType, ref attributeInfo) || !attributeInfo.exists)
 							{
-								return;
+								continue;
 							}
 
 							attrData = CreateAttribute(attributeNames[i], ref attributeInfo);
@@ -572,10 +572,10 @@ namespace HoudiniEngineUnity
 			newPartInfo.faceCount = faceCount;
 			newPartInfo.vertexCount = vertexCount;
 			newPartInfo.pointCount = pointCount;
-			newPartInfo.pointAttributeCount = oldPartInfo.pointAttributeCount;
-			newPartInfo.vertexAttributeCount = oldPartInfo.vertexAttributeCount;
-			newPartInfo.primitiveAttributeCount = oldPartInfo.primitiveAttributeCount;
-			newPartInfo.detailAttributeCount = oldPartInfo.detailAttributeCount;
+			newPartInfo.pointAttributeCount = pointAttributeDatas.Count;
+			newPartInfo.vertexAttributeCount = vertexAttributeDatas.Count;
+			newPartInfo.primitiveAttributeCount = primitiveAttributeDatas.Count;
+			newPartInfo.detailAttributeCount = detailAttributeDatas.Count;
 
 			int newPartID = partID;
 
