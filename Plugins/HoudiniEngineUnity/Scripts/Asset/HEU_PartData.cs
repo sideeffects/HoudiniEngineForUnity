@@ -942,7 +942,7 @@ namespace HoudiniEngineUnity
 		{
 			GameObject newInstanceGO = null;
 
-			if (HEU_EditorUtility.IsPrefabOriginal(sourceObject))
+			if (HEU_EditorUtility.IsPrefabAsset(sourceObject))
 			{
 				newInstanceGO = HEU_EditorUtility.InstantiatePrefab(sourceObject) as GameObject;
 				newInstanceGO.transform.parent = parentTransform;
@@ -1549,10 +1549,41 @@ namespace HoudiniEngineUnity
 				{
 					GameObject srcChildGO = srcChildGameObjects[i];
 
+					bool bSrcPrefabInstance = HEU_EditorUtility.IsPrefabInstance(srcChildGO);
+
 					GameObject targetChildGO = HEU_GeneralUtility.GetGameObjectByName(unprocessedTargetChildren, srcChildGO.name);
+
+					if (bSrcPrefabInstance && targetChildGO != null && !HEU_EditorUtility.IsPrefabInstance(targetChildGO))
+					{
+						// A not-so-ideal workaround to the fact that when calling GameObject.Instantiate, copies of child prefab instances
+						// are not created as prefab instances (they are created as regular gameobjects).
+						// And with Unity 2018.3, it is no longer possible to reconnect regular gameobjects to prefab assets (via ConnectGameObjectToPrefab).
+						// So by clearing the targetChildGO reference here, the code below will create a proper prefab instance.
+						targetChildGO = null;
+					}
+
 					if (targetChildGO == null)
 					{
-						targetChildGO = new GameObject(srcChildGO.name);
+						if (bSrcPrefabInstance)
+						{
+							GameObject prefabAsset = HEU_EditorUtility.GetPrefabAsset(srcChildGO) as GameObject;
+							if (prefabAsset)
+							{
+								targetChildGO = HEU_EditorUtility.InstantiatePrefab(prefabAsset) as GameObject;
+								targetChildGO.name = srcChildGO.name;
+							}
+						}
+						else
+						{
+							targetChildGO = new GameObject(srcChildGO.name);
+						}
+
+						if(targetChildGO == null)
+						{
+							Debug.LogErrorFormat("Unable to create instance for: {0}", srcChildGO.name);
+							continue;
+						}
+
 						targetChildGO.transform.parent = targetTransform;
 					}
 					else
@@ -1563,25 +1594,10 @@ namespace HoudiniEngineUnity
 						}
 
 						unprocessedTargetChildren.Remove(targetChildGO);
-
-						// Update transform of each existing instance
-						HEU_GeneralUtility.CopyLocalTransformValues(srcChildGO.transform, targetChildGO.transform);
-
-						if (bReconnectPrefabInstances && HEU_EditorUtility.IsPrefabInstance(srcChildGO))
-						{
-							// Reconnect back to the prefab if the source was a prefab instance
-							GameObject prefabSource = HEU_EditorUtility.GetPrefabParent(srcChildGO) as GameObject;
-							if (prefabSource != null)
-							{
-								targetChildGO = HEU_EditorUtility.ConnectGameObjectToPrefab(targetChildGO, prefabSource);
-
-								// Update transform of each existing instance again since prefab connect above resets it
-								HEU_GeneralUtility.CopyLocalTransformValues(srcChildGO.transform, targetChildGO.transform);
-
-								continue;
-							}
-						}
 					}
+
+					// Update transform of each existing instance
+					HEU_GeneralUtility.CopyLocalTransformValues(srcChildGO.transform, targetChildGO.transform);
 
 					// Copy component data
 					CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath, 

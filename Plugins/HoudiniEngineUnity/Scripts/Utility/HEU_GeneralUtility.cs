@@ -826,6 +826,10 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
+			// Delete the target mesh collider's mesh
+			// Do this before deleting the mesh below since its stored under the mesh's asset on file
+			DestroyMeshCollider(targetGO, bDontDeletePersistantResources);
+
 			// Delete the target mesh filter's mesh
 			MeshFilter targetMeshFilter = targetGO.GetComponent<MeshFilter>();
 			if (targetMeshFilter != null)
@@ -842,9 +846,6 @@ namespace HoudiniEngineUnity
 					targetMeshFilter.sharedMesh = null;
 				}
 			}
-
-			// Delete the target mesh collider's mesh
-			DestroyMeshCollider(targetGO, bDontDeletePersistantResources);
 
 			// Delete existing materials and textures
 			MeshRenderer targetMeshRenderer = targetGO.GetComponent<MeshRenderer>();
@@ -910,7 +911,8 @@ namespace HoudiniEngineUnity
 				{
 					if (!bDontDeletePersistantResources || !HEU_EditorUtility.IsPersistant(targetColliderMesh))
 					{
-						DestroyImmediate(targetColliderMesh);
+						// Need to call DestroyImmediate with bAllowDestroyingAssets to force deleting the asset file
+						DestroyImmediate(targetColliderMesh, bAllowDestroyingAssets: true);
 					}
 
 					targetColliderMesh = null;

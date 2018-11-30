@@ -111,10 +111,14 @@ namespace HoudiniEngineUnity
 			return meanTransformMatrix;
 		}
 
-		public static GameObject CreatePrefab(string path, GameObject go)
+		public static GameObject SaveAsPrefabAsset(string path, GameObject go)
 		{
 #if UNITY_EDITOR
+#if UNITY_2018_3_OR_NEWER
+			return PrefabUtility.SaveAsPrefabAsset(go, path);
+#else
 			return PrefabUtility.CreatePrefab(path, go);
+#endif
 #else
 			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
@@ -145,6 +149,22 @@ namespace HoudiniEngineUnity
 		public static GameObject ReplacePrefab(GameObject go, Object targetPrefab, HEU_ReplacePrefabOptions heuOptions)
 		{
 #if UNITY_EDITOR
+#if UNITY_2018_3_OR_NEWER
+#pragma warning disable CS0618 // Type or member is obsolete
+			// This is doing the same thing as 2018.2 and earlier for now, since in 2018.3b the SavePrefab* methods don't handle
+			// merging based on naming yet. (FIXME: Revisit when 2018.3 comes out of beta)
+			ReplacePrefabOptions unityOptions = ReplacePrefabOptions.Default;
+			switch (heuOptions)
+			{
+				case HEU_ReplacePrefabOptions.Default: unityOptions = ReplacePrefabOptions.Default; break;
+				case HEU_ReplacePrefabOptions.ConnectToPrefab: unityOptions = ReplacePrefabOptions.ConnectToPrefab; break;
+				case HEU_ReplacePrefabOptions.ReplaceNameBased: unityOptions = ReplacePrefabOptions.ReplaceNameBased; break;
+				default: Debug.LogFormat("Unsupported replace prefab option: {0}", heuOptions); break;
+			}
+
+			return PrefabUtility.ReplacePrefab(go, targetPrefab, unityOptions);
+#pragma warning restore CS0618 // Type or member is obsolete
+#else
 			ReplacePrefabOptions unityOptions = ReplacePrefabOptions.Default;
 			switch(heuOptions)
 			{
@@ -155,6 +175,7 @@ namespace HoudiniEngineUnity
 			}
 
 			return PrefabUtility.ReplacePrefab(go, targetPrefab, unityOptions);
+#endif
 #else
 			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
@@ -169,7 +190,10 @@ namespace HoudiniEngineUnity
 		public static bool IsPrefabInstance(GameObject go)
 		{
 #if UNITY_EDITOR
-#if UNITY_2018_2_OR_NEWER
+#if UNITY_2018_3_OR_NEWER
+			return PrefabUtility.IsPartOfPrefabInstance(go);
+#elif UNITY_2018_2_OR_NEWER
+			// GetCorrespondingObjectFromSource is the way to get the Prefab source from instance
 			return PrefabUtility.GetCorrespondingObjectFromSource(go) != null;
 #else
 			return PrefabUtility.GetPrefabParent(go) != null && PrefabUtility.GetPrefabObject(go) != null;
@@ -181,14 +205,16 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Returns true if given GameObject is a prefab (and not an instance of a prefab).
+		/// Returns true if given GameObject is a prefab asset (and not an instance of a prefab).
 		/// </summary>
 		/// <param name="go">GameObject to check</param>
-		/// <returns>True if given GameObject is a prefab</returns>
-		public static bool IsPrefabOriginal(GameObject go)
+		/// <returns>True if given GameObject is a prefab asset</returns>
+		public static bool IsPrefabAsset(GameObject go)
 		{
 #if UNITY_EDITOR
-#if UNITY_2018_2_OR_NEWER
+#if UNITY_2018_3_OR_NEWER
+			return PrefabUtility.IsPartOfPrefabAsset(go);
+#elif UNITY_2018_2_OR_NEWER
 			return PrefabUtility.GetPrefabType(go) == PrefabType.Prefab;
 #else
 			return PrefabUtility.GetPrefabParent(go) == null && PrefabUtility.GetPrefabObject(go) != null;
@@ -207,7 +233,9 @@ namespace HoudiniEngineUnity
 		public static bool IsDisconnectedPrefabInstance(GameObject go)
 		{
 #if UNITY_EDITOR
-#if UNITY_2018_2_OR_NEWER
+#if UNITY_2018_3_OR_NEWER
+			return PrefabUtility.IsDisconnectedFromPrefabAsset(go);
+#elif UNITY_2018_2_OR_NEWER
 			return PrefabUtility.GetPrefabType(go) == PrefabType.DisconnectedPrefabInstance;
 #else
 			return PrefabUtility.GetPrefabParent(go) != null && PrefabUtility.GetPrefabObject(go) == null;
@@ -218,7 +246,7 @@ namespace HoudiniEngineUnity
 #endif
 		}
 
-		public static Object GetPrefabParent(GameObject go)
+		public static Object GetPrefabAsset(GameObject go)
 		{
 #if UNITY_EDITOR
 #if UNITY_2018_2_OR_NEWER
@@ -226,16 +254,6 @@ namespace HoudiniEngineUnity
 #else
 			return PrefabUtility.GetPrefabParent(go);
 #endif
-#else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
-			return null;
-#endif
-		}
-
-		public static GameObject ConnectGameObjectToPrefab(GameObject go, GameObject sourcePrefab)
-		{
-#if UNITY_EDITOR && UNITY_5_3_OR_NEWER
-			return PrefabUtility.ConnectGameObjectToPrefab(go, sourcePrefab);
 #else
 			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;

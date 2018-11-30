@@ -774,8 +774,12 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 			string assetBakedPath = GetAssetBakedPathWithAssetName(assetName);
 			assetBakedPath = AssetDatabase.GenerateUniqueAssetPath(assetBakedPath);
-			string folderName = HEU_Platform.GetFileName(assetBakedPath);
-			AssetDatabase.CreateFolder(assetBakedPath, folderName);
+
+			if (!HEU_Platform.DoesPathExist(assetBakedPath))
+			{
+				CreatePathWithFolders(assetBakedPath);
+			}
+
 			return assetBakedPath;
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?

@@ -2475,7 +2475,7 @@ namespace HoudiniEngineUnity
 					}
 
 					string prefabPath = HEU_AssetDatabase.AppendPrefabPath(bakedAssetPath, _assetName);
-					GameObject prefabGO = HEU_EditorUtility.CreatePrefab(prefabPath, newClonedRoot);
+					GameObject prefabGO = HEU_EditorUtility.SaveAsPrefabAsset(prefabPath, newClonedRoot);
 					if(prefabGO != null)
 					{
 						HEU_EditorUtility.SelectObject(prefabGO);
@@ -2518,9 +2518,9 @@ namespace HoudiniEngineUnity
 		/// <param name="bakeTargetGO">Must be the original prefab (ie. not an instance)</param>
 		public void BakeToExistingPrefab(GameObject bakeTargetGO)
 		{
-			if(!HEU_EditorUtility.IsPrefabOriginal(bakeTargetGO))
+			if(!HEU_EditorUtility.IsPrefabAsset(bakeTargetGO))
 			{
-				Debug.LogErrorFormat("Unable to bake to existing prefab as specified object is not the original prefab!");
+				Debug.LogErrorFormat("Unable to bake to existing prefab as specified object is not a prefab asset!");
 				return;
 			}
 
@@ -2596,7 +2596,7 @@ namespace HoudiniEngineUnity
 			bool bPrefabInstance = HEU_EditorUtility.IsPrefabInstance(bakeTargetGO);
 			bool bDontDeletePersistantResources = bPrefabInstance;
 
-			bool bWriteMeshesToAssetDatabase = false;
+			bool bWriteMeshesToAssetDatabase = true;
 			bool bDeleteExistingComponents = true;
 			bool bReconnectPrefabInstances = true;
 
