@@ -250,6 +250,47 @@ namespace HoudiniEngineUnity
 				}
 			}
 
+#if UNITY_2018_3_OR_NEWER
+
+			// Create TerrainLayer for each heightfield layer
+			// Note that at time of this implementation the new Unity terrain
+			// is still in beta. Therefore, the following layer creation is subject
+			// to change.
+
+			TerrainLayer[] terrainLayers = new TerrainLayer[numMaps];
+			for (int m = 0; m < numMaps; ++m)
+			{
+				terrainLayers[m] = new TerrainLayer();
+
+				HEU_VolumeLayer layer = (m == 0) ? baseLayer : validLayers[m - 1];
+
+				terrainLayers[m].diffuseTexture = layer._splatTexture;
+				terrainLayers[m].diffuseRemapMin = Vector4.zero;
+				terrainLayers[m].diffuseRemapMax = Vector4.one;
+
+				terrainLayers[m].maskMapTexture = null;
+				terrainLayers[m].maskMapRemapMin = Vector4.zero;
+				terrainLayers[m].maskMapRemapMax = Vector4.one;
+
+				terrainLayers[m].metallic = layer._metallic;
+
+				terrainLayers[m].normalMapTexture = layer._normalTexture;
+				terrainLayers[m].normalScale = 0.5f;
+
+				terrainLayers[m].smoothness = layer._smoothness;
+				terrainLayers[m].specular = Color.gray;
+				terrainLayers[m].tileOffset = layer._tileOffset;
+
+				if (layer._tileSize.magnitude == 0f)
+				{
+					// Use texture size if tile size is 0
+					layer._tileSize = new Vector3(layer._splatTexture.width, layer._splatTexture.height);
+				}
+				terrainLayers[m].tileSize = layer._tileSize;
+			}
+			terrainData.terrainLayers = terrainLayers;
+
+#else
 			// Need to create SplatPrototype for each layer in heightfield, representing the textures.
 			SplatPrototype[] splatPrototypes = new SplatPrototype[numMaps];
 			for (int m = 0; m < numMaps; ++m)
@@ -271,8 +312,9 @@ namespace HoudiniEngineUnity
 				splatPrototypes[m].smoothness = layer._smoothness;
 				splatPrototypes[m].normalMap = layer._normalTexture;
 			}
-
 			terrainData.splatPrototypes = splatPrototypes;
+#endif
+
 			terrainData.SetAlphamaps(0, 0, alphamap);
 		}
 
