@@ -466,6 +466,16 @@ namespace HoudiniEngineUnity
 					bChanged = true;
 				}
 			}
+			HEU_EditorUI.DrawSeparator();
+			{
+				string oldValue = HEU_PluginSettings.DefaultCurveShader;
+				string newValue = EditorGUILayout.DelayedTextField("Default Curve Shader", oldValue);
+				if (!newValue.Equals(oldValue))
+				{
+					HEU_PluginSettings.DefaultCurveShader = newValue;
+					bChanged = true;
+				}
+			}
 
 			HEU_EditorUI.DrawSeparator();
 
