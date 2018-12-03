@@ -645,6 +645,27 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public static string DefaultCurveShader
+		{
+			get
+			{
+				string path = HEU_Defines.DEFAULT_CURVE_SHADER;
+				HEU_PluginStorage.Instance.Get("HAPI_DefaultCurveShader", out path, path);
+
+				// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
+				if (path.Equals(HEU_Defines.DEFAULT_CURVE_SHADER))
+				{
+					path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
+				}
+
+				return path;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_DefaultCurveShader", value);
+			}
+		}
+
 		public static bool SupportHoudiniBoxType
 		{
 			get
