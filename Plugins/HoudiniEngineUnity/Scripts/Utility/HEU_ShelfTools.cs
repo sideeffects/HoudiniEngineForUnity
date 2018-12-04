@@ -582,7 +582,7 @@ namespace HoudiniEngineUnity
 
 							inputNode.ChangeInputType(session, HEU_InputNode.InputObjectType.UNITY_MESH);
 
-							HEU_InputObjectInfo inputInfo = inputNode.AddInputObjectAtEnd(inputObject);
+							HEU_InputObjectInfo inputInfo = inputNode.AddInputEntryAtEnd(inputObject);
 							inputInfo._useTransformOffset = false;
 							inputNode.KeepWorldTransform = true;
 							inputNode.PackGeometryBeforeMerging = false;
@@ -649,7 +649,7 @@ namespace HoudiniEngineUnity
 
 						inputNode.ChangeInputType(session, HEU_InputNode.InputObjectType.UNITY_MESH);
 
-						HEU_InputObjectInfo inputInfo = inputNode.AddInputObjectAtEnd(inputObject);
+						HEU_InputObjectInfo inputInfo = inputNode.AddInputEntryAtEnd(inputObject);
 						inputInfo._useTransformOffset = false;
 						inputNode.KeepWorldTransform = true;
 						inputNode.PackGeometryBeforeMerging = false;

@@ -234,6 +234,62 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 
+		public static bool CreateInputNodeWithMultiAssets(HEU_SessionBase session, HEU_HoudiniAsset parentAsset,
+			ref HAPI_NodeId connectMergeID, ref List<HEU_InputHDAInfo> inputAssetInfos,
+			 bool bKeepWorldTransform, HAPI_NodeId mergeParentID = -1)
+		{
+			// Create the merge SOP node that the input nodes are going to connect to.
+			if (!session.CreateNode(mergeParentID, "SOP/merge", null, true, out connectMergeID))
+			{
+				Debug.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
+				return false;
+			}
+
+			int numInputs = inputAssetInfos.Count;
+			for (int i = 0; i < numInputs; ++i)
+			{
+				inputAssetInfos[i]._connectedInputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+				if (inputAssetInfos[i]._pendingGO == null)
+				{
+					continue;
+				}
+
+				// ID of the asset that will be connected
+				HAPI_NodeId inputAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+				HEU_HoudiniAssetRoot inputAssetRoot = inputAssetInfos[i]._pendingGO.GetComponent<HEU_HoudiniAssetRoot>();
+				if (inputAssetRoot != null && inputAssetRoot._houdiniAsset != null)
+				{
+					if (!inputAssetRoot._houdiniAsset.IsAssetValidInHoudini(session))
+					{
+						// Force a recook if its not valid (in case it hasn't been loaded into the session)
+						inputAssetRoot._houdiniAsset.RequestCook(true, false, true, true);
+					}
+
+					inputAssetID = inputAssetRoot._houdiniAsset.AssetID;
+				}
+
+				if (inputAssetID == HEU_Defines.HEU_INVALID_NODE_ID)
+				{	
+					continue;
+				}
+
+				if (!session.ConnectNodeInput(connectMergeID, i, inputAssetID))
+				{
+					Debug.LogErrorFormat("Unable to connect input nodes!");
+					return false;
+				}
+
+				inputAssetInfos[i]._connectedInputNodeID = inputAssetID;
+				inputAssetInfos[i]._connectedGO = inputAssetInfos[i]._pendingGO;
+
+				parentAsset.ConnectToUpstream(inputAssetRoot._houdiniAsset);
+			}
+
+			return true;
+		}
+
 		/// <summary>
 		/// Set the input node's transform.
 		/// </summary>

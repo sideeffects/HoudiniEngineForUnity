@@ -80,6 +80,8 @@ namespace HoudiniEngineUnity
 		public HEU_InputNode.InputObjectType _inputObjectType;
 
 		public List<HEU_InputObjectPreset> _inputObjectPresets = new List<HEU_InputObjectPreset>();
+
+		// Deprecated and replaced with _inputAssetPresets. Leaving it in for backwards compatibility.
 		public string _inputAssetName;
 
 		public int _inputIndex;
@@ -87,6 +89,9 @@ namespace HoudiniEngineUnity
 
 		public bool _keepWorldTransform;
 		public bool _packGeometryBeforeMerging;
+
+		[OptionalField(VersionAdded = 4)]
+		public List<HEU_InputAssetPreset> _inputAssetPresets = new List<HEU_InputAssetPreset>();
 	}
 
 	[System.Serializable]
@@ -100,6 +105,12 @@ namespace HoudiniEngineUnity
 		public Vector3 _translateOffset = Vector3.zero;
 		public Vector3 _rotateOffset = Vector3.zero;
 		public Vector3 _scaleOffset = Vector3.one;
+	}
+
+	[System.Serializable]
+	public class HEU_InputAssetPreset
+	{
+		public string _gameObjectName;
 	}
 
 	[System.Serializable]
@@ -136,7 +147,7 @@ namespace HoudiniEngineUnity
 		public static char[] PRESET_IDENTIFIER = "HDAPRESET".ToCharArray();
 
 		// Preset version for debugging (increment if added fields to HEU_AssetPreset)
-		public static int PRESET_VERSION = 3;
+		public static int PRESET_VERSION = 4;
 
 		/// <summary>
 		/// Save the specified asset's preset data to file at specified path.
