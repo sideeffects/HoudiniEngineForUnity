@@ -232,13 +232,13 @@ namespace HoudiniEngineUnity
 			HEU_ParameterData paramData = asset.Parameters.GetParameter(paramName);
 			if (paramData != null && paramData._paramInputNode != null)
 			{
-				if (index < paramData._paramInputNode.NumInputObjects())
+				if (index < paramData._paramInputNode.NumInputEntries())
 				{
-					paramData._paramInputNode.InsertInputObject(index, obj);
+					paramData._paramInputNode.InsertInputEntry(index, obj);
 				}
 				else
 				{
-					paramData._paramInputNode.AddInputObjectAtEnd(obj);
+					paramData._paramInputNode.AddInputEntryAtEnd(obj);
 				}
 
 				paramData._paramInputNode.RequiresUpload = true;
@@ -258,7 +258,7 @@ namespace HoudiniEngineUnity
 			HEU_ParameterData paramData = asset.Parameters.GetParameter(paramName);
 			if (paramData != null && paramData._paramInputNode != null)
 			{
-				obj = paramData._paramInputNode.GetInputObject(index)._gameObject;
+				obj = paramData._paramInputNode.GetInputEntryGameObject(index);
 				return obj != null;
 			}
 			else

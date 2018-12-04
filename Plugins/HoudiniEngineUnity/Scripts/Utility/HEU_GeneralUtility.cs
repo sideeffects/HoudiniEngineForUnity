@@ -661,9 +661,43 @@ namespace HoudiniEngineUnity
 					int numObjects = gameObjects.Length;
 					for(int j = 0; j < numObjects; ++j)
 					{
-						if(gameObjects[j].name.Equals(name))
+						Transform[] childTransforms = gameObjects[j].GetComponentsInChildren<Transform>();
+						foreach(Transform t in childTransforms)
 						{
-							return gameObjects[j];
+							if (t.gameObject.name.Equals(name))
+							{
+								return t.gameObject;
+							}
+						}
+					}
+				}
+			}
+#else
+			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+#endif
+			return null;
+		}
+
+		public static HEU_HoudiniAssetRoot GetHDAByGameObjectNameInScene(string name)
+		{
+#if UNITY_EDITOR
+			int numScenes = UnityEditor.SceneManagement.EditorSceneManager.sceneCount;
+			for (int i = 0; i < numScenes; ++i)
+			{
+				var scene = UnityEditor.SceneManagement.EditorSceneManager.GetSceneAt(i);
+				if (scene.isLoaded)
+				{
+					GameObject[] gameObjects = scene.GetRootGameObjects();
+					int numObjects = gameObjects.Length;
+					for (int j = 0; j < numObjects; ++j)
+					{
+						HEU_HoudiniAssetRoot[] assetRoots = gameObjects[j].GetComponentsInChildren<HEU_HoudiniAssetRoot>();
+						foreach (HEU_HoudiniAssetRoot ar in assetRoots)
+						{
+							if (ar.gameObject.name.Equals(name))
+							{
+								return ar;
+							}
 						}
 					}
 				}
