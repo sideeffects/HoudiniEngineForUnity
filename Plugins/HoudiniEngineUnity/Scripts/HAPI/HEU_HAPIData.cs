@@ -583,16 +583,6 @@ namespace HoudiniEngineUnity
 	};
 
 	/// Used with PDG functions
-	public enum HAPI_PDG_CookType
-	{
-		HAPI_PDG_COOK_FULL,
-		HAPI_PDG_COOK_NODE,
-		HAPI_PDG_COOK_NODEGEN,
-		HAPI_PDG_COOK_STATICDEP_FULL,
-		HAPI_PDG_COOK_STATICDEP_NODE
-	};
-
-	/// Used with PDG functions
 	public enum HAPI_PDG_EventType
 	{
 		HAPI_PDG_EVENT_NULL,
@@ -608,6 +598,9 @@ namespace HoudiniEngineUnity
 		HAPI_PDG_EVENT_WORKITEM_REMOVE_PARENT,
 
 		HAPI_PDG_EVENT_NODE_CLEAR,
+
+		HAPI_PDG_EVENT_DIRTY_START,
+		HAPI_PDG_EVENT_DIRTY_STOP,
 
 		HAPI_PDG_EVENT_COOK_ERROR,
 		HAPI_PDG_EVENT_COOK_WARNING,
@@ -1529,6 +1522,7 @@ namespace HoudiniEngineUnity
 	public struct HAPI_PDG_WorkitemResultInfo
 	{
 		public int resultSH;                /// result string
+		public int resultTagSH;				/// result tag
 		public HAPI_Int64 resultHash;       /// hash value of result
 	};
 }   // HoudiniEngineUnity
