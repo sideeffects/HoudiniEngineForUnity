@@ -2979,6 +2979,25 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Returns true if this asset is valid in its own Houdini session.
+		/// </summary>
+		/// <returns></returns>
+		public bool IsAssetValid()
+		{
+			if (_assetID != HEU_Defines.HEU_INVALID_NODE_ID)
+			{
+				HEU_SessionBase session = GetAssetSession(false);
+				if (session == null)
+				{
+					return false;
+				}
+
+				return IsAssetValidInHoudini(session);
+			}
+			return false;
+		}
+
+		/// <summary>
 		/// Returns true if the current asset transform has changed from
 		/// the last upload to HAPI.
 		/// </summary>
@@ -3961,28 +3980,40 @@ namespace HoudiniEngineUnity
 
 						layer._strength = layerPreset._strength;
 
-						Texture2D splatTexture = layer._splatTexture;
-						if(!string.IsNullOrEmpty(layerPreset._splatTexturePath))
+						Texture2D diffuseTexture = layer._diffuseTexture;
+						if(!string.IsNullOrEmpty(layerPreset._diffuseTexturePath))
 						{
-							splatTexture = HEU_MaterialFactory.LoadTexture(layerPreset._splatTexturePath);
+							diffuseTexture = HEU_MaterialFactory.LoadTexture(layerPreset._diffuseTexturePath);
 						}
 
-						if(splatTexture == null)
+						if(diffuseTexture == null)
 						{
-							splatTexture = HEU_VolumeCache.LoadDefaultSplatTexture();
+							diffuseTexture = HEU_VolumeCache.LoadDefaultSplatTexture();
 						}
-						layer._splatTexture = splatTexture;
+						layer._diffuseTexture = diffuseTexture;
 
-						if(!string.IsNullOrEmpty(layerPreset._normalTexturePath))
+						if (!string.IsNullOrEmpty(layerPreset._maskTexturePath))
+						{
+							layer._maskTexture = HEU_MaterialFactory.LoadTexture(layerPreset._maskTexturePath);
+						}
+
+						layer._metallic = layerPreset._metallic;
+
+						if (!string.IsNullOrEmpty(layerPreset._normalTexturePath))
 						{
 							layer._normalTexture = HEU_MaterialFactory.LoadTexture(layerPreset._normalTexturePath);
 						}
 
+						layer._normalScale = layerPreset._normalScale;
+						layer._smoothness = layerPreset._smoothness;
+						layer._specularColor = layerPreset._specularColor;
+
 						layer._tileSize = layerPreset._tileSize;
 						layer._tileOffset = layerPreset._tileOffset;
-						layer._metallic = layerPreset._metallic;
-						layer._smoothness = layerPreset._smoothness;
+						
 						layer._uiExpanded = layerPreset._uiExpanded;
+						layer._tile = layerPreset._tile;
+						layer._overrides = layerPreset._overrides;
 					}
 
 					volumeCache.IsDirty = true;

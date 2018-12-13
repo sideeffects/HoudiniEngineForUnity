@@ -393,7 +393,7 @@ namespace HoudiniEngineUnity
 
 		public static GUIStyle GetNewButtonStyle_MarginPadding(int margin, int padding)
 		{
-			return GetNewButtonStyle(FontStyle.Normal, -1, TextAnchor.MiddleCenter, -1, 0, 0, 0, 0, 0, 0, 0, 0);
+			return GetNewButtonStyle(FontStyle.Normal, -1, TextAnchor.MiddleCenter, -1, padding, padding, padding, padding, margin, margin, margin, margin);
 		}
 
 		public delegate bool DrawField<T>(ref T value);

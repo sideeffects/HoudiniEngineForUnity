@@ -27,6 +27,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HoudiniEngineUnity
 {
@@ -34,20 +35,49 @@ namespace HoudiniEngineUnity
 	// Typedefs (copy these from HEU_Common.cs)
 	using HAPI_NodeId = System.Int32;
 	using HAPI_PartId = System.Int32;
+	using HAPI_StringHandle = System.Int32;
 
+	/// <summary>
+	/// Represents a volume-based terrain layer
+	/// </summary>
 	[System.Serializable]
 	public class HEU_VolumeLayer
 	{
 		public string _layerName;
 		public HEU_PartData _part;
-		public Texture2D _splatTexture;
-		public Texture2D _normalTexture;
 		public float _strength = 1.0f;
+
+		[FormerlySerializedAs("_splatTexture")]
+		public Texture2D _diffuseTexture;
+
+		public Texture2D _maskTexture;
+		public float _metallic = 0f;
+		public Texture2D _normalTexture;
+		public float _normalScale = 0.5f;
+		public float _smoothness = 0f;
+		public Color _specularColor = Color.gray;
 		public Vector2 _tileSize = Vector2.zero;
 		public Vector2 _tileOffset = Vector2.zero;
-		public float _metallic = 0f;
-		public float _smoothness = 0f;
+
 		public bool _uiExpanded;
+		public int _tile = -1;
+
+		// Flags to denote whether the above layer properties had been overriden by user
+		public enum Overrides
+		{
+			None		= 0,
+			Diffuse		= 1,
+			Mask		= 2,
+			Metallic	= 4,
+			Normal		= 8,
+			NormalScale	= 16,
+			Smoothness	= 32,
+			Specular	= 64,
+			TileSize	= 128,
+			TileOffset	= 256
+		}
+
+		public Overrides _overrides = Overrides.None;
 	}
 
 	/// <summary>
@@ -94,15 +124,11 @@ namespace HoudiniEngineUnity
 
 		public void ResetParameters()
 		{
-			foreach(HEU_VolumeLayer layer in _layers)
+			HEU_VolumeLayer defaultLayer = new HEU_VolumeLayer();
+
+			foreach (HEU_VolumeLayer layer in _layers)
 			{
-				layer._splatTexture = LoadDefaultSplatTexture();
-				layer._normalTexture = null;
-				layer._strength = 1.0f;
-				layer._tileSize = Vector2.zero;
-				layer._tileOffset = Vector2.zero;
-				layer._metallic = 0f;
-				layer._smoothness = 0f;
+				CopyLayer(defaultLayer, layer);
 			}
 		}
 
@@ -123,6 +149,140 @@ namespace HoudiniEngineUnity
 				}
 			}
 			return null;
+		}
+
+		private void GetPartLayerAttributes(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, HAPI_NodeId geoID, HAPI_NodeId partID, HEU_VolumeLayer layer)
+		{
+			// Get the tile index, if it exists, for this part
+			HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
+			int[] tileAttrData = new int[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID, "tile", ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
+			if (tileAttrData != null && tileAttrData.Length > 0)
+			{
+				layer._tile = tileAttrData[0];
+				//Debug.LogFormat("Tile: {0}", tileAttrData[0]);
+			}
+			else
+			{
+				layer._tile = -1;
+			}
+
+			// Get the layer textures, and other layer values from attributes
+
+			Texture2D defaultTexture = LoadDefaultSplatTexture();
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Diffuse) && (layer._diffuseTexture == null || layer._diffuseTexture == defaultTexture))
+			{
+				layer._diffuseTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TEXTURE_DIFFUSE_ATTR);
+
+				if (layer._diffuseTexture == null)
+				{
+					layer._diffuseTexture = defaultTexture;
+				}
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Mask) && layer._maskTexture == null)
+			{
+				layer._maskTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TEXTURE_MASK_ATTR);
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Normal) && layer._normalTexture == null)
+			{
+				layer._normalTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TEXTURE_NORMAL_ATTR);
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.NormalScale))
+			{
+				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_NORMAL_SCALE_ATTR, ref layer._normalScale);
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Metallic))
+			{
+				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_METALLIC_ATTR, ref layer._metallic);
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Smoothness))
+			{
+				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_SMOOTHNESS_ATTR, ref layer._smoothness);
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Specular))
+			{
+				LoadLayerColorFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_SPECULAR_ATTR, ref layer._specularColor);
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.TileOffset))
+			{
+				LoadLayerVector2FromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TILE_OFFSET_ATTR, ref layer._tileOffset);
+			}
+
+			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.TileSize))
+			{
+				LoadLayerVector2FromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TILE_SIZE_ATTR, ref layer._tileSize);
+			}
+		}
+
+		private Texture2D LoadLayerTextureFromAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_NodeId partID, string attrName)
+		{
+			// The texture path is stored as string primitive attribute. Only 1 string path per layer.
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			string[] texturePath = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, attrName, ref attrInfo);
+			if (texturePath != null && texturePath.Length > 0 && !string.IsNullOrEmpty(texturePath[0]))
+			{
+				return LoadAssetTexture(texturePath[0]);
+			}
+			return null;
+		}
+
+		private void LoadLayerFloatFromAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_NodeId partID, string attrName, ref float floatValue)
+		{
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			float[] attrValues = new float[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID, attrName, ref attrInfo, ref attrValues, session.GetAttributeFloatData);
+			if (attrValues != null && attrValues.Length > 0)
+			{
+				floatValue = attrValues[0];
+			}
+		}
+
+		private void LoadLayerColorFromAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_NodeId partID, string attrName, ref Color colorValue)
+		{
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			float[] attrValues = new float[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID, attrName, ref attrInfo, ref attrValues, session.GetAttributeFloatData);
+			if (attrValues != null && attrValues.Length >= 3)
+			{
+				if (attrInfo.tupleSize >= 3)
+				{
+					colorValue[0] = attrValues[0];
+					colorValue[1] = attrValues[1];
+					colorValue[2] = attrValues[2];
+
+					if (attrInfo.tupleSize == 4 && attrValues.Length == 4)
+					{
+						colorValue[3] = attrValues[3];
+					}
+					else
+					{
+						colorValue[3] = 1f;
+					}
+				}
+			}
+		}
+
+		private void LoadLayerVector2FromAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_NodeId partID, string attrName, ref Vector2 vectorValue)
+		{
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			float[] attrValues = new float[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID, attrName, ref attrInfo, ref attrValues, session.GetAttributeFloatData);
+			if (attrValues != null && attrValues.Length == 2)
+			{
+				if (attrInfo.tupleSize == 2)
+				{
+					vectorValue[0] = attrValues[0];
+					vectorValue[1] = attrValues[1];
+				}
+			}
 		}
 
 		private void UpdateVolumeLayers(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, List<HEU_PartData> volumeParts)
@@ -152,8 +312,6 @@ namespace HoudiniEngineUnity
 					layer = new HEU_VolumeLayer();
 					layer._layerName = volumeName;
 
-					layer._splatTexture = LoadDefaultSplatTexture();
-
 					if (bHeightPart)
 					{
 						_layers.Insert(0, layer);
@@ -165,6 +323,8 @@ namespace HoudiniEngineUnity
 				}
 
 				layer._part = part;
+
+				GetPartLayerAttributes(session, houdiniAsset, geoNode.GeoID, part.PartID, layer);
 
 				if (!bHeightPart)
 				{
@@ -264,27 +424,27 @@ namespace HoudiniEngineUnity
 
 				HEU_VolumeLayer layer = (m == 0) ? baseLayer : validLayers[m - 1];
 
-				terrainLayers[m].diffuseTexture = layer._splatTexture;
+				terrainLayers[m].diffuseTexture = layer._diffuseTexture;
 				terrainLayers[m].diffuseRemapMin = Vector4.zero;
 				terrainLayers[m].diffuseRemapMax = Vector4.one;
 
-				terrainLayers[m].maskMapTexture = null;
+				terrainLayers[m].maskMapTexture = layer._maskTexture;
 				terrainLayers[m].maskMapRemapMin = Vector4.zero;
 				terrainLayers[m].maskMapRemapMax = Vector4.one;
 
 				terrainLayers[m].metallic = layer._metallic;
 
 				terrainLayers[m].normalMapTexture = layer._normalTexture;
-				terrainLayers[m].normalScale = 0.5f;
+				terrainLayers[m].normalScale = layer._normalScale;
 
 				terrainLayers[m].smoothness = layer._smoothness;
-				terrainLayers[m].specular = Color.gray;
+				terrainLayers[m].specular = layer._specularColor;
 				terrainLayers[m].tileOffset = layer._tileOffset;
 
 				if (layer._tileSize.magnitude == 0f)
 				{
 					// Use texture size if tile size is 0
-					layer._tileSize = new Vector3(layer._splatTexture.width, layer._splatTexture.height);
+					layer._tileSize = new Vector3(layer._diffuseTexture.width, layer._diffuseTexture.height);
 				}
 				terrainLayers[m].tileSize = layer._tileSize;
 			}
@@ -299,12 +459,12 @@ namespace HoudiniEngineUnity
 
 				HEU_VolumeLayer layer = (m == 0) ? baseLayer : validLayers[m - 1];
 
-				splatPrototypes[m].texture = layer._splatTexture;
+				splatPrototypes[m].texture = layer._diffuseTexture;
 				splatPrototypes[m].tileOffset = layer._tileOffset;
 				if(layer._tileSize.magnitude == 0f)
 				{
 					// Use texture size if tile size is 0
-					layer._tileSize = new Vector3(layer._splatTexture.width, layer._splatTexture.height);
+					layer._tileSize = new Vector3(layer._diffuseTexture.width, layer._diffuseTexture.height);
 				}
 				splatPrototypes[m].tileSize = layer._tileSize;
 
@@ -414,21 +574,34 @@ namespace HoudiniEngineUnity
 				layerPreset._layerName = layer._layerName;
 				layerPreset._strength = layer._strength;
 
-				if(layer._splatTexture != null)
+				if(layer._diffuseTexture != null)
 				{
-					layerPreset._splatTexturePath = HEU_AssetDatabase.GetAssetPath(layer._splatTexture);
+					layerPreset._diffuseTexturePath = HEU_AssetDatabase.GetAssetPath(layer._diffuseTexture);
 				}
+
+				if (layer._maskTexture != null)
+				{
+					layerPreset._maskTexturePath = HEU_AssetDatabase.GetAssetPath(layer._maskTexture);
+				}
+
+				layerPreset._metallic = layer._metallic;
 
 				if (layer._normalTexture != null)
 				{
 					layerPreset._normalTexturePath = HEU_AssetDatabase.GetAssetPath(layer._normalTexture);
 				}
 
+				layerPreset._normalScale = layer._normalScale;
+				layerPreset._smoothness = layer._smoothness;
+				layerPreset._specularColor = layer._specularColor;
+
 				layerPreset._tileSize = layer._tileSize;
 				layerPreset._tileOffset = layer._tileOffset;
-				layerPreset._metallic = layer._metallic;
-				layerPreset._smoothness = layer._smoothness;
+
 				layerPreset._uiExpanded = layer._uiExpanded;
+				layerPreset._tile = layer._tile;
+
+				layerPreset._overrides = layer._overrides;
 
 				cachePreset._volumeLayersPresets.Add(layerPreset);
 			}
@@ -443,28 +616,58 @@ namespace HoudiniEngineUnity
 				HEU_VolumeLayer destLayer = destCache.GetLayer(srcLayer._layerName);
 				if(destLayer != null)
 				{
-					destLayer._strength = srcLayer._strength;
-					destLayer._splatTexture = srcLayer._splatTexture;
-					destLayer._normalTexture = srcLayer._normalTexture;
-					destLayer._tileSize = srcLayer._tileSize;
-					destLayer._tileOffset = srcLayer._tileOffset;
-					destLayer._metallic = srcLayer._metallic;
-					destLayer._smoothness = srcLayer._smoothness;
-					destLayer._uiExpanded = srcLayer._uiExpanded;
+					CopyLayer(srcLayer, destLayer);
 				}
 			}
 		}
 
+		public static void CopyLayer(HEU_VolumeLayer srcLayer, HEU_VolumeLayer destLayer)
+		{
+			destLayer._strength = srcLayer._strength;
+
+			destLayer._diffuseTexture = srcLayer._diffuseTexture;
+			destLayer._maskTexture = srcLayer._maskTexture;
+
+			destLayer._metallic = srcLayer._metallic;
+
+			destLayer._normalTexture = srcLayer._normalTexture;
+			destLayer._normalScale = srcLayer._normalScale;
+			destLayer._smoothness = srcLayer._smoothness;
+			destLayer._specularColor = srcLayer._specularColor;
+
+			destLayer._tileSize = srcLayer._tileSize;
+			destLayer._tileOffset = srcLayer._tileOffset;
+
+			destLayer._uiExpanded = srcLayer._uiExpanded;
+			destLayer._tile = srcLayer._tile;
+
+			destLayer._overrides = srcLayer._overrides;
+		}
+
 		public static Texture2D LoadDefaultSplatTexture()
 		{
-			string defaultSplatTexturePath = HEU_PluginSettings.TerrainSplatTextureDefault;
-			Texture2D texture = HEU_MaterialFactory.LoadTexture(defaultSplatTexturePath);
+			return LoadAssetTexture(HEU_PluginSettings.TerrainSplatTextureDefault);
+		}
+
+		public static Texture2D LoadAssetTexture(string path)
+		{
+			Texture2D texture = HEU_MaterialFactory.LoadTexture(path);
 			if (texture == null)
 			{
-				Debug.LogErrorFormat("Unable to find the default Terrain texture at {0}. Make sure this default texture exists. Using default white texture instead.", defaultSplatTexturePath);
+				Debug.LogErrorFormat("Unable to find the default Terrain texture at {0}. Make sure this default texture exists. Using default white texture instead.", path);
 				texture = HEU_MaterialFactory.WhiteTexture();
 			}
 			return texture;
+		}
+
+		public static bool IsLayerFieldOverriden(HEU_VolumeLayer layer, HEU_VolumeLayer.Overrides field)
+		{
+			return (layer._overrides & field) == field;
+		}
+
+		public static HEU_VolumeLayer.Overrides SetLayerFieldOverride(HEU_VolumeLayer.Overrides setOverride, HEU_VolumeLayer.Overrides field)
+		{
+			return setOverride | field;
 		}
 	}
 

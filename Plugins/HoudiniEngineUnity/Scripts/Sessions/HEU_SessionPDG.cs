@@ -48,6 +48,8 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public static class HEU_SessionPDG
 	{
+#if HOUDINIENGINEUNITY_ENABLED
+
 		// SESSION ----------------------------------------------------------------------------------------------------
 
 		public static bool GetPDGGraphContexts(this HEU_SessionBase session, out int num_contexts, [Out] HAPI_StringHandle[] context_names_array, [Out] HAPI_PDG_GraphContextId[] context_id_array, int count)
@@ -190,7 +192,8 @@ namespace HoudiniEngineUnity
 			session.HandleStatusResult(result, "Cancel PDG Cook", false, true);
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
-	}
 
+#endif
+	}
 
 }   // HoudiniEngineUnity
