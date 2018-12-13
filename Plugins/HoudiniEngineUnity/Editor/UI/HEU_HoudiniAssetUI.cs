@@ -1068,52 +1068,96 @@ namespace HoudiniEngineUnity
 										bChanged = true;
 									}
 
-									SerializedProperty textureProperty = layerProperty.FindPropertyRelative("_splatTexture");
+									SerializedProperty overrideProperty = layerProperty.FindPropertyRelative("_overrides");
+
+									SerializedProperty textureProperty = layerProperty.FindPropertyRelative("_diffuseTexture");
 									if (textureProperty != null)
 									{
 										Object textureObject = textureProperty.objectReferenceValue;
-
-
-										EditorGUILayout.PropertyField(textureProperty, new GUIContent("Texture", "Texture to use for heightfield layer mask."));
+										EditorGUILayout.PropertyField(textureProperty, new GUIContent("Diffuse Texture", "Difuse texture used by terrain layer."));
 										if (textureObject != textureProperty.objectReferenceValue)
 										{
+											SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.Diffuse);
 											bChanged = true;
 										}
 
 										HEU_EditorUI.DrawSeparator();
 									}
+
+#if UNITY_2018_3_OR_NEWER
+									SerializedProperty maskTextureProperty = layerProperty.FindPropertyRelative("_maskTexture");
+									if (maskTextureProperty != null)
+									{
+										Object textureObject = maskTextureProperty.objectReferenceValue;
+										EditorGUILayout.PropertyField(maskTextureProperty, new GUIContent("Mask Texture", "The mask map texture used by the terrain layer."));
+										if (textureObject != maskTextureProperty.objectReferenceValue)
+										{
+											SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.Mask);
+											bChanged = true;
+										}
+
+										HEU_EditorUI.DrawSeparator();
+									}
+#endif
 
 									SerializedProperty normalProperty = layerProperty.FindPropertyRelative("_normalTexture");
 									if (normalProperty != null)
 									{
 										Object normalObject = normalProperty.objectReferenceValue;
-
 										EditorGUILayout.PropertyField(normalProperty, new GUIContent("NormalMap", "Normal map of the splat applied to the Terrain."));
 										if (normalObject != normalProperty.objectReferenceValue)
 										{
+											SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.Normal);
 											bChanged = true;
 										}
 
 										HEU_EditorUI.DrawSeparator();
 									}
 
+#if UNITY_2018_3_OR_NEWER
+									if (HEU_EditorUtility.EditorDrawFloatSliderProperty(layerProperty, "_normalScale", "Normal Scale", "The normal scale value of the splat layer."))
+									{
+										SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.NormalScale);
+										bChanged = true;
+									}
+#endif
+
 									if (HEU_EditorUtility.EditorDrawFloatSliderProperty(layerProperty, "_metallic", "Metallic", "The metallic value of the splat layer."))
 									{
+										SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.Metallic);
 										bChanged = true;
 									}
 
 									if (HEU_EditorUtility.EditorDrawFloatSliderProperty(layerProperty, "_smoothness", "Smoothness", "The smoothness value of the splat layer when the main texture has no alpha channel."))
 									{
+										SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.Smoothness);
 										bChanged = true;
 									}
 
+#if UNITY_2018_3_OR_NEWER
+									SerializedProperty specularProperty = layerProperty.FindPropertyRelative("_specularColor");
+									if (specularProperty != null)
+									{
+										Color specColor = specularProperty.colorValue;
+										EditorGUILayout.PropertyField(specularProperty, new GUIContent("Specular", "Specular color"));
+										if (specularProperty.colorValue != specColor)
+										{
+											SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.Specular);
+
+											bChanged = true;
+										}
+									}
+#endif
+
 									if (HEU_EditorUtility.EditorDrawVector2RelativeProperty(layerProperty, "_tileSize", "Tile Size (W, H)", "Size of the tile used in the texture of the SplatPrototype."))
 									{
+										SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.TileSize);
 										bChanged = true;
 									}
 
 									if (HEU_EditorUtility.EditorDrawVector2RelativeProperty(layerProperty, "_tileOffset", "Tile Offset (X, Y)", "Offset of the tile texture of the SplatPrototype."))
 									{
+										SetVolumeLayerPropertyOverride(overrideProperty, HEU_VolumeLayer.Overrides.TileOffset);
 										bChanged = true;
 									}
 
@@ -1140,6 +1184,14 @@ namespace HoudiniEngineUnity
 			HEU_EditorUI.EndSection();
 
 			HEU_EditorUI.DrawSeparator();
+		}
+
+		private void SetVolumeLayerPropertyOverride(SerializedProperty overrideProperty, HEU_VolumeLayer.Overrides field)
+		{
+			if (overrideProperty != null)
+			{
+				overrideProperty.intValue = (int)HEU_VolumeCache.SetLayerFieldOverride((HEU_VolumeLayer.Overrides)overrideProperty.intValue, field);
+			}
 		}
 	}
 
