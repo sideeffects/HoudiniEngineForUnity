@@ -192,16 +192,16 @@ namespace HoudiniEngineUnity
 		public const string DEFAULT_UNITY_SUBMATERIAL_NAME_ATTR = "unity_sub_material_name";
 		public const string DEFAULT_UNITY_SUBMATERIAL_INDEX_ATTR = "unity_sub_material_index";
 
-		// Volume layers
-		public const string DEFAULT_VOLUME_TEXTURE_DIFFUSE_ATTR = "volume_texture_diffuse";
-		public const string DEFAULT_VOLUME_TEXTURE_MASK_ATTR = "volume_texture_mask";
-		public const string DEFAULT_VOLUME_TEXTURE_NORMAL_ATTR = "volume_texture_normal";
-		public const string DEFAULT_VOLUME_NORMAL_SCALE_ATTR = "volume_normal_scale";
-		public const string DEFAULT_VOLUME_METALLIC_ATTR = "volume_metallic";
-		public const string DEFAULT_VOLUME_SMOOTHNESS_ATTR = "volume_smoothness";
-		public const string DEFAULT_VOLUME_SPECULAR_ATTR = "volume_specular";
-		public const string DEFAULT_VOLUME_TILE_OFFSET_ATTR = "volume_tile_offset";
-		public const string DEFAULT_VOLUME_TILE_SIZE_ATTR = "volume_tile_size";
+		// Heightfield layer attributes
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR = "unity_hf_texture_diffuse";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR = "unity_hf_texture_mask";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR = "unity_hf_texture_normal";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_NORMAL_SCALE_ATTR = "unity_hf_normal_scale";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_METALLIC_ATTR = "unity_hf_metallic";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_SMOOTHNESS_ATTR = "unity_hf_smoothness";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_SPECULAR_ATTR = "unity_hf_specular";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR = "unity_hf_tile_offset";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR = "unity_hf_tile_size";
 
 
 		// Material Attributes

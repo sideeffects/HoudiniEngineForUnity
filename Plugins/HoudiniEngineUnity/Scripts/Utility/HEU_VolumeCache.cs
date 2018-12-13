@@ -173,7 +173,7 @@ namespace HoudiniEngineUnity
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Diffuse) && (layer._diffuseTexture == null || layer._diffuseTexture == defaultTexture))
 			{
-				layer._diffuseTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TEXTURE_DIFFUSE_ATTR);
+				layer._diffuseTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR);
 
 				if (layer._diffuseTexture == null)
 				{
@@ -183,42 +183,42 @@ namespace HoudiniEngineUnity
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Mask) && layer._maskTexture == null)
 			{
-				layer._maskTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TEXTURE_MASK_ATTR);
+				layer._maskTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR);
 			}
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Normal) && layer._normalTexture == null)
 			{
-				layer._normalTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TEXTURE_NORMAL_ATTR);
+				layer._normalTexture = LoadLayerTextureFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR);
 			}
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.NormalScale))
 			{
-				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_NORMAL_SCALE_ATTR, ref layer._normalScale);
+				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_NORMAL_SCALE_ATTR, ref layer._normalScale);
 			}
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Metallic))
 			{
-				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_METALLIC_ATTR, ref layer._metallic);
+				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_METALLIC_ATTR, ref layer._metallic);
 			}
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Smoothness))
 			{
-				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_SMOOTHNESS_ATTR, ref layer._smoothness);
+				LoadLayerFloatFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SMOOTHNESS_ATTR, ref layer._smoothness);
 			}
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.Specular))
 			{
-				LoadLayerColorFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_SPECULAR_ATTR, ref layer._specularColor);
+				LoadLayerColorFromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SPECULAR_ATTR, ref layer._specularColor);
 			}
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.TileOffset))
 			{
-				LoadLayerVector2FromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TILE_OFFSET_ATTR, ref layer._tileOffset);
+				LoadLayerVector2FromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR, ref layer._tileOffset);
 			}
 
 			if (!IsLayerFieldOverriden(layer, HEU_VolumeLayer.Overrides.TileSize))
 			{
-				LoadLayerVector2FromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_VOLUME_TILE_SIZE_ATTR, ref layer._tileSize);
+				LoadLayerVector2FromAttribute(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
 			}
 		}
 
