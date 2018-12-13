@@ -33,6 +33,7 @@ using System.Runtime.Serialization;
 using System.Linq;
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HoudiniEngineUnity
 {
@@ -117,14 +118,35 @@ namespace HoudiniEngineUnity
 	public class HEU_VolumeLayerPreset
 	{
 		public string _layerName;
-		public string _splatTexturePath;
-		public string _normalTexturePath;
 		public float _strength;
+
+		[FormerlySerializedAs("_splatTexturePath")]
+		public string _diffuseTexturePath;
+
+		[OptionalField(VersionAdded = 5)]
+		public string _maskTexturePath;
+
+		public float _metallic;
+		public string _normalTexturePath;
+
+		[OptionalField(VersionAdded = 5)]
+		public float _normalScale;
+
+		public float _smoothness;
+
+		[OptionalField(VersionAdded = 5)]
+		public Color _specularColor;
+
 		public Vector2 _tileSize = Vector2.zero;
 		public Vector2 _tileOffset = Vector2.zero;
-		public float _metallic;
-		public float _smoothness;
+		
 		public bool _uiExpanded;
+
+		[OptionalField(VersionAdded = 5)]
+		public int _tile;
+
+		[OptionalField(VersionAdded = 5)]
+		public HEU_VolumeLayer.Overrides _overrides;
 	}
 
 	[System.Serializable]
@@ -147,7 +169,7 @@ namespace HoudiniEngineUnity
 		public static char[] PRESET_IDENTIFIER = "HDAPRESET".ToCharArray();
 
 		// Preset version for debugging (increment if added fields to HEU_AssetPreset)
-		public static int PRESET_VERSION = 4;
+		public static int PRESET_VERSION = 5;
 
 		/// <summary>
 		/// Save the specified asset's preset data to file at specified path.
