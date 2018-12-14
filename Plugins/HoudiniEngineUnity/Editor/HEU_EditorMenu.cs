@@ -217,23 +217,38 @@ namespace HoudiniEngineUnity
 
 		// GENERATE ---------------------------------------------------------------------------------------------------
 
-		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load Houdini Digital Asset", false, 40)]
+		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load HDA File", false, 40)]
 		public static void LoadHoudiniAssetWindow()
 		{
 			if (HEU_SessionManager.ValidatePluginSession())
 			{
 				string[] extensions = { "HDAs", "otl,hda,otllc,hdalc,otlnc,hdanc" };
 				string hdaPath = EditorUtility.OpenFilePanelWithFilters("Load Houdini Digital Asset", HEU_PluginSettings.LastLoadHDAPath, extensions);
-				if (!string.IsNullOrEmpty(hdaPath))
-				{
-					// Store HDA path for next time
-					HEU_PluginSettings.LastLoadHDAPath = Path.GetDirectoryName(hdaPath);
+				LoadHoudiniAssetFromPath(hdaPath);
+			}
+		}
 
-					GameObject go = HEU_HAPIUtility.InstantiateHDA(hdaPath, Vector3.zero, HEU_SessionManager.GetOrCreateDefaultSession(), true);
-					if (go != null)
-					{
-						HEU_EditorUtility.SelectObject(go);
-					}
+		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load HDA Expanded", false, 40)]
+		public static void LoadHoudiniAssetExpandedWindow()
+		{
+			if (HEU_SessionManager.ValidatePluginSession())
+			{
+				string hdaPath = EditorUtility.OpenFolderPanel("Load Houdini Digital Asset (Expanded)", HEU_PluginSettings.LastLoadHDAPath, "");
+				LoadHoudiniAssetFromPath(hdaPath);
+			}
+		}
+
+		private static void LoadHoudiniAssetFromPath(string hdaPath)
+		{
+			if (!string.IsNullOrEmpty(hdaPath))
+			{
+				// Store HDA path for next time
+				HEU_PluginSettings.LastLoadHDAPath = Path.GetDirectoryName(hdaPath);
+
+				GameObject go = HEU_HAPIUtility.InstantiateHDA(hdaPath, Vector3.zero, HEU_SessionManager.GetOrCreateDefaultSession(), true);
+				if (go != null)
+				{
+					HEU_EditorUtility.SelectObject(go);
 				}
 			}
 		}

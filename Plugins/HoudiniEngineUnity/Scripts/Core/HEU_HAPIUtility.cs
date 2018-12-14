@@ -181,15 +181,15 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Returns true if file at inPath exists. Supports inPath with environment mapped values
+		/// Returns true if file or folder at inPath exists. Supports inPath with environment mapped values
 		/// such as <HFS> or $.
 		/// </summary>
-		/// <param name="inPath">Path to file</param>
-		/// <returns>True if file exists</returns>
-		public static bool DoesMappedFileAtPathExist(string inPath)
+		/// <param name="inPath">Path to check. Could be either file or folder.</param>
+		/// <returns>True if file or folder exists</returns>
+		public static bool DoesMappedPathExist(string inPath)
 		{
 			string realPath = HEU_PluginStorage.Instance.ConvertEnvKeyedPathToReal(inPath);
-			return HEU_Platform.DoesFileExist(realPath);
+			return HEU_Platform.DoesPathExist(realPath);
 		}
 
 		/// <summary>
@@ -310,7 +310,7 @@ namespace HoudiniEngineUnity
 		/// <returns>Returns the newly created gameobject for the asset in the scene, or null if creation failed.</returns>
 		public static GameObject InstantiateHDA(string filePath, Vector3 initialPosition, HEU_SessionBase session, bool bBuildAsync)
 		{
-			if (filePath == null || !DoesMappedFileAtPathExist(filePath))
+			if (filePath == null || !DoesMappedPathExist(filePath))
 			{
 				return null;
 			}
