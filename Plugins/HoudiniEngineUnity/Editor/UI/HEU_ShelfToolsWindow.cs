@@ -278,7 +278,7 @@ namespace HoudiniEngineUnity
 						_guiContents[i] = new GUIContent();
 						_guiContents[i].text = shelf._tools[i]._name;
 
-						if (HEU_HAPIUtility.DoesMappedFileAtPathExist(shelf._tools[i]._iconPath))
+						if (HEU_HAPIUtility.DoesMappedPathExist(shelf._tools[i]._iconPath))
 						{
 							string realPath = HEU_PluginStorage.Instance.ConvertEnvKeyedPathToReal(shelf._tools[i]._iconPath);
 							_guiContents[i].image = HEU_GeneralUtility.LoadTextureFromFile(realPath);
