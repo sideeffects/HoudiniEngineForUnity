@@ -1686,7 +1686,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// Set object reference if it hasn't been set. In future, user can re-link this via UI or code if reference is ever lost.
-			if (_assetFileObject == null && HEU_AssetDatabase.IsPathInAssetCache(validAssetPath))
+			if (_assetFileObject == null && HEU_AssetDatabase.IsPathRelativeToAssets(validAssetPath))
 			{
 				_assetFileObject = HEU_AssetDatabase.LoadAssetAtPath(validAssetPath, typeof(UnityEngine.Object));
 			}
