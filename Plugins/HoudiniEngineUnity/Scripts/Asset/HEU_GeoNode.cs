@@ -46,7 +46,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Represents a Geometry (SOP) node.
 	/// </summary>
-	public class HEU_GeoNode : ScriptableObject
+	public class HEU_GeoNode : ScriptableObject, ISerializationCallbackReceiver
 	{
 		//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -91,10 +91,14 @@ namespace HoudiniEngineUnity
 		[SerializeField]
 		private HEU_Curve _geoCurve;
 
+		// Deprecated by _volumeCaches. Keeping it for backwards compatibility on saved assets.
 		[SerializeField]
 		private HEU_VolumeCache _volumeCache;
 
-		public HEU_VolumeCache VolumeCache { get { return _volumeCache; } }
+		[SerializeField]
+		private List<HEU_VolumeCache> _volumeCaches;
+
+		public List<HEU_VolumeCache> VolumeCaches { get { return _volumeCaches; } }
 
 
 		//  LOGIC -----------------------------------------------------------------------------------------------------
@@ -102,6 +106,23 @@ namespace HoudiniEngineUnity
 		public HEU_GeoNode()
 		{
 			Reset();
+		}
+
+		public void OnBeforeSerialize()
+		{
+
+		}
+
+		public void OnAfterDeserialize()
+		{
+			// _volumeCaches replaces _volumeCache, and _volumeCache has been deprecated.
+			// This takes care of moving in the old _volumeCache into _volumeCaches.
+			if (_volumeCache != null && (_volumeCaches == null || _volumeCaches.Count == 0))
+			{
+				_volumeCaches = new List<HEU_VolumeCache>();
+				_volumeCaches.Add(_volumeCache);
+				_volumeCache = null;
+			}
 		}
 
 		/// <summary>
@@ -876,36 +897,61 @@ namespace HoudiniEngineUnity
 		public void ProcessVolumeParts(HEU_SessionBase session, List<HEU_PartData> volumeParts)
 		{
 			int numVolumeParts = volumeParts.Count;
-
-			if (_volumeCache == null)
-			{
-				if (numVolumeParts == 0)
-				{
-					return;
-				}
-
-				_volumeCache = ScriptableObject.CreateInstance<HEU_VolumeCache>();
-				_volumeCache.Initialize(this);
-
-				ParentAsset.AddVolumeCache(_volumeCache);
-			}
-			else if (numVolumeParts == 0)
+			if (numVolumeParts == 0)
 			{
 				DestroyVolumeCache();
-				return;
+			}
+			else if(_volumeCaches == null)
+			{
+				_volumeCaches = new List<HEU_VolumeCache>();
 			}
 
-			_volumeCache.GenerateFromParts(session, ParentAsset, volumeParts);
+			// First update volume caches. Each volume cache represents a set of terrain layers grouped by tile index.
+			_volumeCaches = HEU_VolumeCache.UpdateVolumeCachesFromParts(session, this, volumeParts, _volumeCaches);
+
+			// Now generate the terrain for each volume cache
+			foreach(HEU_VolumeCache cache in _volumeCaches)
+			{
+				cache.GenerateTerrainWithAlphamaps(session, ParentAsset);
+			}
+		}
+
+		public HEU_VolumeCache GetVolumeCacheByTileIndex(int tileIndex)
+		{
+			if (_volumeCaches != null)
+			{
+				int numCaches = _volumeCaches.Count;
+				for (int i = 0; i < numCaches; ++i)
+				{
+					if (_volumeCaches[i] != null && _volumeCaches[i].TileIndex == tileIndex)
+					{
+						return _volumeCaches[i];
+					}
+				}
+			}
+			else if (_volumeCache != null)
+			{
+				return _volumeCache;
+			}
+			return null;
 		}
 
 		public void DestroyVolumeCache()
 		{
-			if(_volumeCache != null)
+			if(_volumeCaches != null)
 			{
-				ParentAsset.RemoveVolumeCache(_volumeCache);
+				int numCaches = _volumeCaches.Count;
+				for(int i = 0; i < numCaches; ++i)
+				{
+					if (_volumeCaches[i] != null)
+					{
+						ParentAsset.RemoveVolumeCache(_volumeCaches[i]);
+						HEU_GeneralUtility.DestroyImmediate(_volumeCaches[i]);
+						_volumeCaches[i] = null;
+					}
+				}
 
-				HEU_GeneralUtility.DestroyImmediate(_volumeCache);
-				_volumeCache = null;
+				_volumeCaches = null;
 			}
 		}
 

@@ -3664,7 +3664,7 @@ namespace HoudiniEngineUnity
 
 					if(newGeoNode != null && srcGeoNode != null)
 					{
-						HEU_VolumeCache srcVolumeCache = srcGeoNode.VolumeCache;
+						HEU_VolumeCache srcVolumeCache = srcGeoNode.GetVolumeCacheByTileIndex(newVolumeCache.TileIndex);
 						if(srcVolumeCache != null)
 						{
 							srcVolumeCache.CopyValuesTo(newVolumeCache);
@@ -3942,6 +3942,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 
+			// Load volume caches (for terrain layers)
 			if (assetPreset.volumeCachePresets != null && assetPreset.volumeCachePresets.Count > 0)
 			{
 				foreach (HEU_VolumeCachePreset volumeCachePreset in assetPreset.volumeCachePresets)
@@ -3954,23 +3955,30 @@ namespace HoudiniEngineUnity
 					}
 
 					HEU_GeoNode geoNode = objNode.GetGeoNode(volumeCachePreset._geoName);
-					if (objNode == null)
+					if (geoNode == null)
 					{
 						Debug.LogWarningFormat("No geo node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._geoName);
 						continue;
 					}
 
-					HEU_VolumeCache volumeCache = geoNode.VolumeCache;
-					if (volumeCache == null)
+					List<HEU_VolumeCache> volumeCaches = geoNode.VolumeCaches;
+					if (volumeCaches == null)
 					{
-						Debug.LogWarningFormat("Volume cache not found for geo node {0} not found! Unable to set heightfield preset.", geoNode.GeoName);
+						Debug.LogWarningFormat("Volume caches not found for geo node {0} not found! Unable to set heightfield preset.", geoNode.GeoName);
 						continue;
 					}
 
-					volumeCache.UIExpanded = volumeCachePreset._uiExpanded;
-
 					foreach (HEU_VolumeLayerPreset layerPreset in volumeCachePreset._volumeLayersPresets)
 					{
+						HEU_VolumeCache volumeCache = geoNode.GetVolumeCacheByTileIndex(layerPreset._tile);
+						if (volumeCache == null)
+						{
+							Debug.LogWarningFormat("Volume cache at tile {0} not found for geo node {1} not found! Unable to set heightfield preset.", layerPreset._tile, geoNode.GeoName);
+							continue;
+						}
+
+						volumeCache.UIExpanded = volumeCachePreset._uiExpanded;
+
 						HEU_VolumeLayer layer = volumeCache.GetLayer(layerPreset._layerName);
 						if(layer == null)
 						{
@@ -4014,9 +4022,9 @@ namespace HoudiniEngineUnity
 						layer._uiExpanded = layerPreset._uiExpanded;
 						layer._tile = layerPreset._tile;
 						layer._overrides = layerPreset._overrides;
-					}
 
-					volumeCache.IsDirty = true;
+						volumeCache.IsDirty = true;
+					}
 				}
 			}
 
