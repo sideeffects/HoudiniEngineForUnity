@@ -60,7 +60,7 @@ namespace HoudiniEngineUnity
 		public Vector2 _tileOffset = Vector2.zero;
 
 		public bool _uiExpanded;
-		public int _tile = -1;
+		public int _tile = 0;
 
 		// Flags to denote whether the above layer properties had been overriden by user
 		public enum Overrides
@@ -80,6 +80,7 @@ namespace HoudiniEngineUnity
 		public Overrides _overrides = Overrides.None;
 	}
 
+
 	/// <summary>
 	/// Creates terrain out of volume parts.
 	/// </summary>
@@ -93,6 +94,12 @@ namespace HoudiniEngineUnity
 		[SerializeField]
 		private List<HEU_VolumeLayer> _layers = new List<HEU_VolumeLayer>();
 
+		// Used for storing in use layers during update. This is temporary and does not need to be serialized.
+		private List<HEU_VolumeLayer> _updatedLayers;
+
+		[SerializeField]
+		private int _tileIndex;
+
 		[SerializeField]
 		private bool _isDirty;
 
@@ -103,6 +110,8 @@ namespace HoudiniEngineUnity
 
 		[SerializeField]
 		private string _objName;
+
+		public int TileIndex { get { return _tileIndex; } }
 
 		public string ObjectName { get { return _objName; } }
 
@@ -115,11 +124,139 @@ namespace HoudiniEngineUnity
 
 		//	LOGIC -----------------------------------------------------------------------------------------------------
 
-		public void Initialize(HEU_GeoNode ownerNode)
+		public static List<HEU_VolumeCache> UpdateVolumeCachesFromParts(HEU_SessionBase session, HEU_GeoNode ownerNode, List<HEU_PartData> volumeParts, List<HEU_VolumeCache> volumeCaches)
+		{
+			HEU_HoudiniAsset parentAsset = ownerNode.ParentAsset;
+
+			foreach (HEU_VolumeCache cache in volumeCaches)
+			{
+				// Remove current volume caches from parent asset.
+				// These get added back in below.
+				parentAsset.RemoveVolumeCache(cache);
+
+				// Mark the cache for updating
+				cache.StartUpdateLayers();
+			}
+
+			// This will keep track of volume caches still in use
+			List<HEU_VolumeCache> updatedCaches = new List<HEU_VolumeCache>();
+
+			int numParts = volumeParts.Count;
+			for (int i = 0; i < numParts; ++i)
+			{
+				// Get the tile index, if it exists, for this part
+				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
+				int[] tileAttrData = new int[0];
+				HEU_GeneralUtility.GetAttribute(session, ownerNode.GeoID, volumeParts[i].PartID, "tile", ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
+				if (tileAttrData != null && tileAttrData.Length > 0)
+				{
+					//Debug.LogFormat("Tile: {0}", tileAttrData[0]);
+
+					int tile = tileAttrData[0];
+					HEU_VolumeCache volumeCache = null;
+
+					// Find cache in updated list
+					for (int j = 0; j < updatedCaches.Count; ++j)
+					{
+						if (updatedCaches[j] != null && updatedCaches[j].TileIndex == tile)
+						{
+							volumeCache = updatedCaches[j];
+							break;
+						}
+					}
+
+					if (volumeCache != null)
+					{
+						volumeCache.UpdateLayerFromPart(session, volumeParts[i]);
+
+						// Skip adding new cache since already found in updated list
+						continue;
+					}
+
+					// Find existing cache in old list
+					if (volumeCaches != null && volumeCaches.Count > 0)
+					{
+						for(int j = 0; j < volumeCaches.Count; ++j)
+						{
+							if (volumeCaches[j] != null && volumeCaches[j].TileIndex == tile)
+							{
+								volumeCache = volumeCaches[j];
+								break;
+							}
+						}
+					}
+
+					// Create new cache for this tile if not found
+					if (volumeCache == null)
+					{
+						volumeCache = ScriptableObject.CreateInstance<HEU_VolumeCache>();
+						volumeCache.Initialize(ownerNode, tile);
+						volumeCache.StartUpdateLayers();
+					}
+
+					volumeCache.UpdateLayerFromPart(session, volumeParts[i]);
+
+					if (!updatedCaches.Contains(volumeCache))
+					{
+						updatedCaches.Add(volumeCache);
+					}
+				}
+				else
+				{
+					// No tile index. Most likely a single terrain tile.
+
+					HEU_VolumeCache volumeCache = null;
+
+					if (updatedCaches.Count == 0)
+					{
+						// Create a single volume cache, or use existing if it was just 1.
+						// If more than 1 volume cache exists, this will recreate a single one
+
+						if (volumeCaches == null || volumeCaches.Count != 1)
+						{
+							volumeCache = ScriptableObject.CreateInstance<HEU_VolumeCache>();
+							volumeCache.Initialize(ownerNode, 0);
+							volumeCache.StartUpdateLayers();
+						}
+						else if (volumeCaches.Count == 1)
+						{
+							// Keep the single volumecache
+							volumeCache = volumeCaches[0];
+						}
+
+						if (!updatedCaches.Contains(volumeCache))
+						{
+							updatedCaches.Add(volumeCache);
+						}
+					}
+					else
+					{
+						// Reuse the updated cache
+						volumeCache = updatedCaches[0];
+					}
+
+					volumeCache.UpdateLayerFromPart(session, volumeParts[i]);
+				}
+			}
+
+			foreach (HEU_VolumeCache cache in updatedCaches)
+			{
+				// Add to parent for UI and preset
+				parentAsset.AddVolumeCache(cache);
+
+				// Finish update by keeping just the layers in use for each volume cache.
+				cache.FinishUpdateLayers();
+			}
+
+			return updatedCaches;
+		}
+
+		public void Initialize(HEU_GeoNode ownerNode, int tileIndex)
 		{
 			_ownerNode = ownerNode;
 			_geoName = ownerNode.GeoName;
 			_objName = ownerNode.ObjectNode.ObjectName;
+			_tileIndex = tileIndex;
 		}
 
 		public void ResetParameters()
@@ -130,13 +267,6 @@ namespace HoudiniEngineUnity
 			{
 				CopyLayer(defaultLayer, layer);
 			}
-		}
-
-		public void GenerateFromParts(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, List<HEU_PartData> volumeParts)
-		{
-			UpdateVolumeLayers(session, houdiniAsset, volumeParts);
-
-			GenerateTerrainWithAlphamaps(session, houdiniAsset);
 		}
 
 		public HEU_VolumeLayer GetLayer(string layerName)
@@ -151,7 +281,18 @@ namespace HoudiniEngineUnity
 			return null;
 		}
 
-		private void GetPartLayerAttributes(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, HAPI_NodeId geoID, HAPI_NodeId partID, HEU_VolumeLayer layer)
+		public void StartUpdateLayers()
+		{
+			_updatedLayers = new List<HEU_VolumeLayer>(_layers);
+		}
+
+		public void FinishUpdateLayers()
+		{
+			_layers = _updatedLayers;
+			_updatedLayers = null;
+		}
+
+		private void GetPartLayerAttributes(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_NodeId partID, HEU_VolumeLayer layer)
 		{
 			// Get the tile index, if it exists, for this part
 			HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
@@ -164,7 +305,7 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-				layer._tile = -1;
+				layer._tile = 0;
 			}
 
 			// Get the layer textures, and other layer values from attributes
@@ -285,56 +426,56 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		private void UpdateVolumeLayers(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, List<HEU_PartData> volumeParts)
+		public void UpdateLayerFromPart(HEU_SessionBase session, HEU_PartData part)
 		{
-			bool bResult;
-			foreach (HEU_PartData part in volumeParts)
+			HEU_GeoNode geoNode = part.ParentGeoNode;
+
+			HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
+			bool bResult = session.GetVolumeInfo(geoNode.GeoID, part.PartID, ref volumeInfo);
+			if (!bResult || volumeInfo.tupleSize != 1 || volumeInfo.zLength != 1 || volumeInfo.storage != HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
 			{
-				HEU_GeoNode geoNode = part.ParentGeoNode;
+				return;
+			}
 
-				HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
-				bResult = session.GetVolumeInfo(geoNode.GeoID, part.PartID, ref volumeInfo);
-				if (!bResult || volumeInfo.tupleSize != 1 || volumeInfo.zLength != 1 || volumeInfo.storage != HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
+			string volumeName = HEU_SessionManager.GetString(volumeInfo.nameSH, session);
+			part.SetVolumeLayerName(volumeName);
+
+			//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
+
+			bool bHeightPart = volumeName.Equals("height");
+
+			HEU_VolumeLayer layer = GetLayer(volumeName);
+			if (layer == null)
+			{
+				layer = new HEU_VolumeLayer();
+				layer._layerName = volumeName;
+
+				if (bHeightPart)
 				{
-					continue;
+					_layers.Insert(0, layer);
 				}
-
-				string volumeName = HEU_SessionManager.GetString(volumeInfo.nameSH, session);
-				part.SetVolumeLayerName(volumeName);
-
-				//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
-
-				bool bHeightPart = volumeName.Equals("height");
-
-				HEU_VolumeLayer layer = GetLayer(volumeName);
-				if (layer == null)
+				else
 				{
-					layer = new HEU_VolumeLayer();
-					layer._layerName = volumeName;
-
-					if (bHeightPart)
-					{
-						_layers.Insert(0, layer);
-					}
-					else
-					{
-						_layers.Add(layer);
-					}
+					_layers.Add(layer);
 				}
+			}
 
-				layer._part = part;
+			layer._part = part;
 
-				GetPartLayerAttributes(session, houdiniAsset, geoNode.GeoID, part.PartID, layer);
+			GetPartLayerAttributes(session, geoNode.GeoID, part.PartID, layer);
 
-				if (!bHeightPart)
-				{
-					part.DestroyAllData();
-				}
+			if (!bHeightPart)
+			{
+				part.DestroyAllData();
+			}
+
+			if (!_updatedLayers.Contains(layer))
+			{
+				_updatedLayers.Add(layer);
 			}
 		}
 
-
-		private void GenerateTerrainWithAlphamaps(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset)
+		public void GenerateTerrainWithAlphamaps(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset)
 		{
 			if(_layers == null || _layers.Count == 0)
 			{
