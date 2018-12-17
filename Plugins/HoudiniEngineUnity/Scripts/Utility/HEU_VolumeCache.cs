@@ -471,7 +471,14 @@ namespace HoudiniEngineUnity
 
 			if (!_updatedLayers.Contains(layer))
 			{
-				_updatedLayers.Add(layer);
+				if (bHeightPart)
+				{
+					_updatedLayers.Insert(0, layer);
+				}
+				else
+				{
+					_updatedLayers.Add(layer);
+				}
 			}
 		}
 
