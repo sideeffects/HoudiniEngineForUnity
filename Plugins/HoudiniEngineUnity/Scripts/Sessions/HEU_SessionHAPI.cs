@@ -665,6 +665,8 @@ namespace HoudiniEngineUnity
 		{
 			// In keeping consistency with other plugins, we don't support splitting by groups or attributes.
 			cookOptions.splitGeosByGroup = false;
+			cookOptions.splitGeosByAttribute = false;
+			cookOptions.splitAttrSH = 0;
 			cookOptions.splitPointsByVertexAttributes = false;
 
 			cookOptions.cookTemplatedGeos = HEU_PluginSettings.CookTemplatedGeos;

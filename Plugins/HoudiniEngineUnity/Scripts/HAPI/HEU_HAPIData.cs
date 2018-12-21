@@ -848,7 +848,18 @@ namespace HoudiniEngineUnity
 		/// set to false, geos will only be split by primtive type.
 		[MarshalAs(UnmanagedType.U1)]
 		public bool splitGeosByGroup;
-
+		
+		/// This toggle lets you enable the splitting by unique values
+		/// of a specified attribute. By default, this is false and
+		/// the geo be split as described above.
+		/// as described above. If this is set to true, and  splitGeosByGroup
+		/// set to false, mesh geos will be split on attribute values
+		/// The attribute name to split on must be created with HAPI_SetCustomString
+		/// and then the splitAttrSH handle set on the struct.
+		[MarshalAs(UnmanagedType.U1)]
+		public bool splitGeosByAttribute;
+		public HAPI_StringHandle splitAttrSH;
+		
 		/// For meshes only, this is enforced by convexing the mesh. Use -1
 		/// to avoid convexing at all and get some performance boost.
 		public int maxVerticesPerPrimitive;
