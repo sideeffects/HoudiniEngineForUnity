@@ -66,8 +66,6 @@ namespace HoudiniEngineUnity
 		[SerializeField]
 		public HAPI_Transform _objectTransform;
 
-		public bool IsInstancer() { return _objectInfo.isInstancer; }
-
 		public bool IsInstanced() { return _objectInfo.isInstanced; }
 
 		public bool IsVisible() { return _objectInfo.isVisible; }
@@ -744,6 +742,30 @@ namespace HoudiniEngineUnity
 			{
 				geoNode.DisableAllColliders();
 			}
+		}
+
+		/// <summary>
+		/// Returns true if this is an object instancer, or if it has point (attribute) instancer parts.
+		/// </summary>
+		/// <returns></returns>
+		public bool IsInstancer()
+		{
+			if (_objectInfo.isInstancer)
+			{
+				return true;
+			}
+			else
+			{
+				// Check parts for atrrib instancing
+				foreach (HEU_GeoNode geoNode in _geoNodes)
+				{
+					if (geoNode.HasAttribInstancer())
+					{
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 
 		public override string ToString()

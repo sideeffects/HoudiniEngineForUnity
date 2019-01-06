@@ -78,6 +78,11 @@ namespace HoudiniEngineUnity
 		public bool IsPartInstancer() { return _partType == HAPI_PartType.HAPI_PARTTYPE_INSTANCER; }
 
 		[SerializeField]
+		private bool _isAttribInstancer;
+
+		public bool IsAttribInstancer() { return _isAttribInstancer; }
+
+		[SerializeField]
 		private bool _isPartInstanced;
 
 		public bool IsPartInstanced() { return _isPartInstanced; }
@@ -172,7 +177,7 @@ namespace HoudiniEngineUnity
 		}
 
 		public void Initialize(HEU_SessionBase session, HAPI_PartId partID, HAPI_NodeId geoID, HAPI_NodeId objectNodeID, HEU_GeoNode geoNode, 
-			ref HAPI_PartInfo partInfo, HEU_PartData.PartOutputType partOutputType, bool isEditable, bool isObjectInstancer)
+			ref HAPI_PartInfo partInfo, HEU_PartData.PartOutputType partOutputType, bool isEditable, bool isObjectInstancer, bool isAttribInstancer)
 		{
 			_partID = partID;
 			_geoID = geoID;
@@ -186,6 +191,7 @@ namespace HoudiniEngineUnity
 			_partPointCount = partInfo.pointCount;
 			_isPartEditable = isEditable;
 			_meshVertexCount = partInfo.vertexCount;
+			_isAttribInstancer = isAttribInstancer;
 
 			_isObjectInstancer = isObjectInstancer;
 			_objectInstancesGenerated = false;
@@ -1533,7 +1539,7 @@ namespace HoudiniEngineUnity
 
 			Transform targetTransform = targetGO.transform;
 
-			if (IsPartInstancer() || IsObjectInstancer())
+			if (IsPartInstancer() || IsObjectInstancer() || IsAttribInstancer())
 			{
 				// Instancer
 
@@ -1712,7 +1718,7 @@ namespace HoudiniEngineUnity
 						HEU_GenerateGeoCache.UpdateCollider(geoCache, _generatedOutput._outputData._gameObject);
 					}
 				}
-				else if(IsPartInstancer() || IsObjectInstancer())
+				else if(IsPartInstancer() || IsObjectInstancer() || IsAttribInstancer())
 				{
 					// Always returning true for meshes without geometry that are instancers. These
 					// are handled after this.
@@ -1720,11 +1726,10 @@ namespace HoudiniEngineUnity
 				}
 				else
 				{
-					// No geometry -> return false to clean up
+					// No geometry -> default case is to return false to clean up
 					bResult = false;
 				}
 
-				
 				return bResult;
 			}
 		}
@@ -1912,6 +1917,7 @@ namespace HoudiniEngineUnity
 
 				string objectName = ParentGeoNode.ObjectNode != null ? ParentGeoNode.ObjectNode.ObjectName : "";
 				string assetPathName = string.Format("Asset_{0}_{1}_{2}_TerrainData.asset", objectName, ParentGeoNode.GeoName, PartID);
+				//Debug.Log("Saving terrain data: " + assetPathName);
 				ParentAsset.AddToAssetDBCache(assetPathName, terrainData, ref _assetDBTerrainData);
 			}
 		}
