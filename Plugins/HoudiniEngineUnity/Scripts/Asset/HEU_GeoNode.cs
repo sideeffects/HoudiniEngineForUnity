@@ -338,6 +338,7 @@ namespace HoudiniEngineUnity
 #endif
 
 			bool isPartEditable = IsIntermediateOrEditable();
+			bool isAttribInstancer = false;
 
 			if (IsGeoInputType())
 			{
@@ -367,6 +368,19 @@ namespace HoudiniEngineUnity
 					return;
 				}
 			}
+			else
+			{
+				// Preliminary check for attribute instancing (mesh type with no verts but has points with instances)
+				if (HEU_HAPIUtility.IsSupportedPolygonType(partInfo.type) && partInfo.vertexCount == 0 && partInfo.pointCount > 0)
+				{
+					HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
+					HEU_GeneralUtility.GetAttributeInfo(session, GeoID, partID, HEU_PluginSettings.UnityInstanceAttr, ref instanceAttrInfo);
+					if (instanceAttrInfo.exists && instanceAttrInfo.count > 0)
+					{
+						isAttribInstancer = true;
+					}
+				}
+			}
 
 			if(partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INVALID)
 			{
@@ -389,7 +403,8 @@ namespace HoudiniEngineUnity
 						partData = ScriptableObject.CreateInstance<HEU_PartData>();
 					}
 
-					partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, HEU_PartData.PartOutputType.CURVE, isPartEditable, _containerObjectNode.IsInstancer());
+					partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, 
+						HEU_PartData.PartOutputType.CURVE, isPartEditable, _containerObjectNode.IsInstancer(), false);
 					SetupGameObjectAndTransform(partData, parentAsset);
 					partData.ProcessCurvePart(session);
 				}
@@ -418,13 +433,30 @@ namespace HoudiniEngineUnity
 								partData.ClearGeneratedMeshOutput();
 							}
 
-							partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, HEU_PartData.PartOutputType.VOLUME, isPartEditable, _containerObjectNode.IsInstancer());
+							partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, 
+								HEU_PartData.PartOutputType.VOLUME, isPartEditable, _containerObjectNode.IsInstancer(), false);
 							SetupGameObjectAndTransform(partData, ParentAsset);
 						}
 					}
 #else
 					Debug.LogWarningFormat("Terrain (heightfield volume) is not yet supported.");
 #endif
+				}
+				else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER || isAttribInstancer)
+				{
+					if (partData == null)
+					{
+						partData = ScriptableObject.CreateInstance<HEU_PartData>();
+					}
+					else
+					{
+						partData.ClearGeneratedMeshOutput();
+						partData.ClearGeneratedVolumeOutput();
+					}
+
+					partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, 
+						HEU_PartData.PartOutputType.INSTANCER, isPartEditable, _containerObjectNode.IsInstancer(), isAttribInstancer);
+					SetupGameObjectAndTransform(partData, parentAsset);
 				}
 				else if (HEU_HAPIUtility.IsSupportedPolygonType(partInfo.type))
 				{
@@ -438,7 +470,8 @@ namespace HoudiniEngineUnity
 						partData.ClearGeneratedVolumeOutput();
 					}
 
-					partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, HEU_PartData.PartOutputType.MESH, isPartEditable, _containerObjectNode.IsInstancer());
+					partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, 
+						HEU_PartData.PartOutputType.MESH, isPartEditable, _containerObjectNode.IsInstancer(), false);
 
 					// This check allows to ignore editable non-display nodes by default, but commented out to allow
 					// them for now. Users can also ignore them by turning on IgnoreNonDisplayNodes
@@ -446,21 +479,6 @@ namespace HoudiniEngineUnity
 					{
 						SetupGameObjectAndTransform(partData, parentAsset);
 					}
-				}
-				else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER)
-				{
-					if (partData == null)
-					{
-						partData = ScriptableObject.CreateInstance<HEU_PartData>();
-					}
-					else
-					{
-						partData.ClearGeneratedMeshOutput();
-						partData.ClearGeneratedVolumeOutput();
-					}
-
-					partData.Initialize(session, partID, GeoID, _containerObjectNode.ObjectID, this, ref partInfo, HEU_PartData.PartOutputType.INSTANCER, isPartEditable, _containerObjectNode.IsInstancer());
-					SetupGameObjectAndTransform(partData, parentAsset);
 				}
 				else
 				{
@@ -827,6 +845,18 @@ namespace HoudiniEngineUnity
 		public List<HEU_PartData> GetParts()
 		{
 			return _parts;
+		}
+
+		public bool HasAttribInstancer()
+		{
+			foreach (HEU_PartData part in _parts)
+			{
+				if (part.IsAttribInstancer())
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		/// <summary>
