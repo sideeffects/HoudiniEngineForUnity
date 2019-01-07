@@ -526,7 +526,7 @@ namespace HoudiniEngineUnity
 			int numLayers = _layers.Count;
 			for(int i = 1; i < numLayers; ++i)
 			{
-				float[] hf = GetHeightfield(session, _ownerNode.GeoID, _layers[i]._part.PartID, _layers[i]._part.PartName, terrainSize);
+				float[] hf = HEU_GeometryUtility.GetHeightfieldFromPart(session, _ownerNode.GeoID, _layers[i]._part.PartID, _layers[i]._part.PartName, terrainSize);
 				if (hf != null && hf.Length > 0)
 				{
 					heightFields.Add(hf);
@@ -592,7 +592,7 @@ namespace HoudiniEngineUnity
 				if (layer._tileSize.magnitude == 0f)
 				{
 					// Use texture size if tile size is 0
-					layer._tileSize = new Vector3(layer._diffuseTexture.width, layer._diffuseTexture.height);
+					layer._tileSize = new Vector2(layer._diffuseTexture.width, layer._diffuseTexture.height);
 				}
 				terrainLayers[m].tileSize = layer._tileSize;
 			}
@@ -612,7 +612,7 @@ namespace HoudiniEngineUnity
 				if(layer._tileSize.magnitude == 0f)
 				{
 					// Use texture size if tile size is 0
-					layer._tileSize = new Vector3(layer._diffuseTexture.width, layer._diffuseTexture.height);
+					layer._tileSize = new Vector2(layer._diffuseTexture.width, layer._diffuseTexture.height);
 				}
 				splatPrototypes[m].tileSize = layer._tileSize;
 
@@ -626,88 +626,7 @@ namespace HoudiniEngineUnity
 			terrainData.SetAlphamaps(0, 0, alphamap);
 		}
 
-		private float[] GetHeightfield(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string partName, int terrainSize)
-		{
-			HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
-			bool bResult = session.GetVolumeInfo(geoID, partID, ref volumeInfo);
-			if (!bResult)
-			{
-				return null;
-			}
-
-			int volumeXLength = volumeInfo.xLength;
-			int volumeYLength = volumeInfo.yLength;
-
-			// Number of heightfield values
-			int totalHeightValues = volumeXLength * volumeYLength;
-
-			float[] heightValues = new float[totalHeightValues];
-			bResult = HEU_GeneralUtility.GetArray2Arg(geoID, partID, session.GetHeightFieldData, heightValues, 0, totalHeightValues);
-			if (!bResult)
-			{
-				Debug.LogErrorFormat("Unable to get heightfield data from part {0}", partName);
-				return null;
-			}
-
-			float minHeight = heightValues[0];
-			float maxHeight = minHeight;
-			for (int i = 0; i < totalHeightValues; ++i)
-			{
-				float f = heightValues[i];
-				if (f > maxHeight)
-				{
-					maxHeight = f;
-				}
-				else if (f < minHeight)
-				{
-					minHeight = f;
-				}
-			}
-
-			float heightRange = (maxHeight - minHeight);
-			if(heightRange == 0f)
-			{
-				heightRange = 1f;
-			}
-			//Debug.LogFormat("{0} : {1}", HEU_SessionManager.GetString(volumeInfo.nameSH, session), heightRange);
-
-			// Remap height values to fit terrain size
-			int paddingWidth = terrainSize - volumeXLength;
-			int paddingLeft = Mathf.CeilToInt(paddingWidth * 0.5f);
-			int paddingRight = terrainSize - paddingLeft;
-			//Debug.LogFormat("Padding: Width={0}, Left={1}, Right={2}", paddingWidth, paddingLeft, paddingRight);
-
-			int paddingHeight = terrainSize - volumeYLength;
-			int paddingTop = Mathf.CeilToInt(paddingHeight * 0.5f);
-			int paddingBottom = terrainSize - paddingTop;
-			//Debug.LogFormat("Padding: Height={0}, Top={1}, Bottom={2}", paddingHeight, paddingTop, paddingBottom);
-
-			// Set height values at centre of the terrain, with padding on the sides if we resized
-			float[] resizedHeightValues = new float[terrainSize * terrainSize];
-			for (int y = 0; y < terrainSize; ++y)
-			{
-				for (int x = 0; x < terrainSize; ++x)
-				{
-					if (y >= paddingTop && y < (paddingBottom) && x >= paddingLeft && x < (paddingRight))
-					{
-						int ay = x - paddingLeft;
-						int ax = y - paddingTop;
-
-						float f = heightValues[ay + ax * volumeXLength] - minHeight;
-						f /= heightRange;
-
-						// Flip for right-hand to left-handed coordinate system
-						int ix = x;
-						int iy = terrainSize - (y + 1);
-
-						// Unity expects height array indexing to be [y, x].
-						resizedHeightValues[iy + ix * terrainSize] = f;
-					}
-				}
-			}
-
-			return resizedHeightValues;
-		}
+		
 
 		public void PopulatePreset(HEU_VolumeCachePreset cachePreset)
 		{
@@ -794,7 +713,12 @@ namespace HoudiniEngineUnity
 
 		public static Texture2D LoadDefaultSplatTexture()
 		{
-			return LoadAssetTexture(HEU_PluginSettings.TerrainSplatTextureDefault);
+			Texture2D texture = LoadAssetTexture(HEU_PluginSettings.TerrainSplatTextureDefault);
+			if (texture == null)
+			{
+				texture = HEU_MaterialFactory.WhiteTexture();
+			}
+			return texture;
 		}
 
 		public static Texture2D LoadAssetTexture(string path)
@@ -802,8 +726,7 @@ namespace HoudiniEngineUnity
 			Texture2D texture = HEU_MaterialFactory.LoadTexture(path);
 			if (texture == null)
 			{
-				Debug.LogErrorFormat("Unable to find the default Terrain texture at {0}. Make sure this default texture exists. Using default white texture instead.", path);
-				texture = HEU_MaterialFactory.WhiteTexture();
+				Debug.LogErrorFormat("Unable to find the default Terrain texture at {0}. Make sure this default texture exists.", path);
 			}
 			return texture;
 		}
