@@ -96,6 +96,10 @@ namespace HoudiniEngineUnity
 					HEU_AssetDatabase.CreateObjectInAssetCacheFolder(material, assetCacheFolderPath, materialFileName, typeof(Material));
 				}
 			}
+			else
+			{
+				Debug.LogWarningFormat("Shader with name {0} not found!", shaderName);
+			}
 			return material;
 		}
 
@@ -554,7 +558,10 @@ namespace HoudiniEngineUnity
 			materialData._materialKey = materialKey;
 
 			materialData._material = HEU_MaterialFactory.CreateNewHoudiniStandardMaterial(assetCacheFolderPath, materialName, bWriteToFile);
-			materialData._material.name = materialName;
+			if (materialData._material != null)
+			{
+				materialData._material.name = materialName;
+			}
 
 			materialCache.Add(materialData);
 			return materialData;
