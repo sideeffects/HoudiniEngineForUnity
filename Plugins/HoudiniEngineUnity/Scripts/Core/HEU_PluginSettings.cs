@@ -112,7 +112,7 @@ namespace HoudiniEngineUnity
 		{
 			get
 			{
-				bool bValue = false;
+				bool bValue = true;
 				HEU_PluginStorage.Instance.Get("HAPI_TransformChangeTriggersCooks", out bValue, bValue);
 				return bValue;
 			}
