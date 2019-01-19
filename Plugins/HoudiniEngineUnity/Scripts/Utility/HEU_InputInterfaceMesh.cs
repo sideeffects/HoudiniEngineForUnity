@@ -676,11 +676,20 @@ namespace HoudiniEngineUnity
 
 			meshData._meshName = meshGameObject.name;
 
-			meshData._meshPath = HEU_AssetDatabase.GetAssetOrScenePath(meshGameObject);
-			if (string.IsNullOrEmpty(meshData._meshPath))
+			// Use project path is not saved in scene, otherwise just use name
+			if (HEU_GeneralUtility.IsGameObjectInProject(meshGameObject))
+			{
+				meshData._meshPath = HEU_AssetDatabase.GetAssetOrScenePath(meshGameObject);
+				if (string.IsNullOrEmpty(meshData._meshPath))
+				{
+					meshData._meshPath = meshGameObject.name;
+				}
+			}
+			else
 			{
 				meshData._meshPath = meshGameObject.name;
 			}
+			//Debug.Log("Mesh Path: " + meshData._meshPath);
 
 			MeshRenderer meshRenderer = meshGameObject.GetComponent<MeshRenderer>();
 			if (meshRenderer != null)
