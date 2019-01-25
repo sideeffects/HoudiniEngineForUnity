@@ -1114,10 +1114,7 @@ namespace HoudiniEngineUnity
 		/// <returns>True if successfully retrieved the child node list</returns>
 		public override bool GetComposedChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeId[] childNodeIDs, int count)
 		{
-			if (childNodeIDs == null)
-			{
-				childNodeIDs = new HAPI_NodeId[count];
-			}
+			Debug.Assert(childNodeIDs != null && childNodeIDs.Length == count, "Child node IDs array not set to correct size!");
 			HAPI_Result result = HEU_HAPIImports.HAPI_GetComposedChildNodeList(ref _sessionData._HAPISession, parentNodeID, childNodeIDs, count);
 			HandleStatusResult(result, "Getting Child Node List", false, true);
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
