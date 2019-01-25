@@ -199,15 +199,21 @@ namespace HoudiniEngineUnity
 		{
 			HEU_SessionBase session = GetHAPISession();
 
-			HAPI_NodeInfo nodeInfo = new HAPI_NodeInfo();
-			if (!session.GetNodeInfo(_assetID, ref nodeInfo, true))
+			HAPI_NodeInfo assetInfo = new HAPI_NodeInfo();
+			if (!session.GetNodeInfo(_assetID, ref assetInfo, true))
 			{
 				return false;
 			}
 
-			HAPI_ObjectInfo[] objectInfos = new HAPI_ObjectInfo[0];
-			HAPI_Transform[] objectTransforms = new HAPI_Transform[0];
-			if (!HEU_HAPIUtility.GetObjectInfos(session, _assetID, ref nodeInfo, out objectInfos, out objectTransforms))
+			// Get all networks within the asset, recursively
+			int nodeCount = 0;
+			if (!session.ComposeChildNodeList(_assetID, (int)(HAPI_NodeType.HAPI_NODETYPE_ANY), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK, true, ref nodeCount))
+			{
+				return false;
+			}
+
+			HAPI_NodeId[] nodeIDs = new HAPI_NodeId[nodeCount];
+			if (!session.GetComposedChildNodeList(_assetID, nodeIDs, nodeCount))
 			{
 				return false;
 			}
@@ -215,69 +221,57 @@ namespace HoudiniEngineUnity
 			// Holds TOP networks in use
 			List<HEU_TOPNetworkData> newNetworks = new List<HEU_TOPNetworkData>();
 
-			int numObjects = objectInfos.Length;
-			for (int o = 0; o < numObjects; ++o)
+			// For each network, only add those with TOP child nodes (therefore guaranteeing only TOP networks are added).
+			for (int t = 0; t < nodeCount; ++t)
 			{
-				// TOP network -> nodeType=HAPI_NODETYPE_TOP, filter=HAPI_NODEFLAGS_NETWORK
-				// SOP_TOPnet -> nodeType=HAPI_NODETYPE_SOP, filter=HAPI_NODEFLAGS_NETWORK
-				// TOP nodes -> nodeType=HAPI_NODETYPE_TOP, filter=HAPI_NODEFLAGS_TOP_NONSCHEDULER (gives TOP nodes in a TOP network)
-
-				// Get list of all networks within this object.
-				HAPI_NodeId[] childNodeIDs = null;
-				HEU_SessionManager.GetComposedChildNodeList(session, objectInfos[o].nodeId, (int)(HAPI_NodeType.HAPI_NODETYPE_ANY), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK, true, out childNodeIDs);
-				if (childNodeIDs != null)
+				HAPI_NodeInfo topNodeInfo = new HAPI_NodeInfo();
+				if (!session.GetNodeInfo(nodeIDs[t], ref topNodeInfo))
 				{
-					foreach (HAPI_NodeId childNodeID in childNodeIDs)
-					{
-						if (childNodeID != HEU_Defines.HEU_INVALID_NODE_ID)
-						{
-							// No need for this. Blocks main thread while looking.
-							//session.CookNode(childNodeID, HEU_PluginSettings.CookTemplatedGeos);
-
-							// Get list of all TOP nodes within this network.
-							HAPI_NodeId[] topNodeIDs = null;
-							if (!HEU_SessionManager.GetComposedChildNodeList(session, childNodeID, (int)(HAPI_NodeType.HAPI_NODETYPE_TOP), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_TOP_NONSCHEDULER, true, out topNodeIDs))
-							{
-								continue;
-							}
-
-							// Skip networks without TOP nodes
-							if (topNodeIDs == null || topNodeIDs.Length == 0)
-							{
-								continue;
-							}
-
-							HAPI_NodeInfo childNodeInfo = new HAPI_NodeInfo();
-							if (!session.GetNodeInfo(childNodeID, ref childNodeInfo))
-							{
-								continue;
-							}
-
-							string nodeName = HEU_SessionManager.GetString(childNodeInfo.nameSH, session);
-							Debug.LogFormat("TOP Network: name={0}, type={1}", nodeName, childNodeInfo.type);
-
-							HEU_TOPNetworkData topNetworkData = GetTOPNetworkByName(nodeName, _topNetworks);
-							if (topNetworkData == null)
-							{
-								topNetworkData = new HEU_TOPNetworkData();
-							}
-							else
-							{
-								// Found previous TOP network, so remove it from old list. This makes
-								// sure to not remove it when cleaning up old nodes.
-								_topNetworks.Remove(topNetworkData);
-							}
-
-							newNetworks.Add(topNetworkData);
-							
-							topNetworkData._nodeID = childNodeID;
-							topNetworkData._nodeName = nodeName;
-							topNetworkData._parentName = _assetName;
-
-							PopulateTOPNodes(session, topNetworkData._nodeID, topNetworkData, topNodeIDs);
-						}
-					}
+					return false;
 				}
+
+				string nodeName = HEU_SessionManager.GetString(topNodeInfo.nameSH, session);
+				//Debug.LogFormat("Top node: {0} - {1}", nodeName, topNodeInfo.type);
+
+				// Skip any non TOP or SOP networks
+				if (topNodeInfo.type != HAPI_NodeType.HAPI_NODETYPE_TOP && topNodeInfo.type != HAPI_NodeType.HAPI_NODETYPE_SOP)
+				{
+					continue;
+				}
+
+				// Get list of all TOP nodes within this network.
+				HAPI_NodeId[] topNodeIDs = null;
+				if (!HEU_SessionManager.GetComposedChildNodeList(session, nodeIDs[t], (int)(HAPI_NodeType.HAPI_NODETYPE_TOP), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_TOP_NONSCHEDULER, true, out topNodeIDs))
+				{
+					continue;
+				}
+
+				// Skip networks without TOP nodes
+				if (topNodeIDs == null || topNodeIDs.Length == 0)
+				{
+					continue;
+				}
+
+				HEU_TOPNetworkData topNetworkData = GetTOPNetworkByName(nodeName, _topNetworks);
+				if (topNetworkData == null)
+				{
+					topNetworkData = new HEU_TOPNetworkData();
+				}
+				else
+				{
+					// Found previous TOP network, so remove it from old list. This makes
+					// sure to not remove it when cleaning up old nodes.
+					_topNetworks.Remove(topNetworkData);
+				}
+
+				newNetworks.Add(topNetworkData);
+
+				topNetworkData._nodeID = nodeIDs[t];
+				topNetworkData._nodeName = nodeName;
+				topNetworkData._parentName = _assetName;
+
+				PopulateTOPNodes(session, topNetworkData._nodeID, topNetworkData, topNodeIDs);
+				
 			}
 
 			// Clear old TOP networks and nodes
@@ -311,7 +305,7 @@ namespace HoudiniEngineUnity
 				}
 
 				string nodeName = HEU_SessionManager.GetString(childNodeInfo.nameSH, session);
-				Debug.LogFormat("TOP Node: name={0}, type={1}", nodeName, childNodeInfo.type);
+				//Debug.LogFormat("TOP Node: name={0}, type={1}", nodeName, childNodeInfo.type);
 
 				HEU_TOPNodeData topNodeData = GetTOPNodeByName(nodeName, topNetwork._topNodes);
 				if (topNodeData == null)
