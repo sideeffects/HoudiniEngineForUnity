@@ -943,6 +943,8 @@ namespace HoudiniEngineUnity
 			foreach(HEU_VolumeCache cache in _volumeCaches)
 			{
 				cache.GenerateTerrainWithAlphamaps(session, ParentAsset);
+
+				cache.IsDirty = false;
 			}
 		}
 
