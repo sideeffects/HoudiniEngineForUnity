@@ -159,6 +159,20 @@ namespace HoudiniEngineUnity
 		public List<HEU_VolumeLayerPreset> _volumeLayersPresets = new List<HEU_VolumeLayerPreset>();
 	}
 
+	/// <summary>
+	/// Pending presets to apply on Asset Recook.
+	/// In some cases, on Rebuild, after the first cook the asset doesn't have all geo 
+	/// nodes due to relying on inputs. On rebuild, the inputs are applied and the asset
+	/// is cooked again. The geo nodes are created on the second cook, and so the
+	/// presets must be applied after the second cook. This structure allows to store
+	/// these second set of presets to apply.
+	/// </summary>
+	[System.Serializable]
+	public class HEU_RecookPreset
+	{
+		public List<HEU_VolumeCachePreset> volumeCachePresets = new List<HEU_VolumeCachePreset>();
+	}
+
 
 	/// <summary>
 	/// Helper to serialize and deserialize a HDA's preset data.

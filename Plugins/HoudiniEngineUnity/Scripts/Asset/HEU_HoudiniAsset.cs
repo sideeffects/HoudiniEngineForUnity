@@ -154,6 +154,8 @@ namespace HoudiniEngineUnity
 		// Unserialized asset preset used when re-building asset to reapply parameter values
 		private HEU_AssetPreset _savedAssetPreset;
 
+		// Pending presets to apply after a Recook, which is invoked after a Rebuild
+		private HEU_RecookPreset _recookPreset;
 
 		// BUILD & COOK -----------------------------------------------------------------------------------------------
 
@@ -1311,6 +1313,12 @@ namespace HoudiniEngineUnity
 			GenerateInstances(session);
 
 			GenerateHandles(session);
+
+			// Now apply saved presets that haven't been applied before
+			if (_recookPreset != null)
+			{
+				ApplyRecookPreset();
+			}
 
 			// After all the objects have been processed, go through our materials list
 			// and remove any unused materials.
@@ -3943,12 +3951,50 @@ namespace HoudiniEngineUnity
 			}
 
 			// Load volume caches (for terrain layers)
-			if (assetPreset.volumeCachePresets != null && assetPreset.volumeCachePresets.Count > 0)
+			ApplyVolumeCachePresets(assetPreset.volumeCachePresets, true);
+
+			Parameters.RecacheUI = true;
+
+			RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true);
+		}
+
+		/// <summary>
+		/// Applies presets after recooking the asset.
+		/// </summary>
+		public void ApplyRecookPreset()
+		{
+			if (_recookPreset != null)
 			{
-				foreach (HEU_VolumeCachePreset volumeCachePreset in assetPreset.volumeCachePresets)
+				bool bApplied = ApplyVolumeCachePresets(_recookPreset.volumeCachePresets, false);
+				_recookPreset = null;
+				if (bApplied)
+				{
+					Parameters.RecacheUI = true;
+					RequestCook(bCheckParametersChanged: false, bAsync: true, bSkipCookCheck: true, bUploadParameters: false);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Applies volumecache presets to volume parts. This sets terrain layer settings such as material.
+		/// </summary>
+		/// <param name="volumeCachePresets">The source volumecache preset to apply</param>
+		/// <param name="bAddMissingVolumesToRecookPreset">Whether to add unapplied presets to the RecookPreset for applying later</param>
+		/// <returns>True if applied the preset, therefore requiring another recook.</returns>
+		private bool ApplyVolumeCachePresets(List<HEU_VolumeCachePreset> volumeCachePresets, bool bAddMissingVolumesToRecookPreset)
+		{
+			bool bApplied = false;
+
+			// Load volume caches (for terrain layers)
+			if (volumeCachePresets != null && volumeCachePresets.Count > 0)
+			{
+				// Keep list of volume presets that have been applied so that we can remove them
+				List<HEU_VolumeCachePreset> appliedVolumePresets = new List<HEU_VolumeCachePreset>();
+
+				foreach (HEU_VolumeCachePreset volumeCachePreset in volumeCachePresets)
 				{
 					HEU_ObjectNode objNode = GetObjectNodeByName(volumeCachePreset._objName);
-					if(objNode == null)
+					if (objNode == null)
 					{
 						Debug.LogWarningFormat("No object node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._objName);
 						continue;
@@ -3964,7 +4010,18 @@ namespace HoudiniEngineUnity
 					List<HEU_VolumeCache> volumeCaches = geoNode.VolumeCaches;
 					if (volumeCaches == null)
 					{
-						Debug.LogWarningFormat("Volume caches not found for geo node {0} not found! Unable to set heightfield preset.", geoNode.GeoName);
+						if (bAddMissingVolumesToRecookPreset)
+						{
+							if (_recookPreset == null)
+							{
+								_recookPreset = new HEU_RecookPreset();
+							}
+							_recookPreset.volumeCachePresets.Add(volumeCachePreset);
+						}
+						else
+						{
+							Debug.LogWarningFormat("Volume caches not found for geo node {0}. Unable to set heightfield preset.", volumeCachePreset._geoName);
+						}
 						continue;
 					}
 
@@ -3980,7 +4037,7 @@ namespace HoudiniEngineUnity
 						volumeCache.UIExpanded = volumeCachePreset._uiExpanded;
 
 						HEU_VolumeLayer layer = volumeCache.GetLayer(layerPreset._layerName);
-						if(layer == null)
+						if (layer == null)
 						{
 							Debug.LogWarningFormat("Volume layer with name {0} not found! Unable to set heightfield layer preset.", layerPreset._layerName);
 							continue;
@@ -3989,12 +4046,12 @@ namespace HoudiniEngineUnity
 						layer._strength = layerPreset._strength;
 
 						Texture2D diffuseTexture = layer._diffuseTexture;
-						if(!string.IsNullOrEmpty(layerPreset._diffuseTexturePath))
+						if (!string.IsNullOrEmpty(layerPreset._diffuseTexturePath))
 						{
 							diffuseTexture = HEU_MaterialFactory.LoadTexture(layerPreset._diffuseTexturePath);
 						}
 
-						if(diffuseTexture == null)
+						if (diffuseTexture == null)
 						{
 							diffuseTexture = HEU_VolumeCache.LoadDefaultSplatTexture();
 						}
@@ -4018,19 +4075,19 @@ namespace HoudiniEngineUnity
 
 						layer._tileSize = layerPreset._tileSize;
 						layer._tileOffset = layerPreset._tileOffset;
-						
+
 						layer._uiExpanded = layerPreset._uiExpanded;
 						layer._tile = layerPreset._tile;
 						layer._overrides = layerPreset._overrides;
 
 						volumeCache.IsDirty = true;
+
+						bApplied = true;
 					}
 				}
 			}
 
-			Parameters.RecacheUI = true;
-
-			RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true);
+			return bApplied;
 		}
 
 		/// <summary>
