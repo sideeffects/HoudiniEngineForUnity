@@ -3988,9 +3988,6 @@ namespace HoudiniEngineUnity
 			// Load volume caches (for terrain layers)
 			if (volumeCachePresets != null && volumeCachePresets.Count > 0)
 			{
-				// Keep list of volume presets that have been applied so that we can remove them
-				List<HEU_VolumeCachePreset> appliedVolumePresets = new List<HEU_VolumeCachePreset>();
-
 				foreach (HEU_VolumeCachePreset volumeCachePreset in volumeCachePresets)
 				{
 					HEU_ObjectNode objNode = GetObjectNodeByName(volumeCachePreset._objName);
