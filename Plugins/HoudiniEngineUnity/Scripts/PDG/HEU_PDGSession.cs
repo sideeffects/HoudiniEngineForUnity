@@ -125,12 +125,15 @@ namespace HoudiniEngineUnity
 			{
 				foreach (HAPI_PDG_GraphContextId contextID in _pdgContextIDs)
 				{
-					HAPI_StringHandle stateHandle;
-					if (!session.GetPDGState(contextID, out stateHandle))
+					int pdgStateInt;
+					if (!session.GetPDGState(contextID, out pdgStateInt))
 					{
 						SetErrorState("Failed to get PDG state", true);
 						continue;
 					}
+
+					_pdgState = (HAPI_PDG_State)pdgStateInt;
+
 
 					if (_pdgQueryEvents == null || _pdgQueryEvents.Length != _pdgMaxProcessEvents)
 					{
@@ -191,16 +194,19 @@ namespace HoudiniEngineUnity
 
 		private void ProcessPDGEvent(HEU_SessionBase session, HAPI_PDG_GraphContextId contextID, ref HAPI_PDG_EventInfo eventInfo)
 		{
+			HEU_PDGAssetLink assetLink = null;
+			HEU_TOPNodeData topNode = null;
+
 			HAPI_PDG_EventType evType = (HAPI_PDG_EventType)eventInfo.eventType;
 			HAPI_PDG_WorkitemState currentState = (HAPI_PDG_WorkitemState)eventInfo.currentState;
 			HAPI_PDG_WorkitemState lastState = (HAPI_PDG_WorkitemState)eventInfo.lastState;
 
-			//Debug.LogFormat("PDG Event: id={0}, type={1}, workitem={2}, curState={3}, lastState={4}", eventInfo.nodeId, evType.ToString(), eventInfo.workitemId, (HAPI_PDG_WorkitemState)eventInfo.currentState, (HAPI_PDG_WorkitemState)eventInfo.lastState);
-
-			HEU_PDGAssetLink assetLink = null;
-			HEU_TOPNodeData topNode = null;
-
 			GetTOPAssetLinkAndNode(eventInfo.nodeId, out assetLink, out topNode);
+
+			string topNodeName = topNode != null ? string.Format("node={0}", topNode._nodeName) : string.Format("id={0}", eventInfo.nodeId);
+			//Debug.LogFormat("PDG Event: {0}, type={1}, workitem={2}, curState={3}, lastState={4}", topNodeName, evType.ToString(), 
+			//	eventInfo.workitemId, currentState, lastState);
+
 			if (assetLink == null || topNode == null || topNode._nodeID != eventInfo.nodeId)
 			{
 				return;
@@ -220,7 +226,7 @@ namespace HoudiniEngineUnity
 			}
 			else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_DIRTY_STOP)
 			{
-				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.NONE);
+				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.DIRTIED);
 			}
 			else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_COOK_ERROR)
 			{
@@ -236,25 +242,55 @@ namespace HoudiniEngineUnity
 			}
 			else 
 			{
-				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOKING);
+				// Work item events
+
+				HEU_TOPNodeData.PDGState currentTOPPDGState = topNode._pdgState;
 
 				if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_WORKITEM_ADD)
 				{
-					NotifyTOPNodeAddWorkItem(assetLink, topNode);
+					NotifyTOPNodeTotalWorkItem(assetLink, topNode, 1);
 				}
 				else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_WORKITEM_REMOVE)
 				{
-					NotifyTOPNodeRemoveWorkItem(assetLink, topNode);
+					NotifyTOPNodeTotalWorkItem(assetLink, topNode, -1);
 				}
 				else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_WORKITEM_STATE_CHANGE)
 				{
-					if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_SUCCESS)
+					// Last states
+					if (lastState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_WAITING && currentState != HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_WAITING)
 					{
+						NotifyTOPNodeWaitingWorkItem(assetLink, topNode, -1);
+					}
+					else if (lastState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKING && currentState != HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKING)
+					{
+						NotifyTOPNodeCookingWorkItem(assetLink, topNode, -1);
+					}
+					else if (lastState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_SCHEDULED && currentState != HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_SCHEDULED)
+					{
+						NotifyTOPNodeScheduledWorkItem(assetLink, topNode, -1);
+					}
+
+					// New states
+					if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_WAITING)
+					{
+						NotifyTOPNodeWaitingWorkItem(assetLink, topNode, 1);
+					}
+					else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_SCHEDULED)
+					{
+						NotifyTOPNodeScheduledWorkItem(assetLink, topNode, 1);
+					}
+					else if(currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKING)
+					{
+						NotifyTOPNodeCookingWorkItem(assetLink, topNode, 1);
+					}
+					else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_SUCCESS)
+					{
+						NotifyTOPNodeCookedWorkItem(assetLink, topNode);
+
 						if (topNode._autoLoad)
 						{
 							//Debug.LogFormat("{0}: Should autoload this!", topNode._nodeName);
-							NotifyTOPNodeCookedWorkItem(assetLink, topNode);
-
+						
 							HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
 							if (!session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
 							{
@@ -280,6 +316,25 @@ namespace HoudiniEngineUnity
 					{
 						NotifyTOPNodeErrorWorkItem(assetLink, topNode);
 					}
+				}
+
+				if (currentTOPPDGState == HEU_TOPNodeData.PDGState.COOKING)
+				{
+					if (topNode.AreAllWorkItemsComplete())
+					{
+						if (topNode.AnyWorkItemsFailed())
+						{
+							SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_FAILED);
+						}
+						else
+						{
+							SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_SUCCESS);
+						}
+					}
+				}
+				else if(topNode.AnyWorkItemsPending())
+				{
+					SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOKING);
 				}
 			}
 		}
@@ -309,22 +364,20 @@ namespace HoudiniEngineUnity
 
 		private void NotifyTOPNodePDGStateClear(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
 		{
+			Debug.LogFormat("NotifyTOPNodePDGStateClear:: {0}", topNode._nodeName);
 			topNode._pdgState = HEU_TOPNodeData.PDGState.NONE;
 			topNode._totalWorkItems = 0;
+			topNode._waitingWorkItems = 0;
+			topNode._scheduledWorkItems = 0;
+			topNode._cookingWorkItems = 0;
 			topNode._cookedWorkItems = 0;
 			topNode._erroredWorkItems = 0;
 			assetLink.RepaintUI();
 		}
 
-		private void NotifyTOPNodeAddWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
+		private void NotifyTOPNodeTotalWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._totalWorkItems++;
-			assetLink.RepaintUI();
-		}
-
-		private void NotifyTOPNodeRemoveWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
-		{
-			topNode._totalWorkItems--;
+			topNode._totalWorkItems += inc;
 			assetLink.RepaintUI();
 		}
 
@@ -337,6 +390,24 @@ namespace HoudiniEngineUnity
 		private void NotifyTOPNodeErrorWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
 		{
 			topNode._erroredWorkItems++;
+			assetLink.RepaintUI();
+		}
+
+		private void NotifyTOPNodeWaitingWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
+		{
+			topNode._waitingWorkItems += inc;
+			assetLink.RepaintUI();
+		}
+
+		private void NotifyTOPNodeScheduledWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
+		{
+			topNode._scheduledWorkItems += inc;
+			assetLink.RepaintUI();
+		}
+
+		private void NotifyTOPNodeCookingWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
+		{
+			topNode._cookingWorkItems += inc;
 			assetLink.RepaintUI();
 		}
 
@@ -392,6 +463,8 @@ namespace HoudiniEngineUnity
 
 		public bool _errored;
 		public string _errorMsg;
+
+		public HAPI_PDG_State _pdgState = HAPI_PDG_State.HAPI_PDG_STATE_READY;
 	}
 
 

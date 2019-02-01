@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) <2019> Side Effects Software Inc.
 * All rights reserved.
 *
@@ -35,6 +35,7 @@ namespace HoudiniEngineUnity
 	using HAPI_NodeId = System.Int32;
 	using HAPI_PartId = System.Int32;
 	using HAPI_ParmId = System.Int32;
+	using HAPI_StringHandle = System.Int32;
 
 	/// <summary>
 	/// Threaded class for loading bgeo files into Unity.
@@ -59,6 +60,8 @@ namespace HoudiniEngineUnity
 			_geoSync = geoSync;
 			_session = session;
 			_name = filePath;
+
+			_generateOptions = geoSync.GenerateOptions;
 
 			// Work data
 			_loadData = new HEU_LoadData();
@@ -90,12 +93,13 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
+#if true
 			// Make sure file type is supported
-			if (!_filePath.EndsWith(".bgeo") && !_filePath.EndsWith(".bgeo.sc"))
-			{
-				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Only .bgeo or .bgeo.sc files are supported."));
-				return;
-			}
+			//if (!_filePath.EndsWith(".bgeo") && !_filePath.EndsWith(".bgeo.sc"))
+			//{
+			//	SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Only .bgeo or .bgeo.sc files are supported."));
+			//	return;
+			//}
 
 			// Create file SOP
 			if (_loadData._fileNodeID == HEU_Defines.HEU_INVALID_NODE_ID)
@@ -107,7 +111,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 
-			Sleep();
+            Sleep();
 
 			HAPI_NodeId displayNodeID = GetDisplayNodeID(_loadData._fileNodeID);
 			if (displayNodeID == HEU_Defines.HEU_INVALID_NODE_ID)
@@ -146,12 +150,36 @@ namespace HoudiniEngineUnity
 				string statusString = _session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
 				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Cook failed: {0}.", statusString));
 				return;
-			}			
+			}
 
-			// Get parts
+#else
+
+            // Load the file using HAPI_LoadGeoFromFile
+            if (_loadData._fileNodeID == HEU_Defines.HEU_INVALID_NODE_ID)
+            {
+				Debug.Log("Creating file node with path: " + _filePath);
+                if (!_session.CreateNode(-1, "SOP/file", "loadfile", true, out _loadData._fileNodeID))
+                {
+                    SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to create geo SOP in Houdini."));
+                    return;
+                }
+
+                if (!_session.LoadGeoFromFile(_loadData._fileNodeID, _filePath))
+                {
+                    SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to create file node in Houdini."));
+                    return;
+                }
+            }
+			HAPI_NodeId displayNodeID = GetDisplayNodeID(_loadData._fileNodeID);
+
+#endif
+
+			// Get the various types of parts from the display node
 			List<HAPI_PartInfo> meshParts = new List<HAPI_PartInfo>();
 			List<HAPI_PartInfo> volumeParts = new List<HAPI_PartInfo>();
-			if (!QueryParts(displayNodeID, ref meshParts, ref volumeParts))
+			List<HAPI_PartInfo> instancerParts = new List<HAPI_PartInfo>();
+			List<HAPI_PartInfo> curveParts = new List<HAPI_PartInfo>();
+			if (!QueryParts(displayNodeID, ref meshParts, ref volumeParts, ref instancerParts, ref curveParts))
 			{
 				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to query parts on node."));
 				return;
@@ -160,11 +188,25 @@ namespace HoudiniEngineUnity
 			Sleep();
 
 			// Create Unity mesh buffers
+            if (!GenerateMeshBuffers(_session, displayNodeID, meshParts, _generateOptions._splitPoints, _generateOptions._useLODGroups, 
+				_generateOptions._generateUVs, _generateOptions._generateTangents, _generateOptions._generateNormals, 
+				out _loadData._meshBuffers))
+            {
+				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to generate mesh data from parts."));
+				return;
+			}
 
 			// Create Unity terrain buffers
-			if (!GenerateTerrainBuffers(displayNodeID, volumeParts))
+			if (!GenerateTerrainBuffers(_session, displayNodeID, volumeParts, out _loadData._terrainBuffers))
 			{
 				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to generate terrain data from volume parts."));
+				return;
+			}
+
+			// Create instancers (should come after normal geometry has been generated above)
+			if (!GenerateInstancerBuffers(_session, displayNodeID, instancerParts, out _loadData._instancerBuffers))
+			{
+				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to generate data from instancer parts."));
 				return;
 			}
 
@@ -246,7 +288,8 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 
-		private bool QueryParts(HAPI_NodeId nodeID, ref List<HAPI_PartInfo> meshParts, ref List<HAPI_PartInfo> volumeParts)
+		private bool QueryParts(HAPI_NodeId nodeID, ref List<HAPI_PartInfo> meshParts, ref List<HAPI_PartInfo> volumeParts,
+			ref List<HAPI_PartInfo> instancerParts, ref List<HAPI_PartInfo> curveParts)
 		{
 			// Get display geo info
 			HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
@@ -279,26 +322,42 @@ namespace HoudiniEngineUnity
 					{
 						meshParts.Add(partInfo);
 					}
+					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_CURVE)
+					{
+						curveParts.Add(partInfo);
+						//Debug.LogWarningFormat("Currently {0} part type is not implemented for threaded geo loading!", partInfo.type);
+					}
+					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER)
+					{
+						instancerParts.Add(partInfo);
+						//Debug.LogWarningFormat("Currently {0} part type is not implemented for threaded geo loading!", partInfo.type);
+					}
 				}
+			}
+			else if(geoInfo.type == HAPI_GeoType.HAPI_GEOTYPE_CURVE)
+			{
+				Debug.LogWarningFormat("Currently {0} geo type is not implemented for threaded geo loading!", geoInfo.type);
 			}
 
 			return true;
 		}
 
-		private bool GenerateTerrainBuffers(HAPI_NodeId nodeID, List<HAPI_PartInfo> volumeParts)
+		public bool GenerateTerrainBuffers(HEU_SessionBase session, HAPI_NodeId nodeID, List<HAPI_PartInfo> volumeParts,
+			out List<HEU_LoadBufferVolume> volumeBuffers)
 		{
+			volumeBuffers = null;
 			if (volumeParts.Count == 0)
 			{
 				return true;
 			}
 
-			_loadData._terrainTiles = new List<HEU_LoadVolumeTerrainTile>();
+			volumeBuffers = new List<HEU_LoadBufferVolume>();
 
 			int numParts = volumeParts.Count;
 			for (int i = 0; i < numParts; ++i)
 			{
 				HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
-				bool bResult = _session.GetVolumeInfo(nodeID, volumeParts[i].id, ref volumeInfo);
+				bool bResult = session.GetVolumeInfo(nodeID, volumeParts[i].id, ref volumeInfo);
 				if (!bResult || volumeInfo.tupleSize != 1 || volumeInfo.zLength != 1 || volumeInfo.storage != HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
 				{
 					SetLog(HEU_LoadData.LoadStatus.ERROR, "This heightfield is not supported. Please check documentation.");
@@ -311,12 +370,12 @@ namespace HoudiniEngineUnity
 					return false;
 				}
 
-				string volumeName = HEU_SessionManager.GetString(volumeInfo.nameSH, _session);
+				string volumeName = HEU_SessionManager.GetString(volumeInfo.nameSH, session);
 				bool bHeightPart = volumeName.Equals("height");
 
 				//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
 
-				HEU_LoadVolumeLayer layer = new HEU_LoadVolumeLayer();
+				HEU_LoadBufferVolumeLayer layer = new HEU_LoadBufferVolumeLayer();
 				layer._layerName = volumeName;
 				layer._partID = volumeParts[i].id;
 				layer._heightMapSize = volumeInfo.xLength;
@@ -335,25 +394,25 @@ namespace HoudiniEngineUnity
 				layer._terrainSizeY = Mathf.Round(volumeInfo.yLength * gridSpacingY - multiplierOffsetY);
 
 				// Get volume bounds for calculating position offset
-				_session.GetVolumeBounds(nodeID, volumeParts[i].id, 
+				session.GetVolumeBounds(nodeID, volumeParts[i].id, 
 					out layer._minBounds.x, out layer._minBounds.y, out layer._minBounds.z, 
 					out layer._maxBounds.x, out layer._maxBounds.y, out layer._maxBounds.z, 
 					out layer._center.x, out layer._center.y, out layer._center.z);
 
-				LoadStringFromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR, ref layer._diffuseTexturePath);
-				LoadStringFromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR, ref layer._maskTexturePath);
-				LoadStringFromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR, ref layer._normalTexturePath);
+				LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR, ref layer._diffuseTexturePath);
+				LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR, ref layer._maskTexturePath);
+				LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR, ref layer._normalTexturePath);
 
-				LoadFloatFromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_NORMAL_SCALE_ATTR, ref layer._normalScale);
-				LoadFloatFromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_METALLIC_ATTR, ref layer._metallic);
-				LoadFloatFromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SMOOTHNESS_ATTR, ref layer._smoothness);
+				LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_NORMAL_SCALE_ATTR, ref layer._normalScale);
+				LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_METALLIC_ATTR, ref layer._metallic);
+				LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SMOOTHNESS_ATTR, ref layer._smoothness);
 
-				LoadLayerColorFromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SPECULAR_ATTR, ref layer._specularColor);
-				LoadLayerVector2FromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR, ref layer._tileOffset);
-				LoadLayerVector2FromAttribute(_session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
+				LoadLayerColorFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SPECULAR_ATTR, ref layer._specularColor);
+				LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR, ref layer._tileOffset);
+				LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
 
 				// Get the height values from Houdini and find the min and max height range.
-				if (!HEU_GeometryUtility.GetHeightfieldValues(_session, volumeInfo.xLength, volumeInfo.yLength, nodeID, volumeParts[i].id, ref layer._rawHeights, ref layer._minHeight, ref layer._maxHeight))
+				if (!HEU_GeometryUtility.GetHeightfieldValues(session, volumeInfo.xLength, volumeInfo.yLength, nodeID, volumeParts[i].id, ref layer._rawHeights, ref layer._minHeight, ref layer._maxHeight))
 				{
 					return false;
 				}
@@ -364,7 +423,7 @@ namespace HoudiniEngineUnity
 				// Get the tile index, if it exists, for this part
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
 				int[] tileAttrData = new int[0];
-				HEU_GeneralUtility.GetAttribute(_session, nodeID, volumeParts[i].id, "tile", ref tileAttrInfo, ref tileAttrData, _session.GetAttributeIntData);
+				HEU_GeneralUtility.GetAttribute(session, nodeID, volumeParts[i].id, "tile", ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
 
 				int tileIndex = 0;
 				if (tileAttrInfo.exists && tileAttrData.Length == 1)
@@ -375,54 +434,57 @@ namespace HoudiniEngineUnity
 				// Add layer based on tile index
 				if (tileIndex >= 0)
 				{
-					HEU_LoadVolumeTerrainTile terrainTile = null;
-					for(int j = 0; j < _loadData._terrainTiles.Count; ++j)
+					HEU_LoadBufferVolume volumeBuffer = null;
+					for(int j = 0; j < volumeBuffers.Count; ++j)
 					{
-						if (_loadData._terrainTiles[j]._tileIndex == tileIndex)
+						if (volumeBuffers[j]._tileIndex == tileIndex)
 						{
-							terrainTile = _loadData._terrainTiles[j];
+							volumeBuffer = volumeBuffers[j];
 							break;
 						}
 					}
 
-					if (terrainTile == null)
+					if (volumeBuffer == null)
 					{
-						terrainTile = new HEU_LoadVolumeTerrainTile();
-						terrainTile._tileIndex = tileIndex;
-						_loadData._terrainTiles.Add(terrainTile);
+						volumeBuffer = new HEU_LoadBufferVolume();
+						volumeBuffer.InitializeBuffer(volumeParts[i].id, volumeName, false, false);
+
+						volumeBuffer._tileIndex = tileIndex;
+						volumeBuffers.Add(volumeBuffer);
 					}
 
 					if (bHeightPart)
 					{
 						// Height layer always first layer
-						terrainTile._layers.Insert(0, layer);
+						volumeBuffer._layers.Insert(0, layer);
 
-						terrainTile._heightMapSize = layer._heightMapSize;
-						terrainTile._terrainSizeX = layer._terrainSizeX;
-						terrainTile._terrainSizeY = layer._terrainSizeY;
-						terrainTile._heightRange = (layer._maxHeight - layer._minHeight);
+						volumeBuffer._heightMapSize = layer._heightMapSize;
+						volumeBuffer._terrainSizeX = layer._terrainSizeX;
+						volumeBuffer._terrainSizeY = layer._terrainSizeY;
+						volumeBuffer._heightRange = (layer._maxHeight - layer._minHeight);
 					}
 					else
 					{
-						terrainTile._layers.Add(layer);
+						volumeBuffer._layers.Add(layer);
 					}
 				}
 
 				Sleep();
 			}
 
-			foreach(HEU_LoadVolumeTerrainTile tile in _loadData._terrainTiles)
+			// Each volume buffer is a self contained terrain tile
+			foreach(HEU_LoadBufferVolume volumeBuffer in volumeBuffers)
 			{
-				List<HEU_LoadVolumeLayer> layers = tile._layers;
+				List<HEU_LoadBufferVolumeLayer> layers = volumeBuffer._layers;
 				//Debug.LogFormat("Heightfield: tile={0}, layers={1}", tile._tileIndex, layers.Count);
 
-				int heightMapSize = tile._heightMapSize;
+				int heightMapSize = volumeBuffer._heightMapSize;
 
 				int numLayers = layers.Count;
 				if (numLayers > 0)
 				{
 					// Convert heightmap values from Houdini to Unity
-					tile._heightMap = HEU_GeometryUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._rawHeights, layers[0]._minHeight, layers[0]._maxHeight);
+					volumeBuffer._heightMap = HEU_GeometryUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._rawHeights, layers[0]._minHeight, layers[0]._maxHeight);
 
 					Sleep();
 
@@ -432,9 +494,9 @@ namespace HoudiniEngineUnity
 					{
 						heightFields.Add(layers[m]._rawHeights);
 					}
-					tile._splatMaps = HEU_GeometryUtility.ConvertHeightSplatMapHoudiniToUnity(heightMapSize, heightFields);
+					volumeBuffer._splatMaps = HEU_GeometryUtility.ConvertHeightSplatMapHoudiniToUnity(heightMapSize, heightFields);
 
-					tile._position = new Vector3((tile._terrainSizeX + tile._layers[0]._minBounds.x), tile._layers[0]._minHeight + tile._layers[0]._position.y, tile._layers[0]._minBounds.z);
+					volumeBuffer._position = new Vector3((volumeBuffer._terrainSizeX + volumeBuffer._layers[0]._minBounds.x), volumeBuffer._layers[0]._minHeight + volumeBuffer._layers[0]._position.y, volumeBuffer._layers[0]._minBounds.z);
 				}
 			}
 
@@ -507,13 +569,159 @@ namespace HoudiniEngineUnity
 			System.Threading.Thread.Sleep(0);
 		}
 
+		public bool GenerateMeshBuffers(HEU_SessionBase session, HAPI_NodeId nodeID, List<HAPI_PartInfo> meshParts, 
+			bool bSplitPoints, bool bUseLODGroups, bool bGenerateUVs, bool bGenerateTangents, bool bGenerateNormals,
+			out List<HEU_LoadBufferMesh> meshBuffers)
+        {
+			meshBuffers = null;
+			if (meshParts.Count == 0)
+            {
+                return true;
+            }
 
-		//	DATA ------------------------------------------------------------------------------------------------------
+			bool bSuccess = true;
+			string assetCacheFolderPath = "";
 
-		// Setup
-		private string _filePath;
+			meshBuffers = new List<HEU_LoadBufferMesh>();
+
+			foreach(HAPI_PartInfo partInfo in meshParts)
+			{
+				HAPI_NodeId geoID = nodeID;
+				int partID = partInfo.id;
+				string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
+				bool bPartInstanced = partInfo.isInstanced;
+
+				if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_MESH)
+				{
+					List<HEU_MaterialData> materialCache = new List<HEU_MaterialData>();
+
+					HEU_GenerateGeoCache geoCache = HEU_GenerateGeoCache.GetPopulatedGeoCache(session, -1, geoID, partID, bUseLODGroups,
+						materialCache, assetCacheFolderPath);
+					if (geoCache == null)
+					{
+						// Failed to get necessary info for generating geometry.
+						SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Failed to generate geometry cache for part: {0}", partName));
+						continue;
+					}
+
+					geoCache._materialCache = materialCache;
+
+					// Build the GeoGroup using points or vertices
+					bool bResult = false;
+					List<HEU_GeoGroup> LODGroupMeshes = null;
+					int defaultMaterialKey = 0;
+					if (bSplitPoints)
+					{
+						bResult = HEU_GenerateGeoCache.GenerateGeoGroupUsingGeoCachePoints(session, geoCache, bGenerateUVs, bGenerateTangents, bGenerateNormals, bUseLODGroups, bPartInstanced,
+							out LODGroupMeshes, out defaultMaterialKey);
+					}
+					else
+					{
+						bResult = HEU_GenerateGeoCache.GenerateGeoGroupUsingGeoCacheVertices(session, geoCache, bGenerateUVs, bGenerateTangents, bGenerateNormals, bUseLODGroups, bPartInstanced,
+							out LODGroupMeshes, out defaultMaterialKey);
+					}
+
+					if (bResult)
+					{
+						HEU_LoadBufferMesh meshBuffer = new HEU_LoadBufferMesh();
+						meshBuffer.InitializeBuffer(partID, partName, partInfo.isInstanced, false);
+
+						meshBuffer._geoCache = geoCache;
+						meshBuffer._LODGroupMeshes = LODGroupMeshes;
+						meshBuffer._defaultMaterialKey = defaultMaterialKey;
+
+						meshBuffer._bGenerateUVs = bGenerateUVs;
+						meshBuffer._bGenerateTangents = bGenerateTangents;
+						meshBuffer._bGenerateNormals = bGenerateNormals;
+						meshBuffer._bPartInstanced = partInfo.isInstanced;
+
+						meshBuffers.Add(meshBuffer);
+					}
+					else
+					{
+						SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Failed to generated geometry for part: {0}", partName));
+					}
+				}
+			}
+
+			return bSuccess;
+        }
+
+
+		public bool GenerateInstancerBuffers(HEU_SessionBase session, HAPI_NodeId nodeID, List<HAPI_PartInfo> instancerParts,
+			out List<HEU_LoadBufferInstancer> instancerBuffers)
+		{
+			instancerBuffers = null;
+			if (instancerParts.Count == 0)
+			{
+				return true;
+			}
+
+			instancerBuffers = new List<HEU_LoadBufferInstancer>();
+
+			foreach (HAPI_PartInfo partInfo in instancerParts)
+			{
+				HAPI_NodeId geoID = nodeID;
+				int partID = partInfo.id;
+				string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
+
+				if (partInfo.instancedPartCount <= 0)
+				{
+					SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Invalid instanced part count: {0} for part {1}", partInfo.instancedPartCount, partName));
+					continue;
+				}
+
+				// Get the instance node IDs to get the geometry to be instanced.
+				// Get the instanced count to all the instances. These will end up being mesh references to the mesh from instance node IDs.
+
+				//Transform partTransform = OutputGameObject.transform;
+
+				// Get each instance's transform
+				HAPI_Transform[] instanceTransforms = new HAPI_Transform[partInfo.instanceCount];
+				if (!HEU_GeneralUtility.GetArray3Arg(geoID, partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstancerPartTransforms, instanceTransforms, 0, partInfo.instanceCount))
+				{
+					SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to get instance transforms for part {0}", partName));
+					continue;
+				}
+
+				// Get part IDs for the parts being instanced
+				HAPI_NodeId[] instanceNodeIDs = new HAPI_NodeId[partInfo.instancedPartCount];
+				if (!HEU_GeneralUtility.GetArray2Arg(geoID, partID, session.GetInstancedPartIds, instanceNodeIDs, 0, partInfo.instancedPartCount))
+				{
+					SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to get instance node IDs for part {0}", partName));
+					continue;
+				}
+
+				// Get instance names if set
+				string[] instancePrefixes = null;
+				HAPI_AttributeInfo instancePrefixAttrInfo = new HAPI_AttributeInfo();
+				HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR, ref instancePrefixAttrInfo);
+				if (instancePrefixAttrInfo.exists)
+				{
+					instancePrefixes = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR, ref instancePrefixAttrInfo);
+				}
+
+				HEU_LoadBufferInstancer instancerBuffer = new HEU_LoadBufferInstancer();
+				instancerBuffer.InitializeBuffer(partID, partName, partInfo.isInstanced, true);
+
+				instancerBuffer._instanceTransforms = instanceTransforms;
+				instancerBuffer._instanceNodeIDs = instanceNodeIDs;
+				instancerBuffer._instancePrefixes = instancePrefixes;
+
+				instancerBuffers.Add(instancerBuffer);
+			}
+
+			return true;
+		}
+
+        //	DATA ------------------------------------------------------------------------------------------------------
+
+        // Setup
+        private string _filePath;
 		private HEU_GeoSync _geoSync;
 		private HEU_SessionBase _session;
+
+		private HEU_GenerateOptions _generateOptions;
 
 		private HEU_LoadData _loadData;
 
@@ -536,56 +744,11 @@ namespace HoudiniEngineUnity
 
 			public HEU_SessionBase _session;
 
-			public List<HEU_LoadVolumeTerrainTile> _terrainTiles;
-		}
+			public List<HEU_LoadBufferVolume> _terrainBuffers;
 
-		public class HEU_LoadVolumeTerrainTile
-		{
-			public int _tileIndex;
-			public List<HEU_LoadVolumeLayer> _layers = new List<HEU_LoadVolumeLayer>();
+			public List<HEU_LoadBufferMesh> _meshBuffers;
 
-			public int _heightMapSize;
-			public float[,] _heightMap;
-			public float[,,] _splatMaps;
-
-			public float _terrainSizeX;
-			public float _terrainSizeY;
-			public float _heightRange;
-
-			public Vector3 _position;
-		}
-
-		public class HEU_LoadVolumeLayer
-		{
-			public string _layerName;
-			public HAPI_PartId _partID;
-			public int _heightMapSize;
-			public float _strength = 1.0f;
-
-			public string _diffuseTexturePath;
-			public string _maskTexturePath;
-			public float _metallic = 0f;
-			public string _normalTexturePath;
-			public float _normalScale = 0.5f;
-			public float _smoothness = 0f;
-			public Color _specularColor = Color.gray;
-			public Vector2 _tileSize = Vector2.zero;
-			public Vector2 _tileOffset = Vector2.zero;
-
-			public bool _uiExpanded;
-			public int _tile = 0;
-
-			public float[] _rawHeights;
-			public float _minHeight;
-			public float _maxHeight;
-
-			public float _terrainSizeX;
-			public float _terrainSizeY;
-
-			public Vector3 _position;
-			public Vector3 _minBounds;
-			public Vector3 _maxBounds;
-			public Vector3 _center;
+			public List<HEU_LoadBufferInstancer> _instancerBuffers;
 		}
 	}
 

@@ -41,11 +41,29 @@ namespace HoudiniEngineUnity
 #endif
 		}
 
+
+
+		public void Initialize()
+		{
+			_generateOptions._generateNormals = true;
+			_generateOptions._generateTangents = true;
+			_generateOptions._generateUVs = false;
+			_generateOptions._useLODGroups = true;
+			_generateOptions._splitPoints = false;
+
+			_initialized = true;
+		}
+
 		public void StartSync()
 		{
 			if (_bSyncing)
 			{
 				return;
+			}
+
+			if (!_initialized)
+			{
+				Initialize();
 			}
 
 			HEU_SessionBase session = GetHoudiniSession(true);
@@ -97,7 +115,7 @@ namespace HoudiniEngineUnity
 			}
 
 			DeleteSessionData();
-			DestroyGameObjects();
+			DestroyOutputs();
 
 			_logStr = "Unloaded!";
 		}
@@ -111,9 +129,21 @@ namespace HoudiniEngineUnity
 
 			if (loadData._loadStatus == HEU_ThreadedTaskLoadGeo.HEU_LoadData.LoadStatus.SUCCESS)
 			{
-				if (loadData._terrainTiles != null && loadData._terrainTiles.Count > 0)
+				DestroyOutputs();
+
+				if (loadData._meshBuffers != null && loadData._meshBuffers.Count > 0)
 				{
-					GenerateTerrain(loadData._terrainTiles);
+					GenerateMesh(loadData._meshBuffers);
+				}
+
+				if (loadData._terrainBuffers != null && loadData._terrainBuffers.Count > 0)
+				{
+					GenerateTerrain(loadData._terrainBuffers);
+				}
+
+				if (loadData._instancerBuffers != null && loadData._instancerBuffers.Count > 0)
+				{
+					GenerateAllInstancers(loadData._instancerBuffers, loadData);
 				}
 			}
 		}
@@ -140,37 +170,30 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		private void GenerateTerrain(List<HEU_ThreadedTaskLoadGeo.HEU_LoadVolumeTerrainTile> terrainTiles)
+		private void GenerateTerrain(List<HEU_LoadBufferVolume> terrainBuffers)
 		{
-			if (_gameObjects == null)
-			{
-				_gameObjects = new List<GameObject>();
-			}
-			else
-			{
-				DestroyGameObjects();
-			}
-
 			Transform parent = this.gameObject.transform;
 
-			int numTiles = terrainTiles.Count;
-			for(int t = 0; t < numTiles; ++t)
+			int numVolues = terrainBuffers.Count;
+			for(int t = 0; t < numVolues; ++t)
 			{
-				if (terrainTiles[t]._heightMap != null)
+				if (terrainBuffers[t]._heightMap != null)
 				{
-					GameObject go = new GameObject("heightfield_" + terrainTiles[t]._tileIndex);
-					Transform goTransform = go.transform;
-					goTransform.parent = parent;
-					_gameObjects.Add(go);
+					GameObject newGameObject = new GameObject("heightfield_" + terrainBuffers[t]._tileIndex);
+					Transform newTransform = newGameObject.transform;
+					newTransform.parent = parent;
 
-					Terrain terrain = HEU_GeneralUtility.GetOrCreateComponent<Terrain>(go);
-					TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(go);
+					HEU_GeneratedOutput generatedOutput = new HEU_GeneratedOutput();
+					generatedOutput._outputData._gameObject = newGameObject;
+
+					Terrain terrain = HEU_GeneralUtility.GetOrCreateComponent<Terrain>(newGameObject);
+					TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(newGameObject);
 
 					terrain.terrainData = new TerrainData();
 					TerrainData terrainData = terrain.terrainData;
 					collider.terrainData = terrainData;
 
-					int heightMapSize = terrainTiles[t]._heightMapSize;
+					int heightMapSize = terrainBuffers[t]._heightMapSize;
 
 					terrainData.heightmapResolution = heightMapSize;
 					if (terrainData.heightmapResolution != heightMapSize)
@@ -185,22 +208,22 @@ namespace HoudiniEngineUnity
 					const int resolutionPerPatch = 128;
 					terrainData.SetDetailResolution(resolutionPerPatch, resolutionPerPatch);
 
-					terrainData.SetHeights(0, 0, terrainTiles[t]._heightMap);
+					terrainData.SetHeights(0, 0, terrainBuffers[t]._heightMap);
 
-					terrainData.size = new Vector3(terrainTiles[t]._terrainSizeX, terrainTiles[t]._heightRange, terrainTiles[t]._terrainSizeY);
+					terrainData.size = new Vector3(terrainBuffers[t]._terrainSizeX, terrainBuffers[t]._heightRange, terrainBuffers[t]._terrainSizeY);
 
 					terrain.Flush();
 
 					// Set position
 					HAPI_Transform hapiTransformVolume = new HAPI_Transform(true);
-					hapiTransformVolume.position[0] += terrainTiles[t]._position[0];
-					hapiTransformVolume.position[1] += terrainTiles[t]._position[1];
-					hapiTransformVolume.position[2] += terrainTiles[t]._position[2];
-					HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransformVolume, goTransform);
+					hapiTransformVolume.position[0] += terrainBuffers[t]._position[0];
+					hapiTransformVolume.position[1] += terrainBuffers[t]._position[1];
+					hapiTransformVolume.position[2] += terrainBuffers[t]._position[2];
+					HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransformVolume, newTransform);
 
 					// Set layers
 					Texture2D defaultTexture = HEU_VolumeCache.LoadDefaultSplatTexture();
-					int numLayers = terrainTiles[t]._layers.Count;
+					int numLayers = terrainBuffers[t]._layers.Count;
 
 #if UNITY_2018_3_OR_NEWER
 
@@ -214,7 +237,7 @@ namespace HoudiniEngineUnity
 					{
 						terrainLayers[m] = new TerrainLayer();
 
-						HEU_ThreadedTaskLoadGeo.HEU_LoadVolumeLayer layer = terrainTiles[t]._layers[m];
+						HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._layers[m];
 
 						if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
 						{
@@ -301,24 +324,235 @@ namespace HoudiniEngineUnity
 					terrainData.splatPrototypes = splatPrototypes;
 #endif
 
-					terrainData.SetAlphamaps(0, 0, terrainTiles[t]._splatMaps);
+					terrainData.SetAlphamaps(0, 0, terrainBuffers[t]._splatMaps);
 
 					//string assetPath = HEU_AssetDatabase.CreateAssetCacheFolder("terrainData");
 					//AssetDatabase.CreateAsset(terrainData, assetPath);
 					//Debug.Log("Created asset data at " + assetPath);
+
+					terrainBuffers[t]._generatedOutput = generatedOutput;
+					_generatedOutputs.Add(generatedOutput);
+
+					SetOutputVisiblity(terrainBuffers[t]);
 				}
 			}
 		}
 
-		private void DestroyGameObjects()
+		private void GenerateMesh(List<HEU_LoadBufferMesh> meshBuffers)
 		{
-			if (_gameObjects != null)
+			HEU_SessionBase session = GetHoudiniSession(true);
+
+			Transform parent = this.gameObject.transform;
+
+			int numBuffers = meshBuffers.Count;
+			for (int m = 0; m < numBuffers; ++m)
 			{
-				for(int i = 0; i < _gameObjects.Count; ++i)
+				if (meshBuffers[m]._geoCache != null)
 				{
-					HEU_GeneralUtility.DestroyImmediate(_gameObjects[i]);
+					GameObject newGameObject = new GameObject("mesh_" + meshBuffers[m]._geoCache._partName);
+					Transform newTransform = newGameObject.transform;
+					newTransform.parent = parent;
+
+					HEU_GeneratedOutput generatedOutput = new HEU_GeneratedOutput();
+					generatedOutput._outputData._gameObject = newGameObject;
+
+					bool bResult = false;
+					int numLODs = meshBuffers[m]._LODGroupMeshes != null ? meshBuffers[m]._LODGroupMeshes.Count : 0;
+					if (numLODs > 1)
+					{
+						bResult = HEU_GenerateGeoCache.GenerateLODMeshesFromGeoGroups(session, meshBuffers[m]._LODGroupMeshes, 
+							meshBuffers[m]._geoCache, generatedOutput, meshBuffers[m]._defaultMaterialKey, 
+							meshBuffers[m]._bGenerateUVs, meshBuffers[m]._bGenerateTangents, meshBuffers[m]._bGenerateNormals, meshBuffers[m]._bPartInstanced);
+					}
+					else if (numLODs == 1)
+					{
+						bResult = HEU_GenerateGeoCache.GenerateMeshFromSingleGroup(session, meshBuffers[m]._LODGroupMeshes[0], 
+							meshBuffers[m]._geoCache, generatedOutput, meshBuffers[m]._defaultMaterialKey, 
+							meshBuffers[m]._bGenerateUVs, meshBuffers[m]._bGenerateTangents, meshBuffers[m]._bGenerateNormals, meshBuffers[m]._bPartInstanced);
+					}
+					else
+					{
+						// Set return state to false if no mesh and not a collider type
+						bResult = (meshBuffers[m]._geoCache._colliderType != HEU_GenerateGeoCache.ColliderType.NONE);
+					}
+
+					if (bResult)
+					{
+						HEU_GenerateGeoCache.UpdateCollider(meshBuffers[m]._geoCache, generatedOutput._outputData._gameObject);
+
+						meshBuffers[m]._generatedOutput = generatedOutput;
+						_generatedOutputs.Add(generatedOutput);
+
+						SetOutputVisiblity(meshBuffers[m]);
+					}
+					else
+					{
+						HEU_GeneratedOutput.DestroyGeneratedOutput(generatedOutput);
+					}
 				}
-				_gameObjects.Clear();
+			}
+		}
+
+		private HEU_LoadBufferBase GetLoadBufferFromID(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData, HAPI_NodeId id)
+		{
+			// Check each buffer array
+
+			foreach(HEU_LoadBufferBase buffer in loadData._meshBuffers)
+			{
+				if(buffer._id == id)
+				{
+					return buffer;
+				}
+			}
+
+			foreach (HEU_LoadBufferBase buffer in loadData._terrainBuffers)
+			{
+				if (buffer._id == id)
+				{
+					return buffer;
+				}
+			}
+
+			foreach (HEU_LoadBufferBase buffer in loadData._instancerBuffers)
+			{
+				if (buffer._id == id)
+				{
+					return buffer;
+				}
+			}
+
+			return null;
+		}
+
+		
+		private void GenerateAllInstancers(List<HEU_LoadBufferInstancer> instancerBuffers, HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
+		{
+			// Create a dictionary of load buffers to their IDs. This speeds up the instancer look up.
+			Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap = new Dictionary<HAPI_NodeId, HEU_LoadBufferBase>();
+
+			if (loadData._meshBuffers != null)
+			{
+				foreach (HEU_LoadBufferBase buffer in loadData._meshBuffers)
+				{
+					idBuffersMap[buffer._id] = buffer;
+				}
+			}
+
+			if (loadData._terrainBuffers != null)
+			{
+				foreach (HEU_LoadBufferBase buffer in loadData._terrainBuffers)
+				{
+					idBuffersMap[buffer._id] = buffer;
+				}
+			}
+
+			if (loadData._instancerBuffers != null)
+			{
+				foreach (HEU_LoadBufferBase buffer in loadData._instancerBuffers)
+				{
+					idBuffersMap[buffer._id] = buffer;
+				}
+			}
+
+			int numBuffers = instancerBuffers.Count;
+			for (int m = 0; m < numBuffers; ++m)
+			{
+				GenerateInstancer(instancerBuffers[m], idBuffersMap);
+			}
+		}
+
+		private void GenerateInstancer(HEU_LoadBufferInstancer instancerBuffer, Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap)
+		{
+			if (instancerBuffer._generatedOutput != null)
+			{
+				// Already generated
+				return;
+			}
+
+			Transform parent = this.gameObject.transform;
+
+			GameObject instanceRootGO = new GameObject("instance_" + instancerBuffer._name);
+			Transform instanceRootTransform = instanceRootGO.transform;
+			instanceRootTransform.parent = parent;
+
+			instancerBuffer._generatedOutput = new HEU_GeneratedOutput();
+			instancerBuffer._generatedOutput._outputData._gameObject = instanceRootGO;
+			_generatedOutputs.Add(instancerBuffer._generatedOutput);
+
+			int numInstances = instancerBuffer._instanceNodeIDs.Length;
+			for (int i = 0; i < numInstances; ++i)
+			{
+				HEU_LoadBufferBase sourceBuffer = null;
+				if (!idBuffersMap.TryGetValue(instancerBuffer._instanceNodeIDs[i], out sourceBuffer) || sourceBuffer == null)
+				{
+					Debug.LogErrorFormat("Part with id {0} is missing. Unable to setup instancer!", instancerBuffer._instanceNodeIDs[i]);
+					return;
+				}
+
+				// If the part we're instancing is itself an instancer, make sure it has generated its instances
+				if (sourceBuffer._bInstanced && sourceBuffer._generatedOutput == null)
+				{
+					HEU_LoadBufferInstancer sourceBufferInstancer = instancerBuffer as HEU_LoadBufferInstancer;
+					if (sourceBufferInstancer != null)
+					{
+						GenerateInstancer(sourceBufferInstancer, idBuffersMap);
+					}
+				}
+
+				GameObject sourceGameObject = sourceBuffer._generatedOutput._outputData._gameObject;
+				if (sourceGameObject == null)
+				{
+					Debug.LogErrorFormat("Output gameobject is null for source {0}. Unable to instance for {1}.", sourceBuffer._name, instancerBuffer._name);
+					continue;
+				}
+
+				int numTransforms = instancerBuffer._instanceTransforms.Length;
+				for (int j = 0; j < numTransforms; ++j)
+				{
+					GameObject newInstanceGO = HEU_EditorUtility.InstantiateGameObject(sourceGameObject, instanceRootTransform, false, false);
+
+					newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(instancerBuffer._name, instancerBuffer._instancePrefixes, (j + 1));
+
+					newInstanceGO.isStatic = sourceGameObject.isStatic;
+
+					HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref instancerBuffer._instanceTransforms[j], newInstanceGO.transform);
+
+					// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
+					HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
+					HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
+				}
+
+				SetOutputVisiblity(instancerBuffer);
+			}
+		}
+
+		private void DestroyOutputs()
+		{
+			if (_generatedOutputs != null)
+			{
+				for (int i = 0; i < _generatedOutputs.Count; ++i)
+				{
+					HEU_GeneratedOutput.DestroyGeneratedOutput(_generatedOutputs[i]);
+					_generatedOutputs[i] = null;
+				}
+				_generatedOutputs.Clear();
+			}
+		}
+
+		private void SetOutputVisiblity(HEU_LoadBufferBase buffer)
+		{
+			bool bVisibility = !buffer._bInstanced;
+
+			if (HEU_GeneratedOutput.HasLODGroup(buffer._generatedOutput))
+			{
+				foreach (HEU_GeneratedOutputData childOutput in buffer._generatedOutput._childOutputs)
+				{
+					HEU_GeneralUtility.SetGameObjectRenderVisiblity(childOutput._gameObject, bVisibility);
+				}
+			}
+			else
+			{
+				HEU_GeneralUtility.SetGameObjectRenderVisiblity(buffer._generatedOutput._outputData._gameObject, bVisibility);
 			}
 		}
 
@@ -343,6 +577,8 @@ namespace HoudiniEngineUnity
 
 		public bool IsLoaded() { return _fileNodeID != HEU_Defines.HEU_INVALID_NODE_ID; }
 
+		public HEU_GenerateOptions GenerateOptions { get { return _generateOptions; } }
+
 
 		//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -361,8 +597,24 @@ namespace HoudiniEngineUnity
 		private long _sessionID = HEU_SessionData.INVALID_SESSION_ID;
 
 		[SerializeField]
-		private List<GameObject> _gameObjects;
+		private List<HEU_GeneratedOutput> _generatedOutputs = new List<HEU_GeneratedOutput>();
+
+		// Asset Options
+		[SerializeField]
+		private HEU_GenerateOptions _generateOptions = new HEU_GenerateOptions();
+
+		[SerializeField]
+		private bool _initialized;
 	}
 
+	[System.Serializable]
+	public struct HEU_GenerateOptions
+	{
+		public bool _generateUVs;
+		public bool _generateTangents;
+		public bool _generateNormals;
+		public bool _useLODGroups;
+		public bool _splitPoints;
+	}
 
 }   // HoudiniEngineUnity

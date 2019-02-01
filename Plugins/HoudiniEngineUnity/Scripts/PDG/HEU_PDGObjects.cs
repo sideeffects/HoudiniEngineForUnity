@@ -69,6 +69,7 @@ namespace HoudiniEngineUnity
 		public enum PDGState
 		{
 			NONE,
+			DIRTIED,
 			DIRTYING,
 			COOKING,
 			COOK_SUCCESS,
@@ -77,8 +78,28 @@ namespace HoudiniEngineUnity
 		public PDGState _pdgState;
 
 		public int _totalWorkItems;
+		public int _waitingWorkItems;
+		public int _scheduledWorkItems;
+		public int _cookingWorkItems;
 		public int _cookedWorkItems;
 		public int _erroredWorkItems;
+		
+
+
+		public bool AreAllWorkItemsComplete()
+		{
+			return (_waitingWorkItems == 0 && _cookingWorkItems == 0 && _scheduledWorkItems == 0 && (_totalWorkItems == (_cookedWorkItems + _erroredWorkItems)));
+		}
+
+		public bool AnyWorkItemsFailed()
+		{
+			return _erroredWorkItems > 0;
+		}
+
+		public bool AnyWorkItemsPending()
+		{
+			return (_totalWorkItems > 0 && (_waitingWorkItems > 0 || _cookingWorkItems > 0 || _scheduledWorkItems > 0));
+		}
 	}
 
 	[System.Serializable]
