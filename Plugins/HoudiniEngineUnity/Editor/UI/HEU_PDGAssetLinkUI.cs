@@ -58,6 +58,23 @@ namespace HoudiniEngineUnity
 
 			using (new EditorGUILayout.VerticalScope(_backgroundStyle))
 			{
+				string pdgState = "PDG is NOT READY!";
+				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+				if (pdgSession != null)
+				{
+					if (pdgSession._pdgState == HAPI_PDG_State.HAPI_PDG_STATE_COOKING)
+					{
+						pdgState = "PDG is COOKING!";
+					}
+					else if (pdgSession._pdgState == HAPI_PDG_State.HAPI_PDG_STATE_READY)
+					{
+						pdgState = "PDG is READY!";
+					}
+				}
+				EditorGUILayout.LabelField(pdgState);
+
+				EditorGUILayout.Space();
+
 				SerializedProperty assetGOProp = HEU_EditorUtility.GetSerializedProperty(serializedObject, "_assetGO");
 				if (assetGOProp != null)
 				{
@@ -185,8 +202,11 @@ namespace HoudiniEngineUnity
 						topNode._autoLoad = autoLoad;
 					}
 
-					EditorGUILayout.LabelField("PDG State: " + topNode._pdgState);
+					EditorGUILayout.LabelField("Node State: " + topNode._pdgState);
 					EditorGUILayout.LabelField("Number of tasks: " + topNode._totalWorkItems);
+					EditorGUILayout.LabelField("Waiting tasks: " + topNode._waitingWorkItems);
+					EditorGUILayout.LabelField("Scheduled tasks: " + topNode._scheduledWorkItems);
+					EditorGUILayout.LabelField("Cooking tasks: " + topNode._cookingWorkItems);
 					EditorGUILayout.LabelField("Cooked tasks: " + topNode._cookedWorkItems);
 					EditorGUILayout.LabelField("Errored tasks: " + topNode._erroredWorkItems);
 

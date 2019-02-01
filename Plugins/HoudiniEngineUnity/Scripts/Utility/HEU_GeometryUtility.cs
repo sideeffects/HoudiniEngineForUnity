@@ -668,6 +668,33 @@ namespace HoudiniEngineUnity
 
 			return mesh;
 		}
+
+		/// <summary>
+		/// Returns the output instance's name for given instance index. 
+		/// The instance name convention is: PartName_Instance1
+		/// User could override the prefix (PartName) with their own via given instancePrefixes array.
+		/// </summary>
+		/// <param name="partName"></param>
+		/// <param name="userPrefix"></param>
+		/// <param name="index"></param>
+		/// <returns></returns>
+		public static string GetInstanceOutputName(string partName, string[] userPrefix, int index)
+		{
+			string prefix = null;
+			if (userPrefix == null || userPrefix.Length == 0)
+			{
+				prefix = partName;
+			}
+			else if (userPrefix.Length == 1)
+			{
+				prefix = userPrefix[0];
+			}
+			else if (index >= 0 && (index <= userPrefix.Length))
+			{
+				prefix = userPrefix[index - 1];
+			}
+			return prefix + HEU_Defines.HEU_INSTANCE + index;
+		}
 	}
 
 
