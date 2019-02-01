@@ -203,7 +203,7 @@ namespace HoudiniEngineUnity
 
 			GetTOPAssetLinkAndNode(eventInfo.nodeId, out assetLink, out topNode);
 
-			string topNodeName = topNode != null ? string.Format("node={0}", topNode._nodeName) : string.Format("id={0}", eventInfo.nodeId);
+			//string topNodeName = topNode != null ? string.Format("node={0}", topNode._nodeName) : string.Format("id={0}", eventInfo.nodeId);
 			//Debug.LogFormat("PDG Event: {0}, type={1}, workitem={2}, curState={3}, lastState={4}", topNodeName, evType.ToString(), 
 			//	eventInfo.workitemId, currentState, lastState);
 

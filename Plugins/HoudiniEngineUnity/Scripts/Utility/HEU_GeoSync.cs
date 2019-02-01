@@ -292,7 +292,7 @@ namespace HoudiniEngineUnity
 					{
 						splatPrototypes[m] = new SplatPrototype();
 
-						HEU_ThreadedTaskLoadGeo.HEU_LoadVolumeLayer layer = terrainTiles[t]._layers[m];
+						HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._layers[m];
 
 						Texture2D diffuseTexture = null;
 						if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
