@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) <2019> Side Effects Software Inc.
 * All rights reserved.
 *
@@ -71,7 +71,7 @@ namespace HoudiniEngineUnity
 			if (!_pdgAssets.Contains(asset))
 			{
 				_pdgAssets.Add(asset);
-				Debug.Log("Adding asset " + asset.AssetName + " with total " + _pdgAssets.Count);
+				//Debug.Log("Adding asset " + asset.AssetName + " with total " + _pdgAssets.Count);
 			}
 #endif
 		}
@@ -289,8 +289,6 @@ namespace HoudiniEngineUnity
 
 						if (topNode._autoLoad)
 						{
-							//Debug.LogFormat("{0}: Should autoload this!", topNode._nodeName);
-						
 							HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
 							if (!session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
 							{
@@ -364,50 +362,45 @@ namespace HoudiniEngineUnity
 
 		private void NotifyTOPNodePDGStateClear(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
 		{
-			Debug.LogFormat("NotifyTOPNodePDGStateClear:: {0}", topNode._nodeName);
+			//Debug.LogFormat("NotifyTOPNodePDGStateClear:: {0}", topNode._nodeName);
 			topNode._pdgState = HEU_TOPNodeData.PDGState.NONE;
-			topNode._totalWorkItems = 0;
-			topNode._waitingWorkItems = 0;
-			topNode._scheduledWorkItems = 0;
-			topNode._cookingWorkItems = 0;
-			topNode._cookedWorkItems = 0;
-			topNode._erroredWorkItems = 0;
+			topNode._workItemTally.ZeroAll();
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeTotalWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._totalWorkItems += inc;
+			topNode._workItemTally._totalWorkItems += inc;
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeCookedWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
 		{
-			topNode._cookedWorkItems++;
+			topNode._workItemTally._cookedWorkItems++;
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeErrorWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
 		{
-			topNode._erroredWorkItems++;
+			topNode._workItemTally._erroredWorkItems++;
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeWaitingWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._waitingWorkItems += inc;
+			topNode._workItemTally._waitingWorkItems += inc;
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeScheduledWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._scheduledWorkItems += inc;
+			topNode._workItemTally._scheduledWorkItems += inc;
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeCookingWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._cookingWorkItems += inc;
+			topNode._workItemTally._cookingWorkItems += inc;
 			assetLink.RepaintUI();
 		}
 
@@ -443,7 +436,6 @@ namespace HoudiniEngineUnity
 		{
 			return HEU_SessionManager.GetOrCreateDefaultSession();
 		}
-
 
 
 		//	DATA ------------------------------------------------------------------------------------------------------
