@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) <2019> Side Effects Software Inc.
 * All rights reserved.
 *
@@ -319,6 +319,7 @@ namespace HoudiniEngineUnity
 
 				newNodes.Add(topNodeData);
 
+				//topNodeData.Reset();
 				topNodeData._nodeID = topNodeID;
 				topNodeData._nodeName = nodeName;
 				topNodeData._parentName = topNetwork._parentName + "_" + topNetwork._nodeName;
@@ -605,6 +606,26 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public void UpdateWorkItemTally()
+		{
+			_workItemTally.ZeroAll();
+
+			int numNetworks = _topNetworks.Count;
+			for (int i = 0; i < numNetworks; ++i)
+			{
+				int numNodes = _topNetworks[i]._topNodes.Count;
+				for (int j = 0; j < numNodes; ++j)
+				{
+					_workItemTally._totalWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._totalWorkItems;
+					_workItemTally._waitingWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._waitingWorkItems;
+					_workItemTally._scheduledWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._scheduledWorkItems;
+					_workItemTally._cookingWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._cookingWorkItems;
+					_workItemTally._cookedWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._cookedWorkItems;
+					_workItemTally._erroredWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._erroredWorkItems;
+				}
+			}
+		}
+
 		//	MENU ----------------------------------------------------------------------------------------------------
 #if UNITY_EDITOR
 		//[MenuItem("PDG/Create PDG Asset Link", false, 0)]
@@ -639,17 +660,23 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-				Debug.LogError("Nothing selected. Select an instantiated HDA first.");
+				//Debug.LogError("Nothing selected. Select an instantiated HDA first.");
+				HEU_EditorUtility.DisplayErrorDialog("PDG Asset Link", "No HDA selected. You must select an instantiated HDA first.", "OK");
 			}
 		}
 
-		
+
 #endif
 
 		//	DATA ------------------------------------------------------------------------------------------------------
 
+#pragma warning disable 0414
 		[SerializeField]
 		private string _assetPath;
+
+		[SerializeField]
+		private GameObject _assetGO;
+#pragma warning restore 0414
 
 		[SerializeField]
 		private string _assetName;
@@ -658,9 +685,6 @@ namespace HoudiniEngineUnity
 
 		[SerializeField]
 		private HAPI_NodeId _assetID = HEU_Defines.HEU_INVALID_NODE_ID;
-
-		[SerializeField]
-		private GameObject _assetGO;
 
 		[SerializeField]
 		private HEU_HoudiniAsset _heu;
@@ -693,7 +717,8 @@ namespace HoudiniEngineUnity
 		public UpdateUIDelegate _repaintUIDelegate;
 
 		private int _numWorkItems;
-		
+
+		public HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
 	}
 
 }   // HoudiniEngineUnity

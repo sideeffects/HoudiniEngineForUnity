@@ -1387,6 +1387,28 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Returns a new texture with given size, and filled in with given single color.
+		/// </summary>
+		public static Texture2D MakeTexture(int width, int height, Color color)
+		{
+			if (width <= 0 || height <= 0)
+			{
+				return null;
+			}
+
+			Color[] pixels = new Color[width * height];
+			for(int i = 0; i < pixels.Length; ++i)
+			{
+				pixels[i] = color;
+			}
+
+			Texture2D texture = new Texture2D(width, height);
+			texture.SetPixels(pixels);
+			texture.Apply(false, true);
+			return texture;
+		}
+
+		/// <summary>
 		/// Replace the first occurence of searchStr in srcStr with replaceStr.
 		/// </summary>
 		/// <param name="srcStr"></param>

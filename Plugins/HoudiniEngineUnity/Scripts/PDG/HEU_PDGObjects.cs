@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) <2018> Side Effects Software Inc.
 * All rights reserved.
 *
@@ -77,14 +77,56 @@ namespace HoudiniEngineUnity
 		}
 		public PDGState _pdgState;
 
+		public HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
+
+		public void Reset()
+		{
+			_pdgState = PDGState.NONE;
+			_workItemTally.ZeroAll();
+		}
+
+		public bool AreAllWorkItemsComplete()
+		{
+			return _workItemTally.AreAllWorkItemsComplete();
+		}
+
+		public bool AnyWorkItemsFailed()
+		{
+			return _workItemTally.AnyWorkItemsFailed();
+		}
+
+		public bool AnyWorkItemsPending()
+		{
+			return _workItemTally.AnyWorkItemsPending();
+		}
+	}
+
+	[System.Serializable]
+	public class HEU_TOPWorkResult
+	{
+		public int _workItemIndex = -1;
+		public List<GameObject> _generatedGOs = new List<GameObject>();
+	}
+
+	[System.Serializable]
+	public class HEU_WorkItemTally
+	{
 		public int _totalWorkItems;
 		public int _waitingWorkItems;
 		public int _scheduledWorkItems;
 		public int _cookingWorkItems;
 		public int _cookedWorkItems;
 		public int _erroredWorkItems;
-		
 
+		public void ZeroAll()
+		{
+			_totalWorkItems = 0;
+			_waitingWorkItems = 0;
+			_scheduledWorkItems = 0;
+			_cookingWorkItems = 0;
+			_cookedWorkItems = 0;
+			_erroredWorkItems = 0;
+		}
 
 		public bool AreAllWorkItemsComplete()
 		{
@@ -100,13 +142,14 @@ namespace HoudiniEngineUnity
 		{
 			return (_totalWorkItems > 0 && (_waitingWorkItems > 0 || _cookingWorkItems > 0 || _scheduledWorkItems > 0));
 		}
-	}
 
-	[System.Serializable]
-	public class HEU_TOPWorkResult
-	{
-		public int _workItemIndex = -1;
-		public List<GameObject> _generatedGOs = new List<GameObject>();
+		public string ProgressRatio()
+		{
+			float cooked = _cookedWorkItems;
+			float total = _totalWorkItems;
+			float ratio = _totalWorkItems > 0 ? Mathf.Min((cooked / total) * 100f, 100f) : 0;
+			return string.Format("{0:0}%", ratio);
+		}
 	}
 
 }   // HoudiniEngineUnity
