@@ -174,7 +174,10 @@ namespace HoudiniEngineUnity
 
 #endif
 
-			// Get the various types of parts from the display node
+			// Note that object instancing is not supported. Instancers currently supported are
+			// part and point instancing.
+
+			// Get the various types of geometry (parts) from the display node
 			List<HAPI_PartInfo> meshParts = new List<HAPI_PartInfo>();
 			List<HAPI_PartInfo> volumeParts = new List<HAPI_PartInfo>();
 			List<HAPI_PartInfo> instancerParts = new List<HAPI_PartInfo>();
@@ -288,6 +291,10 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 
+		/// <summary>
+		/// Returns the various geometry types (parts) from the given node.
+		/// Only part instancers and point instancers (via attributes) are returned.
+		/// </summary>
 		private bool QueryParts(HAPI_NodeId nodeID, ref List<HAPI_PartInfo> meshParts, ref List<HAPI_PartInfo> volumeParts,
 			ref List<HAPI_PartInfo> instancerParts, ref List<HAPI_PartInfo> curveParts)
 		{
@@ -314,29 +321,44 @@ namespace HoudiniEngineUnity
 						return false;
 					}
 
+					bool isAttribInstancer = false;
+					// Preliminary check for attribute instancing (mesh type with no verts but has points with instances)
+					if (HEU_HAPIUtility.IsSupportedPolygonType(partInfo.type) && partInfo.vertexCount == 0 && partInfo.pointCount > 0)
+					{
+						HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
+						HEU_GeneralUtility.GetAttributeInfo(_session, nodeID, partInfo.id, HEU_PluginSettings.UnityInstanceAttr, ref instanceAttrInfo);
+						if (instanceAttrInfo.exists && instanceAttrInfo.count > 0)
+						{
+							isAttribInstancer = true;
+						}
+					}
+
 					if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_VOLUME)
 					{
 						volumeParts.Add(partInfo);
 					}
-					else if(partInfo.type == HAPI_PartType.HAPI_PARTTYPE_MESH)
+					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER || isAttribInstancer)
 					{
-						meshParts.Add(partInfo);
+						instancerParts.Add(partInfo);
 					}
 					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_CURVE)
 					{
 						curveParts.Add(partInfo);
-						//Debug.LogWarningFormat("Currently {0} part type is not implemented for threaded geo loading!", partInfo.type);
 					}
-					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER)
+					else if(HEU_HAPIUtility.IsSupportedPolygonType(partInfo.type))
 					{
-						instancerParts.Add(partInfo);
-						//Debug.LogWarningFormat("Currently {0} part type is not implemented for threaded geo loading!", partInfo.type);
+						meshParts.Add(partInfo);
+					}
+					else
+					{
+						string partName = HEU_SessionManager.GetString(partInfo.nameSH, _session);
+						SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Part {0} with type {1} is not supported for GeoSync.", partName, partInfo.type));
 					}
 				}
 			}
 			else if(geoInfo.type == HAPI_GeoType.HAPI_GEOTYPE_CURVE)
 			{
-				Debug.LogWarningFormat("Currently {0} geo type is not implemented for threaded geo loading!", geoInfo.type);
+				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Currently {0} geo type is not implemented for threaded geo loading!", geoInfo.type));
 			}
 
 			return true;
@@ -662,62 +684,179 @@ namespace HoudiniEngineUnity
 			foreach (HAPI_PartInfo partInfo in instancerParts)
 			{
 				HAPI_NodeId geoID = nodeID;
-				int partID = partInfo.id;
+				HAPI_PartId partID = partInfo.id;
 				string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
 
-				if (partInfo.instancedPartCount <= 0)
+				HEU_LoadBufferInstancer newBuffer = null;
+				if (partInfo.instancedPartCount > 0)
+				{
+					// Part instancer
+					newBuffer = GeneratePartsInstancerBuffer(session, geoID, partID, partName, partInfo);
+				}
+				else if (partInfo.vertexCount == 0 && partInfo.pointCount > 0)
+				{
+					// Point attribute instancer
+					newBuffer = GeneratePointAttributeInstancerBuffer(session, geoID, partID, partName, partInfo);
+				}
+				else
 				{
 					SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Invalid instanced part count: {0} for part {1}", partInfo.instancedPartCount, partName));
 					continue;
 				}
 
-				// Get the instance node IDs to get the geometry to be instanced.
-				// Get the instanced count to all the instances. These will end up being mesh references to the mesh from instance node IDs.
-
-				//Transform partTransform = OutputGameObject.transform;
-
-				// Get each instance's transform
-				HAPI_Transform[] instanceTransforms = new HAPI_Transform[partInfo.instanceCount];
-				if (!HEU_GeneralUtility.GetArray3Arg(geoID, partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstancerPartTransforms, instanceTransforms, 0, partInfo.instanceCount))
+				if (newBuffer != null)
 				{
-					SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to get instance transforms for part {0}", partName));
-					continue;
+					instancerBuffers.Add(newBuffer);
+				}
+			}
+
+			return true;
+		}
+
+		private HEU_LoadBufferInstancer GeneratePartsInstancerBuffer(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string partName, HAPI_PartInfo partInfo)
+		{
+			// Get the instance node IDs to get the geometry to be instanced.
+			// Get the instanced count to all the instances. These will end up being mesh references to the mesh from instance node IDs.
+
+			// Get each instance's transform
+			HAPI_Transform[] instanceTransforms = new HAPI_Transform[partInfo.instanceCount];
+			if (!HEU_GeneralUtility.GetArray3Arg(geoID, partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstancerPartTransforms, instanceTransforms, 0, partInfo.instanceCount))
+			{
+				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to get instance transforms for part {0}", partName));
+				return null;
+			}
+
+			// Get part IDs for the parts being instanced
+			HAPI_NodeId[] instanceNodeIDs = new HAPI_NodeId[partInfo.instancedPartCount];
+			if (!HEU_GeneralUtility.GetArray2Arg(geoID, partID, session.GetInstancedPartIds, instanceNodeIDs, 0, partInfo.instancedPartCount))
+			{
+				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to get instance node IDs for part {0}", partName));
+				return null;
+			}
+
+			// Get instance names if set
+			string[] instancePrefixes = null;
+			HAPI_AttributeInfo instancePrefixAttrInfo = new HAPI_AttributeInfo();
+			HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR, ref instancePrefixAttrInfo);
+			if (instancePrefixAttrInfo.exists)
+			{
+				instancePrefixes = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR, ref instancePrefixAttrInfo);
+			}
+
+			HEU_LoadBufferInstancer instancerBuffer = new HEU_LoadBufferInstancer();
+			instancerBuffer.InitializeBuffer(partID, partName, partInfo.isInstanced, true);
+
+			instancerBuffer._instanceTransforms = instanceTransforms;
+			instancerBuffer._instanceNodeIDs = instanceNodeIDs;
+			instancerBuffer._instancePrefixes = instancePrefixes;
+
+			return instancerBuffer;
+		}
+
+		private HEU_LoadBufferInstancer GeneratePointAttributeInstancerBuffer(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, 
+			string partName, HAPI_PartInfo partInfo)
+		{
+			int numInstances = partInfo.pointCount;
+			if (numInstances <= 0)
+			{
+				return null;
+			}
+
+			// Find type of instancer
+			string instanceAttrName = HEU_PluginSettings.InstanceAttr;
+			string unityInstanceAttrName = HEU_PluginSettings.UnityInstanceAttr;
+			string instancePrefixAttrName = HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR;
+
+			HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
+			HAPI_AttributeInfo unityInstanceAttrInfo = new HAPI_AttributeInfo();
+			HAPI_AttributeInfo instancePrefixAttrInfo = new HAPI_AttributeInfo();
+
+			HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, instanceAttrName, ref instanceAttrInfo);
+			HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo);
+
+			if (unityInstanceAttrInfo.exists)
+			{
+				// Object instancing via existing Unity object (path from point attribute)
+
+				HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
+				if (!session.GetInstanceTransforms(geoID, HAPI_RSTOrder.HAPI_SRT, instanceTransforms, 0, numInstances))
+				{
+					return null;
 				}
 
-				// Get part IDs for the parts being instanced
-				HAPI_NodeId[] instanceNodeIDs = new HAPI_NodeId[partInfo.instancedPartCount];
-				if (!HEU_GeneralUtility.GetArray2Arg(geoID, partID, session.GetInstancedPartIds, instanceNodeIDs, 0, partInfo.instancedPartCount))
-				{
-					SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to get instance node IDs for part {0}", partName));
-					continue;
-				}
-
-				// Get instance names if set
 				string[] instancePrefixes = null;
-				HAPI_AttributeInfo instancePrefixAttrInfo = new HAPI_AttributeInfo();
-				HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR, ref instancePrefixAttrInfo);
+				HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, instancePrefixAttrName, ref instancePrefixAttrInfo);
 				if (instancePrefixAttrInfo.exists)
 				{
-					instancePrefixes = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR, ref instancePrefixAttrInfo);
+					instancePrefixes = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, instancePrefixAttrName, ref instancePrefixAttrInfo);
+				}
+
+				string[] assetPaths = null;
+
+				// Attribute owner type determines whether to use single (detail) or multiple (point) asset(s) as source
+				if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
+				{
+					HAPI_StringHandle[] instanceAttrID = new HAPI_StringHandle[unityInstanceAttrInfo.count * unityInstanceAttrInfo.tupleSize];
+					if (HEU_GeneralUtility.GetAttributeArray(geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo, instanceAttrID,
+						session.GetAttributeStringData, unityInstanceAttrInfo.count))
+					{
+						assetPaths = HEU_SessionManager.GetStringValuesFromStringIndices(instanceAttrID);
+					}
+				}
+				else if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
+				{
+					int[] scriptAttr = new int[unityInstanceAttrInfo.count];
+					if (session.GetAttributeStringData(geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo, scriptAttr, 0, unityInstanceAttrInfo.count))
+					{
+						string assetPath = HEU_SessionManager.GetString(scriptAttr[0]);
+						if (!string.IsNullOrEmpty(assetPath))
+						{
+							assetPaths = new string[1] { assetPath };
+						}
+					}
+				}
+				else
+				{
+					// Other attribute owned types are unsupported
+					SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unsupported attribute owner {0} for attribute {1}", 
+						unityInstanceAttrInfo.owner, unityInstanceAttrName));
+					return null;
+				}
+
+				if (assetPaths == null)
+				{
+					SetLog(HEU_LoadData.LoadStatus.ERROR, "Unable to get instanced asset path from attribute!");
+					return null;
 				}
 
 				HEU_LoadBufferInstancer instancerBuffer = new HEU_LoadBufferInstancer();
 				instancerBuffer.InitializeBuffer(partID, partName, partInfo.isInstanced, true);
 
 				instancerBuffer._instanceTransforms = instanceTransforms;
-				instancerBuffer._instanceNodeIDs = instanceNodeIDs;
 				instancerBuffer._instancePrefixes = instancePrefixes;
+				instancerBuffer._assetPaths = assetPaths;
 
-				instancerBuffers.Add(instancerBuffer);
+				return instancerBuffer;
+			}
+			else if (instanceAttrInfo.exists)
+			{
+				// Object instancing via internal object path is not supported
+				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Object instancing is not supported (part {0})!", partName));
+			}
+			else
+			{
+				// Standard object instancing via single Houdini object is not supported
+				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Object instancing is not supported (part {0})!", partName));
 			}
 
-			return true;
+			return null;
 		}
 
-        //	DATA ------------------------------------------------------------------------------------------------------
 
-        // Setup
-        private string _filePath;
+		//	DATA ------------------------------------------------------------------------------------------------------
+
+		// Setup
+		private string _filePath;
 		private HEU_GeoSync _geoSync;
 		private HEU_SessionBase _session;
 

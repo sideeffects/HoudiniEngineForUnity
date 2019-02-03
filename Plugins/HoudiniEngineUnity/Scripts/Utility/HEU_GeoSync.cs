@@ -474,11 +474,29 @@ namespace HoudiniEngineUnity
 			GameObject instanceRootGO = new GameObject("instance_" + instancerBuffer._name);
 			Transform instanceRootTransform = instanceRootGO.transform;
 			instanceRootTransform.parent = parent;
+			instanceRootTransform.localPosition = Vector3.zero;
+			instanceRootTransform.localRotation = Quaternion.identity;
+			instanceRootTransform.localScale = Vector3.one;
 
 			instancerBuffer._generatedOutput = new HEU_GeneratedOutput();
 			instancerBuffer._generatedOutput._outputData._gameObject = instanceRootGO;
 			_generatedOutputs.Add(instancerBuffer._generatedOutput);
 
+			if (instancerBuffer._instanceNodeIDs != null && instancerBuffer._instanceNodeIDs.Length > 0)
+			{
+				GenerateInstancesFromNodeIDs(instancerBuffer, idBuffersMap, instanceRootTransform);
+			}
+			else if (instancerBuffer._assetPaths != null && instancerBuffer._assetPaths.Length > 0)
+			{
+				GenerateInstancesFromAssetPaths(instancerBuffer, instanceRootTransform);
+			}
+
+			SetOutputVisiblity(instancerBuffer);
+		}
+
+		private void GenerateInstancesFromNodeIDs(HEU_LoadBufferInstancer instancerBuffer, Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap,
+			Transform instanceRootTransform)
+		{
 			int numInstances = instancerBuffer._instanceNodeIDs.Length;
 			for (int i = 0; i < numInstances; ++i)
 			{
@@ -509,21 +527,116 @@ namespace HoudiniEngineUnity
 				int numTransforms = instancerBuffer._instanceTransforms.Length;
 				for (int j = 0; j < numTransforms; ++j)
 				{
-					GameObject newInstanceGO = HEU_EditorUtility.InstantiateGameObject(sourceGameObject, instanceRootTransform, false, false);
+					CreateNewInstanceFromObject(sourceGameObject, (j + 1), instanceRootTransform, ref instancerBuffer._instanceTransforms[i],
+						instancerBuffer._instancePrefixes, instancerBuffer._name);
+				}
+			}
+		}
 
-					newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(instancerBuffer._name, instancerBuffer._instancePrefixes, (j + 1));
+		private void GenerateInstancesFromAssetPaths(HEU_LoadBufferInstancer instancerBuffer, Transform instanceRootTransform)
+	{
+			// For single asset, this is set when its impoted
+			GameObject singleAssetGO = null;
 
-					newInstanceGO.isStatic = sourceGameObject.isStatic;
+			// For multi assets, keep track of loaded objects so we only need to load once for each object
+			Dictionary<string, GameObject> loadedUnityObjectMap = new Dictionary<string, GameObject>();
 
-					HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref instancerBuffer._instanceTransforms[j], newInstanceGO.transform);
+			// Temporary empty gameobject in case the specified Unity asset is not found
+			GameObject tempGO = null;
 
-					// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
-					HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
-					HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
+			if (instancerBuffer._assetPaths.Length == 1)
+			{
+				// Single asset path
+				if (!string.IsNullOrEmpty(instancerBuffer._assetPaths[0]))
+				{
+					HEU_AssetDatabase.ImportAsset(instancerBuffer._assetPaths[0], HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
+					singleAssetGO = HEU_AssetDatabase.LoadAssetAtPath(instancerBuffer._assetPaths[0], typeof(GameObject)) as GameObject;
 				}
 
-				SetOutputVisiblity(instancerBuffer);
+				if (singleAssetGO == null)
+				{
+					Debug.LogErrorFormat("Asset at path {0} not found. Unable to create instances for {1}.", instancerBuffer._assetPaths[0], instancerBuffer._name);
+					return;
+				}
 			}
+
+			int numInstancesCreated = 0;
+			int numInstances = instancerBuffer._instanceTransforms.Length;
+			for (int i = 0; i < numInstances; ++i)
+			{
+				// Reset to the single asset for each instance allows which is null if using multi asset
+				// therefore forcing the instance asset to be found
+				GameObject unitySrcGO = singleAssetGO;
+
+				if (unitySrcGO == null)
+				{
+					// If not using single asset, then there must be an asset path for each instance
+
+					if (string.IsNullOrEmpty(instancerBuffer._assetPaths[i]))
+					{
+						continue;
+					}
+
+					if (!loadedUnityObjectMap.TryGetValue(instancerBuffer._assetPaths[i], out unitySrcGO))
+					{
+						// Try loading it
+						HEU_AssetDatabase.ImportAsset(instancerBuffer._assetPaths[i], HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
+						unitySrcGO = HEU_AssetDatabase.LoadAssetAtPath(instancerBuffer._assetPaths[i], typeof(GameObject)) as GameObject;
+
+						if (unitySrcGO == null)
+						{
+							Debug.LogErrorFormat("Unable to load asset at {0} for instancing!", instancerBuffer._assetPaths[i]);
+
+							// Even though the source Unity object is not found, we should create an object instance info to track it
+							if (tempGO == null)
+							{
+								tempGO = new GameObject();
+							}
+							unitySrcGO = tempGO;
+						}
+
+						// Adding to map even if not found so we don't flood the log with the same error message
+						loadedUnityObjectMap.Add(instancerBuffer._assetPaths[i], unitySrcGO);
+					}
+				}
+
+				CreateNewInstanceFromObject(unitySrcGO, (numInstancesCreated + 1), instanceRootTransform, ref instancerBuffer._instanceTransforms[i],
+					instancerBuffer._instancePrefixes, instancerBuffer._name);
+
+				numInstancesCreated++;
+			}
+
+			if (tempGO != null)
+			{
+				HEU_GeneralUtility.DestroyImmediate(tempGO, bRegisterUndo: false);
+			}
+		}
+
+		private void CreateNewInstanceFromObject(GameObject sourceObject, int instanceIndex, Transform parentTransform, 
+			ref HAPI_Transform hapiTransform, string[] instancePrefixes, string instanceName)
+		{
+			GameObject newInstanceGO = null;
+
+			if (HEU_EditorUtility.IsPrefabAsset(sourceObject))
+			{
+				newInstanceGO = HEU_EditorUtility.InstantiatePrefab(sourceObject) as GameObject;
+				newInstanceGO.transform.parent = parentTransform;
+			}
+			else
+			{
+				newInstanceGO = HEU_EditorUtility.InstantiateGameObject(sourceObject, parentTransform, false, false);
+			}
+
+			// To get the instance output name, we pass in the instance index. The actual name will be +1 from this.
+			newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(instanceName, instancePrefixes, instanceIndex);
+			newInstanceGO.isStatic = sourceObject.isStatic;
+
+			Transform instanceTransform = newInstanceGO.transform;
+			HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransform, instanceTransform);
+
+			// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
+			HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
+			HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
 		}
 
 		private void DestroyOutputs()

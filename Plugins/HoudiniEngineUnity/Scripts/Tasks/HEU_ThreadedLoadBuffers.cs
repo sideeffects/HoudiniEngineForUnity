@@ -121,8 +121,13 @@ namespace HoudiniEngineUnity
 	public class HEU_LoadBufferInstancer : HEU_LoadBufferBase
 	{
 		public HAPI_Transform[] _instanceTransforms;
-		public HAPI_NodeId[] _instanceNodeIDs;
 		public string[] _instancePrefixes;
+
+		// Instancing with parts as source
+		public HAPI_NodeId[] _instanceNodeIDs;
+
+		// Instancing with asset path as source (single or multi)
+		public string[] _assetPaths;
 	}
 
 
