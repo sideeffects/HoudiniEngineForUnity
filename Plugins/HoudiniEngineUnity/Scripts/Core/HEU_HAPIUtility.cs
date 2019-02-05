@@ -809,6 +809,35 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Apply Houdini Engine local transform to Unity's transform for instances, which means rotation and 
+		/// scale are applied in addition (or combined with) the instance's existing transform (presumably from its source).
+		/// This assumes given HAPI transform is in local space.
+		/// </summary>
+		/// <param name="hapiTransform">Houdini Engine transform to get data from</param>
+		/// <param name="unityTransform">The Unity transform to apply data to</param>
+		public static void ApplyLocalTransfromFromHoudiniToUnityForInstance(ref HAPI_Transform hapiTransform, Transform unityTransform)
+		{
+			// Houdini uses right-handed coordinate system, while Unity uses left-handed.
+			// Note: we always use global transform space when communicating with Houdini
+
+			// Invert the X for position
+			unityTransform.localPosition = new Vector3(-hapiTransform.position[0], hapiTransform.position[1], hapiTransform.position[2]);
+
+			// Invert Y and Z for rotation
+			Quaternion quaternion = new Quaternion(hapiTransform.rotationQuaternion[0], hapiTransform.rotationQuaternion[1], hapiTransform.rotationQuaternion[2], hapiTransform.rotationQuaternion[3]);
+			Vector3 euler = quaternion.eulerAngles;
+			euler.y = -euler.y;
+			euler.z = -euler.z;
+			Vector3 rotation = unityTransform.localRotation.eulerAngles;
+			unityTransform.localRotation = Quaternion.Euler(rotation + euler);
+
+			// No inversion required for scale
+			// We can't directly set global scale in Unity, but the proper workaround is to unparent, set scale, then reparent
+			Vector3 scale = new Vector3(hapiTransform.scale[0], hapiTransform.scale[1], hapiTransform.scale[2]);
+			unityTransform.localScale = Vector3.Scale(unityTransform.localScale, scale);
+		}
+
+		/// <summary>
 		/// Apply matrix to transform.
 		/// </summary>
 		/// <param name="matrix"></param>
