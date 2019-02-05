@@ -580,7 +580,7 @@ namespace HoudiniEngineUnity
 					if (!loadedUnityObjectMap.TryGetValue(instancerBuffer._assetPaths[i], out unitySrcGO))
 					{
 						// Try loading it
-						HEU_AssetDatabase.ImportAsset(instancerBuffer._assetPaths[i], HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
+						//HEU_AssetDatabase.ImportAsset(instancerBuffer._assetPaths[i], HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
 						unitySrcGO = HEU_AssetDatabase.LoadAssetAtPath(instancerBuffer._assetPaths[i], typeof(GameObject)) as GameObject;
 
 						if (unitySrcGO == null)
@@ -632,7 +632,7 @@ namespace HoudiniEngineUnity
 			newInstanceGO.isStatic = sourceObject.isStatic;
 
 			Transform instanceTransform = newInstanceGO.transform;
-			HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransform, instanceTransform);
+			HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnityForInstance(ref hapiTransform, instanceTransform);
 
 			// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
 			HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);

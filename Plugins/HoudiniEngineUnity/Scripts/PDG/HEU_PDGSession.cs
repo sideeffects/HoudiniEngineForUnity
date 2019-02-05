@@ -370,7 +370,7 @@ namespace HoudiniEngineUnity
 
 		private void NotifyTOPNodeTotalWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._workItemTally._totalWorkItems += inc;
+			topNode._workItemTally._totalWorkItems = Mathf.Max(topNode._workItemTally._totalWorkItems + inc, 0);
 			assetLink.RepaintUI();
 		}
 
@@ -388,19 +388,19 @@ namespace HoudiniEngineUnity
 
 		private void NotifyTOPNodeWaitingWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._workItemTally._waitingWorkItems += inc;
+			topNode._workItemTally._waitingWorkItems = Mathf.Max(topNode._workItemTally._waitingWorkItems + inc, 0);
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeScheduledWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._workItemTally._scheduledWorkItems += inc;
+			topNode._workItemTally._scheduledWorkItems = Mathf.Max(topNode._workItemTally._scheduledWorkItems + inc, 0);
 			assetLink.RepaintUI();
 		}
 
 		private void NotifyTOPNodeCookingWorkItem(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode, int inc)
 		{
-			topNode._workItemTally._cookingWorkItems += inc;
+			topNode._workItemTally._cookingWorkItems = Mathf.Max(topNode._workItemTally._cookingWorkItems + inc, 0);
 			assetLink.RepaintUI();
 		}
 
