@@ -1106,6 +1106,14 @@ namespace HoudiniEngineUnity
 
 		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 		public static extern HAPI_Result
+		HAPI_DeleteGroup(
+			ref HAPI_Session session,
+			HAPI_NodeId node_id, HAPI_PartId part_id,
+			HAPI_GroupType group_type,
+			string group_name);
+
+		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+		public static extern HAPI_Result
 		HAPI_SetGroupMembership(
 			ref HAPI_Session session,
 			HAPI_NodeId node_id, HAPI_PartId part_id,

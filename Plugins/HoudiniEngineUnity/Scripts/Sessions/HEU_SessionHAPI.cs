@@ -1608,6 +1608,13 @@ namespace HoudiniEngineUnity
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 
+		public override bool DeleteGroup(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_DeleteGroup(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName);
+			HandleStatusResult(result, "Deleting Group", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
 		public override bool SetGroupMembership(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName, [Out] int[] membershipArray, int start, int length)
 		{
 			HAPI_Result result = HEU_HAPIImports.HAPI_SetGroupMembership(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName, membershipArray, start, length);

@@ -980,6 +980,11 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool DeleteGroup(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName)
+		{
+			return false;
+		}
+
 		public virtual bool SetGroupMembership(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName, [Out] int[] membershipArray, int start, int length)
 		{
 			return false;
