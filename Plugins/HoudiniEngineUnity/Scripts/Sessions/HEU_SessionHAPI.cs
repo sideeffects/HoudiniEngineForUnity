@@ -2057,6 +2057,41 @@ namespace HoudiniEngineUnity
 
 		// CACHING ----------------------------------------------------------------------------------------------------
 
+		public override bool GetActiveCacheCount(out int activeCacheCount)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_GetActiveCacheCount(ref _sessionData._HAPISession, out activeCacheCount);
+			HandleStatusResult(result, "Getting Active Cache Count", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool GetActiveCacheNames([Out] HAPI_StringHandle[] cacheNamesArray, int activeCacheCount)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_GetActiveCacheNames(ref _sessionData._HAPISession, cacheNamesArray, activeCacheCount);
+			HandleStatusResult(result, "Getting Active Cache Names", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool GetCacheProperty(string cacheName, HAPI_CacheProperty cacheProperty, out int propertyValue)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_GetCacheProperty(ref _sessionData._HAPISession, cacheName, cacheProperty, out propertyValue);
+			HandleStatusResult(result, "Getting Cache Property", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool SetCacheProperty(string cacheName, HAPI_CacheProperty cacheProperty, int propertyValue)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_SetCacheProperty(ref _sessionData._HAPISession, cacheName, cacheProperty, propertyValue);
+			HandleStatusResult(result, "Setting Cache Property", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool SaveGeoToFile(HAPI_NodeId nodeID, string fileName)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_SaveGeoToFile(ref _sessionData._HAPISession, nodeID, fileName);
+			HandleStatusResult(result, "Saving Geo File", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
 		public override bool LoadGeoFromFile(HAPI_NodeId nodeID, string file_name)
 		{
 			HAPI_Result result = HEU_HAPIImports.HAPI_LoadGeoFromFile(ref _sessionData._HAPISession, nodeID, file_name);
