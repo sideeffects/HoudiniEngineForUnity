@@ -637,6 +637,8 @@ namespace HoudiniEngineUnity
 			// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
 			HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
 			HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
+			HEU_GeneralUtility.SetGameObjectColliderState(newInstanceGO, true);
+			HEU_GeneralUtility.SetGameObjectChildrenColliderState(newInstanceGO, true);
 		}
 
 		private void DestroyOutputs()
@@ -661,11 +663,13 @@ namespace HoudiniEngineUnity
 				foreach (HEU_GeneratedOutputData childOutput in buffer._generatedOutput._childOutputs)
 				{
 					HEU_GeneralUtility.SetGameObjectRenderVisiblity(childOutput._gameObject, bVisibility);
+					HEU_GeneralUtility.SetGameObjectColliderState(childOutput._gameObject, bVisibility);
 				}
 			}
 			else
 			{
 				HEU_GeneralUtility.SetGameObjectRenderVisiblity(buffer._generatedOutput._outputData._gameObject, bVisibility);
+				HEU_GeneralUtility.SetGameObjectColliderState(buffer._generatedOutput._outputData._gameObject, bVisibility);
 			}
 		}
 
