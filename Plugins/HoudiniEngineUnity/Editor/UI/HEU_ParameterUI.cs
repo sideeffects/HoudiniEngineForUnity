@@ -772,26 +772,13 @@ namespace HoudiniEngineUnity
 						string userFilePath = null;
 						if (parameterData._parmInfo.permissions == HAPI_Permissions.HAPI_PERMISSIONS_WRITE_ONLY)
 						{
-							if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
-							{
-								userFilePath = EditorUtility.SaveFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
-							}
-							else
-							{
-								userFilePath = EditorUtility.SaveFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, "", filePattern);
-							}
+							userFilePath = EditorUtility.SaveFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, "", filePattern);
 						}
 						else
 						{
-							if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
-							{
-								userFilePath = EditorUtility.OpenFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
-							}
-							else
-							{
-								userFilePath = EditorUtility.OpenFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, filePattern);
-							}
+							userFilePath = EditorUtility.OpenFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, filePattern);
 						}
+						
 						if (!string.IsNullOrEmpty(userFilePath))
 						{
 							stringsProperty.GetArrayElementAtIndex(0).stringValue = userFilePath;
