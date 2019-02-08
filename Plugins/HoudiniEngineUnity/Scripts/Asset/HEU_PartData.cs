@@ -582,6 +582,8 @@ namespace HoudiniEngineUnity
 					// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
 					HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
 					HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
+					HEU_GeneralUtility.SetGameObjectColliderState(newInstanceGO, true);
+					HEU_GeneralUtility.SetGameObjectChildrenColliderState(newInstanceGO, true);
 				}
 			}
 
@@ -974,6 +976,8 @@ namespace HoudiniEngineUnity
 			// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
 			HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
 			HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
+			HEU_GeneralUtility.SetGameObjectColliderState(newInstanceGO, true);
+			HEU_GeneralUtility.SetGameObjectChildrenColliderState(newInstanceGO, true);
 
 			// Add to object instance info map. Find existing object instance info, or create it.
 			HEU_ObjectInstanceInfo instanceInfo = null;
