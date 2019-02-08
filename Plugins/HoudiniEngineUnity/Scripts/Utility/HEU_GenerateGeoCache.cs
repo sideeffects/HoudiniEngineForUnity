@@ -106,6 +106,9 @@ namespace HoudiniEngineUnity
 
 		public float _normalCosineThreshold;
 
+		public bool _hasLODGroups;
+		public float[] _LODTransitionValues;
+
 		// Collider
 		public enum ColliderType
 		{
@@ -409,6 +412,7 @@ namespace HoudiniEngineUnity
 			_allCollisionFaceIndices = new int[_partInfo.faceCount];
 
 			_hasGroupGeometry = false;
+			_hasLODGroups = false;
 
 			if (_groups != null)
 			{
@@ -426,6 +430,7 @@ namespace HoudiniEngineUnity
 					bool bIsCollidable = groupName.Contains(HEU_PluginSettings.CollisionGroupName);
 					bool bIsRenderCollidable = groupName.Contains(HEU_PluginSettings.RenderedCollisionGroupName);
 					bool bIsLODGroup = bUseLODGroups && groupName.StartsWith(HEU_Defines.HEU_DEFAULT_LOD_NAME);
+					_hasLODGroups |= bIsLODGroup;
 
 					if (bIsCollidable || bIsRenderCollidable || bIsLODGroup)
 					{
@@ -532,6 +537,12 @@ namespace HoudiniEngineUnity
 				_normalCosineThreshold = 0f;
 			}
 
+			if (_hasLODGroups)
+			{
+				// Get the LOD transition attribute values
+				ParseLODTransitionAttribute(session, GeoID, PartID, ref _LODTransitionValues);
+			}
+
 			return true;
 		}
 
@@ -540,7 +551,7 @@ namespace HoudiniEngineUnity
 		/// Expects it to be detail attribute with float type.
 		/// </summary>
 		/// <param name="LODTransitionValues">Output float array of LOD transition values</param>
-		public static void ParseLODTransitionAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, out float[] LODTransitionValues)
+		public static void ParseLODTransitionAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, ref float[] LODTransitionValues)
 		{
 			LODTransitionValues = null;
 
@@ -709,34 +720,30 @@ namespace HoudiniEngineUnity
 			// Sort the LOD groups alphabetically by group names
 			GeoGroupMeshes.Sort();
 
-			// Get the LOD transition attribute values
-			float[] LODTransitionValues = null;
-			ParseLODTransitionAttribute(session, geoCache.GeoID, geoCache.PartID, out LODTransitionValues);
-
 			// Use default transition if user hasn't specified them. Sort by decreasing transition value (1 to 0)
-			if(LODTransitionValues == null || LODTransitionValues.Length == 0)
+			if(geoCache._LODTransitionValues == null || geoCache._LODTransitionValues.Length == 0)
 			{
-				LODTransitionValues = new float[numLODs];
+				geoCache._LODTransitionValues = new float[numLODs];
 				for(int i = 0; i < numLODs; ++i)
 				{
-					LODTransitionValues[i] = (float)(numLODs - (i + 1)) / (float)(numLODs + 1);
+					geoCache._LODTransitionValues[i] = (float)(numLODs - (i + 1)) / (float)(numLODs + 1);
 				}
 			}
 			else
 			{
-				if(LODTransitionValues.Length < numLODs)
+				if(geoCache._LODTransitionValues.Length < numLODs)
 				{
-					Debug.LogWarningFormat("Expected {0} values for LOD transition {1} attribute. Got {2} instead.", numLODs, HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR, LODTransitionValues.Length);
-					System.Array.Resize(ref LODTransitionValues, numLODs);
+					Debug.LogWarningFormat("Expected {0} values for LOD transition {1} attribute. Got {2} instead.", numLODs, HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR, geoCache._LODTransitionValues.Length);
+					System.Array.Resize(ref geoCache._LODTransitionValues, numLODs);
 				}
 
 				// Normalize to 0 to 1 if above 1. Presume that the user was using 0 to 100 range.
 				for(int i = 0; i < numLODs; ++i)
 				{
-					LODTransitionValues[i] = LODTransitionValues[i] > 1f ? LODTransitionValues[i] / 100f : LODTransitionValues[i];
+					geoCache._LODTransitionValues[i] = geoCache._LODTransitionValues[i] > 1f ? geoCache._LODTransitionValues[i] / 100f : geoCache._LODTransitionValues[i];
 				}
 
-				System.Array.Sort(LODTransitionValues, (a, b) => b.CompareTo(a));
+				System.Array.Sort(geoCache._LODTransitionValues, (a, b) => b.CompareTo(a));
 			}
 
 			List<HEU_GeneratedOutputData> newGeneratedChildOutputs = new List<HEU_GeneratedOutputData>();
@@ -798,7 +805,7 @@ namespace HoudiniEngineUnity
 					MeshRenderer meshRenderer = HEU_GeneralUtility.GetOrCreateComponent<MeshRenderer>(childOutput._gameObject);
 					meshRenderer.sharedMaterials = finalMaterials;
 
-					float screenThreshold = LODTransitionValues[l];
+					float screenThreshold = geoCache._LODTransitionValues[l];
 					//Debug.Log("Threshold: " + screenThreshold + " for " + GeoGroupMeshes[l]._groupName);
 					lods[l] = new LOD(screenThreshold, new MeshRenderer[] { meshRenderer });
 				}

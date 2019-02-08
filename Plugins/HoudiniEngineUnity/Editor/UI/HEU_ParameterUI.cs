@@ -434,7 +434,7 @@ namespace HoudiniEngineUnity
 				paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_intValues");
 			}
 			else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO
-				|| parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE)
+				|| parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE)
 			{
 				paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_stringValues");
 			}
@@ -734,7 +734,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 			else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO
-			         || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE)
+				|| parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE)
 			{
 				GUIStyle boxStyle = HEU_EditorUI.GetGUIStyle("Groupbox", 4, 0);
 				using (var vs = new EditorGUILayout.VerticalScope(boxStyle))
@@ -772,16 +772,29 @@ namespace HoudiniEngineUnity
 						string userFilePath = null;
 						if (parameterData._parmInfo.permissions == HAPI_Permissions.HAPI_PERMISSIONS_WRITE_ONLY)
 						{
-							userFilePath = EditorUtility.SaveFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, "", filePattern);
-							
+							if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
+							{
+								userFilePath = EditorUtility.SaveFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+							}
+							else
+							{
+								userFilePath = EditorUtility.SaveFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, "", filePattern);
+							}
 						}
 						else
 						{
-							userFilePath = EditorUtility.OpenFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, filePattern);
+							if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
+							{
+								userFilePath = EditorUtility.OpenFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+							}
+							else
+							{
+								userFilePath = EditorUtility.OpenFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, filePattern);
+							}
 						}
 						if (!string.IsNullOrEmpty(userFilePath))
 						{
-							stringsProperty.GetArrayElementAtIndex(0).stringValue = HEU_Platform.GetValidRelativePath(userFilePath);
+							stringsProperty.GetArrayElementAtIndex(0).stringValue = userFilePath;
 						}
 					}
 

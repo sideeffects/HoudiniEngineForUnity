@@ -573,7 +573,7 @@ namespace HoudiniEngineUnity
 				{
 					GameObject newInstanceGO = HEU_EditorUtility.InstantiateGameObject(partData.OutputGameObject, partTransform, false, false);
 
-					newInstanceGO.name = GetInstanceOutputName(PartName, instancePrefixes, (j + 1));
+					newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(PartName, instancePrefixes, (j + 1));
 
 					newInstanceGO.isStatic = OutputGameObject.isStatic;
 
@@ -582,6 +582,8 @@ namespace HoudiniEngineUnity
 					// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
 					HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
 					HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
+					HEU_GeneralUtility.SetGameObjectColliderState(newInstanceGO, true);
+					HEU_GeneralUtility.SetGameObjectChildrenColliderState(newInstanceGO, true);
 				}
 			}
 
@@ -959,7 +961,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// To get the instance output name, we pass in the instance index. The actual name will be +1 from this.
-			newInstanceGO.name = GetInstanceOutputName(PartName, instancePrefixes, instanceIndex);
+			newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(PartName, instancePrefixes, instanceIndex);
 
 			newInstanceGO.isStatic = OutputGameObject.isStatic;
 
@@ -974,6 +976,8 @@ namespace HoudiniEngineUnity
 			// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
 			HEU_GeneralUtility.SetGameObjectRenderVisiblity(newInstanceGO, true);
 			HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
+			HEU_GeneralUtility.SetGameObjectColliderState(newInstanceGO, true);
+			HEU_GeneralUtility.SetGameObjectChildrenColliderState(newInstanceGO, true);
 
 			// Add to object instance info map. Find existing object instance info, or create it.
 			HEU_ObjectInstanceInfo instanceInfo = null;
@@ -992,33 +996,6 @@ namespace HoudiniEngineUnity
 			}
 
 			instanceInfo._instances.Add(newInstanceGO);
-		}
-
-		/// <summary>
-		/// Returns the output instance's name for given instance index. 
-		/// The instance name convention is: PartName_Instance1
-		/// User could override the prefix (PartName) with their own via given instancePrefixes array.
-		/// </summary>
-		/// <param name="partName"></param>
-		/// <param name="userPrefix"></param>
-		/// <param name="index"></param>
-		/// <returns></returns>
-		public static string GetInstanceOutputName(string partName, string[] userPrefix, int index)
-		{
-			string prefix = null;
-			if(userPrefix == null || userPrefix.Length == 0)
-			{
-				prefix = partName;
-			}
-			else if(userPrefix.Length == 1)
-			{
-				prefix = userPrefix[0];
-			}
-			else if(index >= 0 && (index <= userPrefix.Length))
-			{
-				prefix = userPrefix[index - 1];
-			}
-			return prefix + HEU_Defines.HEU_INSTANCE + index;
 		}
 
 		public HEU_Curve GetCurve(bool bEditableOnly)
