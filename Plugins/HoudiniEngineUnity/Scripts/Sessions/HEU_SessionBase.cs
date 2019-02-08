@@ -116,7 +116,7 @@ namespace HoudiniEngineUnity
 		/// <param name="asset">Asset to register</param>
 		public virtual void RegisterAsset(HEU_HoudiniAsset asset)
 		{
-			
+
 		}
 
 		/// <summary>
@@ -126,7 +126,7 @@ namespace HoudiniEngineUnity
 		/// <param name="id"></param>
 		public virtual void UnregisterAsset(HAPI_NodeId id)
 		{
-			
+
 		}
 
 		/// <summary>
@@ -980,6 +980,11 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool DeleteGroup(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName)
+		{
+			return false;
+		}
+
 		public virtual bool SetGroupMembership(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName, [Out] int[] membershipArray, int start, int length)
 		{
 			return false;
@@ -1299,6 +1304,33 @@ namespace HoudiniEngineUnity
 		}
 
 		// CACHING ----------------------------------------------------------------------------------------------------
+
+		public virtual bool GetActiveCacheCount(out int activeCacheCount)
+		{
+			activeCacheCount = 0;
+			return false;
+		}
+
+		public virtual bool GetActiveCacheNames([Out] HAPI_StringHandle[] cacheNamesArray, int activeCacheCount)
+		{
+			return false;
+		}
+
+		public virtual bool GetCacheProperty(string cacheName, HAPI_CacheProperty cacheProperty, out int propertyValue)
+		{
+			propertyValue = 0;
+			return false;
+		}
+
+		public virtual bool SetCacheProperty(string cacheName, HAPI_CacheProperty cacheProperty, int propertyValue)
+		{
+			return false;
+		}
+
+		public virtual bool SaveGeoToFile(HAPI_NodeId nodeID, string fileName)
+		{
+			return false;
+		}
 
 		public virtual bool LoadGeoFromFile(HAPI_NodeId nodeID, string file_name)
 		{

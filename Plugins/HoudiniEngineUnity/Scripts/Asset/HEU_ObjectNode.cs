@@ -321,6 +321,7 @@ namespace HoudiniEngineUnity
 
 					// Visiblity might have changed, so update that
 					geoNode.CalculateVisiblity(IsVisible());
+					geoNode.CalculateColliderState();
 				}
 			}
 
@@ -407,6 +408,7 @@ namespace HoudiniEngineUnity
 			foreach (HEU_GeoNode geoNode in _geoNodes)
 			{
 				geoNode.CalculateVisiblity(bIsVisible);
+				geoNode.CalculateColliderState();
 
 				geoNode.SetAttributeModifiersOnPartOutputs(session);
 			}
