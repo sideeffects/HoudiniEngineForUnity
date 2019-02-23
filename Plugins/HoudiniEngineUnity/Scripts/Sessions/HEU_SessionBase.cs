@@ -73,10 +73,10 @@ namespace HoudiniEngineUnity
 		public string GetSessionErrorMsg() { return _sessionErrorMsg; }
 
 		// Override for logging session error
-		public bool LogErrorOverride { get; set; } = true;
+		public bool LogErrorOverride { get; set; }
 
 		// Override for throwing session errors
-		public bool ThrowErrorOverride { get; set; } = true;
+		public bool ThrowErrorOverride { get; set; }
 
 		// ASSET REGISTRATION -----------------------------------------------------------------------------------------------
 
@@ -147,6 +147,13 @@ namespace HoudiniEngineUnity
 		}
 
 		// SESSION ----------------------------------------------------------------------------------------------------
+
+		public HEU_SessionBase()
+		{
+			// Have to initialize here as C# 6+ supports property initializer
+			LogErrorOverride = true;
+			ThrowErrorOverride = true;
+		}
 
 		/// <summary>
 		/// Set the session error message
