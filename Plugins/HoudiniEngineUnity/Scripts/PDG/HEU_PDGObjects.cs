@@ -36,6 +36,12 @@ namespace HoudiniEngineUnity
 	using HAPI_NodeId = System.Int32;
 	using HAPI_SessionId = System.Int64;
 
+	public class TOPNodeTags
+	{
+		public bool _show = false;
+		public bool _autoload = false;
+	}
+
 
 	[System.Serializable]
 	public class HEU_TOPNetworkData
@@ -51,6 +57,8 @@ namespace HoudiniEngineUnity
 		public int _selectedTOPIndex;
 
 		public string _parentName;
+
+		public TOPNodeTags _tags = new TOPNodeTags();
 	}
 
 	[System.Serializable]
@@ -62,9 +70,12 @@ namespace HoudiniEngineUnity
 
 		public string _parentName;
 
-		public bool _autoLoad;
-
+		public GameObject _workResultParentGO;
 		public List<HEU_TOPWorkResult> _workResults = new List<HEU_TOPWorkResult>();
+
+		public TOPNodeTags _tags = new TOPNodeTags();
+
+		public bool _showResults = true;
 
 		public enum PDGState
 		{
