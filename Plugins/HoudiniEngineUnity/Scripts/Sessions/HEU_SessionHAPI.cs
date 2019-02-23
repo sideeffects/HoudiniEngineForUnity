@@ -642,9 +642,9 @@ namespace HoudiniEngineUnity
 
 				string statusMessage = GetStatusString(HAPI_StatusType.HAPI_STATUS_CALL_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);
 				string errorMsg = string.Format("{0} : {1}\nIf session is invalid, try restarting Unity.", prependMsg, statusMessage);
-				SetSessionErrorMsg(errorMsg, bLogError); ;
+				SetSessionErrorMsg(errorMsg, LogErrorOverride && bLogError); ;
 
-				if (bThrowError)
+				if (ThrowErrorOverride && bThrowError)
 				{
 					throw new HEU_HoudiniEngineError(errorMsg);
 				}
