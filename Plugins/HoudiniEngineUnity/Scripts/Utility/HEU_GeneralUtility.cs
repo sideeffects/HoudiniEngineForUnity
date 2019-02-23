@@ -1449,6 +1449,17 @@ namespace HoudiniEngineUnity
 			}
 			return srcStr.Substring(0, index) + replaceStr + srcStr.Substring(index + searchStr.Length);
 		}
+
+		/// <summary>
+		/// Sets given childTransform parented to the given parentTransform, with clean (identity) transform matrix.
+		/// </summary>
+		public static void SetParentWithCleanTransform(Transform parentTransform, Transform childTransform)
+		{
+			childTransform.parent = parentTransform;
+			childTransform.localPosition = Vector3.zero;
+			childTransform.localRotation = Quaternion.identity;
+			childTransform.localScale = Vector3.one;
+		}
 	}
 
 
