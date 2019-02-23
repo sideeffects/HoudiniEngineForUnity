@@ -779,7 +779,7 @@ namespace HoudiniEngineUnity
 				// Object instancing via existing Unity object (path from point attribute)
 
 				HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-				if (!session.GetInstanceTransforms(geoID, HAPI_RSTOrder.HAPI_SRT, instanceTransforms, 0, numInstances))
+				if (!HEU_GeneralUtility.GetArray2Arg(geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
 				{
 					return null;
 				}
@@ -794,26 +794,10 @@ namespace HoudiniEngineUnity
 				string[] assetPaths = null;
 
 				// Attribute owner type determines whether to use single (detail) or multiple (point) asset(s) as source
-				if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
+				if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT || unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
 				{
-					HAPI_StringHandle[] instanceAttrID = new HAPI_StringHandle[unityInstanceAttrInfo.count * unityInstanceAttrInfo.tupleSize];
-					if (HEU_GeneralUtility.GetAttributeArray(geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo, instanceAttrID,
-						session.GetAttributeStringData, unityInstanceAttrInfo.count))
-					{
-						assetPaths = HEU_SessionManager.GetStringValuesFromStringIndices(instanceAttrID);
-					}
-				}
-				else if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
-				{
-					int[] scriptAttr = new int[unityInstanceAttrInfo.count];
-					if (session.GetAttributeStringData(geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo, scriptAttr, 0, unityInstanceAttrInfo.count))
-					{
-						string assetPath = HEU_SessionManager.GetString(scriptAttr[0]);
-						if (!string.IsNullOrEmpty(assetPath))
-						{
-							assetPaths = new string[1] { assetPath };
-						}
-					}
+
+					assetPaths = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo);
 				}
 				else
 				{

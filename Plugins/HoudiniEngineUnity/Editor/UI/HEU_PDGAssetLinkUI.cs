@@ -102,6 +102,9 @@ namespace HoudiniEngineUnity
 					}
 				}
 
+				_assetLink._autoCook = EditorGUILayout.Toggle(_autocookContent, _assetLink._autoCook);
+				_assetLink._useHEngineData = EditorGUILayout.Toggle(_useHEngineDataContent, _assetLink._useHEngineData);
+
 				EditorGUILayout.Space();
 
 				using (new EditorGUILayout.VerticalScope(HEU_EditorUI.GetSectionStyle()))
@@ -166,6 +169,21 @@ namespace HoudiniEngineUnity
 						_assetLink.SelectTOPNetwork(newSelectedIndex);
 					}
 				}
+
+				EditorGUILayout.Space();
+
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					if (GUILayout.Button(_buttonDirtyAllContent))
+					{
+						_assetLink.DirtyAll();
+					}
+
+					if (GUILayout.Button(_buttonCookAllContent))
+					{
+						_assetLink.CookOutput();
+					}
+				}
 			}
 			else
 			{
@@ -181,7 +199,7 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
-			using(new EditorGUILayout.VerticalScope())
+			using(new EditorGUILayout.VerticalScope(_backgroundStyle))
 			{
 				//HEU_EditorUI.DrawHeadingLabel("Internal TOP Nodes");
 
@@ -212,11 +230,14 @@ namespace HoudiniEngineUnity
 				HEU_TOPNodeData topNode = _assetLink.GetSelectedTOPNode();
 				if (topNode != null)
 				{
-					bool autoLoad = topNode._autoLoad;
-					autoLoad = EditorGUILayout.Toggle("AutoLoad Results", autoLoad);
-					if (autoLoad != topNode._autoLoad)
+					topNode._tags._autoload = EditorGUILayout.Toggle(_autoloadContent, topNode._tags._autoload);
+
+					bool showResults = topNode._showResults;
+					showResults = EditorGUILayout.Toggle(_showHideResultsContent, showResults);
+					if (showResults != topNode._showResults)
 					{
-						topNode._autoLoad = autoLoad;
+						topNode._showResults = showResults;
+						_assetLink.UpdateTOPNodeResultsVisibility(topNode);
 					}
 
 					EditorGUILayout.Space();
@@ -266,9 +287,9 @@ namespace HoudiniEngineUnity
 					pdgState = "PDG is COOKING";
 					stateColor = Color.yellow;
 
-					if (_assetLink != null)
+					//if (_assetLink != null)
 					{
-						pdgState = string.Format("{0} ({1})", pdgState, _assetLink._workItemTally.ProgressRatio());
+						//pdgState = string.Format("{0} ({1})", pdgState, _assetLink._workItemTally.ProgressRatio());
 					}
 				}
 				else if (pdgSession._pdgState == HAPI_PDG_State.HAPI_PDG_STATE_READY)
@@ -287,7 +308,7 @@ namespace HoudiniEngineUnity
 		private void DrawWorkItemTally(HEU_WorkItemTally tally)
 		{
 			float totalWidth = EditorGUIUtility.currentViewWidth;
-			float cellWidth = totalWidth / 6f;
+			float cellWidth = totalWidth / 5f;
 
 			float titleCellHeight = 26;
 			float cellHeight = 24;
@@ -296,8 +317,8 @@ namespace HoudiniEngineUnity
 			{
 				GUILayout.FlexibleSpace();
 
-				_boxStyleTitle.normal.textColor = Color.black;
-				DrawGridBoxTitle("TOTAL", cellWidth, titleCellHeight);
+				//_boxStyleTitle.normal.textColor = Color.black;
+				//DrawGridBoxTitle("TOTAL", cellWidth, titleCellHeight);
 
 				_boxStyleTitle.normal.textColor = (tally._waitingWorkItems > 0) ? Color.cyan : Color.black;
 				DrawGridBoxTitle("WAITING", cellWidth, titleCellHeight);
@@ -321,7 +342,7 @@ namespace HoudiniEngineUnity
 			{
 				GUILayout.FlexibleSpace();
 
-				DrawGridBoxValue(string.Format("{0}", tally._totalWorkItems), cellWidth, cellHeight);
+				//DrawGridBoxValue(string.Format("{0}", tally._totalWorkItems), cellWidth, cellHeight);
 				DrawGridBoxValue(string.Format("{0}", tally._waitingWorkItems), cellWidth, cellHeight);
 				//DrawGridBoxValue(string.Format("{0}", tally._scheduledWorkItems), cellWidth, cellHeight);
 				DrawGridBoxValue(string.Format("{0}", (tally._scheduledWorkItems + tally._cookingWorkItems)), cellWidth, cellHeight);
@@ -346,11 +367,13 @@ namespace HoudiniEngineUnity
 		{
 			_cookedColor = new Color(0.1f, 0.9f, 0.0f, 1f);
 
-			_assetGOLabel = new GUIContent("TOP Asset To Link", "The HDA containing TOP networks to link with.");
+			_assetGOLabel = new GUIContent("Linked Asset", "The HDA containing TOP networks to link with.");
 			_assetStatusLabel = new GUIContent("Asset Work Items Status:");
 
 			_resetContent = new GUIContent("Reset", "Reset the state and generated items. Updates from linked HDA.");
 			_refreshContent = new GUIContent("Refresh", "Refresh the state and UI.");
+			_autocookContent = new GUIContent("Autocook", "Automatically cook the output node when the linked asset is cooked.");
+			_useHEngineDataContent = new GUIContent("Use HEngine Data", "Whether to use henginedata parm values for displaying and loading node resuls.");
 
 			_topNetworkChooseLabel = new GUIContent("TOP Network");
 			_topNetworkNoneLabel = new GUIContent("TOP Network: None");
@@ -359,8 +382,14 @@ namespace HoudiniEngineUnity
 			_topNodeNoneLabel = new GUIContent("TOP Node: None");
 			_topNodeStatusLabel = new GUIContent("TOP Node Work Items Status:");
 
-			_buttonDirtyContent = new GUIContent("Dirty Node", "Removes all work items.");
-			_buttonCookContent = new GUIContent("Cook Node", "Generates and cooks all work items.");
+			_buttonDirtyContent = new GUIContent("Dirty Node", "Remove current TOP node's work items.");
+			_buttonCookContent = new GUIContent("Cook Node", "Generates and cooks current TOP node's work items.");
+
+			_autoloadContent = new GUIContent("Autoload Results", "Automatically load into Unity the generated geometry from work item resultsl.");
+			_showHideResultsContent = new GUIContent("Show Results", "Show or Hide Results.");
+
+			_buttonDirtyAllContent = new GUIContent("Dirty All", "Removes all work items.");
+			_buttonCookAllContent = new GUIContent("Cook Output", "Generates and cooks all work items.");
 
 			_backgroundStyle = new GUIStyle(GUI.skin.box);
 			RectOffset br = _backgroundStyle.margin;
@@ -423,6 +452,8 @@ namespace HoudiniEngineUnity
 
 		private GUIContent _resetContent;
 		private GUIContent _refreshContent;
+		private GUIContent _autocookContent;
+		private GUIContent _useHEngineDataContent;
 
 		private GUIContent _topNetworkChooseLabel;
 		private GUIContent _topNetworkNoneLabel;
@@ -433,6 +464,12 @@ namespace HoudiniEngineUnity
 
 		private GUIContent _buttonDirtyContent;
 		private GUIContent _buttonCookContent;
+
+		private GUIContent _autoloadContent;
+		private GUIContent _showHideResultsContent;
+
+		private GUIContent _buttonDirtyAllContent;
+		private GUIContent _buttonCookAllContent;
 
 		private GUIStyle _boxStyleTitle;
 		private GUIStyle _boxStyleValue;

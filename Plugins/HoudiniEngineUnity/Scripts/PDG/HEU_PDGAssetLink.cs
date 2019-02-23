@@ -117,10 +117,20 @@ namespace HoudiniEngineUnity
 
 		private void NotifyAssetCooked(HEU_HoudiniAsset asset, bool bSuccess, List<GameObject> generatedOutputs)
 		{
-			//Debug.LogFormat("NotifyAssetCooked: {0} - {1}", asset.AssetName, bSuccess);
+			//Debug.LogFormat("NotifyAssetCooked: {0} - {1} - {2}", asset.AssetName, bSuccess, _linkState);
 			if (bSuccess)
 			{
-				PopulateFromHDA();
+				if (_linkState == LinkState.LINKED)
+				{
+					if (_autoCook)
+					{
+						CookOutput();
+					}
+				}
+				else
+				{
+					PopulateFromHDA();
+				}
 			}
 			else
 			{
@@ -130,7 +140,7 @@ namespace HoudiniEngineUnity
 
 		public void Reset()
 		{
-			ClearTOPData();
+			ClearAllTOPData();
 		}
 
 		public void Refresh()
@@ -252,6 +262,21 @@ namespace HoudiniEngineUnity
 					continue;
 				}
 
+				TOPNodeTags tags = new TOPNodeTags();
+				if (_useHEngineData)
+				{
+					ParseHEngineData(session, nodeIDs[t], ref topNodeInfo, ref tags);
+
+					if (!tags._show)
+					{
+						continue;
+					}
+				}
+				else
+				{
+					tags._show = true;
+				}
+
 				HEU_TOPNetworkData topNetworkData = GetTOPNetworkByName(nodeName, _topNetworks);
 				if (topNetworkData == null)
 				{
@@ -269,13 +294,13 @@ namespace HoudiniEngineUnity
 				topNetworkData._nodeID = nodeIDs[t];
 				topNetworkData._nodeName = nodeName;
 				topNetworkData._parentName = _assetName;
+				topNetworkData._tags = tags;
 
-				PopulateTOPNodes(session, topNetworkData._nodeID, topNetworkData, topNodeIDs);
-				
+				PopulateTOPNodes(session, topNetworkData._nodeID, topNetworkData, topNodeIDs, _useHEngineData);
 			}
 
 			// Clear old TOP networks and nodes
-			ClearTOPData();
+			ClearAllTOPData();
 			_topNetworks = newNetworks;
 
 			// Update latest TOP network names
@@ -288,7 +313,7 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 
-		public static bool PopulateTOPNodes(HEU_SessionBase session, HAPI_NodeId parentNodeID, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs)
+		public static bool PopulateTOPNodes(HEU_SessionBase session, HAPI_NodeId parentNodeID, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs, bool useHEngineData)
 		{
 			// Holds list of found TOP nodes
 			List<HEU_TOPNodeData> newNodes = new List<HEU_TOPNodeData>();
@@ -307,6 +332,21 @@ namespace HoudiniEngineUnity
 				string nodeName = HEU_SessionManager.GetString(childNodeInfo.nameSH, session);
 				//Debug.LogFormat("TOP Node: name={0}, type={1}", nodeName, childNodeInfo.type);
 
+				TOPNodeTags tags = new TOPNodeTags();
+				if (useHEngineData)
+				{
+					ParseHEngineData(session, topNodeID, ref childNodeInfo, ref tags);
+
+					if (!tags._show)
+					{
+						continue;
+					}
+				}
+				else
+				{
+					tags._show = true;
+				}
+
 				HEU_TOPNodeData topNodeData = GetTOPNodeByName(nodeName, topNetwork._topNodes);
 				if (topNodeData == null)
 				{
@@ -323,12 +363,13 @@ namespace HoudiniEngineUnity
 				topNodeData._nodeID = topNodeID;
 				topNodeData._nodeName = nodeName;
 				topNodeData._parentName = topNetwork._parentName + "_" + topNetwork._nodeName;
+				topNodeData._tags = tags;
 			}
 
 			// Clear old unused TOP nodes
 			for (int i = 0; i < topNetwork._topNodes.Count; ++i)
 			{
-				ClearAllWorkItemResults(topNetwork._topNodes[i]);
+				ClearTOPNodeWorkItemResults(topNetwork._topNodes[i]);
 			}
 			topNetwork._topNodes = newNodes;
 
@@ -413,7 +454,7 @@ namespace HoudiniEngineUnity
 			return null;
 		}
 
-		private void ClearTOPData()
+		private void ClearAllTOPData()
 		{
 			// Clears all TOP data
 
@@ -421,7 +462,7 @@ namespace HoudiniEngineUnity
 			{
 				foreach(HEU_TOPNodeData node in network._topNodes)
 				{
-					ClearAllWorkItemResults(node);
+					ClearTOPNodeWorkItemResults(node);
 				}
 			}
 
@@ -429,7 +470,15 @@ namespace HoudiniEngineUnity
 			_topNetworkNames = new string[0];
 		}
 
-		private static void ClearAllWorkItemResults(HEU_TOPNodeData topNode)
+		private static void ClearTOPNetworkWorkItemResults(HEU_TOPNetworkData topNetwork)
+		{
+			foreach (HEU_TOPNodeData node in topNetwork._topNodes)
+			{
+				ClearTOPNodeWorkItemResults(node);
+			}
+		}
+
+		private static void ClearTOPNodeWorkItemResults(HEU_TOPNodeData topNode)
 		{
 			int numResults = topNode._workResults.Count;
 			for (int i = 0; i < numResults; ++i)
@@ -437,6 +486,11 @@ namespace HoudiniEngineUnity
 				DestroyWorkItemResultData(topNode, topNode._workResults[i]);
 			}
 			topNode._workResults.Clear();
+
+			if (topNode._workResultParentGO != null)
+			{
+				HEU_GeneralUtility.DestroyImmediate(topNode._workResultParentGO);
+			}
 		}
 
 		private static void ClearWorkItemResult(HEU_TOPNodeData topNode, int workItemIndex)
@@ -447,6 +501,14 @@ namespace HoudiniEngineUnity
 				DestroyWorkItemResultData(topNode, result);
 
 				topNode._workResults.Remove(result);
+			}
+		}
+
+		public void UpdateTOPNodeResultsVisibility(HEU_TOPNodeData topNode)
+		{
+			if (topNode._workResultParentGO != null)
+			{
+				topNode._workResultParentGO.SetActive(topNode._showResults);
 			}
 		}
 
@@ -499,7 +561,7 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
-			ClearAllWorkItemResults(topNode);
+			ClearTOPNodeWorkItemResults(topNode);
 		}
 
 		public void CookTOPNode(HEU_TOPNodeData topNode)
@@ -513,6 +575,48 @@ namespace HoudiniEngineUnity
 			if (!session.CookPDG(topNode._nodeID, 0, 0))
 			{
 				Debug.LogErrorFormat("Cook node failed!");
+			}
+		}
+
+		public void DirtyAll()
+		{
+			HEU_SessionBase session = GetHAPISession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+			if (topNetwork != null)
+			{
+				if (!session.DirtyPDGNode(topNetwork._nodeID, true))
+				{
+					Debug.LogErrorFormat("Dirty node failed!");
+					return;
+				}
+
+				ClearTOPNetworkWorkItemResults(topNetwork);
+			}
+		}
+
+		public void CookOutput()
+		{
+			HEU_SessionBase session = GetHAPISession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+			if (topNetwork != null)
+			{
+				//Debug.Log("Cooking output!");
+
+				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+				if (pdgSession != null)
+				{
+					pdgSession.CookTOPNetworkOutputNode(topNetwork);
+				}
 			}
 		}
 
@@ -548,6 +652,11 @@ namespace HoudiniEngineUnity
 			int numResults = resultInfos.Length;
 			for (int i = 0; i < numResults; ++i)
 			{
+				if (resultInfos[i].resultTagSH <= 0 || resultInfos[i].resultSH <= 0)
+				{
+					continue;
+				}
+
 				string tag = HEU_SessionManager.GetString(resultInfos[i].resultTagSH, session);
 				string path = HEU_SessionManager.GetString(resultInfos[i].resultSH, session);
 
@@ -563,12 +672,16 @@ namespace HoudiniEngineUnity
 					workItemName,
 					workItemInfo.index);
 
+				// Get or create parent GO
+				if (topNode._workResultParentGO == null)
+				{
+					topNode._workResultParentGO = new GameObject(topNode._nodeName);
+					HEU_GeneralUtility.SetParentWithCleanTransform(this.gameObject.transform, topNode._workResultParentGO.transform);
+					topNode._workResultParentGO.SetActive(topNode._showResults);
+				}
+
 				GameObject newGO = new GameObject(name);
-				Transform newTransform = newGO.transform;
-				newTransform.parent = this.gameObject.transform;
-				newTransform.localPosition = Vector3.zero;
-				newTransform.localRotation = Quaternion.identity;
-				newTransform.localScale = Vector3.one;
+				HEU_GeneralUtility.SetParentWithCleanTransform(topNode._workResultParentGO.transform, newGO.transform);
 
 				result._generatedGOs.Add(newGO);
 
@@ -665,6 +778,43 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		private static void ParseHEngineData(HEU_SessionBase session, HAPI_NodeId topNodeID, ref HAPI_NodeInfo nodeInfo, ref TOPNodeTags nodeTags)
+		{
+			// Turn off session logging error when querying string parm that might not be there
+			bool bLogError = session.LogErrorOverride;
+			session.LogErrorOverride = false;
+
+			int numStrings = nodeInfo.parmStringValueCount;
+			HAPI_StringHandle henginedatash = 0;
+			if (numStrings > 0 && session.GetParamStringValue(topNodeID, "henginedata", 0, out henginedatash))
+			{
+				string henginedatastr = HEU_SessionManager.GetString(henginedatash, session);
+				//Debug.Log("HEngine data: " + henginedatastr);
+
+				if (!string.IsNullOrEmpty(henginedatastr))
+				{
+					string[] tags = henginedatastr.Split(',');
+					if (tags != null && tags.Length > 0)
+					{
+						foreach (string t in tags)
+						{
+							if (t.Equals("show"))
+							{
+								nodeTags._show = true;
+							}
+							else if (t.Equals("autoload"))
+							{
+								nodeTags._autoload = true;
+							}
+						}
+					}
+				}
+			}
+
+			// Logging error back on
+			session.LogErrorOverride = bLogError;
+		}
+
 
 #endif
 
@@ -711,6 +861,10 @@ namespace HoudiniEngineUnity
 			LINKED,
 			ERROR_NOT_LINKED
 		}
+
+		public bool _autoCook;
+
+		public bool _useHEngineData = false;
 
 		// Delegate for Editor window to hook into for callback when needing updating
 		public delegate void UpdateUIDelegate();

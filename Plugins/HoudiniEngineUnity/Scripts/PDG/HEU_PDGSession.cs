@@ -287,7 +287,7 @@ namespace HoudiniEngineUnity
 					{
 						NotifyTOPNodeCookedWorkItem(assetLink, topNode);
 
-						if (topNode._autoLoad)
+						if (topNode._tags._autoload)
 						{
 							HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
 							if (!session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
@@ -310,9 +310,13 @@ namespace HoudiniEngineUnity
 							}
 						}
 					}
-					else if(currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_FAIL || currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_CANCEL)
+					else if(currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_FAIL)
 					{
 						NotifyTOPNodeErrorWorkItem(assetLink, topNode);
+					}
+					else if(currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_CANCEL)
+					{
+						// Ignore it because in-progress cooks can be cancelled when automatically recooking graph
 					}
 				}
 
@@ -435,6 +439,30 @@ namespace HoudiniEngineUnity
 		public HEU_SessionBase GetHAPIPDGSession()
 		{
 			return HEU_SessionManager.GetOrCreateDefaultSession();
+		}
+
+		public void CookTOPNetworkOutputNode(HEU_TOPNetworkData topNetwork)
+		{
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			// Cancel all cooks. This is required as otherwise the graph gets into an infnite cooked
+			// state (bug?)
+			if (_pdgContextIDs != null)
+			{
+				foreach (HAPI_PDG_GraphContextId contextID in _pdgContextIDs)
+				{
+					session.CancelPDGCook(contextID);
+				}
+			}
+
+			if (!session.CookPDG(topNetwork._nodeID, 0, 0))
+			{
+				Debug.LogErrorFormat("Cook node failed!");
+			}
 		}
 
 
