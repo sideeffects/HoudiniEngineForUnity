@@ -72,6 +72,12 @@ namespace HoudiniEngineUnity
 
 		public string GetSessionErrorMsg() { return _sessionErrorMsg; }
 
+		// Override for logging session error
+		public bool LogErrorOverride { get; set; } = true;
+
+		// Override for throwing session errors
+		public bool ThrowErrorOverride { get; set; } = true;
+
 		// ASSET REGISTRATION -----------------------------------------------------------------------------------------------
 
 		// The following asset registration mechanism keeps track of HEU_HoudiniAsset 
