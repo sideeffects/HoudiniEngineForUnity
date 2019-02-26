@@ -91,12 +91,12 @@ namespace HoudiniEngineUnity
 
 				using (new EditorGUILayout.HorizontalScope())
 				{
-					if (GUILayout.Button(_refreshContent))
+					if (GUILayout.Button(_refreshContent, GUILayout.MaxHeight(_largButtonHeight)))
 					{
 						_assetLink.Refresh();
 					}
 
-					if (GUILayout.Button(_resetContent))
+					if (GUILayout.Button(_resetContent, GUILayout.MaxHeight(_largButtonHeight)))
 					{
 						_assetLink.Reset();
 					}
@@ -174,14 +174,29 @@ namespace HoudiniEngineUnity
 
 				using (new EditorGUILayout.HorizontalScope())
 				{
-					if (GUILayout.Button(_buttonDirtyAllContent))
+					if (GUILayout.Button(_buttonDirtyAllContent, GUILayout.MaxHeight(_largButtonHeight)))
 					{
 						_assetLink.DirtyAll();
 					}
 
-					if (GUILayout.Button(_buttonCookAllContent))
+					if (GUILayout.Button(_buttonCookAllContent, GUILayout.MaxHeight(_largButtonHeight)))
 					{
 						_assetLink.CookOutput();
+					}
+				}
+
+				EditorGUILayout.Space();
+
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					if (GUILayout.Button(_buttonPauseCookContent))
+					{
+						_assetLink.PauseCook();
+					}
+
+					if (GUILayout.Button(_buttonCancelCookContent))
+					{
+						_assetLink.CancelCook();
 					}
 				}
 			}
@@ -391,6 +406,9 @@ namespace HoudiniEngineUnity
 			_buttonDirtyAllContent = new GUIContent("Dirty All", "Removes all work items.");
 			_buttonCookAllContent = new GUIContent("Cook Output", "Generates and cooks all work items.");
 
+			_buttonCancelCookContent = new GUIContent("Cancel Cook", "Cancel PDG cook.");
+			_buttonPauseCookContent = new GUIContent("Pause Cook", "Pause PDG cook.");
+
 			_backgroundStyle = new GUIStyle(GUI.skin.box);
 			RectOffset br = _backgroundStyle.margin;
 			br.top = 10;
@@ -470,6 +488,8 @@ namespace HoudiniEngineUnity
 
 		private GUIContent _buttonDirtyAllContent;
 		private GUIContent _buttonCookAllContent;
+		private GUIContent _buttonCancelCookContent;
+		private GUIContent _buttonPauseCookContent;
 
 		private GUIStyle _boxStyleTitle;
 		private GUIStyle _boxStyleValue;
@@ -478,6 +498,8 @@ namespace HoudiniEngineUnity
 		private Texture2D _boxTitleTexture;
 
 		private Color _cookedColor;
+
+		private float _largButtonHeight = 26;
 	}
 
 }   // HoudiniEngineUnity

@@ -465,6 +465,42 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public void PauseCook(HEU_TOPNetworkData topNetwork)
+		{
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			// Cancel all cooks.
+			if (_pdgContextIDs != null)
+			{
+				foreach (HAPI_PDG_GraphContextId contextID in _pdgContextIDs)
+				{
+					session.PausePDGCook(contextID);
+				}
+			}
+		}
+
+		public void CancelCook(HEU_TOPNetworkData topNetwork)
+		{
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			// Cancel all cooks.
+			if (_pdgContextIDs != null)
+			{
+				foreach (HAPI_PDG_GraphContextId contextID in _pdgContextIDs)
+				{
+					session.CancelPDGCook(contextID);
+				}
+			}
+		}
+
 
 		//	DATA ------------------------------------------------------------------------------------------------------
 

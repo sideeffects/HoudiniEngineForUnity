@@ -623,6 +623,54 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public void PauseCook()
+		{
+			HEU_SessionBase session = GetHAPISession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+			if (topNetwork != null)
+			{
+				//Debug.Log("Cooking output!");
+
+				_workItemTally.ZeroAll();
+				ResetTOPNetworkWorkItemTally(topNetwork);
+
+				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+				if (pdgSession != null)
+				{
+					pdgSession.PauseCook(topNetwork);
+				}
+			}
+		}
+
+		public void CancelCook()
+		{
+			HEU_SessionBase session = GetHAPISession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+			if (topNetwork != null)
+			{
+				//Debug.Log("Cooking output!");
+
+				_workItemTally.ZeroAll();
+				ResetTOPNetworkWorkItemTally(topNetwork);
+
+				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+				if (pdgSession != null)
+				{
+					pdgSession.CancelCook(topNetwork);
+				}
+			}
+		}
+
 		public HEU_SessionBase GetHAPISession()
 		{
 			return _heu != null ? _heu.GetAssetSession(true) : null;
@@ -679,7 +727,7 @@ namespace HoudiniEngineUnity
 				if (topNode._workResultParentGO == null)
 				{
 					topNode._workResultParentGO = new GameObject(topNode._nodeName);
-					HEU_GeneralUtility.SetParentWithCleanTransform(this.gameObject.transform, topNode._workResultParentGO.transform);
+					HEU_GeneralUtility.SetParentWithCleanTransform(GetLoadRootTransform(), topNode._workResultParentGO.transform);
 					topNode._workResultParentGO.SetActive(topNode._showResults);
 				}
 
@@ -695,6 +743,15 @@ namespace HoudiniEngineUnity
 					geoSync.StartSync();
 				}
 			}
+		}
+
+		private Transform GetLoadRootTransform()
+		{
+			if (_loadRootGameObject == null)
+			{
+				_loadRootGameObject = new GameObject(_assetName + "_OUTPUTS");
+			}
+			return _loadRootGameObject.transform;
 		}
 
 		public HEU_TOPNodeData GetTOPNode(HAPI_NodeId nodeID)
@@ -914,6 +971,9 @@ namespace HoudiniEngineUnity
 		private int _numWorkItems;
 
 		public HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
+
+		// The root gameobject to place all loaded geometry under
+		public GameObject _loadRootGameObject;
 	}
 
 }   // HoudiniEngineUnity
