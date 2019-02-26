@@ -1071,12 +1071,15 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-				MeshRenderer partMeshRenderer = OutputGameObject.GetComponent<MeshRenderer>();
-				if (partMeshRenderer != null)
+				if (OutputGameObject != null)
 				{
-					bEnabled = partMeshRenderer.enabled;
+					MeshRenderer partMeshRenderer = OutputGameObject.GetComponent<MeshRenderer>();
+					if (partMeshRenderer != null)
+					{
+						bEnabled = partMeshRenderer.enabled;
+					}
+					HEU_GeneralUtility.SetGameObjectColliderState(OutputGameObject, bEnabled);
 				}
-				HEU_GeneralUtility.SetGameObjectColliderState(OutputGameObject, bEnabled);
 			}
 		}
 
