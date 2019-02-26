@@ -83,7 +83,7 @@ namespace HoudiniEngineUnity
 			DIRTIED,
 			DIRTYING,
 			COOKING,
-			COOK_SUCCESS,
+			COOK_COMPLETE,
 			COOK_FAILED
 		}
 		public PDGState _pdgState;

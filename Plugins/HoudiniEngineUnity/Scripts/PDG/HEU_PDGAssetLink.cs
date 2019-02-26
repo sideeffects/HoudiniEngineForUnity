@@ -612,6 +612,9 @@ namespace HoudiniEngineUnity
 			{
 				//Debug.Log("Cooking output!");
 
+				_workItemTally.ZeroAll();
+				ResetTOPNetworkWorkItemTally(topNetwork);
+
 				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
 				if (pdgSession != null)
 				{
@@ -737,6 +740,44 @@ namespace HoudiniEngineUnity
 					_workItemTally._erroredWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._erroredWorkItems;
 				}
 			}
+		}
+
+		public void ResetTOPNetworkWorkItemTally(HEU_TOPNetworkData topNetwork)
+		{
+			if (topNetwork != null)
+			{
+				int numNodes = topNetwork._topNodes.Count;
+				for(int i = 0; i < numNodes; ++i)
+				{
+					topNetwork._topNodes[i]._workItemTally.ZeroAll();
+				}
+			}
+		}
+
+		public string GetTOPNodeStatus(HEU_TOPNodeData topNode)
+		{
+			if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_FAILED || topNode.AnyWorkItemsFailed())
+			{
+				return "Cook Failed";
+			}
+			else if(topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_COMPLETE)
+			{
+				return "Cook Completed";
+			}
+			else if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOKING)
+			{
+				return "Cook In Progress";
+			}
+			else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTIED)
+			{
+				return "Dirtied";
+			}
+			else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTYING)
+			{
+				return "Dirtying";
+			}
+
+			return "";
 		}
 
 		//	MENU ----------------------------------------------------------------------------------------------------

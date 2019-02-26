@@ -238,7 +238,7 @@ namespace HoudiniEngineUnity
 			}
 			else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_COOK_COMPLETE)
 			{
-				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_SUCCESS);
+				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_COMPLETE);
 			}
 			else 
 			{
@@ -330,7 +330,7 @@ namespace HoudiniEngineUnity
 						}
 						else
 						{
-							SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_SUCCESS);
+							SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_COMPLETE);
 						}
 					}
 				}
@@ -457,7 +457,7 @@ namespace HoudiniEngineUnity
 				{
 					session.CancelPDGCook(contextID);
 				}
-			}
+			}			
 
 			if (!session.CookPDG(topNetwork._nodeID, 0, 0))
 			{

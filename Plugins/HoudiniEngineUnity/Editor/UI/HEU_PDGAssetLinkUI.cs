@@ -263,7 +263,7 @@ namespace HoudiniEngineUnity
 
 					using (new EditorGUILayout.VerticalScope(HEU_EditorUI.GetSectionStyle()))
 					{
-						EditorGUILayout.LabelField("Node State: " + topNode._pdgState);
+						EditorGUILayout.LabelField("TOP Node State: " + _assetLink.GetTOPNodeStatus(topNode));
 
 						EditorGUILayout.Space();
 
