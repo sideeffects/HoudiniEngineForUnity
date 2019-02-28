@@ -696,6 +696,11 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public List<HEU_ParameterData> GetParameters()
+		{
+			return _parameterList;
+		}
+
 		public HEU_ParameterData GetParameter(int listIndex)
 		{
 			if(listIndex >= 0 && listIndex < _parameterList.Count)

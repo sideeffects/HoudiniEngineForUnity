@@ -558,6 +558,17 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public void GetOutputGeoNodes(List<HEU_GeoNode> outGeoNodes)
+		{
+			foreach (HEU_GeoNode geoNode in _geoNodes)
+			{
+				if (geoNode.Displayable)
+				{
+					outGeoNodes.Add(geoNode);
+				}
+			}
+		}
+
 		/// <summary>
 		/// Generates object instances.
 		/// Skips parts that already have their instances generated.
