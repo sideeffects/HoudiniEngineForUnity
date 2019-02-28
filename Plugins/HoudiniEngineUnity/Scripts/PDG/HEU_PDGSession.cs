@@ -238,7 +238,7 @@ namespace HoudiniEngineUnity
 			}
 			else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_COOK_COMPLETE)
 			{
-				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_SUCCESS);
+				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_COMPLETE);
 			}
 			else 
 			{
@@ -330,7 +330,7 @@ namespace HoudiniEngineUnity
 						}
 						else
 						{
-							SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_SUCCESS);
+							SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOK_COMPLETE);
 						}
 					}
 				}
@@ -457,11 +457,47 @@ namespace HoudiniEngineUnity
 				{
 					session.CancelPDGCook(contextID);
 				}
-			}
+			}			
 
 			if (!session.CookPDG(topNetwork._nodeID, 0, 0))
 			{
 				Debug.LogErrorFormat("Cook node failed!");
+			}
+		}
+
+		public void PauseCook(HEU_TOPNetworkData topNetwork)
+		{
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			// Cancel all cooks.
+			if (_pdgContextIDs != null)
+			{
+				foreach (HAPI_PDG_GraphContextId contextID in _pdgContextIDs)
+				{
+					session.PausePDGCook(contextID);
+				}
+			}
+		}
+
+		public void CancelCook(HEU_TOPNetworkData topNetwork)
+		{
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			// Cancel all cooks.
+			if (_pdgContextIDs != null)
+			{
+				foreach (HAPI_PDG_GraphContextId contextID in _pdgContextIDs)
+				{
+					session.CancelPDGCook(contextID);
+				}
 			}
 		}
 

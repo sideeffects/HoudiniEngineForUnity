@@ -612,10 +612,61 @@ namespace HoudiniEngineUnity
 			{
 				//Debug.Log("Cooking output!");
 
+				_workItemTally.ZeroAll();
+				ResetTOPNetworkWorkItemTally(topNetwork);
+
 				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
 				if (pdgSession != null)
 				{
 					pdgSession.CookTOPNetworkOutputNode(topNetwork);
+				}
+			}
+		}
+
+		public void PauseCook()
+		{
+			HEU_SessionBase session = GetHAPISession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+			if (topNetwork != null)
+			{
+				//Debug.Log("Cooking output!");
+
+				_workItemTally.ZeroAll();
+				ResetTOPNetworkWorkItemTally(topNetwork);
+
+				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+				if (pdgSession != null)
+				{
+					pdgSession.PauseCook(topNetwork);
+				}
+			}
+		}
+
+		public void CancelCook()
+		{
+			HEU_SessionBase session = GetHAPISession();
+			if (session == null || !session.IsSessionValid())
+			{
+				return;
+			}
+
+			HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+			if (topNetwork != null)
+			{
+				//Debug.Log("Cooking output!");
+
+				_workItemTally.ZeroAll();
+				ResetTOPNetworkWorkItemTally(topNetwork);
+
+				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+				if (pdgSession != null)
+				{
+					pdgSession.CancelCook(topNetwork);
 				}
 			}
 		}
@@ -676,7 +727,7 @@ namespace HoudiniEngineUnity
 				if (topNode._workResultParentGO == null)
 				{
 					topNode._workResultParentGO = new GameObject(topNode._nodeName);
-					HEU_GeneralUtility.SetParentWithCleanTransform(this.gameObject.transform, topNode._workResultParentGO.transform);
+					HEU_GeneralUtility.SetParentWithCleanTransform(GetLoadRootTransform(), topNode._workResultParentGO.transform);
 					topNode._workResultParentGO.SetActive(topNode._showResults);
 				}
 
@@ -692,6 +743,15 @@ namespace HoudiniEngineUnity
 					geoSync.StartSync();
 				}
 			}
+		}
+
+		private Transform GetLoadRootTransform()
+		{
+			if (_loadRootGameObject == null)
+			{
+				_loadRootGameObject = new GameObject(_assetName + "_OUTPUTS");
+			}
+			return _loadRootGameObject.transform;
 		}
 
 		public HEU_TOPNodeData GetTOPNode(HAPI_NodeId nodeID)
@@ -737,6 +797,44 @@ namespace HoudiniEngineUnity
 					_workItemTally._erroredWorkItems += _topNetworks[i]._topNodes[j]._workItemTally._erroredWorkItems;
 				}
 			}
+		}
+
+		public void ResetTOPNetworkWorkItemTally(HEU_TOPNetworkData topNetwork)
+		{
+			if (topNetwork != null)
+			{
+				int numNodes = topNetwork._topNodes.Count;
+				for(int i = 0; i < numNodes; ++i)
+				{
+					topNetwork._topNodes[i]._workItemTally.ZeroAll();
+				}
+			}
+		}
+
+		public string GetTOPNodeStatus(HEU_TOPNodeData topNode)
+		{
+			if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_FAILED || topNode.AnyWorkItemsFailed())
+			{
+				return "Cook Failed";
+			}
+			else if(topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_COMPLETE)
+			{
+				return "Cook Completed";
+			}
+			else if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOKING)
+			{
+				return "Cook In Progress";
+			}
+			else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTIED)
+			{
+				return "Dirtied";
+			}
+			else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTYING)
+			{
+				return "Dirtying";
+			}
+
+			return "";
 		}
 
 		//	MENU ----------------------------------------------------------------------------------------------------
@@ -873,6 +971,9 @@ namespace HoudiniEngineUnity
 		private int _numWorkItems;
 
 		public HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
+
+		// The root gameobject to place all loaded geometry under
+		public GameObject _loadRootGameObject;
 	}
 
 }   // HoudiniEngineUnity
