@@ -722,6 +722,20 @@ namespace HoudiniEngineUnity
 				HEU_PluginStorage.Instance.Set("HEU_HoudiniDebugLaunchPath", value);
 			}
 		}
+
+		public static string LastExportPath
+		{
+			get
+			{
+				string path = "";
+				HEU_PluginStorage.Instance.Get("HAPI_LastExportPath", out path, path);
+				return path;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_LastExportPath", value);
+			}
+		}
 	}
 
 }   // HoudiniEngineUnity

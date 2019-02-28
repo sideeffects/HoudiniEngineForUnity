@@ -33,6 +33,10 @@ using UnityEditor;
 
 namespace HoudiniEngineUnity
 {
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Typedefs (copy these from HEU_Common.cs)
+	using HAPI_NodeId = System.Int32;
+
 	/// <summary>
 	/// Wrapper around Unity Editor functions.
 	/// </summary>
@@ -1013,6 +1017,103 @@ namespace HoudiniEngineUnity
 					root._houdiniAsset.RequestBakeInPlace();
 				}
 			}
+		}
+
+		public static void ExportSelectedAssetsToGeoFiles()
+		{
+			ExportAssetsToGeoFiles(GetSelectedAssetRoots());
+		}
+
+		public static void ExportAllAssetsToGeoFiles()
+		{
+			ExportAssetsToGeoFiles(GetAllAssetRoots());
+		}
+
+		public static void ExportAssetsToGeoFiles(HEU_HoudiniAssetRoot[] rootAssets)
+		{
+			// Open a Dialog to get user settings:
+			//	-directory to write to
+			//	-file name with extension (determines file format)
+
+			string exportExt = "bgeo.sc";
+			List<HEU_GeoNode> outputGeoNodes = new List<HEU_GeoNode>();
+			int numNodes = 0;
+
+			int numAssets = rootAssets.Length;
+			if (numAssets == 0)
+			{
+				return;
+			}
+
+			string exportDir = EditorSaveFolderPanel("Export Geo to Folder", HEU_PluginSettings.LastExportPath, "");
+			if (string.IsNullOrEmpty(exportDir))
+			{
+				return;
+			}
+
+			// Save latest folder choice
+			HEU_PluginSettings.LastExportPath = exportDir;
+
+			if (string.IsNullOrEmpty(exportExt))
+			{
+				Debug.LogErrorFormat("Export extension cannot be empty.");
+				return;
+			}
+
+			if (!HEU_Platform.DoesDirectoryExist(exportDir) && HEU_Platform.CreateDirectory(exportDir))
+			{
+				Debug.LogErrorFormat("Error creating directory at {0}.", exportDir);
+				return;
+			}
+
+			for (int i = 0; i < numAssets; ++i)
+			{
+				if (rootAssets[i] != null && rootAssets[i]._houdiniAsset != null)
+				{
+					HEU_HoudiniAsset asset = rootAssets[i]._houdiniAsset;
+
+					HEU_SessionBase session = asset.GetAssetSession(true);
+					if (session == null || !session.IsSessionValid())
+					{
+						continue;
+					}
+
+					if (string.IsNullOrEmpty(asset.AssetName))
+					{
+						Debug.LogErrorFormat("Unable to export output of asset at {0} due to empty name.", asset.AssetPath);
+						continue;
+					}
+
+					outputGeoNodes.Clear();
+					asset.GetOutputGeoNodes(outputGeoNodes);
+
+					numNodes = outputGeoNodes.Count;
+					for (int j = 0; j < numNodes; ++j)
+					{
+						string exportPath = string.Format("{0}/{1}_{2}.{3}", exportDir, asset.RootGameObject.name, outputGeoNodes[j].GeoName, exportExt);
+
+						if (!session.SaveGeoToFile(outputGeoNodes[j].GeoID, exportPath))
+						{
+							Debug.LogErrorFormat("Failed to export output geo of asset with path: {0}", exportPath);
+						}
+						else
+						{
+							Debug.LogFormat("Exported output geo {0} of {1} at: {2}", outputGeoNodes[j].GeoName, asset.RootGameObject.name, exportPath);
+						}
+					}
+				}
+			}
+		}
+
+
+		public static string EditorSaveFolderPanel(string title, string folder, string defaultName)
+		{
+#if UNITY_EDITOR
+			return EditorUtility.SaveFolderPanel(title, folder, defaultName);
+#else
+			Debug.LogWarning("Save to Folder is only supported in Editor mode.");
+			return null;
+#endif
 		}
 	}
 

@@ -114,6 +114,7 @@ namespace HoudiniEngineUnity
 		// Drag selection
 		private bool _dragMouseDown;
 		private Vector3 _dragMouseStart;
+		private bool _cleanMouseDown;
 
 		// Add point
 		private string _closestCurveName;
@@ -190,6 +191,7 @@ namespace HoudiniEngineUnity
 			_closestPointIndex = -1;
 
 			_dragMouseDown = false;
+			_cleanMouseDown = false;
 		}
 
 		/// <summary>
@@ -648,8 +650,6 @@ namespace HoudiniEngineUnity
 			// In edit, we draw points as interactable buttons, allowing for selection/deselection.
 			// We also draw drag handle for selected buttons.
 
-			Color defaultHandleColor = Handles.color;
-
 			Event currentEvent = Event.current;
 
 			// For multi-point selection, calculates bounds and centre point
@@ -658,18 +658,221 @@ namespace HoudiniEngineUnity
 
 			bool bInteractionOcurred = false;
 
+			bool isDraggingPoints = false;
+			bool wasDraggingPoints = false;
+
+			// Draw the curve points
+			EditModeDrawCurvePoints(currentEvent, eventType, ref numSelectedPoints, ref bounds, ref bInteractionOcurred);
+
+			// Two types of dragging: dragging selected points, dragging selection box to select points
+
+			if (numSelectedPoints > 0)
+			{
+				// Drag selected points
+
+				Vector3 dragHandlePosition = bounds.center;
+
+				// Let Unity do the transform handle magic
+				Vector3 newPosition = Handles.PositionHandle(dragHandlePosition, Quaternion.identity);
+				isDraggingPoints = (EditorGUIUtility.hotControl != 0);
+
+				Vector3 deltaMove = newPosition - dragHandlePosition;
+				if (deltaMove.magnitude > 0)
+				{
+					// User dragged point(s)
+					// We update point value here, but defer parameter coords update until after we finished editing
+
+					foreach (KeyValuePair<string, List<int>> curvePoints in _selectedCurvePoints)
+					{
+						List<int> selectedPoints = curvePoints.Value;
+						if (selectedPoints.Count > 0)
+						{
+							SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
+							SerializedProperty curvePointsProperty = serializedCurve.FindProperty("_points");
+
+							foreach (int pointIndex in selectedPoints)
+							{
+								SerializedProperty pointProperty = curvePointsProperty.GetArrayElementAtIndex(pointIndex);
+								Vector3 updatedPosition = pointProperty.vector3Value + deltaMove;
+
+								HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
+								if (curve != null)
+								{
+									// Localize the movement vector to the curve point's transform,
+									// since deltaMove is based on the transformed curve point,
+									// and we're adding to the local curve point.
+									Vector3 localDeltaMove = curve.GetInvertedTransformedDirection(deltaMove);
+									updatedPosition = pointProperty.vector3Value + localDeltaMove;
+								}
+
+								pointProperty.vector3Value = updatedPosition;
+							}
+
+							// Setting to editing mode to flag that cooking needs to be deferred
+							SetCurveState(HEU_Curve.CurveEditState.EDITING, serializedCurve);
+
+							AddChangedSerializedObject(serializedCurve, updatedCurves);
+						}
+					}
+
+					bInteractionOcurred = true;
+				}
+
+				// After drag, process/cook each curve to update its state
+				foreach (HEU_Curve curve in _curves)
+				{
+					SerializedObject serializedCurve = GetOrCreateSerializedCurve(curve.CurveName);
+					SerializedProperty stateProperty = serializedCurve.FindProperty("_editState");
+					HEU_Curve.CurveEditState editState = (HEU_Curve.CurveEditState)stateProperty.intValue;
+
+					// On mouse release, transition editing curve to generation state
+					if (!isDraggingPoints)
+					{
+						if (editState == HEU_Curve.CurveEditState.EDITING)
+						{
+							// Flag to cook once user has stopped dragging
+							SetCurveState(HEU_Curve.CurveEditState.REQUIRES_GENERATION, serializedCurve);
+
+							AddChangedSerializedObject(serializedCurve, updatedCurves);
+
+							wasDraggingPoints = true;
+						}
+					}
+
+					// Draw uncooked curve to show user the intermediate curve
+					if (editState == HEU_Curve.CurveEditState.EDITING || editState == HEU_Curve.CurveEditState.REQUIRES_GENERATION)
+					{
+						if (eventType == EventType.Repaint)
+						{
+							DrawCurveUsingPoints(curve, Color.red);
+						}
+					}
+				}
+			}
+			
+			// Drag to select points
+			switch (eventType)
+			{
+				case EventType.MouseDown:
+				{
+					if (currentEvent.button == 0 && !_dragMouseDown && !isDraggingPoints && !wasDraggingPoints)
+					{
+						// This is to reduce the possibility of getting into drag selection mode right after
+						// dragging a point.
+						_cleanMouseDown = true;
+					}
+					break;
+				}
+				case EventType.MouseUp:
+				{
+					if (currentEvent.button == 0 && !bInteractionOcurred && !_dragMouseDown && !isDraggingPoints && !wasDraggingPoints)
+					{
+						if (_selectedCurvePoints.Count > 0 && !currentEvent.alt && !currentEvent.control)
+						{
+							DeselectAllPoints();
+							currentEvent.Use();
+						}
+					}
+
+					if (currentEvent.button == 0)
+					{
+						if (_dragMouseDown)
+						{
+							// Note that as user was dragging, the points were auto-selected, so we shouldn't
+							// need to do anything here other than stop dragging.
+							_dragMouseDown = false;
+
+							currentEvent.Use();
+						}
+
+						_cleanMouseDown = false;
+					}
+
+					break;
+				}
+				case EventType.MouseDrag:
+				{
+					if (!_dragMouseDown && !currentEvent.alt && !currentEvent.control
+						&& currentEvent.button == 0 && !isDraggingPoints && !wasDraggingPoints && _cleanMouseDown)
+					{
+						_dragMouseStart = mousePosition;
+						_dragMouseDown = true;
+					}
+
+					if (_dragMouseDown)
+					{
+						currentEvent.Use();
+					}
+
+					break;
+				}
+				case EventType.MouseMove:
+				{
+					// Use the mouse move event will force a repaint allowing for much more responsive UI
+					currentEvent.Use();
+					break;
+				}
+				case EventType.KeyUp:
+				{
+					if (currentEvent.keyCode == KeyCode.Escape || currentEvent.keyCode == KeyCode.Return || currentEvent.keyCode == KeyCode.KeypadEnter)
+					{
+						SwitchToMode(HEU_Curve.Interaction.VIEW);
+						currentEvent.Use();
+					}
+
+					break;
+				}
+				case EventType.KeyDown:
+				{
+					if (!currentEvent.alt && currentEvent.keyCode == KeyCode.Space)
+					{
+						// Toggle modes
+						SwitchToMode(HEU_Curve.Interaction.ADD);
+						currentEvent.Use();
+					}
+					else if (currentEvent.keyCode == KeyCode.Backspace || currentEvent.keyCode == KeyCode.Delete)
+					{
+						DeleteSelectedPoints(updatedCurves);
+						currentEvent.Use();
+					}
+
+					break;
+				}
+				case EventType.Layout:
+				{
+					// This disables deselection on asset while in Add mode
+					HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+
+					break;
+				}
+				case EventType.Repaint:
+				{
+					if (_dragMouseDown)
+					{
+						DrawSelectionBox(mousePosition, true);
+					}
+
+					break;
+				}
+			}
+		}
+
+		private void EditModeDrawCurvePoints(Event currentEvent, EventType eventType, ref int numSelectedPoints, ref Bounds bounds, ref bool bInteractionOcurred)
+		{
+			Color defaultHandleColor = Handles.color;
+
 			// First we draw all the curves, while drawing each point as button
 			// and collecting the selected points.
 			foreach (HEU_Curve curve in _curves)
 			{
-				if(eventType == EventType.Repaint)
+				if (eventType == EventType.Repaint)
 				{
 					// Draw the cooked curve using its vertices
 					DrawCurveUsingVertices(curve, _selectedCurveColor);
 				}
 
 				// During dragging, we draw the points in the drag logic later
-				if(_dragMouseDown)
+				if (_dragMouseDown)
 				{
 					continue;
 				}
@@ -737,192 +940,6 @@ namespace HoudiniEngineUnity
 							bInteractionOcurred = true;
 						}
 					}
-				}
-			}
-
-			HEU_DragHandleMulti.DragHandleResult dragResult = HEU_DragHandleMulti.DragHandleResult.NONE;
-
-			// Then we process the selected points and drag logic
-			if (numSelectedPoints > 0)
-			{
-				Vector3 dragHandlePosition = bounds.center;
-
-				// Draw drag handle and update point if user dragged it
-				Vector3 newPosition = HEU_DragHandleMulti.DoDragHandle(dragHandlePosition, true, true, true, true, out dragResult);
-
-				Vector3 deltaMove = newPosition - dragHandlePosition;
-				if (deltaMove.magnitude > 0)
-				{
-					// User dragged point(s)
-					// We update point value here, but defer parameter coords update until after we finished editing
-
-					foreach (KeyValuePair<string, List<int>> curvePoints in _selectedCurvePoints)
-					{
-						List<int> selectedPoints = curvePoints.Value;
-						if (selectedPoints.Count > 0)
-						{
-							SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
-							SerializedProperty curvePointsProperty = serializedCurve.FindProperty("_points");
-
-							foreach (int pointIndex in selectedPoints)
-							{
-								SerializedProperty pointProperty = curvePointsProperty.GetArrayElementAtIndex(pointIndex);
-								Vector3 updatedPosition = pointProperty.vector3Value + deltaMove;
-
-								HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
-								if (curve != null)
-								{
-									// Localize the movement vector to the curve point's transform,
-									// since deltaMove is based on the transformed curve point,
-									// and we're adding to the local curve point.
-									Vector3 localDeltaMove = curve.GetInvertedTransformedDirection(deltaMove);
-									updatedPosition = pointProperty.vector3Value + localDeltaMove;
-								}
-
-								pointProperty.vector3Value = updatedPosition;
-							}
-
-							// Setting to editing mode to flag that cooking needs to be deferred
-							SetCurveState(HEU_Curve.CurveEditState.EDITING, serializedCurve);
-
-							AddChangedSerializedObject(serializedCurve, updatedCurves);
-						}
-					}
-
-					bInteractionOcurred = true;
-				}
-
-				if (dragResult == HEU_DragHandleMulti.DragHandleResult.LMB_RELEASE || dragResult == HEU_DragHandleMulti.DragHandleResult.RMB_RELEASE)
-				{
-					// Without setting this, the points can get unselected further down
-					bInteractionOcurred = true;
-				}
-
-				// After drag, process each curve to update its state
-				foreach (HEU_Curve curve in _curves)
-				{
-					SerializedObject serializedCurve = GetOrCreateSerializedCurve(curve.CurveName);
-					SerializedProperty stateProperty = serializedCurve.FindProperty("_editState");
-					HEU_Curve.CurveEditState editState = (HEU_Curve.CurveEditState)stateProperty.intValue;
-
-					// On mouse release, transition editing curve to generation state
-					if (dragResult == HEU_DragHandleMulti.DragHandleResult.LMB_RELEASE || dragResult == HEU_DragHandleMulti.DragHandleResult.RMB_RELEASE)
-					{
-						if (editState == HEU_Curve.CurveEditState.EDITING)
-						{
-							// Flag to cook once user has stopped dragging
-							SetCurveState(HEU_Curve.CurveEditState.REQUIRES_GENERATION, serializedCurve);
-
-							AddChangedSerializedObject(serializedCurve, updatedCurves);
-						}
-					}
-
-					// Draw uncooked curve to show user the intermediate curve
-					if (editState == HEU_Curve.CurveEditState.EDITING || editState == HEU_Curve.CurveEditState.REQUIRES_GENERATION)
-					{
-						if (eventType == EventType.Repaint)
-						{
-							DrawCurveUsingPoints(curve, Color.red);
-						}
-					}
-				}
-			}
-
-			switch (eventType)
-			{
-				case EventType.MouseDown:
-				{
-
-					break;
-				}
-				case EventType.MouseUp:
-				{
-					if (currentEvent.button == 0 && !bInteractionOcurred && !_dragMouseDown)
-					{
-						if (_selectedCurvePoints.Count > 0 && !currentEvent.alt && !currentEvent.control)
-						{
-							DeselectAllPoints();
-							currentEvent.Use();
-						}
-					}
-
-					if(currentEvent.button == 0)
-					{
-						if (_dragMouseDown)
-						{
-							// Note that as user was dragging, the points were auto-selected, so we shouldn't
-							// need to do anything here other than stop dragging.
-							_dragMouseDown = false;
-
-							currentEvent.Use();
-						}
-					}
-
-					break;
-				}
-				case EventType.MouseDrag:
-				{
-					if(!_dragMouseDown && !currentEvent.alt && !currentEvent.control 
-						&& currentEvent.button == 0 && dragResult == HEU_DragHandleMulti.DragHandleResult.NONE)
-					{
-						_dragMouseStart = mousePosition;
-						_dragMouseDown = true;
-					}
-
-					if(_dragMouseDown)
-					{
-						currentEvent.Use();
-					}
-
-					break;
-				}
-				case EventType.MouseMove:
-				{
-					// Use the mouse move event will force a repaint allowing for much more responsive UI
-					currentEvent.Use();
-					break;
-				}
-				case EventType.KeyUp:
-				{
-					if (currentEvent.keyCode == KeyCode.Escape || currentEvent.keyCode == KeyCode.Return || currentEvent.keyCode == KeyCode.KeypadEnter)
-					{
-						SwitchToMode(HEU_Curve.Interaction.VIEW);
-						currentEvent.Use();
-					}
-
-					break;
-				}
-				case EventType.KeyDown:
-				{
-					if (!currentEvent.alt && currentEvent.keyCode == KeyCode.Space)
-					{
-						// Toggle modes
-						SwitchToMode(HEU_Curve.Interaction.ADD);
-						currentEvent.Use();
-					}
-					else if (currentEvent.keyCode == KeyCode.Backspace || currentEvent.keyCode == KeyCode.Delete)
-					{
-						DeleteSelectedPoints(updatedCurves);
-						currentEvent.Use();
-					}
-
-					break;
-				}
-				case EventType.Layout:
-				{
-					// This disables deselection on asset while in Add mode
-					HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
-
-					break;
-				}
-				case EventType.Repaint:
-				{
-					if(_dragMouseDown)
-					{
-						DrawSelectionBox(mousePosition, true);
-					}
-
-					break;
 				}
 			}
 		}
