@@ -35,6 +35,8 @@ namespace HoudiniEngineUnity
 	// Typedefs (copy these from HEU_Common.cs)
 	using HAPI_NodeId = System.Int32;
 	using HAPI_SessionId = System.Int64;
+	using HAPI_PDG_WorkitemId = System.Int32;
+
 
 	public class TOPNodeTags
 	{
@@ -116,6 +118,7 @@ namespace HoudiniEngineUnity
 	public class HEU_TOPWorkResult
 	{
 		public int _workItemIndex = -1;
+		public HAPI_PDG_WorkitemId _workItemID = -1;
 		public List<GameObject> _generatedGOs = new List<GameObject>();
 	}
 

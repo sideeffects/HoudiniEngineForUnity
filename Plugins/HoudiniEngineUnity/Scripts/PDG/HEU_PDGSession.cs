@@ -223,6 +223,8 @@ namespace HoudiniEngineUnity
 			else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_DIRTY_START)
 			{
 				SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.DIRTYING);
+
+				//HEU_PDGAssetLink.ClearTOPNodeWorkItemResults(topNode);
 			}
 			else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_DIRTY_STOP)
 			{
@@ -275,6 +277,16 @@ namespace HoudiniEngineUnity
 					{
 						NotifyTOPNodeWaitingWorkItem(assetLink, topNode, 1);
 					}
+					else if(currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_UNCOOKED)
+					{
+
+					}
+					else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_DIRTY)
+					{
+						//Debug.LogFormat("Dirty: id={0}", eventInfo.workitemId);
+
+						ClearWorkItemResult(session, contextID, eventInfo, topNode);
+					}
 					else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_SCHEDULED)
 					{
 						NotifyTOPNodeScheduledWorkItem(assetLink, topNode, 1);
@@ -306,7 +318,7 @@ namespace HoudiniEngineUnity
 									return;
 								}
 
-								assetLink.LoadResults(session, topNode, workItemInfo, resultInfos);
+								assetLink.LoadResults(session, topNode, workItemInfo, resultInfos, eventInfo.workitemId);
 							}
 						}
 					}
@@ -499,6 +511,31 @@ namespace HoudiniEngineUnity
 					session.CancelPDGCook(contextID);
 				}
 			}
+		}
+
+		public void ClearWorkItemResult(HEU_SessionBase session, HAPI_PDG_GraphContextId contextID, HAPI_PDG_EventInfo eventInfo, HEU_TOPNodeData topNode)
+		{
+			session.LogErrorOverride = false;
+			bool bCleared = false;
+
+			HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
+			if (session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
+			{
+				//Debug.LogFormat("Clear: index={0}, state={1}", workItemInfo.index, (HAPI_PDG_WorkitemState)eventInfo.currentState);
+
+				if (workItemInfo.index >= 0)
+				{
+					HEU_PDGAssetLink.ClearWorkItemResultByIndex(topNode, workItemInfo.index);
+					bCleared = true;
+				}
+			}
+
+			if (!bCleared)
+			{
+				HEU_PDGAssetLink.ClearWorkItemResultByID(topNode, eventInfo.workitemId);
+			}
+
+			session.LogErrorOverride = true;
 		}
 
 
