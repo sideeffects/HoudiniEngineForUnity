@@ -317,6 +317,18 @@ namespace HoudiniEngineUnity
 		{
 			HEU_EditorUtility.BakeAndReplaceAllInScene();
 		}
+
+		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Export Output Geo/Selected Houdini Assets", false, 80)]
+		public static void ExportSelecedAssetsGeo()
+		{
+			HEU_EditorUtility.ExportSelectedAssetsToGeoFiles();
+		}
+
+		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Export Output Geo/All Houdini Assets", false, 80)]
+		public static void ExportAllAssetsGeo()
+		{
+			HEU_EditorUtility.ExportAllAssetsToGeoFiles();
+		}
 	}
 
 

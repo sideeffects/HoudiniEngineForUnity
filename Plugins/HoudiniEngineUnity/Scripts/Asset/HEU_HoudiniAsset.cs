@@ -3060,6 +3060,18 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Returns list of display geo nodes.
+		/// </summary>
+		/// <param name="outputGeoNodes"></param>
+		public void GetOutputGeoNodes(List<HEU_GeoNode> outputGeoNodes)
+		{
+			foreach (HEU_ObjectNode objNode in _objectNodes)
+			{
+				objNode.GetOutputGeoNodes(outputGeoNodes);
+			}
+		}
+
+		/// <summary>
 		/// Returns the HEU_PartData with the given output gameobject.
 		/// </summary>
 		/// <param name="outputGameObject">The output gameobject associated with the part</param>

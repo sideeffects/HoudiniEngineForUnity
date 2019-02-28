@@ -463,7 +463,6 @@ namespace HoudiniEngineUnity
 							break;
 						}
 						case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE:
-						case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR:
 						case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO:
 						case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE:
 						{
@@ -696,6 +695,11 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public List<HEU_ParameterData> GetParameters()
+		{
+			return _parameterList;
+		}
+
 		public HEU_ParameterData GetParameter(int listIndex)
 		{
 			if(listIndex >= 0 && listIndex < _parameterList.Count)
@@ -809,7 +813,6 @@ namespace HoudiniEngineUnity
 					}
 					case HAPI_ParmType.HAPI_PARMTYPE_STRING:
 					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE:
-					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR:
 					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO:
 					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE:
 					{
@@ -918,7 +921,6 @@ namespace HoudiniEngineUnity
 					}
 					case HAPI_ParmType.HAPI_PARMTYPE_STRING:
 					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE:
-					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR:
 					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO:
 					case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE:
 					{

@@ -423,6 +423,16 @@ namespace HoudiniEngineUnity
 			return Directory.Exists(inPath);
 		}
 
+		public static bool CreateDirectory(string inPath)
+		{
+			DirectoryInfo dirInfo = Directory.CreateDirectory(inPath);
+			if (dirInfo != null)
+			{
+				return dirInfo.Exists;
+			}
+			return false;
+		}
+
 		public static string GetFullPath(string inPath)
 		{
 			return Path.GetFullPath(inPath);
