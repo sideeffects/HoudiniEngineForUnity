@@ -478,7 +478,7 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		private static void ClearTOPNodeWorkItemResults(HEU_TOPNodeData topNode)
+		public static void ClearTOPNodeWorkItemResults(HEU_TOPNodeData topNode)
 		{
 			int numResults = topNode._workResults.Count;
 			for (int i = 0; i < numResults; ++i)
@@ -493,9 +493,20 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		private static void ClearWorkItemResult(HEU_TOPNodeData topNode, int workItemIndex)
+		public static void ClearWorkItemResultByIndex(HEU_TOPNodeData topNode, int workItemIndex)
 		{
-			HEU_TOPWorkResult result = GetWorkResult(topNode, workItemIndex);
+			HEU_TOPWorkResult result = GetWorkResultByIndex(topNode, workItemIndex);
+			ClearWorkItemResult(topNode, result);
+		}
+
+		public static void ClearWorkItemResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
+		{
+			HEU_TOPWorkResult result = GetWorkResultByID(topNode, workItemID);
+			ClearWorkItemResult(topNode, result);
+		}
+
+		private static void ClearWorkItemResult(HEU_TOPNodeData topNode, HEU_TOPWorkResult result)
+		{
 			if (result != null)
 			{
 				DestroyWorkItemResultData(topNode, result);
@@ -512,12 +523,26 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		private static HEU_TOPWorkResult GetWorkResult(HEU_TOPNodeData topNode, int workItemIndex)
+		private static HEU_TOPWorkResult GetWorkResultByIndex(HEU_TOPNodeData topNode, int workItemIndex)
 		{
 			HEU_TOPWorkResult result = null;
 			foreach (HEU_TOPWorkResult res in topNode._workResults)
 			{
 				if (res._workItemIndex == workItemIndex)
+				{
+					result = res;
+					break;
+				}
+			}
+			return result;
+		}
+
+		private static HEU_TOPWorkResult GetWorkResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
+		{
+			HEU_TOPWorkResult result = null;
+			foreach (HEU_TOPWorkResult res in topNode._workResults)
+			{
+				if (res._workItemID == workItemID)
 				{
 					result = res;
 					break;
@@ -539,6 +564,7 @@ namespace HoudiniEngineUnity
 						geoSync.Unload();
 					}
 
+					//Debug.LogFormat("Destroy result: " + result._generatedGOs[i].name);
 					HEU_GeneralUtility.DestroyImmediate(result._generatedGOs[i]);
 					result._generatedGOs[i] = null;
 				}
@@ -676,7 +702,7 @@ namespace HoudiniEngineUnity
 			return _heu != null ? _heu.GetAssetSession(true) : null;
 		}
 
-		public void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos)
+		public void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos, HAPI_PDG_WorkitemId workItemID)
 		{
 			// Create HEU_GeoSync objects, set results, and sync it
 
@@ -684,18 +710,19 @@ namespace HoudiniEngineUnity
 			//Debug.LogFormat("Work item: {0}:: name={1}, results={2}", workItemInfo.index, workItemName, workItemInfo.numResults);
 
 			// Clear previously generated result
-			ClearWorkItemResult(topNode, workItemInfo.index);
+			ClearWorkItemResultByIndex(topNode, workItemInfo.index);
 
 			if (resultInfos == null || resultInfos.Length == 0)
 			{
 				return;
 			}
 
-			HEU_TOPWorkResult result = GetWorkResult(topNode, workItemInfo.index);
+			HEU_TOPWorkResult result = GetWorkResultByIndex(topNode, workItemInfo.index);
 			if (result == null)
 			{
 				result = new HEU_TOPWorkResult();
 				result._workItemIndex = workItemInfo.index;
+				result._workItemID = workItemID;
 
 				topNode._workResults.Add(result);
 			}
