@@ -410,10 +410,8 @@ namespace HoudiniEngineUnity
 				// The height values will be mapped over this terrain size.
 				float gridSpacingX = scale.x * 2f;
 				float gridSpacingY = scale.y * 2f;
-				float multiplierOffsetX = Mathf.Round(scale.x);
-				float multiplierOffsetY = Mathf.Round(scale.y);
-				layer._terrainSizeX = Mathf.Round(volumeInfo.xLength * gridSpacingX - multiplierOffsetX);
-				layer._terrainSizeY = Mathf.Round(volumeInfo.yLength * gridSpacingY - multiplierOffsetY);
+				layer._terrainSizeX = Mathf.Round((volumeInfo.xLength - 1) * gridSpacingX);
+				layer._terrainSizeY = Mathf.Round((volumeInfo.yLength - 1) * gridSpacingY);
 
 				// Get volume bounds for calculating position offset
 				session.GetVolumeBounds(nodeID, volumeParts[i].id, 
