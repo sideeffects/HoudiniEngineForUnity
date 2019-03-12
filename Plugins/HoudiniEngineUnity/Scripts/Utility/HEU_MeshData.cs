@@ -40,9 +40,7 @@ namespace HoudiniEngineUnity
 		public List<Color32> _colors = new List<Color32>();
 		public List<Vector3> _normals = new List<Vector3>();
 		public List<Vector4> _tangents = new List<Vector4>();
-		public List<Vector2> _UVs = new List<Vector2>();
-		public List<Vector2> _UV2s = new List<Vector2>();
-		public List<Vector2> _UV3s = new List<Vector2>();
+		public List<Vector4>[] _uvs = new List<Vector4>[HEU_Defines.HAPI_MAX_UVS];
 
 		public List<Vector3> _triangleNormals = new List<Vector3>();
 
