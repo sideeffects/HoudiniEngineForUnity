@@ -182,14 +182,10 @@ namespace HoudiniEngineUnity
 				// The height values will be mapped over this terrain size.
 				float gridSpacingX = scale.x * 2f;
 				float gridSpacingY = scale.y * 2f;
-				//float gridSpacingZ = scale.z * 2f;
-				float multiplierOffsetX = Mathf.Round(scale.x);
-				float multiplierOffsetY = Mathf.Round(scale.y);
-				//float multiplierOffsetZ = Mathf.Round(scale.z);
-				float terrainSizeX = Mathf.Round(volumeInfo.xLength * gridSpacingX - multiplierOffsetX);
-				float terrainSizeY = Mathf.Round(volumeInfo.yLength * gridSpacingY - multiplierOffsetY);
+				float terrainSizeX = Mathf.Round((volumeInfo.xLength - 1) * gridSpacingX);
+				float terrainSizeY = Mathf.Round((volumeInfo.yLength - 1) * gridSpacingY);
 
-				//Debug.LogFormat("GS = {0},{1},{2}. SX = {1}. SY = {2}", gridSpacingX, gridSpacingY, gridSpacingZ, terrainSizeX, terrainSizeY);
+				//Debug.LogFormat("GS = {0},{1},{2}. SX = {1}. SY = {2}", gridSpacingX, gridSpacingY, terrainSizeX, terrainSizeY);
 
 				//Debug.LogFormat("HeightField Pos:{0}, Scale:{1}", position, scale.ToString("{0.00}"));
 				//Debug.LogFormat("HeightField tileSize:{0}, xLength:{1}, yLength:{2}", volumeInfo.tileSize.ToString("{0.00}"), volumeInfo.xLength.ToString("{0.00}"), volumeInfo.yLength.ToString("{0.00}"));
@@ -299,7 +295,7 @@ namespace HoudiniEngineUnity
 				// Note SetHeights must be called before setting size in next line, as otherwise
 				// the internal terrain size will not change after setting the size.
 				terrainData.SetHeights(0, 0, unityHeights);
-
+				
 				terrainData.size = new Vector3(terrainSizeX, heightRange, terrainSizeY);
 
 				terrain.Flush();
