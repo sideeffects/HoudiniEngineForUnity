@@ -1260,12 +1260,13 @@ namespace HoudiniEngineUnity
 					return;
 				}
 
+				int functionNameLength = 0;
 				int functionColon = scriptToAttach.IndexOf(":", scriptColon + 1);
-				int functionNameLength = functionColon - (scriptColon + 1);
+				functionNameLength = (functionColon > 0) ? functionColon - (scriptColon + 1) : scriptToAttach.Length - (scriptColon + 1);
+
 				if (functionNameLength > 0)
 				{
 					string scriptFunction = scriptToAttach.Substring(scriptColon + 1, functionNameLength).Trim();
-
 					if (functionColon + 1 < scriptToAttach.Length)
 					{
 						// Get argument

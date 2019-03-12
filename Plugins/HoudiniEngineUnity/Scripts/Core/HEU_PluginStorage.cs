@@ -279,7 +279,7 @@ namespace HoudiniEngineUnity
 				StoreData data = _dataMap[key];
 				if (data._type == DataType.FLOAT)
 				{
-					value = System.Convert.ToSingle(data._valueStr);
+					value = System.Convert.ToSingle(data._valueStr, System.Globalization.CultureInfo.InvariantCulture);
 					return true;
 				}
 			}

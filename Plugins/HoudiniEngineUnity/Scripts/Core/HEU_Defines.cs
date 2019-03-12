@@ -107,7 +107,6 @@ namespace HoudiniEngineUnity
 		public const int HAPI_NORMAL_VECTOR_SIZE			= 3;
 		public const int HAPI_QUATERNION_VECTOR_SIZE		= 4;
 		public const int HAPI_EULER_VECTOR_SIZE				= 3;
-		public const int HAPI_UV_VECTOR_SIZE				= 2;
 		public const int HAPI_COLOR_VECTOR_SIZE				= 4;
 		public const int HAPI_CV_VECTOR_SIZE				= 4;
 
@@ -116,11 +115,11 @@ namespace HoudiniEngineUnity
 
 		public const int HAPI_INVALID_PARM_ID 				= -1;
 
+		public const int HAPI_MAX_UVS						= 8;
+
 		// Default Attributes' Names
 		public const string HAPI_ATTRIB_POSITION			= "P";
 		public const string HAPI_ATTRIB_UV					= "uv";
-		public const string HAPI_ATTRIB_UV2					= "uv2";
-		public const string HAPI_ATTRIB_UV3					= "uv3";
 		public const string HAPI_ATTRIB_NORMAL				= "N";
 		public const string HAPI_ATTRIB_TANGENT				= "tangentu";
 		public const string HAPI_ATTRIB_COLOR				= "Cd";

@@ -331,9 +331,9 @@ namespace HoudiniEngineUnity
 					string[] vecSplit = str.Split(',');
 					if (vecSplit.Length == 3)
 					{
-						_points.Add(new Vector3(-System.Convert.ToSingle(vecSplit[0]),
-							System.Convert.ToSingle(vecSplit[1]),
-							System.Convert.ToSingle(vecSplit[2])));
+						_points.Add(new Vector3(-System.Convert.ToSingle(vecSplit[0], System.Globalization.CultureInfo.InvariantCulture),
+							System.Convert.ToSingle(vecSplit[1], System.Globalization.CultureInfo.InvariantCulture),
+							System.Convert.ToSingle(vecSplit[2], System.Globalization.CultureInfo.InvariantCulture)));
 					}
 				}
 			}

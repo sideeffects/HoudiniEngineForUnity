@@ -78,18 +78,14 @@ namespace HoudiniEngineUnity
 		public List<HEU_MaterialData> _inUseMaterials = new List<HEU_MaterialData>();
 
 		public HAPI_AttributeInfo _posAttrInfo;
-		public HAPI_AttributeInfo _uvAttrInfo;
-		public HAPI_AttributeInfo _uv2AttrInfo;
-		public HAPI_AttributeInfo _uv3AttrInfo;
+		public HAPI_AttributeInfo[] _uvsAttrInfo;
 		public HAPI_AttributeInfo _normalAttrInfo;
 		public HAPI_AttributeInfo _colorAttrInfo;
 		public HAPI_AttributeInfo _alphaAttrInfo;
 		public HAPI_AttributeInfo _tangentAttrInfo;
 
 		public float[] _posAttr;
-		public float[] _uvAttr;
-		public float[] _uv2Attr;
-		public float[] _uv3Attr;
+		public float[][] _uvsAttr;
 		public float[] _normalAttr;
 		public float[] _colorAttr;
 		public float[] _alphaAttr;
@@ -347,23 +343,22 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			// Get UV attributes
-			_uvAttrInfo = new HAPI_AttributeInfo();
-			_uvAttrInfo.tupleSize = 2;
-			_uvAttr = new float[0];
-			HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_Defines.HAPI_ATTRIB_UV, ref _uvAttrInfo, ref _uvAttr, session.GetAttributeFloatData);
+			// Get all UV attributes
+			_uvsAttrInfo = new HAPI_AttributeInfo[HEU_Defines.HAPI_MAX_UVS];
+			_uvsAttr = new float[HEU_Defines.HAPI_MAX_UVS][];
+			for (int i = 0; i < HEU_Defines.HAPI_MAX_UVS; ++i)
+			{
+				_uvsAttrInfo[i] = new HAPI_AttributeInfo();
+				_uvsAttr[i] = new float[0];
+				string uvName = i == 0 ? HEU_Defines.HAPI_ATTRIB_UV : HEU_Defines.HAPI_ATTRIB_UV + (i + 1);
+				HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, uvName, ref _uvsAttrInfo[i], ref _uvsAttr[i], session.GetAttributeFloatData);
 
-			// Get UV2 attributes
-			_uv2AttrInfo = new HAPI_AttributeInfo();
-			_uv2AttrInfo.tupleSize = 2;
-			_uv2Attr = new float[0];
-			HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_Defines.HAPI_ATTRIB_UV2, ref _uv2AttrInfo, ref _uv2Attr, session.GetAttributeFloatData);
-
-			// Get UV3 attributes
-			_uv3AttrInfo = new HAPI_AttributeInfo();
-			_uv3AttrInfo.tupleSize = 2;
-			_uv3Attr = new float[0];
-			HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_Defines.HAPI_ATTRIB_UV3, ref _uv3AttrInfo, ref _uv3Attr, session.GetAttributeFloatData);
+				if (_uvsAttrInfo[i].exists && (_uvsAttrInfo[i].tupleSize < 2 || _uvsAttrInfo[i].tupleSize > 4))
+				{
+					Debug.LogWarningFormat("UV attribute '{0}' has size {1} which is unsupported. Size must be either 2, 3, or 4.", uvName, _uvsAttrInfo[i].tupleSize);
+					_uvsAttrInfo[i].exists = false;
+				}
+			}
 
 			// Get normal attributes
 			_normalAttrInfo = new HAPI_AttributeInfo();
@@ -1011,19 +1006,17 @@ namespace HoudiniEngineUnity
 							combine.mesh.uv = generatedUVs;
 						}
 					}
-					else if (submesh._UVs.Count > 0)
+					else if (submesh._uvs[0].Count > 0)
 					{
-						combine.mesh.SetUVs(0, submesh._UVs);
+						combine.mesh.SetUVs(0, submesh._uvs[0]);
 					}
-
-					if (submesh._UV2s.Count > 0)
+					
+					for (int u = 1; u < HEU_Defines.HAPI_MAX_UVS; ++u)
 					{
-						combine.mesh.SetUVs(1, submesh._UV2s);
-					}
-
-					if (submesh._UV3s.Count > 0)
-					{
-						combine.mesh.SetUVs(2, submesh._UV3s);
+						if (submesh._uvs[u].Count > 0)
+						{
+							combine.mesh.SetUVs(u, submesh._uvs[u]);
+						}
 					}
 
 					if (bGenerateNormals && submesh._normals.Count == 0)
@@ -1297,14 +1290,16 @@ namespace HoudiniEngineUnity
 				float[] groupTangentsAttr = new float[0];
 				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._tangentAttrInfo, geoCache._tangentAttr, ref groupTangentsAttr);
 
-				float[] groupUVAttr = new float[0];
-				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._uvAttrInfo, geoCache._uvAttr, ref groupUVAttr);
-
-				float[] groupUV2Attr = new float[0];
-				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._uv2AttrInfo, geoCache._uv2Attr, ref groupUV2Attr);
-
-				float[] groupUV3Attr = new float[0];
-				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._uv3AttrInfo, geoCache._uv3Attr, ref groupUV3Attr);
+				// Get maximum of 8 UV sets that Unity supports
+				float[][] groupUVsAttr = new float[HEU_Defines.HAPI_MAX_UVS][];
+				for(int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+				{
+					if (geoCache._uvsAttrInfo[u].exists)
+					{
+						groupUVsAttr[u] = new float[0];
+						HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._uvsAttrInfo[u], geoCache._uvsAttr[u], ref groupUVsAttr[u]);
+					}
+				}
 
 				// Unity mesh creation requires # of vertices must equal # of attributes (color, normal, uvs).
 				// HAPI gives us point indices. Since our attributes are via vertex, we need to therefore
@@ -1404,6 +1399,11 @@ namespace HoudiniEngineUnity
 					{
 						subMeshData = new HEU_MeshData();
 						currentLODGroup._subMeshesMap.Add(submeshID, subMeshData);
+
+						for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+						{
+							subMeshData._uvs[u] = new List<Vector4>();
+						}
 					}
 
 					for (int triIndex = 0; triIndex < 3; ++triIndex)
@@ -1455,27 +1455,21 @@ namespace HoudiniEngineUnity
 							subMeshData._normals.Add(Vector3.zero);
 						}
 
-						// UV1
-						if (vertexTriIndex < groupUVAttr.Length)
+						// Convert all UVs to vector format then add to submesh UVs array
+						for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
 						{
-							Vector2 uv = new Vector2(groupUVAttr[vertexTriIndex * 2 + 0], groupUVAttr[vertexTriIndex * 2 + 1]);
-							subMeshData._UVs.Add(uv);
+							if (geoCache._uvsAttrInfo[u].exists && (vertexTriIndex < groupUVsAttr[u].Length))
+							{
+								int uvSize = geoCache._uvsAttrInfo[u].tupleSize;
+								switch (uvSize)
+								{
+									case 2: { subMeshData._uvs[u].Add(new Vector2(groupUVsAttr[u][vertexTriIndex * 2 + 0], groupUVsAttr[u][vertexTriIndex * 2 + 1])); break; }
+									case 3: { subMeshData._uvs[u].Add(new Vector3(groupUVsAttr[u][vertexTriIndex * 3 + 0], groupUVsAttr[u][vertexTriIndex * 3 + 1], groupUVsAttr[u][vertexTriIndex * 3 + 2])); break; }
+									case 4: { subMeshData._uvs[u].Add(new Vector4(groupUVsAttr[u][vertexTriIndex * 4 + 0], groupUVsAttr[u][vertexTriIndex * 4 + 1], groupUVsAttr[u][vertexTriIndex * 4 + 2], groupUVsAttr[u][vertexTriIndex * 4 + 3])); break; }
+								}
+							} 
 						}
-
-						// UV2
-						if (vertexTriIndex < groupUV2Attr.Length)
-						{
-							Vector2 uv = new Vector2(groupUV2Attr[vertexTriIndex * 2 + 0], groupUV2Attr[vertexTriIndex * 2 + 1]);
-							subMeshData._UV2s.Add(uv);
-						}
-
-						// UV3
-						if (vertexTriIndex < groupUV3Attr.Length)
-						{
-							Vector2 uv = new Vector2(groupUV3Attr[vertexTriIndex * 2 + 0], groupUV3Attr[vertexTriIndex * 2 + 1]);
-							subMeshData._UV3s.Add(uv);
-						}
-
+						
 						// Tangents
 						if (bGenerateTangents && vertexTriIndex < groupTangentsAttr.Length)
 						{
@@ -1791,6 +1785,11 @@ namespace HoudiniEngineUnity
 					{
 						subMeshData = new HEU_MeshData();
 						currentLODGroup._subMeshesMap.Add(submeshID, subMeshData);
+
+						for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+						{
+							subMeshData._uvs[u] = new List<Vector4>();
+						}
 					}
 
 					for (int triIndex = 0; triIndex < 3; ++triIndex)
@@ -1836,7 +1835,6 @@ namespace HoudiniEngineUnity
 								subMeshData._colors.Add(Color.white);
 							}
 
-							
 							// Normal
 							if (geoCache._normalAttrInfo.exists && geoCache._normalAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT && positionIndex < geoCache._normalAttr.Length)
 							{
@@ -1845,25 +1843,19 @@ namespace HoudiniEngineUnity
 								subMeshData._normals.Add(normal);
 							}
 
-							// UV1
-							if (geoCache._uvAttrInfo.exists && geoCache._uvAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT && positionIndex < geoCache._uvAttr.Length)
+							// Convert all UVs to vector format
+							for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
 							{
-								Vector2 uv = new Vector2(geoCache._uvAttr[positionIndex * 2 + 0], geoCache._uvAttr[positionIndex * 2 + 1]);
-								subMeshData._UVs.Add(uv);
-							}
-
-							// UV2
-							if (geoCache._uv2AttrInfo.exists && geoCache._uv2AttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT && positionIndex < geoCache._uv2Attr.Length)
-							{
-								Vector2 uv = new Vector2(geoCache._uv2Attr[positionIndex * 2 + 0], geoCache._uv2Attr[positionIndex * 2 + 1]);
-								subMeshData._UV2s.Add(uv);
-							}
-
-							// UV3
-							if (geoCache._uv3AttrInfo.exists && geoCache._uv3AttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT && positionIndex < geoCache._uv3Attr.Length)
-							{
-								Vector2 uv = new Vector2(geoCache._uv3Attr[positionIndex * 2 + 0], geoCache._uv3Attr[positionIndex * 2 + 1]);
-								subMeshData._UV3s.Add(uv);
+								if (geoCache._uvsAttrInfo[u].exists && geoCache._uvsAttrInfo[u].owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT && positionIndex < geoCache._uvsAttr.Length)
+								{
+									int uvSize = geoCache._uvsAttrInfo[u].tupleSize;
+									switch (uvSize)
+									{
+										case 2: { subMeshData._uvs[u].Add(new Vector2(geoCache._uvsAttr[u][positionIndex * 2 + 0], geoCache._uvsAttr[u][positionIndex * 2 + 1])); break; }
+										case 3: { subMeshData._uvs[u].Add(new Vector3(geoCache._uvsAttr[u][positionIndex * 3 + 0], geoCache._uvsAttr[u][positionIndex * 3 + 1], geoCache._uvsAttr[u][positionIndex * 3 + 2])); break; }
+										case 4: { subMeshData._uvs[u].Add(new Vector4(geoCache._uvsAttr[u][positionIndex * 4 + 0], geoCache._uvsAttr[u][positionIndex * 4 + 1], geoCache._uvsAttr[u][positionIndex * 4 + 2], geoCache._uvsAttr[u][positionIndex * 4 + 3])); break; }
+									}
+								}
 							}
 
 							// Tangents
