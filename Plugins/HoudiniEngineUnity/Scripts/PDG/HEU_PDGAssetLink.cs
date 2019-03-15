@@ -49,8 +49,15 @@ namespace HoudiniEngineUnity
 
 
 	/// <summary>
-	/// Connects to an HDA containing TOP networks, queries TOP nodes, and keeps in sync.
-	/// Also triggers automatically loading of generated geometry.
+	/// Connects to an instanced HDA containing TOP networks and TOP nodes, manages PDG graph cook, and keeps in sync.
+	/// Handles automatic loading of generated results (geometry). Show / hide, unload results.
+	/// This behaves differently from a regular HDA as it doesn't expose any parms, 
+	/// nor the regular Houdini Engine cooking or baking functionality. Rather its strictly meant for PDG workflow.
+	/// It also uses a different loading (geometry generation) mechanism that focuses on asynchronous, fast loading,
+	/// lightweight footprint, and reduction of "editor" state. This means it doesn't support normal editor workflow such
+	/// as undo, parms, custom tools (e.g curve editor), baking, etc.
+	/// Currently the loaded geometry are not saved to persistent files in the Editor, but only saved to the current scene.
+	/// This limititation will be fixed in the near future.
 	/// </summary>
 	[ExecuteInEditMode]
 	public class HEU_PDGAssetLink : MonoBehaviour, ISerializationCallbackReceiver
@@ -67,6 +74,9 @@ namespace HoudiniEngineUnity
 			
 		}
 
+		/// <summary>
+		/// Callback on scene load, or code refresh.
+		/// </summary>
 		public void OnAfterDeserialize()
 		{
 			//Debug.Log("OnAfterDeserialize");
@@ -74,6 +84,9 @@ namespace HoudiniEngineUnity
 			HandleInitialLoad();
 		}
 
+		/// <summary>
+		/// Register self with the global HEU_PDGAssetLink list.
+		/// </summary>
 		private void HandleInitialLoad()
 		{
 #if HOUDINIENGINEUNITY_ENABLED
@@ -100,6 +113,7 @@ namespace HoudiniEngineUnity
 			HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
 			if (pdgSession != null)
 			{
+				// Unregister on clean up
 				pdgSession.RemoveAsset(this);
 			}
 		}
@@ -115,6 +129,12 @@ namespace HoudiniEngineUnity
 			Refresh();
 		}
 
+		/// <summary>
+		/// Callback when linked HDA has been cooked. Allows to trigger a PDG graph cook.
+		/// </summary>
+		/// <param name="asset"></param>
+		/// <param name="bSuccess"></param>
+		/// <param name="generatedOutputs"></param>
 		private void NotifyAssetCooked(HEU_HoudiniAsset asset, bool bSuccess, List<GameObject> generatedOutputs)
 		{
 			//Debug.LogFormat("NotifyAssetCooked: {0} - {1} - {2}", asset.AssetName, bSuccess, _linkState);
@@ -138,11 +158,19 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Reset all TOP network and node state.
+		/// Should be done after the linked HDA has rebuilt.
+		/// </summary>
 		public void Reset()
 		{
 			ClearAllTOPData();
 		}
 
+		/// <summary>
+		/// Refresh this object's internal state by querying and populating TOP network and nodes
+		/// from linked HDA.
+		/// </summary>
 		public void Refresh()
 		{
 			if (_heu == null)
@@ -160,24 +188,32 @@ namespace HoudiniEngineUnity
 
 			if (_linkState == LinkState.INACTIVE || _assetID == HEU_Defines.HEU_INVALID_NODE_ID)
 			{
+				// Never linked before, so do some setup, and cook the HDA
+
 				_linkState = LinkState.LINKING;
 
+				// Removing then adding listener guarantees no duplicate entries
 				_heu._cookedEvent.RemoveListener(NotifyAssetCooked);
 				_heu._cookedEvent.AddListener(NotifyAssetCooked);
 
 				_heu._reloadEvent.RemoveListener(NotifyAssetCooked);
 				_heu._reloadEvent.AddListener(NotifyAssetCooked);
 
+				// Do a asynchronouse cook of the linked HDA so that we get its latest state
 				_heu.RequestCook(true, true, true, true);
 
 				RepaintUI();
 			}
 			else
 			{
+				// Linked already, so now populate this
 				PopulateFromHDA();
 			}
 		}
 
+		/// <summary>
+		/// Populate TOP data from linked HDA
+		/// </summary>
 		private void PopulateFromHDA()
 		{
 			if (!_heu.IsAssetValid())
@@ -205,6 +241,10 @@ namespace HoudiniEngineUnity
 			RepaintUI();
 		}
 
+		/// <summary>
+		/// Find all TOP networks from linked HDA, as well as the TOP nodes within, and populate internal state.
+		/// </summary>
+		/// <returns>True if successfully populated data</returns>
 		public bool PopulateTOPNetworks()
 		{
 			HEU_SessionBase session = GetHAPISession();
@@ -215,7 +255,8 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			// Get all networks within the asset, recursively
+			// Get all networks within the asset, recursively.
+			// The reason to get all networks is because there can be TOP network SOP which isn't a TOP network type, but rather a SOP type
 			int nodeCount = 0;
 			if (!session.ComposeChildNodeList(_assetID, (int)(HAPI_NodeType.HAPI_NODETYPE_ANY), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK, true, ref nodeCount))
 			{
@@ -262,6 +303,7 @@ namespace HoudiniEngineUnity
 					continue;
 				}
 
+				// Get any filter tags from spare parms on TOP nodes
 				TOPNodeTags tags = new TOPNodeTags();
 				if (_useHEngineData)
 				{
@@ -296,7 +338,7 @@ namespace HoudiniEngineUnity
 				topNetworkData._parentName = _assetName;
 				topNetworkData._tags = tags;
 
-				PopulateTOPNodes(session, topNetworkData._nodeID, topNetworkData, topNodeIDs, _useHEngineData);
+				PopulateTOPNodes(session, topNetworkData, topNodeIDs, _useHEngineData);
 			}
 
 			// Clear old TOP networks and nodes
@@ -313,7 +355,15 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 
-		public static bool PopulateTOPNodes(HEU_SessionBase session, HAPI_NodeId parentNodeID, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs, bool useHEngineData)
+		/// <summary>
+		/// Given TOP nodes from a TOP network, populate internal state from each TOP node.
+		/// </summary>
+		/// <param name="session">Houdini Engine session</param>
+		/// <param name="topNetwork">TOP network to query TOP nodes from</param>
+		/// <param name="topNodeIDs">List of TOP nodes in the TOP network</param>
+		/// <param name="useHEngineData">Whether or not to use HEngine data for filtering</param>
+		/// <returns>True if successfully populated data</returns>
+		public static bool PopulateTOPNodes(HEU_SessionBase session, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs, bool useHEngineData)
 		{
 			// Holds list of found TOP nodes
 			List<HEU_TOPNodeData> newNodes = new List<HEU_TOPNodeData>();
@@ -383,6 +433,10 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 
+		/// <summary>
+		/// Set the TOP network at the given index as currently selected TOP network
+		/// </summary>
+		/// <param name="newIndex">Index of the TOP network</param>
 		public void SelectTOPNetwork(int newIndex)
 		{
 			if (newIndex < 0 || newIndex >= _topNetworks.Count)
@@ -393,6 +447,11 @@ namespace HoudiniEngineUnity
 			_selectedTOPNetwork = newIndex;
 		}
 
+		/// <summary>
+		/// Set the TOP node at the given index in the given TOP network as currently selected TOP node
+		/// </summary>
+		/// <param name="network">Container TOP network</param>
+		/// <param name="newIndex">Index of the TOP node to be selected</param>
 		public void SelectTOPNode(HEU_TOPNetworkData network, int newIndex)
 		{
 			if (newIndex < 0 || newIndex >= network._topNodes.Count)
@@ -573,6 +632,10 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Dirty the specified TOP node and clear its work item results.
+		/// </summary>
+		/// <param name="topNode"></param>
 		public void DirtyTOPNode(HEU_TOPNodeData topNode)
 		{
 			HEU_SessionBase session = GetHAPISession();
@@ -590,6 +653,10 @@ namespace HoudiniEngineUnity
 			ClearTOPNodeWorkItemResults(topNode);
 		}
 
+		/// <summary>
+		/// Cook the specified TOP node.
+		/// </summary>
+		/// <param name="topNode"></param>
 		public void CookTOPNode(HEU_TOPNodeData topNode)
 		{
 			HEU_SessionBase session = GetHAPISession();
@@ -604,6 +671,9 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Dirty the currently selected TOP network and clear all work item results.
+		/// </summary>
 		public void DirtyAll()
 		{
 			HEU_SessionBase session = GetHAPISession();
@@ -625,6 +695,9 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Cook the output TOP node of the currently selected TOP network.
+		/// </summary>
 		public void CookOutput()
 		{
 			HEU_SessionBase session = GetHAPISession();
@@ -649,6 +722,9 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Pause the PDG cook of the currently selected TOP network
+		/// </summary>
 		public void PauseCook()
 		{
 			HEU_SessionBase session = GetHAPISession();
@@ -673,6 +749,9 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Cancel the PDG cook of the currently selected TOP network
+		/// </summary>
 		public void CancelCook()
 		{
 			HEU_SessionBase session = GetHAPISession();
@@ -702,6 +781,16 @@ namespace HoudiniEngineUnity
 			return _heu != null ? _heu.GetAssetSession(true) : null;
 		}
 
+		/// <summary>
+		/// Load the geometry generated as results of the given work item, of the given TOP node.
+		/// The load will be done asynchronously.
+		/// Results must be tagged with 'file', and must have a file path, otherwise will not be loaded.
+		/// </summary>
+		/// <param name="session">Houdini Engine session that the TOP node is in</param>
+		/// <param name="topNode">TOP node that the work item belongs to</param>
+		/// <param name="workItemInfo">Work item whose results to load</param>
+		/// <param name="resultInfos">Results data</param>
+		/// <param name="workItemID">The work item's ID. Required for clearning its results.</param>
 		public void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos, HAPI_PDG_WorkitemId workItemID)
 		{
 			// Create HEU_GeoSync objects, set results, and sync it
@@ -727,6 +816,7 @@ namespace HoudiniEngineUnity
 				topNode._workResults.Add(result);
 			}
 
+			// Load each result geometry
 			int numResults = resultInfos.Length;
 			for (int i = 0; i < numResults; ++i)
 			{
@@ -763,6 +853,7 @@ namespace HoudiniEngineUnity
 
 				result._generatedGOs.Add(newGO);
 
+				// HEU_GeoSync does the loading
 				HEU_GeoSync geoSync = newGO.AddComponent<HEU_GeoSync>();
 				if (geoSync != null)
 				{
@@ -865,8 +956,10 @@ namespace HoudiniEngineUnity
 		}
 
 		//	MENU ----------------------------------------------------------------------------------------------------
+		/// <summary>
+		/// Menu entry to create the PDG Asset Link object with link to selected HDA.
+		/// </summary>
 #if UNITY_EDITOR
-		//[MenuItem("PDG/Create PDG Asset Link", false, 0)]
 		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/PDG/Create PDG Asset Link", false, 100)]
 		public static void CreatePDGAssetLink()
 		{
@@ -903,6 +996,13 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Helper to parse spare parm containing the filter key words.
+		/// </summary>
+		/// <param name="session">Houdini Engine session that the TOP node is in</param>
+		/// <param name="topNodeID">TOP node to get spare parm from</param>
+		/// <param name="nodeInfo">Previously queried TOP node info</param>
+		/// <param name="nodeTags">Tag data to populate</param>
 		private static void ParseHEngineData(HEU_SessionBase session, HAPI_NodeId topNodeID, ref HAPI_NodeInfo nodeInfo, ref TOPNodeTags nodeTags)
 		{
 			// Turn off session logging error when querying string parm that might not be there
@@ -961,14 +1061,18 @@ namespace HoudiniEngineUnity
 		[SerializeField]
 		private HAPI_NodeId _assetID = HEU_Defines.HEU_INVALID_NODE_ID;
 
+		// Linked HDA
 		[SerializeField]
 		private HEU_HoudiniAsset _heu;
 
+		// List of TOP networks within HDA
 		[SerializeField]
 		private List<HEU_TOPNetworkData> _topNetworks = new List<HEU_TOPNetworkData>();
 
+		// Names of TOP networks within HDA
 		public string[] _topNetworkNames = new string[0];
 
+		// Currently selected TOP network
 		[SerializeField]
 		private int _selectedTOPNetwork;
 

@@ -46,7 +46,11 @@ namespace HoudiniEngineUnity
 	using HAPI_PDG_GraphContextId = System.Int32;
 	using HAPI_SessionId = System.Int64;
 
-
+	/// <summary>
+	/// Global object that manages all PDG-specific things on Unity side.
+	/// Handles PDG events for all PDG graph contexts.
+	/// Manages and updates all HEU_PDGAssetLink objects in scene.
+	/// </summary>
 	public class HEU_PDGSession
 	{
 		public static HEU_PDGSession GetPDGSession()
@@ -110,6 +114,11 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Query all the PDG graph context in the current Houdini Engine session.
+		/// Handle PDG events, work item status updates.
+		/// Forward relevant events to HEU_PDGAssetLink objects.
+		/// </summary>
 		private void UpdatePDGContext()
 		{
 			HEU_SessionBase session = GetHAPIPDGSession();
@@ -118,9 +127,10 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
+			// Get current PDG graph contexts
 			ReinitializePDGContext();
 
-			// Get next set of events for each graph context
+			// Process next set of events for each graph context
 			if (_pdgContextIDs != null)
 			{
 				foreach (HAPI_PDG_GraphContextId contextID in _pdgContextIDs)
@@ -134,7 +144,7 @@ namespace HoudiniEngineUnity
 
 					_pdgState = (HAPI_PDG_State)pdgStateInt;
 
-
+					// Only initialize event array if not valid, or user resized max size
 					if (_pdgQueryEvents == null || _pdgQueryEvents.Length != _pdgMaxProcessEvents)
 					{
 						_pdgQueryEvents = new HAPI_PDG_EventInfo[_pdgMaxProcessEvents];
@@ -162,6 +172,10 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Query the currently active PDG graph contexts in the Houdini Engine session.
+		/// Should be done each time to get latest set of graph contexts.
+		/// </summary>
 		public void ReinitializePDGContext()
 		{
 			HEU_SessionBase session = GetHAPIPDGSession();
@@ -185,6 +199,7 @@ namespace HoudiniEngineUnity
 				_pdgContextIDs = new HAPI_PDG_GraphContextId[numContexts];
 			}
 
+			// TODO: might be okay to just use _pdgContextIDs above instead of doing a copy here
 			for (int i = 0; i < numContexts; ++i)
 			{
 				_pdgContextIDs[i] = contextIDs[i];
@@ -192,6 +207,12 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Process a PDG event. Notify the relevant HEU_PDGAssetLink object.
+		/// </summary>
+		/// <param name="session">Houdini Engine session</param>
+		/// <param name="contextID">PDG graph context ID</param>
+		/// <param name="eventInfo">PDG event info</param>
 		private void ProcessPDGEvent(HEU_SessionBase session, HAPI_PDG_GraphContextId contextID, ref HAPI_PDG_EventInfo eventInfo)
 		{
 			HEU_PDGAssetLink assetLink = null;
@@ -211,6 +232,8 @@ namespace HoudiniEngineUnity
 			{
 				return;
 			}
+
+			// Events can be split into TOP node specific or work item specific
 
 			if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_NULL)
 			{
@@ -299,6 +322,7 @@ namespace HoudiniEngineUnity
 					{
 						NotifyTOPNodeCookedWorkItem(assetLink, topNode);
 
+						// On cook success, handle results
 						if (topNode._tags._autoload)
 						{
 							HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
@@ -324,6 +348,7 @@ namespace HoudiniEngineUnity
 					}
 					else if(currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_FAIL)
 					{
+						// TODO: on cook failure, get log path?
 						NotifyTOPNodeErrorWorkItem(assetLink, topNode);
 					}
 					else if(currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_CANCEL)
@@ -353,6 +378,13 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Returns the HEU_PDGAssetLink and HEU_TOPNodeData associated with this TOP node ID
+		/// </summary>
+		/// <param name="nodeID">Node ID to query</param>
+		/// <param name="assetLink">Found HEU_PDGAssetLink or null</param>
+		/// <param name="topNode">Found top node with ID or null</param>
+		/// <returns>Returns true if found</returns>
 		private bool GetTOPAssetLinkAndNode(HAPI_NodeId nodeID, out HEU_PDGAssetLink assetLink, out HEU_TOPNodeData topNode)
 		{
 			assetLink = null;
@@ -448,11 +480,19 @@ namespace HoudiniEngineUnity
 			_errorMsg = "";
 		}
 
+		/// <summary>
+		/// Return the current Houdini Engine session
+		/// </summary>
+		/// <returns></returns>
 		public HEU_SessionBase GetHAPIPDGSession()
 		{
 			return HEU_SessionManager.GetOrCreateDefaultSession();
 		}
 
+		/// <summary>
+		/// Cook the PDG graph of the specified TOP network
+		/// </summary>
+		/// <param name="topNetwork"></param>
 		public void CookTOPNetworkOutputNode(HEU_TOPNetworkData topNetwork)
 		{
 			HEU_SessionBase session = GetHAPIPDGSession();
@@ -461,7 +501,7 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
-			// Cancel all cooks. This is required as otherwise the graph gets into an infnite cooked
+			// Cancel all cooks. This is required as otherwise the graph gets into an infinite cook
 			// state (bug?)
 			if (_pdgContextIDs != null)
 			{
@@ -477,6 +517,10 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Pause the PDG graph cook of the specified TOP network
+		/// </summary>
+		/// <param name="topNetwork"></param>
 		public void PauseCook(HEU_TOPNetworkData topNetwork)
 		{
 			HEU_SessionBase session = GetHAPIPDGSession();
@@ -495,6 +539,10 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Cancel the PDG graph cook of the specified TOP network
+		/// </summary>
+		/// <param name="topNetwork"></param>
 		public void CancelCook(HEU_TOPNetworkData topNetwork)
 		{
 			HEU_SessionBase session = GetHAPIPDGSession();
@@ -513,6 +561,13 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		/// <summary>
+		/// Clear all work items' results of the specified TOP node. This destroys any loaded results (geometry etc).
+		/// </summary>
+		/// <param name="session"></param>
+		/// <param name="contextID"></param>
+		/// <param name="eventInfo"></param>
+		/// <param name="topNode"></param>
 		public void ClearWorkItemResult(HEU_SessionBase session, HAPI_PDG_GraphContextId contextID, HAPI_PDG_EventInfo eventInfo, HEU_TOPNodeData topNode)
 		{
 			session.LogErrorOverride = false;
@@ -541,18 +596,20 @@ namespace HoudiniEngineUnity
 
 		//	DATA ------------------------------------------------------------------------------------------------------
 
-
+		// Global PDG session object
 		private static HEU_PDGSession _pdgSession;
 
+		// List of all registered HEU_PDGAssetLink in the scene
 		private List<HEU_PDGAssetLink> _pdgAssets = new List<HEU_PDGAssetLink>();
 
+		// Maximum number of PDG events to process at a time
 		public int _pdgMaxProcessEvents = 100;
-		public int _pdgContextSize = 20;
-		public HAPI_PDG_GraphContextId[] _pdgContextIDs = null;
-
-		public Stack<HAPI_PDG_EventInfo> _pdgEvents = new Stack<HAPI_PDG_EventInfo>();
-
+		// Storage of latest PDG events
 		public HAPI_PDG_EventInfo[] _pdgQueryEvents;
+
+		// Storage of latest PDG graph context data
+		public int _pdgContextSize = 20;
+		public HAPI_PDG_GraphContextId[] _pdgContextIDs;
 
 		public bool _errored;
 		public string _errorMsg;
