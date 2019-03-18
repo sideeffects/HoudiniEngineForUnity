@@ -71,7 +71,7 @@ namespace HoudiniEngineUnity
 
 		public void AddAsset(HEU_PDGAssetLink asset)
 		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+#if HOUDINIENGINEUNITY_ENABLED
 			if (!_pdgAssets.Contains(asset))
 			{
 				_pdgAssets.Add(asset);
@@ -82,7 +82,7 @@ namespace HoudiniEngineUnity
 
 		public void RemoveAsset(HEU_PDGAssetLink asset)
 		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+#if HOUDINIENGINEUNITY_ENABLED
 			// Setting the asset reference to null and removing
 			// later in Update in case of removing while iterating the list
 			int index = _pdgAssets.IndexOf(asset);
@@ -95,7 +95,7 @@ namespace HoudiniEngineUnity
 
 		void Update()
 		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+#if HOUDINIENGINEUNITY_ENABLED
 			CleanUp();
 
 			UpdatePDGContext();
@@ -121,6 +121,7 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		private void UpdatePDGContext()
 		{
+#if HOUDINIENGINEUNITY_ENABLED
 			HEU_SessionBase session = GetHAPIPDGSession();
 			if (session == null || !session.IsSessionValid())
 			{
@@ -170,6 +171,7 @@ namespace HoudiniEngineUnity
 					
 				}
 			}
+#endif
 		}
 
 		/// <summary>
@@ -178,6 +180,7 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		public void ReinitializePDGContext()
 		{
+#if HOUDINIENGINEUNITY_ENABLED
 			HEU_SessionBase session = GetHAPIPDGSession();
 			if (session == null || !session.IsSessionValid())
 			{
@@ -205,6 +208,7 @@ namespace HoudiniEngineUnity
 				_pdgContextIDs[i] = contextIDs[i];
 				//Debug.LogFormat("PDG Context: {0} - {1}", HEU_SessionManager.GetString(contextNames[i], session), contextIDs[i]);
 			}
+#endif
 		}
 
 		/// <summary>
@@ -215,6 +219,7 @@ namespace HoudiniEngineUnity
 		/// <param name="eventInfo">PDG event info</param>
 		private void ProcessPDGEvent(HEU_SessionBase session, HAPI_PDG_GraphContextId contextID, ref HAPI_PDG_EventInfo eventInfo)
 		{
+#if HOUDINIENGINEUNITY_ENABLED
 			HEU_PDGAssetLink assetLink = null;
 			HEU_TOPNodeData topNode = null;
 
@@ -376,6 +381,7 @@ namespace HoudiniEngineUnity
 					SetTOPNodePDGState(assetLink, topNode, HEU_TOPNodeData.PDGState.COOKING);
 				}
 			}
+#endif
 		}
 
 		/// <summary>
@@ -495,6 +501,7 @@ namespace HoudiniEngineUnity
 		/// <param name="topNetwork"></param>
 		public void CookTOPNetworkOutputNode(HEU_TOPNetworkData topNetwork)
 		{
+#if HOUDINIENGINEUNITY_ENABLED
 			HEU_SessionBase session = GetHAPIPDGSession();
 			if (session == null || !session.IsSessionValid())
 			{
@@ -515,6 +522,7 @@ namespace HoudiniEngineUnity
 			{
 				Debug.LogErrorFormat("Cook node failed!");
 			}
+#endif
 		}
 
 		/// <summary>
@@ -523,6 +531,7 @@ namespace HoudiniEngineUnity
 		/// <param name="topNetwork"></param>
 		public void PauseCook(HEU_TOPNetworkData topNetwork)
 		{
+#if HOUDINIENGINEUNITY_ENABLED
 			HEU_SessionBase session = GetHAPIPDGSession();
 			if (session == null || !session.IsSessionValid())
 			{
@@ -537,6 +546,7 @@ namespace HoudiniEngineUnity
 					session.PausePDGCook(contextID);
 				}
 			}
+#endif
 		}
 
 		/// <summary>
@@ -545,6 +555,7 @@ namespace HoudiniEngineUnity
 		/// <param name="topNetwork"></param>
 		public void CancelCook(HEU_TOPNetworkData topNetwork)
 		{
+#if HOUDINIENGINEUNITY_ENABLED
 			HEU_SessionBase session = GetHAPIPDGSession();
 			if (session == null || !session.IsSessionValid())
 			{
@@ -559,6 +570,7 @@ namespace HoudiniEngineUnity
 					session.CancelPDGCook(contextID);
 				}
 			}
+#endif
 		}
 
 		/// <summary>
@@ -570,6 +582,7 @@ namespace HoudiniEngineUnity
 		/// <param name="topNode"></param>
 		public void ClearWorkItemResult(HEU_SessionBase session, HAPI_PDG_GraphContextId contextID, HAPI_PDG_EventInfo eventInfo, HEU_TOPNodeData topNode)
 		{
+#if HOUDINIENGINEUNITY_ENABLED
 			session.LogErrorOverride = false;
 			bool bCleared = false;
 
@@ -591,6 +604,54 @@ namespace HoudiniEngineUnity
 			}
 
 			session.LogErrorOverride = true;
+#endif
+		}
+
+		/// <summary>
+		/// Returns true if successfully dirtied the TOP node.
+		/// </summary>
+		/// <param name="topNode">TOP node to dirty</param>
+		public bool DirtyTOPNode(HAPI_NodeId nodeID)
+		{
+#if HOUDINIENGINEUNITY_ENABLED
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session != null && session.IsSessionValid())
+			{
+				return session.DirtyPDGNode(nodeID, true);
+			}
+#endif
+			return false;
+		}
+
+		/// <summary>
+		/// Returns true if cooked the specified TOP node.
+		/// </summary>
+		/// <param name="topNode"></param>
+		public bool CookTOPNode(HAPI_NodeId nodeID)
+		{
+#if HOUDINIENGINEUNITY_ENABLED
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session != null && session.IsSessionValid())
+			{
+				return session.CookPDG(nodeID, 0, 0);
+			}
+#endif
+			return false;
+		}
+
+		/// <summary>
+		/// Returns true if dirtied the TOP network.
+		/// </summary>
+		public bool DirtyAll(HAPI_NodeId nodeID)
+		{
+#if HOUDINIENGINEUNITY_ENABLED
+			HEU_SessionBase session = GetHAPIPDGSession();
+			if (session != null && session.IsSessionValid())
+			{
+				return session.DirtyPDGNode(nodeID, true);
+			}
+#endif
+			return false;
 		}
 
 

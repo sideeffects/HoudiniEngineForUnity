@@ -638,19 +638,11 @@ namespace HoudiniEngineUnity
 		/// <param name="topNode"></param>
 		public void DirtyTOPNode(HEU_TOPNodeData topNode)
 		{
-			HEU_SessionBase session = GetHAPISession();
-			if (session == null || !session.IsSessionValid())
+			HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+			if (pdgSession != null && pdgSession.DirtyTOPNode(topNode._nodeID))
 			{
-				return;
+				ClearTOPNodeWorkItemResults(topNode);
 			}
-
-			if (!session.DirtyPDGNode(topNode._nodeID, true))
-			{
-				Debug.LogErrorFormat("Dirty node failed!");
-				return;
-			}
-
-			ClearTOPNodeWorkItemResults(topNode);
 		}
 
 		/// <summary>
@@ -659,15 +651,10 @@ namespace HoudiniEngineUnity
 		/// <param name="topNode"></param>
 		public void CookTOPNode(HEU_TOPNodeData topNode)
 		{
-			HEU_SessionBase session = GetHAPISession();
-			if (session == null || !session.IsSessionValid())
+			HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+			if (pdgSession != null)
 			{
-				return;
-			}
-
-			if (!session.CookPDG(topNode._nodeID, 0, 0))
-			{
-				Debug.LogErrorFormat("Cook node failed!");
+				pdgSession.CookTOPNode(topNode._nodeID);
 			}
 		}
 
@@ -676,22 +663,14 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		public void DirtyAll()
 		{
-			HEU_SessionBase session = GetHAPISession();
-			if (session == null || !session.IsSessionValid())
-			{
-				return;
-			}
-
 			HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
 			if (topNetwork != null)
 			{
-				if (!session.DirtyPDGNode(topNetwork._nodeID, true))
+				HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+				if (pdgSession != null && pdgSession.DirtyAll(topNetwork._nodeID))
 				{
-					Debug.LogErrorFormat("Dirty node failed!");
-					return;
+					ClearTOPNetworkWorkItemResults(topNetwork);
 				}
-
-				ClearTOPNetworkWorkItemResults(topNetwork);
 			}
 		}
 
@@ -955,47 +934,6 @@ namespace HoudiniEngineUnity
 			return "";
 		}
 
-		//	MENU ----------------------------------------------------------------------------------------------------
-		/// <summary>
-		/// Menu entry to create the PDG Asset Link object with link to selected HDA.
-		/// </summary>
-#if UNITY_EDITOR
-		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/PDG/Create PDG Asset Link", false, 100)]
-		public static void CreatePDGAssetLink()
-		{
-			GameObject selectedGO = Selection.activeGameObject;
-			if (selectedGO != null)
-			{
-				HEU_HoudiniAssetRoot assetRoot = selectedGO.GetComponent<HEU_HoudiniAssetRoot>();
-				if (assetRoot != null)
-				{
-					if (assetRoot._houdiniAsset != null)
-					{
-						string name = string.Format("{0}_PDGLink", assetRoot._houdiniAsset.AssetName);
-
-						GameObject go = new GameObject(name);
-						HEU_PDGAssetLink assetLink = go.AddComponent<HEU_PDGAssetLink>();
-						assetLink.Setup(assetRoot._houdiniAsset);
-
-						Selection.activeGameObject = go;
-					}
-					else
-					{
-						Debug.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
-					}
-				}
-				else
-				{
-					Debug.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
-				}
-			}
-			else
-			{
-				//Debug.LogError("Nothing selected. Select an instantiated HDA first.");
-				HEU_EditorUtility.DisplayErrorDialog("PDG Asset Link", "No HDA selected. You must select an instantiated HDA first.", "OK");
-			}
-		}
-
 		/// <summary>
 		/// Helper to parse spare parm containing the filter key words.
 		/// </summary>
@@ -1039,9 +977,6 @@ namespace HoudiniEngineUnity
 			// Logging error back on
 			session.LogErrorOverride = bLogError;
 		}
-
-
-#endif
 
 		//	DATA ------------------------------------------------------------------------------------------------------
 

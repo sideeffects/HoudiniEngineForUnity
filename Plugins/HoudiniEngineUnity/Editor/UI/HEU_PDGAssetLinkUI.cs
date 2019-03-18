@@ -476,6 +476,48 @@ namespace HoudiniEngineUnity
 			Repaint();
 		}
 
+		//	MENU ----------------------------------------------------------------------------------------------------
+		/// <summary>
+		/// Menu entry to create the PDG Asset Link object with link to selected HDA.
+		/// </summary>
+#if UNITY_EDITOR
+		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/PDG/Create PDG Asset Link", false, 100)]
+		public static void CreatePDGAssetLink()
+		{
+			GameObject selectedGO = Selection.activeGameObject;
+			if (selectedGO != null)
+			{
+				HEU_HoudiniAssetRoot assetRoot = selectedGO.GetComponent<HEU_HoudiniAssetRoot>();
+				if (assetRoot != null)
+				{
+					if (assetRoot._houdiniAsset != null)
+					{
+						string name = string.Format("{0}_PDGLink", assetRoot._houdiniAsset.AssetName);
+
+						GameObject go = new GameObject(name);
+						HEU_PDGAssetLink assetLink = go.AddComponent<HEU_PDGAssetLink>();
+						assetLink.Setup(assetRoot._houdiniAsset);
+
+						Selection.activeGameObject = go;
+					}
+					else
+					{
+						Debug.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
+					}
+				}
+				else
+				{
+					Debug.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
+				}
+			}
+			else
+			{
+				//Debug.LogError("Nothing selected. Select an instantiated HDA first.");
+				HEU_EditorUtility.DisplayErrorDialog("PDG Asset Link", "No HDA selected. You must select an instantiated HDA first.", "OK");
+			}
+		}
+#endif
+
 		//	DATA ------------------------------------------------------------------------------------------------------
 
 		public HEU_PDGAssetLink _assetLink;
