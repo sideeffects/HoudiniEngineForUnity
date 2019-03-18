@@ -642,7 +642,7 @@ namespace HoudiniEngineUnity
 
 				string statusMessage = GetStatusString(HAPI_StatusType.HAPI_STATUS_CALL_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);
 				string errorMsg = string.Format("{0} : {1}\nIf session is invalid, try restarting Unity.", prependMsg, statusMessage);
-				SetSessionErrorMsg(errorMsg, LogErrorOverride && bLogError); ;
+				SetSessionErrorMsg(errorMsg, bLogError);
 
 				if (ThrowErrorOverride && bThrowError)
 				{
@@ -1259,10 +1259,10 @@ namespace HoudiniEngineUnity
 		/// <param name="nodeID">Object node ID</param>
 		/// <param name="geoInfo">Geo info to populate</param>
 		/// <returns>True if successfully queried the geo info</returns>
-		public override bool GetDisplayGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo)
+		public override bool GetDisplayGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo, bool bLogError)
 		{
 			HAPI_Result result = HEU_HAPIImports.HAPI_GetDisplayGeoInfo(ref _sessionData._HAPISession, nodeID, out geoInfo);
-			HandleStatusResult(result, "Getting Display Geo Info", false, true);
+			HandleStatusResult(result, "Getting Display Geo Info", false, bLogError);
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 

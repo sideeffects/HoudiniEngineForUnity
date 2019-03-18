@@ -553,7 +553,7 @@ namespace HoudiniEngineUnity
 				HEU_PartData partData = _geoNode.GetPartFromPartID(instanceNodeIDs[i]);
 				if (partData == null)
 				{
-					Debug.LogErrorFormat("Part with id {0} is missing. Unable to setup instancer!", instanceNodeIDs[i]);
+					Debug.LogWarningFormat("Part with id {0} is missing. Unable to generate instance!", instanceNodeIDs[i]);
 					return;
 				}
 
