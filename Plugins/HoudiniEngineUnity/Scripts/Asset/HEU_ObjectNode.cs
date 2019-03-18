@@ -215,8 +215,6 @@ namespace HoudiniEngineUnity
 			// Update the object transform
 			_objectTransform = ParentAsset.GetObjectTransform(session, ObjectID);
 
-			bool bApplyHAPITransform = false;
-
 			// Container for existing geo nodes that are still in use
 			List<HEU_GeoNode> geoNodesToKeep = new List<HEU_GeoNode>();
 			
@@ -233,11 +231,14 @@ namespace HoudiniEngineUnity
 
 				// Get the display geo info
 				HAPI_GeoInfo displayGeoInfo = new HAPI_GeoInfo();
-				if (!session.GetDisplayGeoInfo(_objectInfo.nodeId, ref displayGeoInfo))
+				if (session.GetDisplayGeoInfo(_objectInfo.nodeId, ref displayGeoInfo, false))
 				{
-					return;
+					postCookGeoInfos.Add(displayGeoInfo);
 				}
-				postCookGeoInfos.Add(displayGeoInfo);
+				else
+				{
+					displayGeoInfo.nodeId = HEU_Defines.HEU_INVALID_NODE_ID;
+				}
 
 				// Get editable nodes, cook em, then create geo nodes for them
 				HAPI_NodeId[] editableNodes = null;
@@ -292,8 +293,6 @@ namespace HoudiniEngineUnity
 				{
 					_geoNodes[i].DestroyAllData();
 				}
-
-				bApplyHAPITransform = true;
 			}
 			else
 			{
@@ -334,13 +333,7 @@ namespace HoudiniEngineUnity
 			// Overwrite the old list with new
 			_geoNodes = geoNodesToKeep;
 
-			// Update transform to all geo nodes whether they were created newly, or
-			// this object's transform has changed
-			if (bApplyHAPITransform || bForceUpdate || _objectInfo.hasTransformChanged)
-			{
-				// This has been moved to GenerateGeometry but kept here just in case.
-				//ApplyObjectTransformToGeoNodes();
-			}
+			// Updating the trasform is done in GenerateGeometry
 		}
 
 		public void GenerateGeometry(HEU_SessionBase session)

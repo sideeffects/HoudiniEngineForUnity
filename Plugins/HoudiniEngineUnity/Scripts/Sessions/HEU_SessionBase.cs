@@ -163,7 +163,7 @@ namespace HoudiniEngineUnity
 		public virtual void SetSessionErrorMsg(string msg, bool bLogError = false)
 		{
 			_sessionErrorMsg = msg;
-			if (bLogError)
+			if (bLogError && LogErrorOverride)
 			{
 				Debug.LogError(_sessionErrorMsg);
 			}
@@ -725,7 +725,7 @@ namespace HoudiniEngineUnity
 		/// <param name="nodeID">Object node ID</param>
 		/// <param name="geoInfo">Geo info to populate</param>
 		/// <returns>True if successfully queried the geo info</returns>
-		public virtual bool GetDisplayGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo)
+		public virtual bool GetDisplayGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo, bool bLogError = false)
 		{
 			return false;
 		}
