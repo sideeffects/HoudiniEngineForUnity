@@ -346,7 +346,7 @@ namespace HoudiniEngineUnity
 				if (_inputNode == null)
 				{
 					string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
-					_inputNode = HEU_InputNode.CreateSetupInput(GeoID, 0, partName, HEU_InputNode.InputNodeType.NODE, ParentAsset);
+					_inputNode = HEU_InputNode.CreateSetupInput(GeoID, 0, partName, partName, HEU_InputNode.InputNodeType.NODE, ParentAsset);
 					if(_inputNode != null)
 					{
 						ParentAsset.AddInputNode(_inputNode);

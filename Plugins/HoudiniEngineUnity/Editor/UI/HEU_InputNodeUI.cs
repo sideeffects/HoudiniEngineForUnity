@@ -109,10 +109,10 @@ namespace HoudiniEngineUnity
 
 			EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-			string inputName = inputNode.InputName;
-			if (!string.IsNullOrEmpty(inputName))
+			string labelName = inputNode.LabelName;
+			if (!string.IsNullOrEmpty(labelName))
 			{
-				EditorGUILayout.LabelField(inputName);
+				EditorGUILayout.LabelField(labelName);
 			}
 
 			EditorGUI.indentLevel++;
