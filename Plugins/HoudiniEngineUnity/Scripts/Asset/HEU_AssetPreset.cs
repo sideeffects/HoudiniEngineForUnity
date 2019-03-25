@@ -170,7 +170,8 @@ namespace HoudiniEngineUnity
 	[System.Serializable]
 	public class HEU_RecookPreset
 	{
-		public List<HEU_VolumeCachePreset> volumeCachePresets = new List<HEU_VolumeCachePreset>();
+		public List<HEU_VolumeCachePreset> _volumeCachePresets = new List<HEU_VolumeCachePreset>();
+		public List<HEU_InputPreset> _inputPresets = new List<HEU_InputPreset>();
 	}
 
 

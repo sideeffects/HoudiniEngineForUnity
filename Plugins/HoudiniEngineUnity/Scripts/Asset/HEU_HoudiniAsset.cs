@@ -1848,18 +1848,18 @@ namespace HoudiniEngineUnity
 			List<int> newInputIndex = new List<int>();
 
 			for (int i = 0; i < updatedAssetInputCount; ++i)
-				{
+			{
 				HAPI_StringHandle tempNameHandle = HEU_Defines.HEU_INVALID_NODE_ID;
 				if (session.GetNodeInputName(_assetID, i, out tempNameHandle))
-					{
+				{
 					string inputName = HEU_SessionManager.GetString(tempNameHandle, session);
 					//Debug.Log("Found input: " + inputName);
 
 					HEU_InputNode inputNode = GetAssetInputNode(inputName);
-						if(inputNode != null)
-						{
+					if(inputNode != null)
+					{
 						nodesToRemove.Remove(inputNode);
-						}
+					}
 					else
 					{
 						newInputNames.Add(inputName);
@@ -1886,7 +1886,7 @@ namespace HoudiniEngineUnity
 			int numNodesToAdd = newInputNames.Count;
 			for(int i = 0; i < numNodesToAdd; ++i)
 			{
-				HEU_InputNode inputNode = HEU_InputNode.CreateSetupInput(_assetID, newInputIndex[i], newInputNames[i], HEU_InputNode.InputNodeType.CONNECTION, this);
+				HEU_InputNode inputNode = HEU_InputNode.CreateSetupInput(_assetID, newInputIndex[i], newInputNames[i], newInputNames[i], HEU_InputNode.InputNodeType.CONNECTION, this);
 				if (inputNode != null)
 				{
 					AddInputNode(inputNode);
@@ -3946,21 +3946,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// Load input nodes (reattach connections)
-			if(assetPreset.inputPresets != null && assetPreset.inputPresets.Count > 0)
-			{
-				foreach(HEU_InputPreset inputPreset in assetPreset.inputPresets)
-				{
-					HEU_InputNode inputNode = GetInputNode(inputPreset._inputName);
-					if(inputNode != null)
-					{
-						inputNode.LoadPreset(session, inputPreset);
-					}
-					else
-					{
-						Debug.LogWarningFormat("Input node with name {0} not found! Unable to set input preset.", inputPreset._inputName);
-					}
-				}
-			}
+			ApplyInputPresets(session, assetPreset.inputPresets, true);
 
 			// Load volume caches (for terrain layers)
 			ApplyVolumeCachePresets(assetPreset.volumeCachePresets, true);
@@ -3977,7 +3963,9 @@ namespace HoudiniEngineUnity
 		{
 			if (_recookPreset != null)
 			{
-				bool bApplied = ApplyVolumeCachePresets(_recookPreset.volumeCachePresets, false);
+				bool bApplied = ApplyInputPresets(GetAssetSession(true), _recookPreset._inputPresets, false);
+				bApplied |= ApplyVolumeCachePresets(_recookPreset._volumeCachePresets, false);
+
 				_recookPreset = null;
 				if (bApplied)
 				{
@@ -3985,6 +3973,40 @@ namespace HoudiniEngineUnity
 					RequestCook(bCheckParametersChanged: false, bAsync: true, bSkipCookCheck: true, bUploadParameters: false);
 				}
 			}
+		}
+
+		private bool ApplyInputPresets(HEU_SessionBase session, List<HEU_InputPreset> inputPresets, bool bAddMissingInputsToRecookPreset)
+		{
+			bool bApplied = false;
+
+			if (inputPresets != null && inputPresets.Count > 0)
+			{
+				foreach (HEU_InputPreset inputPreset in inputPresets)
+				{
+					HEU_InputNode inputNode = GetInputNode(inputPreset._inputName);
+					if (inputNode != null)
+					{
+						inputNode.LoadPreset(session, inputPreset);
+						bApplied = true;
+					}
+					else
+					{
+						if (bAddMissingInputsToRecookPreset)
+						{
+							if (_recookPreset == null)
+							{
+								_recookPreset = new HEU_RecookPreset();
+							}
+							_recookPreset._inputPresets.Add(inputPreset);
+						}
+						else
+						{
+							Debug.LogWarningFormat("Input node with name {0} not found! Unable to set input preset.", inputPreset._inputName);
+						}
+					}
+				}
+			}
+			return bApplied;
 		}
 
 		/// <summary>
@@ -4025,7 +4047,7 @@ namespace HoudiniEngineUnity
 							{
 								_recookPreset = new HEU_RecookPreset();
 							}
-							_recookPreset.volumeCachePresets.Add(volumeCachePreset);
+							_recookPreset._volumeCachePresets.Add(volumeCachePreset);
 						}
 						else
 						{

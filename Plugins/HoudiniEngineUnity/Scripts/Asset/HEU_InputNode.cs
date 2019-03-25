@@ -124,6 +124,11 @@ namespace HoudiniEngineUnity
 		public string InputName { get { return _inputName; } }
 
 		[SerializeField]
+		private string _labelName;
+
+		public string LabelName { get { return _labelName; } }
+
+		[SerializeField]
 		private string _paramName;
 
 		public string ParamName { get { return _paramName; } set { _paramName = value; } }
@@ -161,12 +166,13 @@ namespace HoudiniEngineUnity
 
 		// LOGIC ------------------------------------------------------------------------------------------------------
 
-		public static HEU_InputNode CreateSetupInput(HAPI_NodeId nodeID, int inputIndex, string inputName, InputNodeType inputNodeType, HEU_HoudiniAsset parentAsset)
+		public static HEU_InputNode CreateSetupInput(HAPI_NodeId nodeID, int inputIndex, string inputName, string labelName, InputNodeType inputNodeType, HEU_HoudiniAsset parentAsset)
 		{
 			HEU_InputNode newInput = ScriptableObject.CreateInstance<HEU_InputNode>();
 			newInput._nodeID = nodeID;
 			newInput._inputIndex = inputIndex;
 			newInput._inputName = inputName;
+			newInput._labelName = labelName;
 			newInput._inputNodeType = inputNodeType;
 			newInput._parentAsset = parentAsset;
 
