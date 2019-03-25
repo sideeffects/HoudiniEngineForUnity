@@ -516,7 +516,7 @@ namespace HoudiniEngineUnity
 
 							if (newParameter._paramInputNode == null)
 							{
-								newParameter._paramInputNode = HEU_InputNode.CreateSetupInput(parentAsset.AssetInfo.nodeId, 0, newParameter._labelName, HEU_InputNode.InputNodeType.PARAMETER, parentAsset);
+								newParameter._paramInputNode = HEU_InputNode.CreateSetupInput(parentAsset.AssetInfo.nodeId, 0, newParameter._name, newParameter._labelName, HEU_InputNode.InputNodeType.PARAMETER, parentAsset);
 								if (newParameter._paramInputNode != null)
 								{
 									newParameter._paramInputNode.ParamName = newParameter._name;
