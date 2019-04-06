@@ -995,6 +995,64 @@ namespace HoudiniEngineUnity
 		{
 			_uiCache = null;
 		}
+
+		/// <summary>
+		/// Appends given selectedObjects to the input field.
+		/// </summary>
+		/// <param name="selectedObjects">Array of GameObjects that should be appended into new input entries</param>
+		public void HandleSelectedObjectsForInputObjects(GameObject[] selectedObjects)
+		{
+			if (selectedObjects != null && selectedObjects.Length > 0)
+			{
+				GameObject rootGO = ParentAsset.RootGameObject;
+
+				foreach (GameObject selected in selectedObjects)
+				{
+					if (selected == rootGO)
+					{
+						continue;
+					}
+
+					InternalAddInputObjectAtEnd(selected);
+				}
+
+				RequiresUpload = true;
+
+				if (HEU_PluginSettings.CookingEnabled && ParentAsset.AutoCookOnParameterChange)
+				{
+					ParentAsset.RequestCook(bCheckParametersChanged: true, bAsync: true, bSkipCookCheck: false, bUploadParameters: true);
+				}
+			}
+		}
+
+		/// <summary>
+		///  Appends given selectedObjects to the input field.
+		/// </summary>
+		/// <param name="selectedObjects">Array of HDAs that should be appended into new input entries</param>
+		public void HandleSelectedObjectsForInputHDAs(GameObject[] selectedObjects)
+		{
+			if (selectedObjects != null && selectedObjects.Length > 0)
+			{
+				GameObject rootGO = ParentAsset.RootGameObject;
+
+				foreach (GameObject selected in selectedObjects)
+				{
+					if (selected == rootGO)
+					{
+						continue;
+					}
+
+					InternalAddInputHDAAtEnd(selected);
+				}
+
+				RequiresUpload = true;
+
+				if (HEU_PluginSettings.CookingEnabled && ParentAsset.AutoCookOnParameterChange)
+				{
+					ParentAsset.RequestCook(bCheckParametersChanged: true, bAsync: true, bSkipCookCheck: false, bUploadParameters: true);
+				}
+			}
+		}
 	}
 
 	// Container for each input object in this node
