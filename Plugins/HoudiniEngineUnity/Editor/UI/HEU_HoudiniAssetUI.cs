@@ -394,6 +394,7 @@ namespace HoudiniEngineUnity
 					HEU_EditorUI.DrawPropertyField(assetObject, "_generateMeshUsingPoints", "Generate Mesh Using Points", "Use point attributes instead of vertex attributes for geometry. Ignores vertex attributes.");
 					HEU_EditorUI.DrawPropertyField(assetObject, "_useLODGroups", "Use LOD Groups", "Automatically create Unity LOD group if found.");
 					HEU_EditorUI.DrawPropertyField(assetObject, "_ignoreNonDisplayNodes", "Ignore NonDisplay Nodes", "Only display node geometry will be created.");
+					HEU_EditorUI.DrawPropertyField(assetObject, "_splitGeosByGroup", "Split Geos By Group", "Split geometry into separate gameobjects by group. Deprecated feature and only recommended for simple use cases.");
 
 					if (asset.NumAttributeStores() > 0)
 					{

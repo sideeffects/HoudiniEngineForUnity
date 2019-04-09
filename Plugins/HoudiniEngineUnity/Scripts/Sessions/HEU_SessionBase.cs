@@ -446,8 +446,9 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		/// <param name="nodeID">ID of the node to cook</param>
 		/// <param name="bCookTemplatedGeos">Whether to recursively cook all templated geos or not</param>
+		/// <param name="bSplitGeosByGroup">Whether to split the geometry by groups. Not recommended to use, but allowing in specific situations.</param>
 		/// <returns>True if successfully cooked the node</returns>
-		public virtual bool CookNode(HAPI_NodeId nodeID, bool bCookTemplatedGeos)
+		public virtual bool CookNode(HAPI_NodeId nodeID, bool bCookTemplatedGeos, bool bSplitGeosByGroup = false)
 		{
 			return false;
 		}

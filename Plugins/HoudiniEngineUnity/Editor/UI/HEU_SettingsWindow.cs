@@ -396,6 +396,16 @@ namespace HoudiniEngineUnity
 					bChanged = true;
 				}
 			}
+			HEU_EditorUI.DrawSeparator();
+			{
+				bool oldValue = HEU_PluginSettings.CookOptionSplitGeosByGroup;
+				bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Split Geos By Group");
+				if (newValue != oldValue)
+				{
+					HEU_PluginSettings.CookOptionSplitGeosByGroup = newValue;
+					bChanged = true;
+				}
+			}
 
 			return bChanged;
 		}
