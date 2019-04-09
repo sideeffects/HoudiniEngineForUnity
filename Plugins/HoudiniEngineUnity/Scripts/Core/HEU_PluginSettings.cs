@@ -792,6 +792,20 @@ namespace HoudiniEngineUnity
 				HEU_PluginStorage.Instance.Set("HAPI_InputFilterName", value);
 			}
 		}
+
+		public static bool CookOptionSplitGeosByGroup
+		{
+			get
+			{
+				bool selection = false;
+				HEU_PluginStorage.Instance.Get("HAPI_CookOptionSplitGeosByGroup", out selection, selection);
+				return selection;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_CookOptionSplitGeosByGroup", value);
+			}
+		}
 	}
 
 }   // HoudiniEngineUnity

@@ -317,6 +317,11 @@ namespace HoudiniEngineUnity
 		private bool _useLODGroups = true;
 		public bool UseLODGroups { get { return _useLODGroups; } set { _useLODGroups = value; } }
 
+		[SerializeField]
+		private bool _splitGeosByGroup = false;
+
+		public bool SplitGeosByGroup { get { return _splitGeosByGroup; } set { _splitGeosByGroup = value; } }
+
 		// CURVES -----------------------------------------------------------------------------------------------------
 
 		// Toggle curve editing tool in Scene view
@@ -1351,7 +1356,7 @@ namespace HoudiniEngineUnity
 
 		private bool StartHoudiniCookNode(HEU_SessionBase session)
 		{
-			bool bResult = session.CookNode(AssetID, HEU_PluginSettings.CookTemplatedGeos);
+			bool bResult = session.CookNode(AssetID, HEU_PluginSettings.CookTemplatedGeos, SplitGeosByGroup);
 			if (bResult)
 			{
 				SetCookStatus(AssetCookStatus.COOKING, AssetCookResult.NONE);
