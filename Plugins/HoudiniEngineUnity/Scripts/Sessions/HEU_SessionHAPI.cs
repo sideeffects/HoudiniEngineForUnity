@@ -664,7 +664,8 @@ namespace HoudiniEngineUnity
 		private void GetCookOptions(ref HAPI_CookOptions cookOptions)
 		{
 			// In keeping consistency with other plugins, we don't support splitting by groups or attributes.
-			cookOptions.splitGeosByGroup = false;
+			// Though allowing it now behind an option.
+			cookOptions.splitGeosByGroup = HEU_PluginSettings.CookOptionSplitGeosByGroup;
 			cookOptions.splitGeosByAttribute = false;
 			cookOptions.splitAttrSH = 0;
 			cookOptions.splitPointsByVertexAttributes = false;
@@ -908,12 +909,14 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		/// <param name="nodeID">ID of the node to cook</param>
 		/// <param name="bCookTemplatedGeos">Whether to recursively cook all templated geos or not</param>
+		/// <param name="bSplitGeosByGroup">Whether to split the geometry by groups. Not recommended to use, but allowing in specific situations.</param>
 		/// <returns>True if successfully cooked the node</returns>
-		public override bool CookNode(HAPI_NodeId nodeID, bool bCookTemplatedGeos)
+		public override bool CookNode(HAPI_NodeId nodeID, bool bCookTemplatedGeos, bool bSplitGeosByGroup)
 		{
 			HAPI_CookOptions cookOptions = new HAPI_CookOptions();
 			GetCookOptions(ref cookOptions);
 			cookOptions.cookTemplatedGeos = bCookTemplatedGeos;
+			cookOptions.splitGeosByGroup |= bSplitGeosByGroup;
 			//float cookTime = Time.realtimeSinceStartup;
 			HAPI_Result result = HEU_HAPIImports.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref cookOptions);
 			//Debug.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
