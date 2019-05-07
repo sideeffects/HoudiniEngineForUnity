@@ -323,7 +323,7 @@ namespace HoudiniEngineUnity
 					{
 						NotifyTOPNodeCookingWorkItem(assetLink, topNode, 1);
 					}
-					else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_SUCCESS)
+					else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_SUCCESS || currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_CACHE)
 					{
 						NotifyTOPNodeCookedWorkItem(assetLink, topNode);
 
