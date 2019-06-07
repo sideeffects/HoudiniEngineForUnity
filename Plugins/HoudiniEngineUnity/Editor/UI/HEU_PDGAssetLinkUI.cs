@@ -417,7 +417,7 @@ namespace HoudiniEngineUnity
 			_buttonDirtyContent = new GUIContent("Dirty Node", "Remove current TOP node's work items.");
 			_buttonCookContent = new GUIContent("Cook Node", "Generates and cooks current TOP node's work items.");
 
-			_autoloadContent = new GUIContent("Autoload Results", "Automatically load into Unity the generated geometry from work item resultsl.");
+			_autoloadContent = new GUIContent("Autoload Results", "Automatically load into Unity the generated geometry from work item results.");
 			_showHideResultsContent = new GUIContent("Show Results", "Show or Hide Results.");
 
 			_buttonDirtyAllContent = new GUIContent("Dirty All", "Removes all work items.");
