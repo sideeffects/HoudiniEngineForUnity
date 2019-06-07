@@ -241,9 +241,7 @@ namespace HoudiniEngineUnity
 
 						if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
 						{
-							// Using Resources.Load is much faster than AssetDatabase.Load
-							//terrainLayers[m].diffuseTexture = HEU_MaterialFactory.LoadTexture(layer._diffuseTexturePath);
-							terrainLayers[m].diffuseTexture = Resources.Load<Texture2D>(layer._diffuseTexturePath);
+							terrainLayers[m].diffuseTexture = HEU_MaterialFactory.LoadTexture(layer._diffuseTexturePath);
 						}
 						if (terrainLayers[m].diffuseTexture == null)
 						{
@@ -255,9 +253,7 @@ namespace HoudiniEngineUnity
 
 						if (!string.IsNullOrEmpty(layer._maskTexturePath))
 						{
-							// Using Resources.Load is much faster than AssetDatabase.Load
-							//terrainLayers[m].maskMapTexture = HEU_MaterialFactory.LoadTexture(layer._maskTexturePath);
-							terrainLayers[m].maskMapTexture = Resources.Load<Texture2D>(layer._maskTexturePath);
+							terrainLayers[m].maskMapTexture = HEU_MaterialFactory.LoadTexture(layer._maskTexturePath);
 						}
 
 						terrainLayers[m].maskMapRemapMin = Vector4.zero;
