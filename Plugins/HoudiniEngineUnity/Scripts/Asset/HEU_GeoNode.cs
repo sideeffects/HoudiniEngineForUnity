@@ -429,7 +429,7 @@ namespace HoudiniEngineUnity
 							}
 							else
 							{
-								// Clear volume data (case where switching from polygonal mesh to volume output)
+								// Clear mesh data to handle case where switching from polygonal mesh to volume output.
 								partData.ClearGeneratedMeshOutput();
 							}
 
