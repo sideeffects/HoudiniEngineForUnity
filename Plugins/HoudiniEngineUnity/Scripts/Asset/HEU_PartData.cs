@@ -278,7 +278,7 @@ namespace HoudiniEngineUnity
 			if (IsPartVolume())
 			{
 				HAPI_Transform hapiTransformVolume = new HAPI_Transform();
-				hapiTransform.CopyTo(ref hapiTransformVolume);
+				HEU_GeneralUtility.CopyHAPITransform(ref hapiTransform, ref hapiTransformVolume);
 
 				hapiTransformVolume.position[0] += _terrainOffsetPosition[0];
 				hapiTransformVolume.position[1] += _terrainOffsetPosition[1];
@@ -467,6 +467,9 @@ namespace HoudiniEngineUnity
 			ObjectInstancesBeenGenerated = false;
 		}
 
+		/// <summary>
+		/// Clears the generated mesh output for this part.
+		/// </summary>
 		public void ClearGeneratedMeshOutput()
 		{
 			if (_generatedOutput != null)
@@ -474,7 +477,7 @@ namespace HoudiniEngineUnity
 				HEU_GeneralUtility.DestroyGeneratedMeshMaterialsLODGroups(_generatedOutput._outputData._gameObject, true);
 				HEU_GeneratedOutput.DestroyGeneratedOutputChildren(_generatedOutput);
 				HEU_GeneratedOutput.ClearGeneratedMaterialReferences(_generatedOutput._outputData);
-				HEU_GeneralUtility.DestroyGeneratedComponents(_generatedOutput._outputData._gameObject);
+				HEU_GeneralUtility.DestroyGeneratedMeshComponents(_generatedOutput._outputData._gameObject);
 			}
 		}
 

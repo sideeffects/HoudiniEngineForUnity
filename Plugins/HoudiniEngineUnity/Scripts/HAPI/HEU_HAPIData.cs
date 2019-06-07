@@ -692,16 +692,6 @@ namespace HoudiniEngineUnity
 			for (int n = 0; n < HEU_Defines.HAPI_SHEAR_VECTOR_SIZE; n++)
 				shear[n] = 0.0f;
 		}
-
-		public void CopyTo(ref HAPI_Transform dest)
-		{
-			position.CopyToWithResize<float>(ref dest.position);
-			rotationQuaternion.CopyToWithResize<float>(ref dest.rotationQuaternion);
-			scale.CopyToWithResize<float>(ref dest.scale);
-			shear.CopyToWithResize<float>(ref dest.shear);
-
-			dest.rstOrder = rstOrder;
-		}
 	}
 
 	[StructLayout(LayoutKind.Sequential)]

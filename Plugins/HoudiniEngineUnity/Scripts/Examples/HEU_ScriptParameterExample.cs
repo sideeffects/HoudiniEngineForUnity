@@ -27,6 +27,7 @@
 
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 using HoudiniEngineUnity;
 
@@ -51,6 +52,32 @@ public class HEU_ScriptParameterExample : MonoBehaviour
 	{
 		// Grab the HEU_HoduiniAsset
 		_evergreenAsset = _evergreenGameObject.GetComponent<HEU_HoudiniAssetRoot>() != null ? _evergreenGameObject.GetComponent<HEU_HoudiniAssetRoot>()._houdiniAsset : null;
+
+		// Always get the latest parms after each cook
+		List<HEU_ParameterData> parms = _evergreenAsset.Parameters.GetParameters();
+
+		foreach(HEU_ParameterData parmData in parms)
+		{
+			Debug.Log(parmData._labelName);
+			
+			if(parmData._parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_BUTTON)
+			{
+				// Display a button: parmData._intValues[0];
+
+			}
+			else if(parmData._parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_FLOAT)
+			{
+				// Display a float: parmData._floatValues[0];
+
+				// You can set a float this way
+				HEU_ParameterUtility.SetFloat(_evergreenAsset, parmData._name, 1f);
+
+				// Or this way (the index is 0, unless its for array of floats)
+				parmData._floatValues[0] = 1;
+			}
+		}
+		// Make sure to cook after changing
+		_evergreenAsset.RequestCook(true, false, true, true);
 
 		// Start a repeating updater
 		InvokeRepeating("UpdateGravity", _updateRate, _updateRate);

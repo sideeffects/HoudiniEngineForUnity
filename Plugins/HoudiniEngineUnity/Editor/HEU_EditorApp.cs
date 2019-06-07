@@ -45,7 +45,11 @@ namespace HoudiniEngineUnity
 		{
 			EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
 
+#if UNITY_2019_1_OR_NEWER
+			SceneView.duringSceneGui += OnSceneGUIDelegate;
+#else
 			SceneView.onSceneGUIDelegate += OnSceneGUIDelegate;
+#endif
 		}
 
 		private static void HierarchyWindowItemOnGUI(int instanceID, Rect selectionRect)

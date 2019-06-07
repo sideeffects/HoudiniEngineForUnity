@@ -737,6 +737,14 @@ namespace HoudiniEngineUnity
 			DestroyComponent<Terrain>(gameObject);
 			DestroyComponent<LODGroup>(gameObject);
 		}
+
+		public static void DestroyGeneratedMeshComponents(GameObject gameObject)
+		{
+			DestroyComponent<MeshFilter>(gameObject);
+			DestroyComponent<MeshRenderer>(gameObject);
+			DestroyComponent<Collider>(gameObject);
+			DestroyComponent<LODGroup>(gameObject);
+		}
 		
 		/// <summary>
 		/// Destroy any terrain components and data on given gameObject.
@@ -1460,6 +1468,19 @@ namespace HoudiniEngineUnity
 			childTransform.localPosition = Vector3.zero;
 			childTransform.localRotation = Quaternion.identity;
 			childTransform.localScale = Vector3.one;
+		}
+
+		/// <summary>
+		/// Copy src HAPI_Transfrom to dest HAPI_Transform.
+		/// </summary>
+		public static void CopyHAPITransform(ref HAPI_Transform src, ref HAPI_Transform dest)
+		{
+			src.position.CopyToWithResize<float>(ref dest.position);
+			src.rotationQuaternion.CopyToWithResize<float>(ref dest.rotationQuaternion);
+			src.scale.CopyToWithResize<float>(ref dest.scale);
+			src.shear.CopyToWithResize<float>(ref dest.shear);
+
+			dest.rstOrder = src.rstOrder;
 		}
 	}
 
