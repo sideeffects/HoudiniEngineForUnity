@@ -584,24 +584,8 @@ namespace HoudiniEngineUnity
 		{
 #if HOUDINIENGINEUNITY_ENABLED
 			session.LogErrorOverride = false;
-			bool bCleared = false;
 
-			HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
-			if (session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
-			{
-				//Debug.LogFormat("Clear: index={0}, state={1}", workItemInfo.index, (HAPI_PDG_WorkitemState)eventInfo.currentState);
-
-				if (workItemInfo.index >= 0)
-				{
-					HEU_PDGAssetLink.ClearWorkItemResultByIndex(topNode, workItemInfo.index);
-					bCleared = true;
-				}
-			}
-
-			if (!bCleared)
-			{
-				HEU_PDGAssetLink.ClearWorkItemResultByID(topNode, eventInfo.workitemId);
-			}
+			HEU_PDGAssetLink.ClearWorkItemResultByID(topNode, eventInfo.workitemId);
 
 			session.LogErrorOverride = true;
 #endif

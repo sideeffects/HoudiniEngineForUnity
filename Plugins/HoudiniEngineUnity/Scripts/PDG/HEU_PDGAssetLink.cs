@@ -552,12 +552,6 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		public static void ClearWorkItemResultByIndex(HEU_TOPNodeData topNode, int workItemIndex)
-		{
-			HEU_TOPWorkResult result = GetWorkResultByIndex(topNode, workItemIndex);
-			ClearWorkItemResult(topNode, result);
-		}
-
 		public static void ClearWorkItemResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
 		{
 			HEU_TOPWorkResult result = GetWorkResultByID(topNode, workItemID);
@@ -580,20 +574,6 @@ namespace HoudiniEngineUnity
 			{
 				topNode._workResultParentGO.SetActive(topNode._showResults);
 			}
-		}
-
-		private static HEU_TOPWorkResult GetWorkResultByIndex(HEU_TOPNodeData topNode, int workItemIndex)
-		{
-			HEU_TOPWorkResult result = null;
-			foreach (HEU_TOPWorkResult res in topNode._workResults)
-			{
-				if (res._workItemIndex == workItemIndex)
-				{
-					result = res;
-					break;
-				}
-			}
-			return result;
 		}
 
 		private static HEU_TOPWorkResult GetWorkResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
@@ -778,14 +758,14 @@ namespace HoudiniEngineUnity
 			//Debug.LogFormat("Work item: {0}:: name={1}, results={2}", workItemInfo.index, workItemName, workItemInfo.numResults);
 
 			// Clear previously generated result
-			ClearWorkItemResultByIndex(topNode, workItemInfo.index);
+			ClearWorkItemResultByID(topNode, workItemID);
 
 			if (resultInfos == null || resultInfos.Length == 0)
 			{
 				return;
 			}
 
-			HEU_TOPWorkResult result = GetWorkResultByIndex(topNode, workItemInfo.index);
+			HEU_TOPWorkResult result = GetWorkResultByID(topNode, workItemID);
 			if (result == null)
 			{
 				result = new HEU_TOPWorkResult();
