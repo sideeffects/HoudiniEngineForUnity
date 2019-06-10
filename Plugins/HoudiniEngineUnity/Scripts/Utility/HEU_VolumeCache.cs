@@ -559,45 +559,81 @@ namespace HoudiniEngineUnity
 			}
 
 #if UNITY_2018_3_OR_NEWER
-
-			// Create TerrainLayer for each heightfield layer
-			// Note that at time of this implementation the new Unity terrain
-			// is still in beta. Therefore, the following layer creation is subject
-			// to change.
-
+			// Create or update the terrain layers based on heightfield layers.
+			TerrainLayer[] previousLayers = terrainData.terrainLayers;
 			TerrainLayer[] terrainLayers = new TerrainLayer[numMaps];
+			bool bRequiresSave = false;
+			TerrainLayer terrainLayerToUpdate = null;
 			for (int m = 0; m < numMaps; ++m)
 			{
-				terrainLayers[m] = new TerrainLayer();
+				bRequiresSave = false;
+				terrainLayerToUpdate = null;
 
 				HEU_VolumeLayer layer = (m == 0) ? baseLayer : validLayers[m - 1];
 
-				terrainLayers[m].diffuseTexture = layer._diffuseTexture;
-				terrainLayers[m].diffuseRemapMin = Vector4.zero;
-				terrainLayers[m].diffuseRemapMax = Vector4.one;
+				// Search by layer name to reuse existing layer to keep user changes. Otherwise create a new one.
+				if (previousLayers != null)
+				{
+					string layerFileName = layer._layerName + ".terrainlayer";
+					foreach (TerrainLayer prevLayer in previousLayers)
+					{
+						if (prevLayer != null && prevLayer.name != null && prevLayer.name.Equals(layerFileName))
+						{
+							terrainLayerToUpdate = prevLayer;
+							break;
+						}
+					}
+				}
 
-				terrainLayers[m].maskMapTexture = layer._maskTexture;
-				terrainLayers[m].maskMapRemapMin = Vector4.zero;
-				terrainLayers[m].maskMapRemapMax = Vector4.one;
+				if (terrainLayerToUpdate == null)
+				{
+					terrainLayerToUpdate = new TerrainLayer();
+					terrainLayerToUpdate.name = layer._layerName + ".terrainlayer";
+					bRequiresSave = true;
+				}
 
-				terrainLayers[m].metallic = layer._metallic;
+				terrainLayerToUpdate.diffuseTexture = layer._diffuseTexture;
+				terrainLayerToUpdate.diffuseRemapMin = Vector4.zero;
+				terrainLayerToUpdate.diffuseRemapMax = Vector4.one;
 
-				terrainLayers[m].normalMapTexture = layer._normalTexture;
-				terrainLayers[m].normalScale = layer._normalScale;
+				terrainLayerToUpdate.maskMapTexture = layer._maskTexture;
+				terrainLayerToUpdate.maskMapRemapMin = Vector4.zero;
+				terrainLayerToUpdate.maskMapRemapMax = Vector4.one;
 
-				terrainLayers[m].smoothness = layer._smoothness;
-				terrainLayers[m].specular = layer._specularColor;
-				terrainLayers[m].tileOffset = layer._tileOffset;
+				terrainLayerToUpdate.metallic = layer._metallic;
+
+				terrainLayerToUpdate.normalMapTexture = layer._normalTexture;
+				terrainLayerToUpdate.normalScale = layer._normalScale;
+
+				terrainLayerToUpdate.smoothness = layer._smoothness;
+				terrainLayerToUpdate.specular = layer._specularColor;
+				terrainLayerToUpdate.tileOffset = layer._tileOffset;
 
 				if (layer._tileSize.magnitude == 0f)
 				{
 					// Use texture size if tile size is 0
 					layer._tileSize = new Vector2(layer._diffuseTexture.width, layer._diffuseTexture.height);
 				}
-				terrainLayers[m].tileSize = layer._tileSize;
+				terrainLayerToUpdate.tileSize = layer._tileSize;
+
+				terrainLayers[m] = terrainLayerToUpdate;
+
+				// While not documented, it seems that the new TerrainLayers need to be explictly saved to disk
+				// as otherwise they get lost when scene gets refreshed (save/load, play mode, code compile, etc).
+				if (bRequiresSave)
+				{
+					baseLayer._part.SaveTerrainLayer(terrainLayers[m]);
+				}
+
 			}
 			terrainData.terrainLayers = terrainLayers;
 
+			terrainData.SetAlphamaps(0, 0, alphamap);
+
+			// If the layers were writen out, this saves the asset DB. Otherwise user has to save it themselves.
+			// Not 100% sure this is needed, but without this the editor doesn't know the terrain asset has been updated
+			// and therefore doesn't import and show the terrain layer.
+			HEU_AssetDatabase.SaveAssetDatabase();
 #else
 			// Need to create SplatPrototype for each layer in heightfield, representing the textures.
 			SplatPrototype[] splatPrototypes = new SplatPrototype[numMaps];
@@ -621,12 +657,12 @@ namespace HoudiniEngineUnity
 				splatPrototypes[m].normalMap = layer._normalTexture;
 			}
 			terrainData.splatPrototypes = splatPrototypes;
-#endif
 
 			terrainData.SetAlphamaps(0, 0, alphamap);
+#endif
 		}
 
-		
+
 
 		public void PopulatePreset(HEU_VolumeCachePreset cachePreset)
 		{
