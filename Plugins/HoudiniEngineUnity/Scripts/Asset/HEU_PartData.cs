@@ -1902,6 +1902,7 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+#if UNITY_2018_3_OR_NEWER
 		/// <summary>
 		/// Save the given terrainLayer to the AssetDatabase under the currently saved TerrainData.
 		/// Assumes the TerrainData has already been saved, otherwise returns False with warning.
@@ -1918,6 +1919,7 @@ namespace HoudiniEngineUnity
 			HEU_AssetDatabase.AddObjectToAsset(terrainLayer, _assetDBTerrainData);
 			return true;
 		}
+#endif
 
 		public static string AppendBakedCloneName(string name)
 		{
