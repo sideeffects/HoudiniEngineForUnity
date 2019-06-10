@@ -224,7 +224,7 @@ namespace HoudiniEngineUnity
 				}
 				else if(terrainResizedDelta > 0)
 				{
-					Debug.LogErrorFormat("Unsupported terrain size. Use terrain size of power of two plus 1, and grid spacing of 2. (delta = {0})", terrainResizedDelta);
+					Debug.LogErrorFormat("Unsupported terrain size. Use terrain size of power of two plus 1, and grid spacing of 2. Given size is {0} but Unity resized it to {1}.", heightMapResolution, terrainData.heightmapResolution);
 					return false;
 				}
 

@@ -1352,10 +1352,6 @@ namespace HoudiniEngineUnity
 						bakedAssetPath = HEU_AssetDatabase.GetAssetRootPath(targetTerrainData);
 					}
 
-					//targetTerrainData = TerrainData.Instantiate(sourceTerrainData);
-					//targetTerrain.terrainData = targetTerrainData;
-					//targetTerrain.Flush();
-
 					// Note: ignoring bWriteMeshesToAssetDatabase and always writing to asset db
 					//HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(assetName, assetObjectFileName, targetTerrainData, ref bakedAssetPath, ref assetDBObject);
 
@@ -1884,13 +1880,14 @@ namespace HoudiniEngineUnity
 			_terrainOffsetPosition = offsetPosition;
 		}
 
+		/// <summary>
+		/// Saves the given terrainData to the AssetDatabase for this part.
+		/// Adds to existing saved asset file or creates this as the root asset.
+		/// </summary>
+		/// <param name="terrainData">The TerrainData object to save</param>
 		public void SetTerrainData(TerrainData terrainData)
 		{
-			if (HEU_AssetDatabase.ContainsAsset(terrainData))
-			{
-				_assetDBTerrainData = terrainData;
-			}
-			else
+			if (terrainData != _assetDBTerrainData || !HEU_AssetDatabase.ContainsAsset(terrainData))
 			{
 				if (_assetDBTerrainData != null && HEU_AssetDatabase.ContainsAsset(_assetDBTerrainData))
 				{
@@ -1903,6 +1900,23 @@ namespace HoudiniEngineUnity
 				//Debug.Log("Saving terrain data: " + assetPathName);
 				ParentAsset.AddToAssetDBCache(assetPathName, terrainData, ref _assetDBTerrainData);
 			}
+		}
+
+		/// <summary>
+		/// Save the given terrainLayer to the AssetDatabase under the currently saved TerrainData.
+		/// Assumes the TerrainData has already been saved, otherwise returns False with warning.
+		/// </summary>
+		/// <param name="terrainLayer">The TerrainLayer to save</param>
+		public bool SaveTerrainLayer(TerrainLayer terrainLayer)
+		{
+			if (_assetDBTerrainData == null || !HEU_AssetDatabase.ContainsAsset(_assetDBTerrainData))
+			{
+				Debug.LogWarningFormat("Unable to save terrain layer because the terrain data is invalid or not saved. You might lose terrain state.");
+				return false;
+			}
+
+			HEU_AssetDatabase.AddObjectToAsset(terrainLayer, _assetDBTerrainData);
+			return true;
 		}
 
 		public static string AppendBakedCloneName(string name)
