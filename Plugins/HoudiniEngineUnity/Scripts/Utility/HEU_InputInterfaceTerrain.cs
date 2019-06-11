@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) <2018> Side Effects Software Inc.
 * All rights reserved.
 *
@@ -100,21 +100,55 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			if (!UploadHeightValuesWithTransform(session, idt))
+			HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
+			if (!UploadHeightValuesWithTransform(session, idt, ref volumeInfo))
 			{
 				return false;
 			}
 
 			inputNodeID = idt._heightfieldNodeID;
 
-			if (!UploadAlphaMaps(session, idt))
+			bool bMaskSet = false;
+			if (!UploadAlphaMaps(session, idt, ref volumeInfo, out bMaskSet))
 			{
 				return false;
+			}
+
+			if (!bMaskSet)
+			{
+				// While the default HF created by the input node also creates a default mask layer,
+				// we still need to set the mask layer's transform. So this uses the base VolumeInfo
+				// to do just that.
+				if (!SetMaskLayer(session, idt, ref volumeInfo))
+				{
+					return false;
+				}
 			}
 
 			if (!session.CookNode(inputNodeID, false))
 			{
 				Debug.LogError("New input node failed to cook!");
+				return false;
+			}
+
+			return true;
+		}
+
+		private bool SetMaskLayer(HEU_SessionBase session, HEU_InputDataTerrain idt, ref HAPI_VolumeInfo baseVolumeInfo)
+		{
+			int sizeX = idt._terrainData.alphamapWidth;
+			int sizeY = idt._terrainData.alphamapHeight;
+			int totalSize = sizeX * sizeY;
+
+			float[] maskValues = new float[totalSize];
+			if (!SetHeightFieldData(session, idt._maskNodeID, 0, maskValues, "mask", ref baseVolumeInfo))
+			{
+				return false;
+			}
+
+			if (!session.CommitGeo(idt._maskNodeID))
+			{
+				Debug.LogError("Failed to commit volume layer 'mask'");
 				return false;
 			}
 
@@ -174,7 +208,7 @@ namespace HoudiniEngineUnity
 		/// <param name="session"></param>
 		/// <param name="idt"></param>
 		/// <returns></returns>
-		public bool UploadHeightValuesWithTransform(HEU_SessionBase session, HEU_InputDataTerrain idt)
+		public bool UploadHeightValuesWithTransform(HEU_SessionBase session, HEU_InputDataTerrain idt, ref HAPI_VolumeInfo volumeInfo)
 		{
 			// Get Geo, Part, and Volume infos
 			HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
@@ -191,7 +225,7 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
+			volumeInfo = new HAPI_VolumeInfo();
 			if (!session.GetVolumeInfo(idt._heightNodeID, 0, ref volumeInfo))
 			{
 				Debug.LogError("Unable to get volume info from heightfield node!");
@@ -256,6 +290,8 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
+			SetTerrainLayerAttributesToHeightField(session, "height", idt._heightNodeID, 0, idt._terrainData, 0);
+
 			if (!session.CommitGeo(idt._heightNodeID))
 			{
 				Debug.LogError("Unable to commit geo on input heightfield node!");
@@ -271,17 +307,26 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		/// <param name="session"></param>
 		/// <param name="idt"></param>
-		/// <returns></returns>
-		public bool UploadAlphaMaps(HEU_SessionBase session, HEU_InputDataTerrain idt)
+		/// <param name="baseVolumeInfo">The valid base height HAPI_VolumeInfo</param>
+		/// <param name="bMaskSet">This is set to true if a mask layer was uploaded</param>
+		/// <returns>True if successfully uploaded all layers</returns>
+		public bool UploadAlphaMaps(HEU_SessionBase session, HEU_InputDataTerrain idt, ref HAPI_VolumeInfo baseVolumeInfo, out bool bMaskSet)
 		{
 			bool bResult = true;
+			bMaskSet = false;
 
 			int alphaLayers = idt._terrainData.alphamapLayers;
+#if UNITY_2018_3_OR_NEWER
+			int numTerrainLayers = (idt._terrainData.terrainLayers != null) ? idt._terrainData.terrainLayers.Length : 0;
+#else
+			// Not supporting SplatPrototypes as these are deprecated
+			int numTerrainLayers = 0; //(idt._terrainData.splatPrototypes != null) ? idt._terrainData.splatPrototypes.Length : 0;
+#endif
 
-			// Skip the base layer
+			// Skip if no layers
 			if (alphaLayers < 1)
 			{
-				return true;
+				return bResult;
 			}
 
 			int sizeX = idt._terrainData.alphamapWidth;
@@ -309,26 +354,55 @@ namespace HoudiniEngineUnity
 				}
 			}
 
-
 			// Create volume layers for all non-base alpha maps and upload values.
+			bool bMaskLayer = false;
 			for (int m = 0; m < alphaLayers - 1; ++m)
 			{
+#if UNITY_2018_3_OR_NEWER
+				string layerName = idt._terrainData.terrainLayers[m + 1].name;
+#else
 				string layerName = "unity_alphamap_" + m + 1;
+#endif
+
+				// The Unity layer name could contain '.terrainlayer' and spaces. Remove them because Houdini doesn't allow
+				// spaces, and the extension isn't necessary.
+				layerName = layerName.Replace(" ", "_");
+				int extIndex = layerName.LastIndexOf(".terrainlayer");
+				if (extIndex > 0)
+				{
+					layerName = layerName.Remove(extIndex);
+				}
+				//Debug.Log("Adding terrain layer: " + layerName);
 
 				HAPI_NodeId alphaLayerID = HEU_Defines.HEU_INVALID_NODE_ID;
-				if (!session.CreateHeightfieldInputVolumeNode(idt._heightfieldNodeID, out alphaLayerID, layerName,
-					Mathf.RoundToInt(sizeX * idt._voxelSize), Mathf.RoundToInt(sizeY * idt._voxelSize), idt._voxelSize))
+
+				if (layerName.Equals("mask"))
+				{
+					//Debug.Log("Mask layer found! Skipping creating the HF.");
+					bMaskSet = true;
+					bMaskLayer = true;
+					alphaLayerID = idt._maskNodeID;
+				}
+				else
+				{
+					bMaskLayer = false;
+
+					if (!session.CreateHeightfieldInputVolumeNode(idt._heightfieldNodeID, out alphaLayerID, layerName,
+						Mathf.RoundToInt(sizeX * idt._voxelSize), Mathf.RoundToInt(sizeY * idt._voxelSize), idt._voxelSize))
+					{
+						bResult = false;
+						Debug.LogError("Failed to create input volume node for layer " + layerName);
+						break;
+					}
+				}
+
+				if (!SetHeightFieldData(session, alphaLayerID, 0, alphaMapsConverted[m], layerName, ref baseVolumeInfo))
 				{
 					bResult = false;
-					Debug.LogError("Failed to create input volume node for layer " + layerName);
 					break;
 				}
 
-				if (!SetHeightFieldData(session, alphaLayerID, 0, alphaMapsConverted[m], layerName))
-				{
-					bResult = false;
-					break;
-				}
+				SetTerrainLayerAttributesToHeightField(session, layerName, alphaLayerID, 0, idt._terrainData, m + 1);
 
 				if (!session.CommitGeo(alphaLayerID))
 				{
@@ -337,12 +411,15 @@ namespace HoudiniEngineUnity
 					break;
 				}
 
-				// Connect to the merge node but starting from index 1 since index 0 is height layer
-				if (!session.ConnectNodeInput(idt._mergeNodeID, m + 2, alphaLayerID, 0))
+				if (!bMaskLayer)
 				{
-					bResult = false;
-					Debug.LogError("Unable to connect new volume node for layer " + layerName);
-					break;
+					// Connect to the merge node but starting from index 1 since index 0 is height layer
+					if (!session.ConnectNodeInput(idt._mergeNodeID, m + 2, alphaLayerID, 0))
+					{
+						bResult = false;
+						Debug.LogError("Unable to connect new volume node for layer " + layerName);
+						break;
+					}
 				}
 			}
 
@@ -359,7 +436,7 @@ namespace HoudiniEngineUnity
 		/// <param name="heightValues">Array of height or alpha values</param>
 		/// <param name="heightFieldName">Name of the layer</param>
 		/// <returns>True if successfully uploaded heightfield values</returns>
-		public bool SetHeightFieldData(HEU_SessionBase session, HAPI_NodeId volumeNodeID, HAPI_PartId partID, float[] heightValues, string heightFieldName)
+		public bool SetHeightFieldData(HEU_SessionBase session, HAPI_NodeId volumeNodeID, HAPI_PartId partID, float[] heightValues, string heightFieldName, ref HAPI_VolumeInfo baseVolumeInfo)
 		{
 			// Cook the node to get infos below
 			if (!session.CookNode(volumeNodeID, false))
@@ -388,7 +465,7 @@ namespace HoudiniEngineUnity
 
 			volumeInfo.tileSize = 1;
 
-			if (!session.SetVolumeInfo(volumeNodeID, partInfo.id, ref volumeInfo))
+			if (!session.SetVolumeInfo(volumeNodeID, partInfo.id, ref baseVolumeInfo))
 			{
 				Debug.LogError("Unable to set volume info on input heightfield node!");
 				return false;
@@ -402,6 +479,53 @@ namespace HoudiniEngineUnity
 			}
 
 			return true;
+		}
+
+		public bool SetTerrainLayerAttributesToHeightField(HEU_SessionBase session, string layerName, HAPI_NodeId volumeNodeID, HAPI_PartId partID, TerrainData terrainData, int terrainLayerIndex)
+		{
+#if UNITY_2018_3_OR_NEWER
+			if (terrainData == null || terrainLayerIndex < 0 || terrainLayerIndex >= terrainData.terrainLayers.Length)
+			{
+				return false;
+			}
+
+			TerrainLayer terrainLayer = terrainData.terrainLayers[terrainLayerIndex];
+
+			string assetPath = HEU_AssetDatabase.GetAssetPath(terrainLayer);
+			if (string.IsNullOrEmpty(assetPath))
+			{
+				return false;
+			}
+			//Debug.Log("AssetPath: " + assetPath);
+
+			// Store the TerrainLayer file path as string attribute
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			attrInfo.exists = true;
+			attrInfo.owner = HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM;
+			attrInfo.storage = HAPI_StorageType.HAPI_STORAGETYPE_STRING;
+			attrInfo.count = 1;
+			attrInfo.tupleSize = 1;
+			attrInfo.originalOwner = HAPI_AttributeOwner.HAPI_ATTROWNER_INVALID;
+
+			if (!session.AddAttribute(volumeNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, ref attrInfo))
+			{
+				Debug.LogError("Failed to add heightfield terrainlayer file attribute.");
+				return false;
+			}
+
+			string[] pathData = new string[] { assetPath };
+			if (!session.SetAttributeStringData(volumeNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, ref attrInfo, pathData, 0, 1))
+			{
+				Debug.LogError("Failed to set input geometry unity material name.");
+				return false;
+			}
+
+			return true;
+
+#else
+			// Not supporting SplatPrototype layers which have been deprecated
+			return false;
+#endif
 		}
 
 		/// <summary>

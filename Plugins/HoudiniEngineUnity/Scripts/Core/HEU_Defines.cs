@@ -202,6 +202,8 @@ namespace HoudiniEngineUnity
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR = "unity_hf_tile_offset";
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR = "unity_hf_tile_size";
 
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR = "unity_hf_terrainlayer_file";
+
 
 		// Material Attributes
 		public const string MAT_OGL_ALPHA_ATTR = "ogl_alpha";

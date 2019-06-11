@@ -534,7 +534,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 
-			// Total maps is masks plus base height layer
+			// Total maps = all HF layers + base height layer
 			int numMaps = heightFields.Count + 1;
 
 			// Assign floats to alpha map
