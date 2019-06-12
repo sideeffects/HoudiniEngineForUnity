@@ -464,8 +464,10 @@ namespace HoudiniEngineUnity
 			}
 
 			volumeInfo.tileSize = 1;
+			// Use same transform as base layer
+			volumeInfo.transform = baseVolumeInfo.transform;
 
-			if (!session.SetVolumeInfo(volumeNodeID, partInfo.id, ref baseVolumeInfo))
+			if (!session.SetVolumeInfo(volumeNodeID, partInfo.id, ref volumeInfo))
 			{
 				Debug.LogError("Unable to set volume info on input heightfield node!");
 				return false;
@@ -622,3 +624,4 @@ namespace HoudiniEngineUnity
 	}
 
 }   // HoudiniEngineUnity
+						 
