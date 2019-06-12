@@ -50,6 +50,9 @@ namespace HoudiniEngineUnity
 		private static Texture2D _refreshIcon;
 		private static GUIContent _refreshContent;
 
+		// Cache the loaded terrain material that the user has selected as default
+		private static Material _terrainMaterial;
+
 
 		public static void ShowWindow()
 		{
@@ -72,6 +75,9 @@ namespace HoudiniEngineUnity
 		{
 			// Turn off auto repaint as otherwise get null access after this closes
 			this.autoRepaintOnSceneChange = false;
+
+			// Clear references
+			_terrainMaterial = null;
 		}
 
 		public void OnGUI()
@@ -438,8 +444,25 @@ namespace HoudiniEngineUnity
 			}
 			HEU_EditorUI.DrawSeparator();
 			{
+				string oldValue = HEU_PluginSettings.DefaultTerrainMaterial;
+				if (_terrainMaterial == null && !string.IsNullOrEmpty(oldValue))
+				{
+					//Debug.Log("Loading terrain material at: " + oldValue);
+					_terrainMaterial = HEU_MaterialFactory.LoadUnityMaterial(oldValue);
+				}
+
+				Material newMaterial = EditorGUILayout.ObjectField("Default Terrain Material", _terrainMaterial, typeof(Material), false) as Material;
+				if (newMaterial != _terrainMaterial)
+				{
+					HEU_PluginSettings.DefaultTerrainMaterial = (newMaterial != null) ? HEU_AssetDatabase.GetAssetPathWithSubAssetSupport(newMaterial) : "";
+					_terrainMaterial = newMaterial;
+					bChanged = true;
+				}
+			}
+			HEU_EditorUI.DrawSeparator();
+			{
 				string oldValue = HEU_PluginSettings.TerrainSplatTextureDefault;
-				string newValue = EditorGUILayout.DelayedTextField("Terrain Default Splat Texture", oldValue);
+				string newValue = EditorGUILayout.DelayedTextField("Default Terrain Splat Texture", oldValue);
 				if (!newValue.Equals(oldValue))
 				{
 					HEU_PluginSettings.TerrainSplatTextureDefault = newValue;
