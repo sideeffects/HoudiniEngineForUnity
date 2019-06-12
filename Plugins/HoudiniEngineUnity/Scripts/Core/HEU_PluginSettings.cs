@@ -568,6 +568,20 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public static string DefaultTerrainMaterial
+		{
+			get
+			{
+				string path = "";
+				HEU_PluginStorage.Instance.Get("HAPI_DefaultTerrainMaterial", out path, path);
+				return path;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_DefaultTerrainMaterial", value);
+			}
+		}
+
 		public static string TerrainSplatTextureDefault
 		{
 			get

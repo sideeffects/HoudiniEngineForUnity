@@ -207,6 +207,8 @@ namespace HoudiniEngineUnity
 				if (terrain.terrainData == null)
 				{
 					terrain.terrainData = new TerrainData();
+
+					SetTerrainMaterial(terrain);
 				}
 
 				terrainData = terrain.terrainData;
@@ -327,6 +329,28 @@ namespace HoudiniEngineUnity
 			}
 
 			return false;
+		}
+
+		/// <summary>
+		/// Sets a material on the given Terrain object.
+		/// Currently sets the default Terrain material from the plugin settings, if its valid.
+		/// </summary>
+		/// <param name="terrain">The terrain to set material for</param>
+		public static void SetTerrainMaterial(Terrain terrain)
+		{
+			// Use material specified in Plugin settings.
+			string terrainMaterialPath = HEU_PluginSettings.DefaultTerrainMaterial;
+			if (!string.IsNullOrEmpty(terrainMaterialPath))
+			{
+				Material material = HEU_MaterialFactory.LoadUnityMaterial(terrainMaterialPath);
+				if (material != null)
+				{
+					terrain.materialType = Terrain.MaterialType.Custom;
+					terrain.materialTemplate = material;
+				}
+			}
+
+			// TODO: If none specified, guess based on Render settings?
 		}
 
 		/// <summary>

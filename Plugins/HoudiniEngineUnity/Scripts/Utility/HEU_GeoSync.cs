@@ -193,6 +193,8 @@ namespace HoudiniEngineUnity
 					TerrainData terrainData = terrain.terrainData;
 					collider.terrainData = terrainData;
 
+					HEU_GeometryUtility.SetTerrainMaterial(terrain);
+
 					int heightMapSize = terrainBuffers[t]._heightMapSize;
 
 					terrainData.heightmapResolution = heightMapSize;
