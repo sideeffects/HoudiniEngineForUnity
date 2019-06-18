@@ -515,7 +515,7 @@ namespace HoudiniEngineUnity
 					for (int m = numMaps - 1; m > 0; --m)
 					{
 						float a = heightFields[m - 1][x + heightMapSize * y];
-						a = Mathf.Clamp01(a - f);
+						a = Mathf.Clamp01(a);
 
 						alphamap[ix, iy, m] = a;
 
