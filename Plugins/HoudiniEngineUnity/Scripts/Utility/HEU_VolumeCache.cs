@@ -547,7 +547,7 @@ namespace HoudiniEngineUnity
 					for (int m = numMaps - 1; m > 0; --m)
 					{
 						float a = heightFields[m - 1][y + terrainSize * x];
-						a = Mathf.Clamp01(a - f) * validLayers[m - 1]._strength;
+						a = Mathf.Clamp01(a) * validLayers[m - 1]._strength;
 						alphamap[x, y, m] = a;
 
 						f += a;
