@@ -202,7 +202,12 @@ namespace HoudiniEngineUnity
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR = "unity_hf_tile_offset";
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR = "unity_hf_tile_size";
 
-		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR = "unity_hf_terrainlayer_file";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR = "unity_hf_terraindata_file";
+
+		// General Heightfield
+		public const string HAPI_HEIGHTFIELD_TILE_ATTR = "tile";
+		public const string HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT = "height";
+		public const string HAPI_HEIGHTFIELD_LAYERNAME_MASK = "mask";
 
 
 		// Material Attributes
@@ -288,6 +293,19 @@ namespace HoudiniEngineUnity
 
 		// Textures
 		public const string HEU_TERRAIN_SPLAT_DEFAULT = "Textures/heu_terrain_default_splat";
+
+		// Folder names
+		public const string HEU_FOLDER_MESHES = "Meshes";
+		public const string HEU_FOLDER_MATERIALS = "Materials";
+		public const string HEU_FOLDER_TERRAIN = "Terrain";
+		public const string HEU_FOLDER_TILE = "Tile";
+		public const string HEU_FOLDER_TEXTURES = "Textures";
+
+		// Extensions
+		public const string HEU_EXT_ASSET = ".asset";
+		public const string HEU_EXT_MAT = ".mat";
+		public const string HEU_EXT_TERRAINDATA = ".terraindata";
+		public const string HEU_EXT_TERRAINLAYER = ".terrainlayer";
 	}
 
 }   // HoudiniEngineUnity

@@ -195,6 +195,12 @@ namespace HoudiniEngineUnity
 
 					HEU_GeometryUtility.SetTerrainMaterial(terrain);
 
+#if UNITY_2018_3_OR_NEWER
+					terrain.allowAutoConnect = true;
+					// This has to be set after setting material
+					terrain.drawInstanced = true;
+#endif
+
 					int heightMapSize = terrainBuffers[t]._heightMapSize;
 
 					terrainData.heightmapResolution = heightMapSize;
@@ -207,12 +213,23 @@ namespace HoudiniEngineUnity
 					terrainData.baseMapResolution = heightMapSize;
 					terrainData.alphamapResolution = heightMapSize;
 
-					const int resolutionPerPatch = 128;
-					terrainData.SetDetailResolution(resolutionPerPatch, resolutionPerPatch);
+					// 32 is the default for resolutionPerPatch
+					const int detailResolution = 1024;
+					const int resolutionPerPatch = 32;
+					terrainData.SetDetailResolution(detailResolution, resolutionPerPatch);
 
 					terrainData.SetHeights(0, 0, terrainBuffers[t]._heightMap);
 
-					terrainData.size = new Vector3(terrainBuffers[t]._terrainSizeX, terrainBuffers[t]._heightRange, terrainBuffers[t]._terrainSizeY);
+					// Note that Unity uses a default height range of 600 when a flat terrain is created.
+					// Without a non-zero value for the height range, user isn't able to draw heights.
+					// Therefore, set 600 as the value if height range is currently 0 (due to flat heightfield).
+					float heightRange = terrainBuffers[t]._heightRange;
+					if (heightRange == 0)
+					{
+						heightRange = 600;
+					}
+
+					terrainData.size = new Vector3(terrainBuffers[t]._terrainSizeX, heightRange, terrainBuffers[t]._terrainSizeY);
 
 					terrain.Flush();
 

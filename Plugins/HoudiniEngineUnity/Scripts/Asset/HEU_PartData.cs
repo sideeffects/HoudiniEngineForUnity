@@ -31,8 +31,8 @@ using System;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
-
 
 namespace HoudiniEngineUnity
 {
@@ -1170,7 +1170,7 @@ namespace HoudiniEngineUnity
 
 						if (bWriteMeshesToAssetDatabase)
 						{
-							HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(assetName, assetObjectFileName, targetMesh, ref bakedAssetPath, ref assetDBObject);
+							HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(assetName, assetObjectFileName, targetMesh, "", ref bakedAssetPath, ref assetDBObject);
 						}
 					}
 
@@ -1204,7 +1204,7 @@ namespace HoudiniEngineUnity
 
 						if (bWriteMeshesToAssetDatabase)
 						{
-							HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(assetName, assetObjectFileName, targetColliderMesh, ref bakedAssetPath, ref assetDBObject);
+							HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(assetName, assetObjectFileName, targetColliderMesh, "", ref bakedAssetPath, ref assetDBObject);
 						}
 					}
 
@@ -1270,7 +1270,7 @@ namespace HoudiniEngineUnity
 						string materialPath = HEU_AssetDatabase.GetAssetPath(srcMaterial);
 						if (!string.IsNullOrEmpty(materialPath) && HEU_AssetDatabase.IsPathInAssetCache(materialPath))
 						{
-							newMaterial = HEU_AssetDatabase.LoadAssetCopy(srcMaterial, bakedAssetPath, typeof(Material), false) as Material;
+							newMaterial = HEU_AssetDatabase.CopyAndLoadAssetWithRelativePath(srcMaterial, bakedAssetPath, "", typeof(Material), false) as Material;
 							if (newMaterial == null)
 							{
 								throw new HEU_HoudiniEngineError(string.Format("Unable to copy material. Stopping bake!"));
@@ -1298,7 +1298,7 @@ namespace HoudiniEngineUnity
 								Texture srcDiffuseTexture = newMaterial.mainTexture;
 								if (srcDiffuseTexture != null)
 								{
-									Texture newDiffuseTexture = HEU_AssetDatabase.LoadAssetCopy(srcDiffuseTexture, bakedAssetPath, typeof(Texture), false) as Texture;
+									Texture newDiffuseTexture = HEU_AssetDatabase.CopyAndLoadAssetWithRelativePath(srcDiffuseTexture, bakedAssetPath, "", typeof(Texture), false) as Texture;
 									if (newDiffuseTexture == null)
 									{
 										throw new HEU_HoudiniEngineError(string.Format("Unable to copy texture. Stopping bake!"));
@@ -1311,7 +1311,7 @@ namespace HoudiniEngineUnity
 							Texture srcNormalMap = materials[m].GetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP);
 							if (srcNormalMap != null)
 							{
-								Texture newNormalMap = HEU_AssetDatabase.LoadAssetCopy(srcNormalMap, bakedAssetPath, typeof(Texture), false) as Texture;
+								Texture newNormalMap = HEU_AssetDatabase.CopyAndLoadAssetWithRelativePath(srcNormalMap, bakedAssetPath, "", typeof(Texture), false) as Texture;
 								if (newNormalMap == null)
 								{
 									throw new HEU_HoudiniEngineError(string.Format("Unable to copy texture. Stopping bake!"));
@@ -1352,17 +1352,69 @@ namespace HoudiniEngineUnity
 						bakedAssetPath = HEU_AssetDatabase.GetAssetRootPath(targetTerrainData);
 					}
 
-					// Note: ignoring bWriteMeshesToAssetDatabase and always writing to asset db
-					//HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(assetName, assetObjectFileName, targetTerrainData, ref bakedAssetPath, ref assetDBObject);
-
 					if (string.IsNullOrEmpty(bakedAssetPath))
 					{
 						bakedAssetPath = HEU_AssetDatabase.CreateUniqueBakePath(assetName);
 					}
 
+					// Copy over the TerrainData, and TerrainLayers. But both of these are stored as files on disk. 
+					// We will need to copy them if the HDA generated them.
+					// Note: ignoring bWriteMeshesToAssetDatabase and always writing to asset db because terrain 
+					// files need to stored in asset db
+
+					string sourceAssetPath = HEU_AssetDatabase.GetAssetPath(sourceTerrainData);
+
+					// Form the baked terrain path with sub folders, by acquiring the geo name, and terrain tile index:
+					//	 sourceAssetPath	= "Assets/HoudiniEngineAssetCache/Working/{asset name}/{geo name}/Terrain/Tile0/TerrainData.asset"
+					//	 bakedAssetPath		= "Assets/HoudiniEngineAssetCache/Baked/{asset name}"
+					// =>bakedTerrainPath	= "Assets/HoudiniEngineAssetCache/Baked/{asset name}/{geo name}/Terrain/Tile0"
+					string bakedTerrainPath = bakedAssetPath;
+
+					// Find the geo name and terrain tile index
+					//	@"/(Working)/(\w+)/(\w+)/(Terrain/Tile\d)/TerrainData.asset$"
+					string pattern = string.Format(@"{0}(Working){0}(\w+){0}(\w+){0}({1}{0}{2}\d){0}TerrainData{3}", 
+						HEU_Platform.DirectorySeparatorStr,
+						HEU_Defines.HEU_FOLDER_TERRAIN,
+						HEU_Defines.HEU_FOLDER_TILE,
+						HEU_Defines.HEU_EXT_ASSET);
+					Regex reg = new Regex(pattern); 
+					Match match = reg.Match(sourceAssetPath);
+					
+					/* Leaving it in for debugging
+					Debug.Log("Match: " + match.Success);
+					if (match.Success)
+					{
+						int numGroups = match.Groups.Count;
+						for(int g = 0; g < numGroups; ++g)
+						{
+							Debug.LogFormat("Group: {0} - {1}", g, match.Groups[g].Value);
+						}
+					}
+					*/
+
+					// We should get 5 groups matched: {full match}, Working, {asset name}, {geo name}, Terrain/Tile{index}
+					if (match.Success && match.Groups.Count == 5)
+					{
+						bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
+					}
+
 					// We're going to copy the source terrain data asset file, then load the copy and assign to the target
-					// Note: ignoring bWriteMeshesToAssetDatabase and always writing to asset db because terrain data needs to be stored on file
-					targetTerrainData = HEU_AssetDatabase.LoadAssetCopy(sourceTerrainData, bakedAssetPath, typeof(TerrainData), true) as TerrainData;
+					targetTerrainData = HEU_AssetDatabase.CopyAndLoadAssetFromAssetCachePath(sourceTerrainData, bakedTerrainPath, typeof(TerrainData), true) as TerrainData;
+
+#if UNITY_2018_3_OR_NEWER
+					// Copy over the TerrainLayers
+					TerrainLayer[] sourceTerrainLayers = sourceTerrainData.terrainLayers;
+					if (sourceTerrainLayers != null)
+					{
+						TerrainLayer[] tergetTerrainLayers = new TerrainLayer[sourceTerrainLayers.Length];
+						for(int m = 0; m < sourceTerrainLayers.Length; ++m)
+						{
+							tergetTerrainLayers[m] = HEU_AssetDatabase.CopyAndLoadAssetFromAssetCachePath(sourceTerrainLayers[m], bakedTerrainPath, typeof(TerrainLayer), true) as TerrainLayer;
+						}
+						targetTerrainData.terrainLayers = tergetTerrainLayers;
+					}
+#endif
+
 					targetTerrain.terrainData = targetTerrainData;
 					targetTerrain.Flush();
 				}
@@ -1885,41 +1937,27 @@ namespace HoudiniEngineUnity
 		/// Adds to existing saved asset file or creates this as the root asset.
 		/// </summary>
 		/// <param name="terrainData">The TerrainData object to save</param>
-		public void SetTerrainData(TerrainData terrainData)
+		public void SetTerrainData(TerrainData terrainData, string relativeFolderPath)
 		{
-			if (terrainData != _assetDBTerrainData || !HEU_AssetDatabase.ContainsAsset(terrainData))
+			// Remove the old asset from the AssetDB if its different
+			if (_assetDBTerrainData != null && terrainData != _assetDBTerrainData && HEU_AssetDatabase.ContainsAsset(_assetDBTerrainData))
 			{
-				if (_assetDBTerrainData != null && HEU_AssetDatabase.ContainsAsset(_assetDBTerrainData))
-				{
-					HEU_AssetDatabase.DeleteAsset(_assetDBTerrainData);
-				}
+				HEU_AssetDatabase.DeleteAsset(_assetDBTerrainData);
 				_assetDBTerrainData = null;
-
-				string objectName = ParentGeoNode.ObjectNode != null ? ParentGeoNode.ObjectNode.ObjectName : "";
-				string assetPathName = string.Format("Asset_{0}_{1}_{2}_TerrainData.asset", objectName, ParentGeoNode.GeoName, PartID);
-				//Debug.Log("Saving terrain data: " + assetPathName);
-				ParentAsset.AddToAssetDBCache(assetPathName, terrainData, ref _assetDBTerrainData);
 			}
-		}
 
-#if UNITY_2018_3_OR_NEWER
-		/// <summary>
-		/// Save the given terrainLayer to the AssetDatabase under the currently saved TerrainData.
-		/// Assumes the TerrainData has already been saved, otherwise returns False with warning.
-		/// </summary>
-		/// <param name="terrainLayer">The TerrainLayer to save</param>
-		public bool SaveTerrainLayer(TerrainLayer terrainLayer)
-		{
-			if (_assetDBTerrainData == null || !HEU_AssetDatabase.ContainsAsset(_assetDBTerrainData))
+			// Add new asset if it doesn't exist in AssetDB
+			if (!HEU_AssetDatabase.ContainsAsset(terrainData))
 			{
-				Debug.LogWarningFormat("Unable to save terrain layer because the terrain data is invalid or not saved. You might lose terrain state.");
-				return false;
+				string assetPathName = "TerrainData" + HEU_Defines.HEU_EXT_ASSET;
+				Debug.Log("Saving terrain data: " + assetPathName);
+				ParentAsset.AddToAssetDBCache(assetPathName, terrainData, relativeFolderPath, ref _assetDBTerrainData);
 			}
-
-			HEU_AssetDatabase.AddObjectToAsset(terrainLayer, _assetDBTerrainData);
-			return true;
+			else
+			{
+				_assetDBTerrainData = terrainData;
+			}
 		}
-#endif
 
 		public static string AppendBakedCloneName(string name)
 		{

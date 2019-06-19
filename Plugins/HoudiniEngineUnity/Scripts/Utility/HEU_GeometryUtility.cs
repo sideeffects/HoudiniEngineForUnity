@@ -158,10 +158,25 @@ namespace HoudiniEngineUnity
 			mesh.tangents = tangents;
 		}
 
+		/// <summary>
+		/// Creates terrain from given volumeInfo for the given gameObject.
+		/// If gameObject has a valid Terrain component, then it is reused.
+		/// Similarly, if the Terrain component has a valid TerrainData, or if the given terrainData is valid, then it is used.
+		/// Otherwise a new TerrainData is created and set to the Terrain.
+		/// Populates the volumePositionOffset with the heightfield offset position.
+		/// Returns true if successfully created the terrain, otherwise false.
+		/// </summary>
+		/// <param name="session">Houdini Engine session to query heightfield data from</param>
+		/// <param name="volumeInfo">Volume info pertaining to the heightfield to generate the Terrain from</param>
+		/// <param name="geoID">The geometry ID</param>
+		/// <param name="partID">The part ID (height layer)</param>
+		/// <param name="gameObject">The target GameObject containing the Terrain component</param>
+		/// <param name="terrainData">A valid TerrainData to use, or if empty, a new one is created and populated</param>
+		/// <param name="volumePositionOffset">Heightfield offset</param>
+		/// <returns>True if successfully popupated the terrain</returns>
 		public static bool GenerateTerrainFromVolume(HEU_SessionBase session, ref HAPI_VolumeInfo volumeInfo, HAPI_NodeId geoID, HAPI_PartId partID, 
-			GameObject gameObject, out TerrainData terrainData, out Vector3 volumePositionOffset)
+			GameObject gameObject, ref TerrainData terrainData, out Vector3 volumePositionOffset)
 		{
-			terrainData = null;
 			volumePositionOffset = Vector3.zero;
 
 			if (volumeInfo.zLength == 1 && volumeInfo.tupleSize == 1)
@@ -201,18 +216,41 @@ namespace HoudiniEngineUnity
 					return false;
 				}
 
-				Terrain terrain = HEU_GeneralUtility.GetOrCreateComponent<Terrain>(gameObject);
+				bool bNewTerrain = false;
+				bool bNewTerrainData = false;
+				Terrain terrain = gameObject.GetComponent<Terrain>();
+				if (terrain == null)
+				{
+					terrain = gameObject.AddComponent<Terrain>();
+					bNewTerrain = true;
+				}
+
 				TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(gameObject);
 				
+				// This ensures to reuse existing terraindata, and only creates new if none exist or none provided
 				if (terrain.terrainData == null)
 				{
-					terrain.terrainData = new TerrainData();
+					if (terrainData == null)
+					{
+						terrainData = new TerrainData();
+						bNewTerrainData = true;
+					}
 
+					terrain.terrainData = terrainData;
 					SetTerrainMaterial(terrain);
 				}
 
 				terrainData = terrain.terrainData;
 				collider.terrainData = terrainData;
+
+				if (bNewTerrain)
+				{
+#if UNITY_2018_3_OR_NEWER
+					terrain.allowAutoConnect = true;
+					// This has to be set after setting material
+					terrain.drawInstanced = true;
+#endif
+				}
 
 				// Heightmap resolution must be square power-of-two plus 1. 
 				// Unity will automatically resize terrainData.heightmapResolution so need to handle the changed size (if Unity changed it).
@@ -289,15 +327,26 @@ namespace HoudiniEngineUnity
 				terrainData.baseMapResolution = heightMapResolution;
 				terrainData.alphamapResolution = heightMapResolution;
 
-				//int detailResolution = heightMapResolution;
-				// 128 is the maximum for resolutionPerPatch
-				const int resolutionPerPatch = 128;
-				terrainData.SetDetailResolution(resolutionPerPatch, resolutionPerPatch);
+				if (bNewTerrainData)
+				{
+					// 32 is the default for resolutionPerPatch
+					const int detailResolution = 1024;
+					const int resolutionPerPatch = 32;
+					terrainData.SetDetailResolution(detailResolution, resolutionPerPatch);
+				}
 
 				// Note SetHeights must be called before setting size in next line, as otherwise
 				// the internal terrain size will not change after setting the size.
 				terrainData.SetHeights(0, 0, unityHeights);
-				
+
+				// Note that Unity uses a default height range of 600 when a flat terrain is created.
+				// Without a non-zero value for the height range, user isn't able to draw heights.
+				// Therefore, set 600 as the value if height range is currently 0 (due to flat heightfield).
+				if (heightRange == 0)
+				{
+					heightRange = terrainData.size.y > 1 ? terrainData.size.y : 600;
+				}
+
 				terrainData.size = new Vector3(terrainSizeX, heightRange, terrainSizeY);
 
 				terrain.Flush();

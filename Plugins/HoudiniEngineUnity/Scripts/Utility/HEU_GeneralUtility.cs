@@ -1227,6 +1227,39 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Returns the single string value from Attribute with given name and owner type, or null if failed.
+		/// </summary>
+		/// <param name="session">Houdini Engine session to query</param>
+		/// <param name="geoID">The geometry ID in Houdini</param>
+		/// <param name="partID">The part ID in Houdini</param>
+		/// <param name="attrName">Name of the attribute to query</param>
+		/// <param name="attrOwner">Owner type of the attribute</param>
+		/// <returns>Valid string if successful, otherwise returns null</returns>
+		public static string GetAttributeStringValueSingle(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string attrName, HAPI_AttributeOwner attrOwner)
+		{
+			if (string.IsNullOrEmpty(attrName))
+			{
+				return null;
+			}
+
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			int[] stringHandle = new int[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID, attrName, ref attrInfo, ref stringHandle, session.GetAttributeStringData);
+			if (attrInfo.exists)
+			{
+				if (attrInfo.owner != attrOwner)
+				{
+					Debug.LogWarningFormat("Expected {0} attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.owner);
+				}
+				else if (stringHandle.Length > 0)
+				{
+					return HEU_SessionManager.GetString(stringHandle[0]);
+				}
+			}
+			return null;
+		}
+
+		/// <summary>
 		/// Attach scripts in Unity to the asset root gameobject, and optionally
 		/// invoke a function with an optional argument.
 		/// </summary>

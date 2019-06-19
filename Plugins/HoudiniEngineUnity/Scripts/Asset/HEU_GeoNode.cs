@@ -937,6 +937,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// First update volume caches. Each volume cache represents a set of terrain layers grouped by tile index.
+			// Therefore each volume cache represents a potential Unity Terrain (containing layers)
 			_volumeCaches = HEU_VolumeCache.UpdateVolumeCachesFromParts(session, this, volumeParts, _volumeCaches);
 
 			// Now generate the terrain for each volume cache
