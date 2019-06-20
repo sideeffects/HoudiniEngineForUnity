@@ -1026,6 +1026,7 @@ namespace HoudiniEngineUnity
 						{
 							SerializedObject cacheObjectSerialized = new SerializedObject(volumeCaches[i]);
 							bool bChanged = false;
+							bool bStrengthChanged = false;
 
 							SerializedProperty layersProperty = cacheObjectSerialized.FindProperty("_layers");
 							if (layersProperty == null || layersProperty.arraySize == 0)
@@ -1066,7 +1067,7 @@ namespace HoudiniEngineUnity
 
 									if (HEU_EditorUtility.EditorDrawFloatSliderProperty(layerProperty, "_strength", "Strength", "Amount to multiply the layer values by on import."))
 									{
-										bChanged = true;
+										bStrengthChanged = true;
 									}
 
 									HEU_EditorUI.DrawSeparator();
@@ -1075,14 +1076,18 @@ namespace HoudiniEngineUnity
 								EditorGUI.indentLevel--;
 							}
 
-							if(bChanged)
+							if (bStrengthChanged)
 							{
 								SerializedProperty dirtyProperty = cacheObjectSerialized.FindProperty("_isDirty");
 								if (dirtyProperty != null)
 								{
 									dirtyProperty.boolValue = true;
+									bChanged = true;
 								}
+							}
 
+							if(bChanged)
+							{
 								cacheObjectSerialized.ApplyModifiedProperties();
 							}
 						}

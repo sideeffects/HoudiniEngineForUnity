@@ -268,61 +268,16 @@ namespace HoudiniEngineUnity
 					return false;
 				}
 
-				// Get the height values from Houdini and find the min and max height range.
-				float minHeight = 0;
-				float maxHeight = 0;
-				float[] heightValues = null;
-				if (!GetHeightfieldValues(session, volumeInfo.xLength, volumeInfo.yLength, geoID, partID, ref heightValues, ref minHeight, ref maxHeight))
-				{
-					return false;
-				}
-
-				const int UNITY_MAX_HEIGHT_RANGE = 65536;
-				float heightRange = (maxHeight - minHeight);
-				if (Mathf.RoundToInt(heightRange) > UNITY_MAX_HEIGHT_RANGE)
-				{
-					Debug.LogWarningFormat("Unity Terrain has maximum height range of {0}. This HDA height range is {1}, so it will be maxed out at {0}.\nPlease resize to within valid range!",
-						UNITY_MAX_HEIGHT_RANGE, Mathf.RoundToInt(heightRange));
-					heightRange = UNITY_MAX_HEIGHT_RANGE;
-				}
-
 				int mapWidth = volumeInfo.xLength;
 				int mapHeight = volumeInfo.yLength;
 
-				int paddingWidth = heightMapResolution - mapWidth;
-				int paddingLeft = Mathf.CeilToInt(paddingWidth * 0.5f);
-				int paddingRight = heightMapResolution - paddingLeft;
-				//Debug.LogFormat("Padding: Width={0}, Left={1}, Right={2}", paddingWidth, paddingLeft, paddingRight);
-
-				int paddingHeight = heightMapResolution - mapHeight;
-				int paddingTop = Mathf.CeilToInt(paddingHeight * 0.5f);
-				int paddingBottom = heightMapResolution - paddingTop;
-				//Debug.LogFormat("Padding: Height={0}, Top={1}, Bottom={2}", paddingHeight, paddingTop, paddingBottom);
-
-				// Set height values at centre of the terrain, with padding on the sides if we resized
-				float[,] unityHeights = new float[heightMapResolution, heightMapResolution];
-				for (int y = 0; y < heightMapResolution; ++y)
-				{
-					for (int x = 0; x < heightMapResolution; ++x)
-					{	
-						if (y >= paddingTop && y < (paddingBottom) && x >= paddingLeft && x < (paddingRight))
-						{
-							int ay = x - paddingLeft;
-							int ax = y - paddingTop;
-
-							// Unity expects normalized height values
-							float h = heightValues[ay + ax * mapWidth] - minHeight;
-							float f = h / heightRange;
-
-							// Flip for right-hand to left-handed coordinate system
-							int ix = x;
-							int iy = heightMapResolution - (y + 1);
-
-							// Unity expects height array indexing to be [y, x].
-							unityHeights[ix, iy] = f;
-						}
-					}
-				}
+				// Get the converted height values from Houdini and find the min and max height range.
+				float minHeight = 0;
+				float maxHeight = 0;
+				float heightRange = 0;
+				float[] normalizedHeights = GetNormalizedHeightmapFromPartWithMinMax(session, geoID, partID, volumeInfo.xLength,
+					ref minHeight, ref maxHeight, ref heightRange);
+				float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, normalizedHeights);
 
 				terrainData.baseMapResolution = heightMapResolution;
 				terrainData.alphamapResolution = heightMapResolution;
@@ -403,10 +358,24 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Retrieves the height values from Houdini for the given volume part.
+		/// Retrieves the heightmap from Houdini for the given volume part, converts to Unity coordinates,
+		/// normalizes to 0 and 1, along with min and max height values, as well as the range.
 		/// </summary>
-		public static float[] GetHeightfieldFromPart(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string partName, int terrainSize)
+		/// <param name="session">Current Houdini session</param>
+		/// <param name="geoID">Geometry object ID</param>
+		/// <param name="partID">The volume part ID</param>
+		/// <param name="heightMapSize">Size of each dimension of the heightmap (assumes equal sides).</param>
+		/// <param name="minHeight">Found minimum height value in the heightmap.</param>
+		/// <param name="maxHeight">Found maximum height value in the heightmap.</param>
+		/// <param name="heightRange">Found height range in the heightmap.</param>
+		/// <returns>The converted heightmap from Houdini.</returns>
+		public static float[] GetNormalizedHeightmapFromPartWithMinMax(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int heightMapSize,
+			ref float minHeight, ref float maxHeight, ref float heightRange)
 		{
+			minHeight = float.MaxValue;
+			maxHeight = float.MinValue;
+			heightRange = 1;
+
 			HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
 			bool bResult = session.GetVolumeInfo(geoID, partID, ref volumeInfo);
 			if (!bResult)
@@ -420,37 +389,43 @@ namespace HoudiniEngineUnity
 			// Number of heightfield values
 			int totalHeightValues = volumeXLength * volumeYLength;
 
-			float minHeight = float.MaxValue;
-			float maxHeight = float.MinValue;
 			float[] heightValues = new float[totalHeightValues];
-			if (!GetHeightfieldValues(session, volumeXLength, volumeYLength, geoID, partID, ref heightValues, ref minHeight, ref maxHeight))
+			if (!GetHeightmapFromPart(session, volumeXLength, volumeYLength, geoID, partID, ref heightValues, ref minHeight, ref maxHeight))
 			{
 				return null;
 			}
 
-			float heightRange = (maxHeight - minHeight);
+			heightRange = (maxHeight - minHeight);
 			if (heightRange == 0f)
 			{
 				heightRange = 1f;
 			}
 			//Debug.LogFormat("{0} : {1}", HEU_SessionManager.GetString(volumeInfo.nameSH, session), heightRange);
 
+			const int UNITY_MAX_HEIGHT_RANGE = 65536;
+			if (Mathf.RoundToInt(heightRange) > UNITY_MAX_HEIGHT_RANGE)
+			{
+				Debug.LogWarningFormat("Unity Terrain has maximum height range of {0}. This HDA height range is {1}, so it will be maxed out at {0}.\nPlease resize to within valid range!",
+					UNITY_MAX_HEIGHT_RANGE, Mathf.RoundToInt(heightRange));
+				heightRange = UNITY_MAX_HEIGHT_RANGE;
+			}
+
 			// Remap height values to fit terrain size
-			int paddingWidth = terrainSize - volumeXLength;
+			int paddingWidth = heightMapSize - volumeXLength;
 			int paddingLeft = Mathf.CeilToInt(paddingWidth * 0.5f);
-			int paddingRight = terrainSize - paddingLeft;
+			int paddingRight = heightMapSize - paddingLeft;
 			//Debug.LogFormat("Padding: Width={0}, Left={1}, Right={2}", paddingWidth, paddingLeft, paddingRight);
 
-			int paddingHeight = terrainSize - volumeYLength;
+			int paddingHeight = heightMapSize - volumeYLength;
 			int paddingTop = Mathf.CeilToInt(paddingHeight * 0.5f);
-			int paddingBottom = terrainSize - paddingTop;
+			int paddingBottom = heightMapSize - paddingTop;
 			//Debug.LogFormat("Padding: Height={0}, Top={1}, Bottom={2}", paddingHeight, paddingTop, paddingBottom);
 
 			// Set height values at centre of the terrain, with padding on the sides if we resized
-			float[] resizedHeightValues = new float[terrainSize * terrainSize];
-			for (int y = 0; y < terrainSize; ++y)
+			float[] resizedHeightValues = new float[heightMapSize * heightMapSize];
+			for (int y = 0; y < heightMapSize; ++y)
 			{
-				for (int x = 0; x < terrainSize; ++x)
+				for (int x = 0; x < heightMapSize; ++x)
 				{
 					if (y >= paddingTop && y < (paddingBottom) && x >= paddingLeft && x < (paddingRight))
 					{
@@ -462,10 +437,10 @@ namespace HoudiniEngineUnity
 
 						// Flip for right-hand to left-handed coordinate system
 						int ix = x;
-						int iy = terrainSize - (y + 1);
+						int iy = heightMapSize - (y + 1);
 
 						// Unity expects height array indexing to be [y, x].
-						resizedHeightValues[iy + ix * terrainSize] = f;
+						resizedHeightValues[iy + ix * heightMapSize] = f;
 					}
 				}
 			}
@@ -474,9 +449,18 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Retrieve the height values from Houdini for given part (volume), along with min and max height values.
+		/// Retrieve the heightmap from Houdini for given part (volume), along with min and max height values.
 		/// </summary>
-		public static bool GetHeightfieldValues(HEU_SessionBase session, int xLength, int yLength, HAPI_NodeId geoID, HAPI_PartId partID,
+		/// <param name="session">Current Houdini session.</param>
+		/// <param name="xLength">Length of x dimension of the heightmap.</param>
+		/// <param name="yLength">Length of y dimension of the heightmap.</param>
+		/// <param name="geoID">Geometry object ID.</param>
+		/// <param name="partID">The volume part ID.</param>
+		/// <param name="heightValues">The raw heightmap from Houdini.</param>
+		/// <param name="minHeight">Found minimum height value in the heightmap.</param>
+		/// <param name="maxHeight">Found maximum height value in the heightmap.</param>
+		/// <returns>The heightmap from Houdini.</returns>
+		public static bool GetHeightmapFromPart(HEU_SessionBase session, int xLength, int yLength, HAPI_NodeId geoID, HAPI_PartId partID,
 			ref float[] heightValues, ref float minHeight, ref float maxHeight)
 		{
 			// Get the height values from Houdini and find the min and max height range.
@@ -508,32 +492,21 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Convert the given heightfield values linear array into multidimensional array that Unity
-		/// requires for terrain heightmap. Also normalizes the height values (since Unity expects that)
-		/// and does Houdini to Unity coordinate system conversion.
+		/// Convert the given heightValues (linear array) into a multi-dimensional array that Unity
+		/// needs for uploading as the heightmap for terrain.
 		/// </summary>
-		public static float[,] ConvertHeightMapHoudiniToUnity(int terrainSize, float[] heightValues, float minHeight, float maxHeight)
+		/// <param name="heightMapSize">Size of each dimension of the heightmap (assumes equal sides).</param>
+		/// <param name="heightValues">List of height values that will be converted to the heightmap.</param>
+		/// <returns>Converted heightmap for Unity terrain.</returns>
+		public static float[,] ConvertHeightMapHoudiniToUnity(int heightMapSize, float[] heightValues)
 		{
-			float heightRange = (maxHeight - minHeight);
-
-			float[,] unityHeights = new float[terrainSize, terrainSize];
-			for (int y = 0; y < terrainSize; ++y)
+			float[,] unityHeights = new float[heightMapSize, heightMapSize];
+			for (int y = 0; y < heightMapSize; ++y)
 			{
-				for (int x = 0; x < terrainSize; ++x)
+				for (int x = 0; x < heightMapSize; ++x)
 				{
-					int ay = x;
-					int ax = y;
-
-					// Unity expects normalized height values
-					float h = heightValues[ay + ax * terrainSize] - minHeight;
-					float f = h / heightRange;
-
-					// Flip for right-hand to left-handed coordinate system
-					int ix = x;
-					int iy = terrainSize - (y + 1);
-
-					// Unity expects height array indexing to be [y, x].
-					unityHeights[ix, iy] = f;
+					float f = heightValues[y + x * heightMapSize];
+					unityHeights[x, y] = f;
 				}
 			}
 
@@ -541,38 +514,40 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Convert the given heightfields linear list into multidimensional array that Unity
-		/// needs for uploading height splatmap values. Does Houdini to Unity coordinate system conversion.
+		/// Converts the given heightfields (linear array) into a multi-dimensional array that Unity
+		/// needs for uploading splatmap values for terrain. Each layer's values are clamped between 0 and 1,
+		/// and multiplied by the given strengths array (at corresponding layer index).
+		/// The base layer (located at alphamap[x,y,0]) is given the residual value after summing up the other layers
+		/// and subtracting from 1. Therefore the sum of each layer at a particular index should sum up to 1.
+		/// Converts from Houdini to Unity coordinate system conversion.
 		/// </summary>
-		public static float[,,] ConvertHeightSplatMapHoudiniToUnity(int heightMapSize, List<float[]> heightFields)
+		/// <param name="heightMapSize">Size of each dimension of the heightmap (assumes equal sides).</param>
+		/// <param name="heightFields">List of height values that will be converted to alphamap.</param>
+		/// <param name="strengths">List of strength values to multiply corresponding layer in the array.</param>
+		/// <returns>Converted heightfields into Unity alphamap array, multiplied by strength values.</returns>
+		public static float[,,] ConvertHeightSplatMapHoudiniToUnity(int heightMapSize, List<float[]> heightFields, float[] strengths)
 		{
 			// Total maps is masks plus base height layer
 			int numMaps = heightFields.Count + 1;
 
-			// Assign floats to alpha map
+			// Assign height floats to alpha map, with strength applied.
 			float[,,] alphamap = new float[heightMapSize, heightMapSize, numMaps];
 			for (int y = 0; y < heightMapSize; ++y)
 			{
 				for (int x = 0; x < heightMapSize; ++x)
 				{
 					float f = 0f;
-
-					// Flip for right-hand to left-handed coordinate system
-					int ix = x;
-					int iy = heightMapSize - (y + 1);
-
 					for (int m = numMaps - 1; m > 0; --m)
 					{
-						float a = heightFields[m - 1][x + heightMapSize * y];
-						a = Mathf.Clamp01(a);
-
-						alphamap[ix, iy, m] = a;
+						float a = heightFields[m - 1][y + heightMapSize * x];
+						a = Mathf.Clamp01(a) * strengths[m];
+						alphamap[x, y, m] = a;
 
 						f += a;
 					}
 
 					// Base layer gets leftover value
-					alphamap[ix, iy, 0] = Mathf.Clamp01(1.0f - f);
+					alphamap[x, y, 0] = Mathf.Clamp01(1.0f - f) * strengths[0];
 				}
 			}
 

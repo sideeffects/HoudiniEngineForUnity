@@ -189,7 +189,19 @@ namespace HoudiniEngineUnity
 					Terrain terrain = HEU_GeneralUtility.GetOrCreateComponent<Terrain>(newGameObject);
 					TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(newGameObject);
 
-					terrain.terrainData = new TerrainData();
+					if (!string.IsNullOrEmpty(terrainBuffers[t]._terrainDataPath))
+					{
+						terrain.terrainData = HEU_AssetDatabase.LoadAssetAtPath(terrainBuffers[t]._terrainDataPath, typeof(TerrainData)) as TerrainData;
+						if (terrain.terrainData == null)
+						{
+							Debug.LogWarningFormat("TerrainData, set via attribute, not found at: {0}", terrainBuffers[t]._terrainDataPath);
+						}
+					}
+
+					if (terrain.terrainData == null)
+					{
+						terrain.terrainData = new TerrainData();
+					}
 					TerrainData terrainData = terrain.terrainData;
 					collider.terrainData = terrainData;
 
@@ -254,49 +266,67 @@ namespace HoudiniEngineUnity
 					TerrainLayer[] terrainLayers = new TerrainLayer[numLayers];
 					for (int m = 0; m < numLayers; ++m)
 					{
-						terrainLayers[m] = new TerrainLayer();
+						TerrainLayer terrainlayer = null;
 
 						HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._layers[m];
 
-						if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
+						// Look up TerrainLayer file via attribute if user has set it
+						if (!string.IsNullOrEmpty(layer._layerPath))
 						{
-							terrainLayers[m].diffuseTexture = HEU_MaterialFactory.LoadTexture(layer._diffuseTexturePath);
-						}
-						if (terrainLayers[m].diffuseTexture == null)
-						{
-							terrainLayers[m].diffuseTexture = defaultTexture;
+							terrainlayer = HEU_AssetDatabase.LoadAssetAtPath(layer._layerPath, typeof(TerrainLayer)) as TerrainLayer;
+							if (terrainlayer == null)
+							{
+								Debug.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", layer._layerPath);
+								continue;
+							}
 						}
 
-						terrainLayers[m].diffuseRemapMin = Vector4.zero;
-						terrainLayers[m].diffuseRemapMax = Vector4.one;
+						if (terrainlayer == null)
+						{
+							terrainlayer = new TerrainLayer();
+						}
+
+						if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
+						{
+							terrainlayer.diffuseTexture = HEU_MaterialFactory.LoadTexture(layer._diffuseTexturePath);
+						}
+						if (terrainlayer.diffuseTexture == null)
+						{
+							terrainlayer.diffuseTexture = defaultTexture;
+						}
+
+						terrainlayer.diffuseRemapMin = Vector4.zero;
+						terrainlayer.diffuseRemapMax = Vector4.one;
 
 						if (!string.IsNullOrEmpty(layer._maskTexturePath))
 						{
-							terrainLayers[m].maskMapTexture = HEU_MaterialFactory.LoadTexture(layer._maskTexturePath);
+							terrainlayer.maskMapTexture = HEU_MaterialFactory.LoadTexture(layer._maskTexturePath);
 						}
 
-						terrainLayers[m].maskMapRemapMin = Vector4.zero;
-						terrainLayers[m].maskMapRemapMax = Vector4.one;
+						terrainlayer.maskMapRemapMin = Vector4.zero;
+						terrainlayer.maskMapRemapMax = Vector4.one;
 
-						terrainLayers[m].metallic = layer._metallic;
+						terrainlayer.metallic = layer._metallic;
 
 						if (!string.IsNullOrEmpty(layer._normalTexturePath))
 						{
-							terrainLayers[m].normalMapTexture = HEU_MaterialFactory.LoadTexture(layer._normalTexturePath);
+							terrainlayer.normalMapTexture = HEU_MaterialFactory.LoadTexture(layer._normalTexturePath);
 						}
 
-						terrainLayers[m].normalScale = layer._normalScale;
+						terrainlayer.normalScale = layer._normalScale;
 
-						terrainLayers[m].smoothness = layer._smoothness;
-						terrainLayers[m].specular = layer._specularColor;
-						terrainLayers[m].tileOffset = layer._tileOffset;
+						terrainlayer.smoothness = layer._smoothness;
+						terrainlayer.specular = layer._specularColor;
+						terrainlayer.tileOffset = layer._tileOffset;
 
-						if (layer._tileSize.magnitude == 0f && terrainLayers[m].diffuseTexture != null)
+						if (layer._tileSize.magnitude == 0f && terrainlayer.diffuseTexture != null)
 						{
 							// Use texture size if tile size is 0
-							layer._tileSize = new Vector2(terrainLayers[m].diffuseTexture.width, terrainLayers[m].diffuseTexture.height);
+							layer._tileSize = new Vector2(terrainlayer.diffuseTexture.width, terrainlayer.diffuseTexture.height);
 						}
-						terrainLayers[m].tileSize = layer._tileSize;
+						terrainlayer.tileSize = layer._tileSize;
+
+						terrainLayers[m] = terrainlayer;
 					}
 					terrainData.terrainLayers = terrainLayers;
 

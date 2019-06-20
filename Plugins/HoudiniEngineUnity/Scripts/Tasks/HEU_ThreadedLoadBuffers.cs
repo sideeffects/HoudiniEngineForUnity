@@ -83,6 +83,8 @@ namespace HoudiniEngineUnity
 		public float _heightRange;
 
 		public Vector3 _position;
+
+		public string _terrainDataPath;
 	}
 
 	public class HEU_LoadBufferVolumeLayer
@@ -105,9 +107,10 @@ namespace HoudiniEngineUnity
 		public bool _uiExpanded;
 		public int _tile = 0;
 
-		public float[] _rawHeights;
+		public float[] _normalizedHeights;
 		public float _minHeight;
 		public float _maxHeight;
+		public float _heightRange;
 
 		public float _terrainSizeX;
 		public float _terrainSizeY;
@@ -116,6 +119,8 @@ namespace HoudiniEngineUnity
 		public Vector3 _minBounds;
 		public Vector3 _maxBounds;
 		public Vector3 _center;
+
+		public string _layerPath;
 	}
 
 	public class HEU_LoadBufferInstancer : HEU_LoadBufferBase

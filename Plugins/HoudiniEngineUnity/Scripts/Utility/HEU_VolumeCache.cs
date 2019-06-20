@@ -499,12 +499,16 @@ namespace HoudiniEngineUnity
 			List<HEU_VolumeLayer> validLayers = new List<HEU_VolumeLayer>();
 
 			int numLayers = _layers.Count;
+			float minHeight = 0;
+			float maxHeight = 0;
+			float  heightRange = 0;
 			for(int i = 1; i < numLayers; ++i)
 			{
-				float[] hf = HEU_GeometryUtility.GetHeightfieldFromPart(session, _ownerNode.GeoID, _layers[i]._part.PartID, _layers[i]._part.PartName, terrainSize);
-				if (hf != null && hf.Length > 0)
+				float[] normalizedHF = HEU_GeometryUtility.GetNormalizedHeightmapFromPartWithMinMax(session, _ownerNode.GeoID, _layers[i]._part.PartID, terrainSize,
+					ref minHeight, ref maxHeight, ref heightRange);
+				if (normalizedHF != null && normalizedHF.Length > 0)
 				{
-					heightFields.Add(hf);
+					heightFields.Add(normalizedHF);
 					validLayers.Add(_layers[i]);
 				}
 			}
@@ -512,26 +516,14 @@ namespace HoudiniEngineUnity
 			// Total maps = all HF layers + base height layer
 			int numMaps = heightFields.Count + 1;
 
-			// Assign floats to alpha map
-			float[,,] alphamap = new float[terrainSize, terrainSize, numMaps];
-			for (int y = 0; y < terrainSize; ++y)
+			// Convert the heightfields into alpha maps with layer strengths
+			float[] strengths = new float[numMaps];
+			strengths[0] = baseLayer._strength;
+			for (int m = 1; m < strengths.Length; ++m)
 			{
-				for (int x = 0; x < terrainSize; ++x)
-				{
-					float f = 0f;
-					for (int m = numMaps - 1; m > 0; --m)
-					{
-						float a = heightFields[m - 1][y + terrainSize * x];
-						a = Mathf.Clamp01(a) * validLayers[m - 1]._strength;
-						alphamap[x, y, m] = a;
-
-						f += a;
-					}
-
-					// Base layer gets leftover value
-					alphamap[x, y, 0] = Mathf.Clamp01(1.0f - f) * baseLayer._strength;
-				}
+				strengths[m] = validLayers[m - 1]._strength;
 			}
+			float[,,] alphamap = HEU_GeometryUtility.ConvertHeightSplatMapHoudiniToUnity(terrainSize, heightFields, strengths);
 
 			HAPI_NodeId geoID;
 			HAPI_PartId partID;
@@ -556,32 +548,45 @@ namespace HoudiniEngineUnity
 
 				// Ideally want to reuse existing TerrainLayer unless it doesn't exist or provided.
 				
+				// Look up TerrainLayer file via attribute if user has set it
+				string terrainLayerFile = HEU_GeneralUtility.GetAttributeStringValueSingle(session, geoID, partID,
+					HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
+				if (!string.IsNullOrEmpty(terrainLayerFile))
+				{
+					terrainLayerToUpdate = HEU_AssetDatabase.LoadAssetAtPath(terrainLayerFile, typeof(TerrainLayer)) as TerrainLayer;
+					if (terrainLayerToUpdate == null)
+					{
+						Debug.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", terrainLayerFile);
+						continue;
+					}
+				}
+				
 				// Search existing layers by layer name to reuse it so that we can keep user changes
-				if (previousLayers != null)
+				if (terrainLayerToUpdate == null && previousLayers != null)
 				{
 					terrainLayerToUpdate = GetTerrainLayerByName(layer._layerName, previousLayers);
 					//Debug.LogFormat("Found and reusing existing terrain layer {0}: {1}", layer._layerName, (terrainLayerToUpdate != null));
-
-					if (terrainLayerToUpdate != null)
-					{
-						// Make copy of the TerrainLayer into this asset's cache
-						string bakedTerrainPath = houdiniAsset.GetValidAssetCacheFolderPath();
-						bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, relativeFolderPath);
-						terrainLayerToUpdate = HEU_AssetDatabase.CopyAndLoadAssetAtAnyPath(terrainLayerToUpdate, bakedTerrainPath, typeof(TerrainLayer), true) as TerrainLayer;
-						if (terrainLayerToUpdate == null)
-						{
-							Debug.LogErrorFormat("Unable to copy TerrainLayer '{0}' for generating Terrain.", layer._layerName);
-							continue;
-						}
-					}
 				}
 
 				if (terrainLayerToUpdate == null)
 				{
+					// Finally, create it newly if no existing TerrainLayer specified
 					terrainLayerToUpdate = new TerrainLayer();
 					terrainLayerToUpdate.name = layer._layerName;
 					//Debug.LogFormat("Created new TerrainLayer with name: {0} ", terrainLayerToUpdate.name);
 					bRequiresSave = true;
+				}
+				else
+				{
+					// Make copy of the TerrainLayer into this asset's cache
+					string bakedTerrainPath = houdiniAsset.GetValidAssetCacheFolderPath();
+					bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, relativeFolderPath);
+					terrainLayerToUpdate = HEU_AssetDatabase.CopyAndLoadAssetAtAnyPath(terrainLayerToUpdate, bakedTerrainPath, typeof(TerrainLayer), true) as TerrainLayer;
+					if (terrainLayerToUpdate == null)
+					{
+						Debug.LogErrorFormat("Unable to copy TerrainLayer '{0}' for generating Terrain.", layer._layerName);
+						continue;
+					}
 				}
 
 				// Now override layer properties if they have been set via attributes

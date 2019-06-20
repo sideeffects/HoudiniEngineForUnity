@@ -203,6 +203,7 @@ namespace HoudiniEngineUnity
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR = "unity_hf_tile_size";
 
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR = "unity_hf_terraindata_file";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR = "unity_hf_terrainlayer_file";
 
 		// General Heightfield
 		public const string HAPI_HEIGHTFIELD_TILE_ATTR = "tile";
