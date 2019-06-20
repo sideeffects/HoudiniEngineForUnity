@@ -183,6 +183,9 @@ namespace HoudiniEngineUnity
 		[SerializeField]
 		private bool _uploadParameters;
 
+		[SerializeField]
+		private bool _forceUploadInputs;
+
 		public enum AssetCookStatus
 		{
 			NONE,
@@ -546,8 +549,9 @@ namespace HoudiniEngineUnity
 					bool thisCkipCookCheck = _skipCookCheck;
 					bool thisUploadParameters = _uploadParameters;
 					bool thisUploadParameterPreset = false;
+					bool thisForceUploadInputs = _forceUploadInputs;
 					ClearBuildRequest();
-					RecookAsync(thisCheckParameterChangeForCook, thisCkipCookCheck, thisUploadParameters, thisUploadParameterPreset);
+					RecookAsync(thisCheckParameterChangeForCook, thisCkipCookCheck, thisUploadParameters, thisUploadParameterPreset, thisForceUploadInputs);
 				}
 				else if (_requestBuildAction == AssetBuildAction.STRIP_HEDATA)
 				{
@@ -656,7 +660,7 @@ namespace HoudiniEngineUnity
 			{
 				if (_cookStatus == AssetCookStatus.NONE)
 				{
-					RecookBlocking(bCheckParametersChanged, bSkipCookCheck, bUploadParameters, false);
+					RecookBlocking(bCheckParametersChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset: false, bForceUploadInputs: false);
 				}
 				else
 				{
@@ -681,6 +685,7 @@ namespace HoudiniEngineUnity
 			_checkParameterChangeForCook = false;
 			_skipCookCheck = false;
 			_uploadParameters = true;
+			_forceUploadInputs = false;
 		}
 
 		private bool HasValidAssetPath()
@@ -951,7 +956,7 @@ namespace HoudiniEngineUnity
 		/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 		/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
 		/// <returns>True if cooking started.</returns>
-		private bool RecookAsync(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset)
+		private bool RecookAsync(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 		{
 #if HEU_PROFILER_ON
 			_cookStartTime = Time.realtimeSinceStartup;
@@ -961,7 +966,7 @@ namespace HoudiniEngineUnity
 			bool bStarted = false;
 			try
 			{
-				 bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
+				 bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset, bForceUploadInputs);
 			}
 			catch (System.Exception ex)
 			{
@@ -985,8 +990,10 @@ namespace HoudiniEngineUnity
 		/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 		/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
 		/// <param name = "bUploadParameters" > If true, will upload parameter values before cooking.</param>
+		/// <param name="bUploadParameterPreset">If true, will upload parameter preset into Houdini before cooking.</param>
+		/// <param name="bForceUploadInputs">If true, will upload all input geometry into Houdini before cooking.</param>
 		/// <returns>True if cooking was done.</returns>
-		private bool RecookBlocking(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset)
+		private bool RecookBlocking(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 		{
 #if HEU_PROFILER_ON
 			_cookStartTime = Time.realtimeSinceStartup;
@@ -996,7 +1003,7 @@ namespace HoudiniEngineUnity
 
 			try
 			{
-				bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
+				bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset, bForceUploadInputs);
 			}
 			catch (System.Exception ex)
 			{
@@ -1053,8 +1060,10 @@ namespace HoudiniEngineUnity
 		/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 		/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
 		/// <param name="bUploadParameters">If true, will upload parameter values before cooking.</param>
+		/// <param name="bUploadParameterPreset">If true, will upload parameter preset into Houdini before cooking.</param>
+		/// <param name="bForceUploadInputs">If true, will upload all input geometry into Houdini before cooking.</param>
 		/// <returns></returns>
-		private bool InternalStartRecook(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset)
+		private bool InternalStartRecook(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 		{
 			HEU_SessionBase session = GetAssetSession(true);
 			if (session == null)
@@ -1188,7 +1197,7 @@ namespace HoudiniEngineUnity
 				}
 				else
 				{
-					if (!_parameters.UploadValuesToHoudini(session, this, bCheckParamsChanged))
+					if (!_parameters.UploadValuesToHoudini(session, this, bCheckParamsChanged, bForceUploadInputs))
 					{
 						Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}", AssetName);
 					}
@@ -1221,8 +1230,9 @@ namespace HoudiniEngineUnity
 			// button that invokes edit node's Reste All Changes.
 			UploadAttributeValues(session);
 
-			// Upload asset inputs
-			UploadInputNodes(session, _bForceUpdate, !bParamsUpdated);
+			// Upload asset inputs. 
+			// bForceUploadInputs allows to upload the input geometry when user hits Recook.
+			UploadInputNodes(session, _bForceUpdate | bForceUploadInputs, !bParamsUpdated);
 
 			bResult = StartHoudiniCookNode(session);
 			if (!bResult)
@@ -1960,7 +1970,8 @@ namespace HoudiniEngineUnity
 			foreach (HEU_InputNode inputNode in _inputNodes)
 			{
 				// Upload all but parameter types, as those are taken care of in the parameter update
-				if((inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER || bUpdateAll) && (bForceUpdate || inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged())
+				if ((inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER || bUpdateAll) 
+					&& (bForceUpdate || inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged())
 					&& inputNode.InputNodeID != HEU_Defines.HEU_INVALID_NODE_ID)
 				{
 					if(bForceUpdate)
@@ -3971,7 +3982,7 @@ namespace HoudiniEngineUnity
 
 			Parameters.RecacheUI = true;
 
-			RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true);
+			RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true, bForceUploadInputs: false);
 		}
 
 		/// <summary>

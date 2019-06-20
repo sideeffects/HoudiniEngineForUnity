@@ -736,6 +736,13 @@ namespace HoudiniEngineUnity
 						{
 							checkParameterChange.boolValue = true;
 						}
+
+						// But we do want to always upload input geometry on user hitting Recook expliclity
+						SerializedProperty forceUploadInputs = HEU_EditorUtility.GetSerializedProperty(assetObject, "_forceUploadInputs");
+						if (forceUploadInputs != null)
+						{
+							forceUploadInputs.boolValue = true;
+						}
 					}
 				}
 			}
