@@ -117,8 +117,11 @@ namespace HoudiniEngineUnity
 		public Vector3 _colliderCenter;
 		public Vector3 _colliderSize;
 		public float _colliderRadius;
-		public Mesh _colliderMesh;
 		public bool _convexCollider;
+
+		public string _collisionGroupName;
+		public Vector3[] _collisionVertices;
+		public int[] _collisionIndices;
 
 		public List<HEU_MaterialData> _materialCache;
 		public Dictionary<int, HEU_MaterialData> _materialIDToDataMap;
@@ -593,7 +596,17 @@ namespace HoudiniEngineUnity
 				else if(geoCache._colliderType == ColliderType.MESH)
 				{
 					MeshCollider meshCollider = HEU_GeneralUtility.GetOrCreateComponent<MeshCollider>(outputGameObject);
-					meshCollider.sharedMesh = geoCache._colliderMesh;
+
+					Mesh collisionMesh = new Mesh();
+#if UNITY_2017_3_OR_NEWER
+					collisionMesh.indexFormat = geoCache._inderFormat;
+#endif
+					collisionMesh.name = geoCache._collisionGroupName;
+					collisionMesh.vertices = geoCache._collisionVertices;
+					collisionMesh.triangles = geoCache._collisionIndices;
+					collisionMesh.RecalculateBounds();
+
+					meshCollider.sharedMesh = collisionMesh;
 					meshCollider.convex = geoCache._convexCollider;
 				}
 			}
@@ -1122,6 +1135,7 @@ namespace HoudiniEngineUnity
 		/// <summary>
 		/// Generate mesh for the given gameObject with the populated geoCache data.
 		/// Splits vertices so that each triangle will have unique (non-shared) vertices.
+		/// Can be invoked on non-main thread as it doesn't use any Unity main thread-only APIs.
 		/// </summary>
 		/// <returns>True if successfully generated mesh for gameObject</returns>
 		public static bool GenerateGeoGroupUsingGeoCacheVertices(HEU_SessionBase session, HEU_GenerateGeoCache geoCache,
@@ -1219,17 +1233,11 @@ namespace HoudiniEngineUnity
 							collisionIndices[i] = i;
 						}
 
-						Mesh collisionMesh = new Mesh();
-#if UNITY_2017_3_OR_NEWER
-						collisionMesh.indexFormat = geoCache._inderFormat;
-#endif
-						collisionMesh.name = groupName;
-						collisionMesh.vertices = collisionVertices.ToArray();
-						collisionMesh.triangles = collisionIndices;
-						collisionMesh.RecalculateBounds();
-
+						// Defer the mesh creation as this function can be invoked from non-main thread (e.g. HEU_GeoSync)
+						geoCache._collisionGroupName = groupName;
+						geoCache._collisionVertices = collisionVertices.ToArray();
+						geoCache._collisionIndices = collisionIndices;
 						geoCache._colliderType = ColliderType.MESH;
-						geoCache._colliderMesh = collisionMesh;
 						geoCache._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
 					}
 
@@ -1527,6 +1535,7 @@ namespace HoudiniEngineUnity
 		/// Generate mesh for the given gameObject with the populated geoCache data.
 		/// Only uses the points to generate the mesh, so vertices might be shared.
 		/// Note that only point attributes are used (all other attributes ignored).
+		/// Can be invoked on non-main thread as it doesn't use any Unity main thread-only APIs.
 		/// </summary>
 		/// <returns>True if successfully generated mesh for gameObject</returns>
 		public static bool GenerateGeoGroupUsingGeoCachePoints(HEU_SessionBase session, HEU_GenerateGeoCache geoCache,
@@ -1631,17 +1640,11 @@ namespace HoudiniEngineUnity
 							}
 						}
 
-						Mesh collisionMesh = new Mesh();
-#if UNITY_2017_3_OR_NEWER
-						collisionMesh.indexFormat = geoCache._inderFormat;
-#endif
-						collisionMesh.name = groupName;
-						collisionMesh.vertices = collisionVertices.ToArray();
-						collisionMesh.triangles = collisionIndices.ToArray();
-						collisionMesh.RecalculateBounds();
-
-						geoCache._colliderType = HEU_GenerateGeoCache.ColliderType.MESH;
-						geoCache._colliderMesh = collisionMesh;
+						// Defer the mesh creation as this function can be invoked from non-main thread (e.g. HEU_GeoSync)
+						geoCache._collisionGroupName = groupName;
+						geoCache._collisionVertices = collisionVertices.ToArray();
+						geoCache._collisionIndices = collisionIndices.ToArray();
+						geoCache._colliderType = ColliderType.MESH;
 						geoCache._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
 					}
 
