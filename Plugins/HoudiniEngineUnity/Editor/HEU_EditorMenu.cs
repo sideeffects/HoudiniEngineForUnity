@@ -238,6 +238,16 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load Geo File", false, 40)]
+		public static void LoadGeoFile()
+		{
+			GameObject newGO = HEU_HAPIUtility.LoadGeoWithNewGeoSync();
+			if (newGO != null)
+			{
+				HEU_EditorUtility.SelectObject(newGO);
+			}
+		}
+
 		private static void LoadHoudiniAssetFromPath(string hdaPath)
 		{
 			if (!string.IsNullOrEmpty(hdaPath))

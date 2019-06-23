@@ -649,6 +649,43 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Creates a new HEU_GeoSync in scene, opens the file select panel, and starts the file load.
+		/// </summary>
+		/// <param name="session">A Houdini session to use, or null if to use default or create one.</param>
+		/// <returns>The new gameobject with HEU_GeoSync as a component.</returns>
+		public static GameObject LoadGeoWithNewGeoSync(HEU_SessionBase session = null)
+		{
+			string filePattern = "*.bgeo;*.bgeo.sc";
+			string filePath = EditorUtility.OpenFilePanel("Select Geo File To Load", "", filePattern);
+			if (string.IsNullOrEmpty(filePath))
+			{
+				return null;
+			}
+
+			if (session == null)
+			{
+				session = HEU_SessionManager.GetOrCreateDefaultSession();
+			}
+			if (!session.IsSessionValid())
+			{
+				Debug.LogWarning("Invalid Houdini Engine session!");
+				return null;
+			}
+
+			// This will be the root GameObject.
+			GameObject rootGO = new GameObject();
+			HEU_GeoSync geoSync = rootGO.AddComponent<HEU_GeoSync>();
+
+			// Set the game object's name to the asset's name
+			rootGO.name = string.Format("{0}{1}", "GeoSync", rootGO.GetInstanceID());
+
+			geoSync._filePath = filePath;
+			geoSync.StartSync();
+
+			return rootGO;
+		}
+
+		/// <summary>
 		/// Destroy children of the given transform. Does not destroy inTransform itself.
 		/// </summary>
 		/// <param name="inTransform">Tranform whose children are to be destroyed</param>
