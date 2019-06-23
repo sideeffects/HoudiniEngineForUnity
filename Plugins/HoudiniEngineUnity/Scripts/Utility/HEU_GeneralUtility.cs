@@ -1260,6 +1260,27 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Returns true if specified geometry and part has the given atttribute name.
+		/// </summary>
+		/// <param name="session">Houdini session to check</param>
+		/// <param name="geoID">Geometry object ID</param>
+		/// <param name="partID">Part ID</param>
+		/// <param name="attrName">The name of the attribute to check</param>
+		/// <param name="attrOwner">The owner type for the attribute</param>
+		/// <returns></returns>
+		public static bool HasAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string attrName, HAPI_AttributeOwner attrOwner)
+		{
+			if (string.IsNullOrEmpty(attrName))
+			{
+				return false;
+			}
+
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			bool bResult = session.GetAttributeInfo(geoID, partID, attrName, attrOwner, ref attrInfo);
+			return (bResult && attrInfo.exists);
+		}
+
+		/// <summary>
 		/// Attach scripts in Unity to the asset root gameobject, and optionally
 		/// invoke a function with an optional argument.
 		/// </summary>

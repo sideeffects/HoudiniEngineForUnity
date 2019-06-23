@@ -1056,7 +1056,13 @@ namespace HoudiniEngineUnity
 										continue;
 									}
 
-									string layerName = string.Format("Layer: {0}", layerProperty.FindPropertyRelative("_layerName").stringValue);
+									// Skipping "height" layer on UI since its treated as Houdini-specific layer
+									string layerName = layerProperty.FindPropertyRelative("_layerName").stringValue;
+									if (layerName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT))
+									{
+										continue;
+									}
+									layerName = string.Format("Layer: {0}", layerName);
 
 									SerializedProperty uiExpandedProperty = layerProperty.FindPropertyRelative("_uiExpanded");
 									bool bExpanded = uiExpandedProperty != null ? uiExpandedProperty.boolValue : true;

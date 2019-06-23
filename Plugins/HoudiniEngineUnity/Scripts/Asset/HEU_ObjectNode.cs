@@ -336,7 +336,7 @@ namespace HoudiniEngineUnity
 			// Updating the trasform is done in GenerateGeometry
 		}
 
-		public void GenerateGeometry(HEU_SessionBase session)
+		public void GenerateGeometry(HEU_SessionBase session, bool bRebuild)
 		{
 			// Volumes could come in as a geonode + part for each heightfield layer.
 			// Otherwise the other geo types can be done individually.
@@ -360,7 +360,7 @@ namespace HoudiniEngineUnity
 					// Each layer in the volume is retrieved as a volume part, in the display geo node. 
 					// But we need to handle all layers as 1 terrain output in Unity, with 1 height layer and 
 					// other layers as alphamaps.
-					geoNode.ProcessVolumeParts(session, volumeParts);
+					geoNode.ProcessVolumeParts(session, volumeParts, bRebuild);
 
 					// Clear the volume parts after processing since we are done with this set
 					volumeParts.Clear();

@@ -394,8 +394,15 @@ namespace HoudiniEngineUnity
 
 				string volumeName = HEU_SessionManager.GetString(volumeInfo.nameSH, session);
 				bool bHeightPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT);
+				bool bMaskPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK);
 
 				//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
+
+				// Ignoring mask layer because it is Houdini-specific (same behaviour as regular HDA terrain generation)
+				if (bMaskPart)
+				{
+					continue;
+				}
 
 				HEU_LoadBufferVolumeLayer layer = new HEU_LoadBufferVolumeLayer();
 				layer._layerName = volumeName;
@@ -441,7 +448,7 @@ namespace HoudiniEngineUnity
 				// Get the tile index, if it exists, for this part
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
 				int[] tileAttrData = new int[0];
-				HEU_GeneralUtility.GetAttribute(session, nodeID, volumeParts[i].id, "tile", ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
+				HEU_GeneralUtility.GetAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
 
 				int tileIndex = 0;
 				if (tileAttrInfo.exists && tileAttrData.Length == 1)
@@ -511,22 +518,29 @@ namespace HoudiniEngineUnity
 					Sleep();
 
 					// Convert splatmap values from Houdini to Unity.
+					// Start at 2nd index since height is strictly for height values (not splatmap).
 					List<float[]> heightFields = new List<float[]>();
 					for(int m = 1; m < numLayers; ++m)
 					{
 						heightFields.Add(layers[m]._normalizedHeights);
 					}
 
-					// Total maps = all HF layers + base height layer
-					int numMaps = heightFields.Count + 1;
-
-					// Using strength of 1 for all layers so its same as defined in Houdini
-					float[] strengths = new float[numMaps];
-					for (int m = 0; m < strengths.Length; ++m)
+					// The number of maps are the number of splatmaps (ie. non height/mask layers)
+					int numMaps = heightFields.Count;
+					if (numMaps > 0)
 					{
-						strengths[m] = 1f;
+						// Using strength of 1 for all layers so its same as defined in Houdini
+						float[] strengths = new float[numMaps];
+						for (int m = 0; m < strengths.Length; ++m)
+						{
+							strengths[m] = 1f;
+						}
+						volumeBuffer._splatMaps = HEU_GeometryUtility.ConvertHeightFieldToAlphaMap(heightMapSize, heightFields, strengths);
 					}
-					volumeBuffer._splatMaps = HEU_GeometryUtility.ConvertHeightSplatMapHoudiniToUnity(heightMapSize, heightFields, strengths);
+					else
+					{
+						volumeBuffer._splatMaps = null;
+					}
 
 					volumeBuffer._position = new Vector3((volumeBuffer._terrainSizeX + volumeBuffer._layers[0]._minBounds.x), volumeBuffer._layers[0]._minHeight + volumeBuffer._layers[0]._position.y, volumeBuffer._layers[0]._minBounds.z);
 				}

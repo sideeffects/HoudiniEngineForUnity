@@ -918,7 +918,7 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			GenerateObjectsGeometry(session);
+			GenerateObjectsGeometry(session, bRebuild: true);
 
 			GenerateInstances(session);
 
@@ -1326,7 +1326,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 
-			GenerateObjectsGeometry(session);
+			GenerateObjectsGeometry(session, bRebuild: false);
 
 			GenerateInstances(session);
 
@@ -2228,11 +2228,12 @@ namespace HoudiniEngineUnity
 		/// Generate geometry (mesh, curves, terrain) for all object nodes.
 		/// </summary>
 		/// <param name="session">Current session</param>
-		private void GenerateObjectsGeometry(HEU_SessionBase session)
+		/// <param name="bRebuild">True if this is a rebuild or recook</param>
+		private void GenerateObjectsGeometry(HEU_SessionBase session, bool bRebuild)
 		{
 			foreach (HEU_ObjectNode objNode in _objectNodes)
 			{
-				objNode.GenerateGeometry(session);
+				objNode.GenerateGeometry(session, bRebuild);
 			}
 		}
 

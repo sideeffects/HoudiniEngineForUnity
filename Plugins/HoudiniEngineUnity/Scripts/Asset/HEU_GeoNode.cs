@@ -924,7 +924,7 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		public void ProcessVolumeParts(HEU_SessionBase session, List<HEU_PartData> volumeParts)
+		public void ProcessVolumeParts(HEU_SessionBase session, List<HEU_PartData> volumeParts, bool bRebuild)
 		{
 			int numVolumeParts = volumeParts.Count;
 			if (numVolumeParts == 0)
@@ -943,7 +943,7 @@ namespace HoudiniEngineUnity
 			// Now generate the terrain for each volume cache
 			foreach(HEU_VolumeCache cache in _volumeCaches)
 			{
-				cache.GenerateTerrainWithAlphamaps(session, ParentAsset);
+				cache.GenerateTerrainWithAlphamaps(session, ParentAsset, bRebuild);
 
 				cache.IsDirty = false;
 			}

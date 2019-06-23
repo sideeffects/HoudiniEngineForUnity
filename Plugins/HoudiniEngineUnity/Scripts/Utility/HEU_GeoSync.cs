@@ -174,8 +174,8 @@ namespace HoudiniEngineUnity
 		{
 			Transform parent = this.gameObject.transform;
 
-			int numVolues = terrainBuffers.Count;
-			for(int t = 0; t < numVolues; ++t)
+			int numVolumes = terrainBuffers.Count;
+			for(int t = 0; t < numVolumes; ++t)
 			{
 				if (terrainBuffers[t]._heightMap != null)
 				{
@@ -258,77 +258,79 @@ namespace HoudiniEngineUnity
 
 #if UNITY_2018_3_OR_NEWER
 
-					// Create TerrainLayer for each heightfield layer
-					// Note that at time of this implementation the new Unity terrain
-					// is still in beta. Therefore, the following layer creation is subject
-					// to change.
-
-					TerrainLayer[] terrainLayers = new TerrainLayer[numLayers];
-					for (int m = 0; m < numLayers; ++m)
+					// Create TerrainLayer for each heightfield layer.
+					// Note that height and mask layers are ignored (i.e. not created as TerrainLayers).
+					// Since height layer is first, only process layers from 2nd index onwards.
+					if (numLayers > 1)
 					{
-						TerrainLayer terrainlayer = null;
-
-						HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._layers[m];
-
-						// Look up TerrainLayer file via attribute if user has set it
-						if (!string.IsNullOrEmpty(layer._layerPath))
+						TerrainLayer[] terrainLayers = new TerrainLayer[numLayers - 1];
+						for (int m = 1; m < numLayers; ++m)
 						{
-							terrainlayer = HEU_AssetDatabase.LoadAssetAtPath(layer._layerPath, typeof(TerrainLayer)) as TerrainLayer;
+							TerrainLayer terrainlayer = null;
+
+							HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._layers[m];
+
+							// Look up TerrainLayer file via attribute if user has set it
+							if (!string.IsNullOrEmpty(layer._layerPath))
+							{
+								terrainlayer = HEU_AssetDatabase.LoadAssetAtPath(layer._layerPath, typeof(TerrainLayer)) as TerrainLayer;
+								if (terrainlayer == null)
+								{
+									Debug.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", layer._layerPath);
+									continue;
+								}
+							}
+
 							if (terrainlayer == null)
 							{
-								Debug.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", layer._layerPath);
-								continue;
+								terrainlayer = new TerrainLayer();
 							}
+
+							if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
+							{
+								terrainlayer.diffuseTexture = HEU_MaterialFactory.LoadTexture(layer._diffuseTexturePath);
+							}
+							if (terrainlayer.diffuseTexture == null)
+							{
+								terrainlayer.diffuseTexture = defaultTexture;
+							}
+
+							terrainlayer.diffuseRemapMin = Vector4.zero;
+							terrainlayer.diffuseRemapMax = Vector4.one;
+
+							if (!string.IsNullOrEmpty(layer._maskTexturePath))
+							{
+								terrainlayer.maskMapTexture = HEU_MaterialFactory.LoadTexture(layer._maskTexturePath);
+							}
+
+							terrainlayer.maskMapRemapMin = Vector4.zero;
+							terrainlayer.maskMapRemapMax = Vector4.one;
+
+							terrainlayer.metallic = layer._metallic;
+
+							if (!string.IsNullOrEmpty(layer._normalTexturePath))
+							{
+								terrainlayer.normalMapTexture = HEU_MaterialFactory.LoadTexture(layer._normalTexturePath);
+							}
+
+							terrainlayer.normalScale = layer._normalScale;
+
+							terrainlayer.smoothness = layer._smoothness;
+							terrainlayer.specular = layer._specularColor;
+							terrainlayer.tileOffset = layer._tileOffset;
+
+							if (layer._tileSize.magnitude == 0f && terrainlayer.diffuseTexture != null)
+							{
+								// Use texture size if tile size is 0
+								layer._tileSize = new Vector2(terrainlayer.diffuseTexture.width, terrainlayer.diffuseTexture.height);
+							}
+							terrainlayer.tileSize = layer._tileSize;
+
+							// Note index is m - 1 due to skipping height layer
+							terrainLayers[m - 1] = terrainlayer;
 						}
-
-						if (terrainlayer == null)
-						{
-							terrainlayer = new TerrainLayer();
-						}
-
-						if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
-						{
-							terrainlayer.diffuseTexture = HEU_MaterialFactory.LoadTexture(layer._diffuseTexturePath);
-						}
-						if (terrainlayer.diffuseTexture == null)
-						{
-							terrainlayer.diffuseTexture = defaultTexture;
-						}
-
-						terrainlayer.diffuseRemapMin = Vector4.zero;
-						terrainlayer.diffuseRemapMax = Vector4.one;
-
-						if (!string.IsNullOrEmpty(layer._maskTexturePath))
-						{
-							terrainlayer.maskMapTexture = HEU_MaterialFactory.LoadTexture(layer._maskTexturePath);
-						}
-
-						terrainlayer.maskMapRemapMin = Vector4.zero;
-						terrainlayer.maskMapRemapMax = Vector4.one;
-
-						terrainlayer.metallic = layer._metallic;
-
-						if (!string.IsNullOrEmpty(layer._normalTexturePath))
-						{
-							terrainlayer.normalMapTexture = HEU_MaterialFactory.LoadTexture(layer._normalTexturePath);
-						}
-
-						terrainlayer.normalScale = layer._normalScale;
-
-						terrainlayer.smoothness = layer._smoothness;
-						terrainlayer.specular = layer._specularColor;
-						terrainlayer.tileOffset = layer._tileOffset;
-
-						if (layer._tileSize.magnitude == 0f && terrainlayer.diffuseTexture != null)
-						{
-							// Use texture size if tile size is 0
-							layer._tileSize = new Vector2(terrainlayer.diffuseTexture.width, terrainlayer.diffuseTexture.height);
-						}
-						terrainlayer.tileSize = layer._tileSize;
-
-						terrainLayers[m] = terrainlayer;
+						terrainData.terrainLayers = terrainLayers;
 					}
-					terrainData.terrainLayers = terrainLayers;
 
 #else
 					// Need to create SplatPrototype for each layer in heightfield, representing the textures.
@@ -369,7 +371,10 @@ namespace HoudiniEngineUnity
 					terrainData.splatPrototypes = splatPrototypes;
 #endif
 
-					terrainData.SetAlphamaps(0, 0, terrainBuffers[t]._splatMaps);
+					if (terrainBuffers[t]._splatMaps != null)
+					{
+						terrainData.SetAlphamaps(0, 0, terrainBuffers[t]._splatMaps);
+					}
 
 					//string assetPath = HEU_AssetDatabase.CreateAssetCacheFolder("terrainData");
 					//AssetDatabase.CreateAsset(terrainData, assetPath);
