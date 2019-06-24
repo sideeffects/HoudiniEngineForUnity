@@ -619,7 +619,7 @@ namespace HoudiniEngineUnity
 				Transform partTransform = OutputGameObject.transform;
 
 				HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-				if (session.GetInstanceTransforms(_geoID, HAPI_RSTOrder.HAPI_SRT, instanceTransforms, 0, numInstances))
+				if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
 				{
 					int numTransforms = instanceTransforms.Length;
 					for (int j = 0; j < numTransforms; ++j)
@@ -669,7 +669,7 @@ namespace HoudiniEngineUnity
 			Transform partTransform = OutputGameObject.transform;
 
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (session.GetInstanceTransforms(_geoID, HAPI_RSTOrder.HAPI_SRT, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
 			{
 				int numInstancesCreated = 0;
 				int numTransforms = instanceTransforms.Length;
@@ -699,13 +699,13 @@ namespace HoudiniEngineUnity
 			}
 
 			HAPI_NodeId[] instancedNodeIds = new HAPI_NodeId[numInstances];
-			if (!session.GetInstancedObjectIds(_geoID, instancedNodeIds, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray1Arg(_geoID, session.GetInstancedObjectIds, instancedNodeIds, 0, numInstances))
 			{
 				return;
 			}
 
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (!session.GetInstanceTransforms(_geoID, HAPI_RSTOrder.HAPI_SRT, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
 			{
 				return;
 			}
@@ -772,7 +772,7 @@ namespace HoudiniEngineUnity
 			}
 
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (!session.GetInstanceTransforms(_geoID, HAPI_RSTOrder.HAPI_SRT, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
 			{
 				return;
 			}
@@ -881,7 +881,7 @@ namespace HoudiniEngineUnity
 			}
 
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (!session.GetInstanceTransforms(_geoID, HAPI_RSTOrder.HAPI_SRT, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
 			{
 				return;
 			}

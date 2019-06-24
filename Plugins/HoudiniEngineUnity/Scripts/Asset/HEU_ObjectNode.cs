@@ -637,7 +637,8 @@ namespace HoudiniEngineUnity
 							{
 								bool bInstanced = false;
 								int[] scriptAttr = new int[unityInstanceAttrInfo.count];
-								if(session.GetAttributeStringData(_geoNodes[i].GeoID, parts[j].PartID, unityInstanceAttrName, ref unityInstanceAttrInfo, scriptAttr, 0, unityInstanceAttrInfo.count))
+								HEU_GeneralUtility.GetAttribute(session, _geoNodes[i].GeoID, parts[j].PartID, unityInstanceAttrName, ref unityInstanceAttrInfo, ref scriptAttr, session.GetAttributeStringData);
+								if (unityInstanceAttrInfo.exists)
 								{
 									string assetPath = HEU_SessionManager.GetString(scriptAttr[0]);
 									if (!string.IsNullOrEmpty(assetPath))
