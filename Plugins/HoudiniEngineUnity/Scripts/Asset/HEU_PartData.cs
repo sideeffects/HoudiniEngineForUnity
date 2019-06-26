@@ -1636,9 +1636,13 @@ namespace HoudiniEngineUnity
 					// Update transform of each existing instance
 					HEU_GeneralUtility.CopyLocalTransformValues(srcChildGO.transform, targetChildGO.transform);
 
-					// Copy component data
-					CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath, 
-						ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
+					if (!bSrcPrefabInstance)
+					{
+						// Copy component data only if not a prefab instance. 
+						// Otherwise, copying prefab instances breaks the prefab connection and creates duplicates (e.g. instancing existing prefabs).
+						CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
+							ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
+					}
 				}
 
 				if (unprocessedTargetChildren.Count > 0)
