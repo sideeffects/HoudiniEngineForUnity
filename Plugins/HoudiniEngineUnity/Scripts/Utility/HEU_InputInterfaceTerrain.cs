@@ -407,6 +407,10 @@ namespace HoudiniEngineUnity
 					break;
 				}
 
+#if UNITY_2018_3_OR_NEWER
+				SetTerrainLayerAttributesToHeightField(session, alphaLayerID, 0, idt._terrainData.terrainLayers[m]);
+#endif
+
 				if (!session.CommitGeo(alphaLayerID))
 				{
 					bResult = false;
@@ -488,6 +492,14 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 
+		/// <summary>
+		/// Writes out the TerrainData file path as a string attribute (primitive-owned) for the specified heightfield volume.
+		/// </summary>
+		/// <param name="session">Current Houdini session</param>
+		/// <param name="geoNodeID">Geometry object ID</param>
+		/// <param name="partID">Part ID (volume)</param>
+		/// <param name="terrainData">The TerrainData's file path is set as attribute</param>
+		/// <returns>True if successfully added the attribute.</returns>
 		public bool SetTerrainDataAttributesToHeightField(HEU_SessionBase session, HAPI_NodeId geoNodeID, HAPI_PartId partID, TerrainData terrainData)
 		{
 			string assetPath = HEU_AssetDatabase.GetAssetPath(terrainData);
@@ -506,19 +518,61 @@ namespace HoudiniEngineUnity
 
 			if (!session.AddAttribute(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, ref attrInfo))
 			{
-				Debug.LogError("Failed to add heightfield terrainlayer file attribute.");
+				Debug.LogError("Failed to add TerrainData file attribute to input heightfield.");
 				return false;
 			}
 
 			string[] pathData = new string[] { assetPath };
 			if (!session.SetAttributeStringData(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, ref attrInfo, pathData, 0, 1))
 			{
-				Debug.LogError("Failed to set input geometry unity material name.");
+				Debug.LogError("Failed to set TerrainData file name to input heightfield.");
 				return false;
 			}
 
 			return true;
 		}
+
+#if UNITY_2018_3_OR_NEWER
+		/// <summary>
+		/// Writes out the TerrainLayer file path as a string attribute (primitive-owned) for the specified heightfield volume.
+		/// </summary>
+		/// <param name="session">Current Houdini session</param>
+		/// <param name="geoNodeID">Geometry object ID</param>
+		/// <param name="partID">Part ID (volume)</param>
+		/// <param name="terrainLayer">The TerrainLayer's file path is set as attribute</param>
+		/// <returns>True if successfully added the attribute.</returns>
+		public bool SetTerrainLayerAttributesToHeightField(HEU_SessionBase session, HAPI_NodeId geoNodeID, HAPI_PartId partID, TerrainLayer terrainLayer)
+		{
+			string assetPath = HEU_AssetDatabase.GetAssetPath(terrainLayer);
+			if (string.IsNullOrEmpty(assetPath))
+			{
+				return false;
+			}
+
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			attrInfo.exists = true;
+			attrInfo.owner = HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM;
+			attrInfo.storage = HAPI_StorageType.HAPI_STORAGETYPE_STRING;
+			attrInfo.count = 1;
+			attrInfo.tupleSize = 1;
+			attrInfo.originalOwner = HAPI_AttributeOwner.HAPI_ATTROWNER_INVALID;
+
+			if (!session.AddAttribute(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, ref attrInfo))
+			{
+				Debug.LogError("Failed to add TerrainLayer file attribute to input heightfield.");
+				return false;
+			}
+
+			string[] pathData = new string[] { assetPath };
+			if (!session.SetAttributeStringData(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, ref attrInfo, pathData, 0, 1))
+			{
+				Debug.LogError("Failed to set TerrainLayer file name to input heightfield");
+				return false;
+			}
+
+			return true;
+		}
+#endif
 
 		/// <summary>
 		/// Holds terrain data for uploading as heightfields
