@@ -139,6 +139,10 @@ namespace HoudiniEngineUnity
 
 		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 		public static extern HAPI_Result
+		HAPI_GetServerEnvVarCount(ref HAPI_Session session, out int env_count);
+
+		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+		public static extern HAPI_Result
 		HAPI_SetServerEnvInt(ref HAPI_Session session, string variable_name, int value);
 
 		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -824,9 +828,10 @@ namespace HoudiniEngineUnity
 
 		[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 		public static extern HAPI_Result
-		HAPI_GetInstanceTransforms(
+		HAPI_GetInstanceTransformsOnPart(
 			ref HAPI_Session session,
 			HAPI_NodeId object_node_id,
+			HAPI_PartId part_id,
 			HAPI_RSTOrder rst_order,
 			[Out] HAPI_Transform[] transforms_array,
 			int start, int length);

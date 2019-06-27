@@ -803,7 +803,7 @@ namespace HoudiniEngineUnity
 				// Object instancing via existing Unity object (path from point attribute)
 
 				HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-				if (!HEU_GeneralUtility.GetArray2Arg(geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
+				if (!HEU_GeneralUtility.GetArray3Arg(geoID, partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransformsOnPart, instanceTransforms, 0, numInstances))
 				{
 					return null;
 				}

@@ -326,6 +326,12 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool GetServerEnvVarCount(out int env_count)
+		{
+			env_count = 0;
+			return false;
+		}
+
 		/// <summary>
 		/// Gives back the status code for a specific status type
 		/// </summary>
@@ -875,7 +881,7 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
-		public virtual bool GetInstanceTransforms(HAPI_NodeId nodeID, HAPI_RSTOrder rstOrder, [Out] HAPI_Transform[] transformsArray, int start, int length)
+		public virtual bool GetInstanceTransformsOnPart(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_RSTOrder rstOrder, [Out] HAPI_Transform[] transformsArray, int start, int length)
 		{
 			return false;
 		}

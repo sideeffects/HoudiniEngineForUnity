@@ -655,8 +655,9 @@ namespace HoudiniEngineUnity
 							}
 							else
 							{
-								// Other attribute owned types are unsupported
-								Debug.LogWarningFormat("Unsupported attribute owner {0} for attribute {1}", unityInstanceAttrInfo.owner, unityInstanceAttrName);
+								// Other attribute owned types are unsupported.
+								// Originally had a warning here, but unnecessary as in some cases (e.g. heightfield attrbiutes) the
+								// attribute owner could be changed in HAPI.
 							}
 						}
 						else
