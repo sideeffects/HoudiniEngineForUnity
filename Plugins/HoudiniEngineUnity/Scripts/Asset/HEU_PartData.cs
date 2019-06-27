@@ -619,7 +619,7 @@ namespace HoudiniEngineUnity
 				Transform partTransform = OutputGameObject.transform;
 
 				HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-				if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
+				if (!HEU_GeneralUtility.GetArray3Arg(_geoID, _partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransformsOnPart, instanceTransforms, 0, numInstances))
 				{
 					int numTransforms = instanceTransforms.Length;
 					for (int j = 0; j < numTransforms; ++j)
@@ -669,7 +669,7 @@ namespace HoudiniEngineUnity
 			Transform partTransform = OutputGameObject.transform;
 
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray3Arg(_geoID, _partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransformsOnPart, instanceTransforms, 0, numInstances))
 			{
 				int numInstancesCreated = 0;
 				int numTransforms = instanceTransforms.Length;
@@ -705,7 +705,7 @@ namespace HoudiniEngineUnity
 			}
 
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray3Arg(_geoID, _partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransformsOnPart, instanceTransforms, 0, numInstances))
 			{
 				return;
 			}
@@ -771,8 +771,9 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
+			// Get the part-specific instance transforms
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray3Arg(_geoID, _partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransformsOnPart, instanceTransforms, 0, numInstances))
 			{
 				return;
 			}
@@ -881,7 +882,7 @@ namespace HoudiniEngineUnity
 			}
 
 			HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-			if (!HEU_GeneralUtility.GetArray2Arg(_geoID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransforms, instanceTransforms, 0, numInstances))
+			if (!HEU_GeneralUtility.GetArray3Arg(_geoID, _partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransformsOnPart, instanceTransforms, 0, numInstances))
 			{
 				return;
 			}
