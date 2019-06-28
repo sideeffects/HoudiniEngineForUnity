@@ -80,7 +80,7 @@ namespace HoudiniEngineUnity
 					GUIStyle buttonStyle = HEU_EditorUI.GetNewButtonStyle_MarginPadding(0, 0);
 					if (GUILayout.Button("...", buttonStyle, GUILayout.Width(30), GUILayout.Height(18)))
 					{
-						string filePattern = "*.bgeo";
+						string filePattern = "*.bgeo;*.bgeo.sc";
 						_geoSync._filePath = EditorUtility.OpenFilePanel("Select File", _geoSync._filePath, filePattern);
 					}
 				}

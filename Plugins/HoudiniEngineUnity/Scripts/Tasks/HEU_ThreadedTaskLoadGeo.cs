@@ -393,9 +393,16 @@ namespace HoudiniEngineUnity
 				}
 
 				string volumeName = HEU_SessionManager.GetString(volumeInfo.nameSH, session);
-				bool bHeightPart = volumeName.Equals("height");
+				bool bHeightPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT);
+				bool bMaskPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK);
 
 				//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
+
+				// Ignoring mask layer because it is Houdini-specific (same behaviour as regular HDA terrain generation)
+				if (bMaskPart)
+				{
+					continue;
+				}
 
 				HEU_LoadBufferVolumeLayer layer = new HEU_LoadBufferVolumeLayer();
 				layer._layerName = volumeName;
@@ -419,6 +426,10 @@ namespace HoudiniEngineUnity
 					out layer._maxBounds.x, out layer._maxBounds.y, out layer._maxBounds.z, 
 					out layer._center.x, out layer._center.y, out layer._center.z);
 
+				// Look up TerrainLayer file via attribute if user has set it
+				layer._layerPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeParts[i].id,
+					HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
+
 				LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR, ref layer._diffuseTexturePath);
 				LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR, ref layer._maskTexturePath);
 				LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR, ref layer._normalTexturePath);
@@ -431,19 +442,13 @@ namespace HoudiniEngineUnity
 				LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR, ref layer._tileOffset);
 				LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
 
-				// Get the height values from Houdini and find the min and max height range.
-				if (!HEU_GeometryUtility.GetHeightfieldValues(session, volumeInfo.xLength, volumeInfo.yLength, nodeID, volumeParts[i].id, ref layer._rawHeights, ref layer._minHeight, ref layer._maxHeight))
-				{
-					return false;
-				}
-
-				// TODO: Tried to replace above with this, but it flattens the heights
-				//layer._rawHeights = HEU_GeometryUtility.GetHeightfieldFromPart(_session, nodeID, volumeParts[i].id, "part", volumeInfo.xLength);
+				// Get the height values from Houdini along with the min and max height range.
+				layer._normalizedHeights = HEU_GeometryUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
 
 				// Get the tile index, if it exists, for this part
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
 				int[] tileAttrData = new int[0];
-				HEU_GeneralUtility.GetAttribute(session, nodeID, volumeParts[i].id, "tile", ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
+				HEU_GeneralUtility.GetAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
 
 				int tileIndex = 0;
 				if (tileAttrInfo.exists && tileAttrData.Length == 1)
@@ -482,6 +487,10 @@ namespace HoudiniEngineUnity
 						volumeBuffer._terrainSizeX = layer._terrainSizeX;
 						volumeBuffer._terrainSizeY = layer._terrainSizeY;
 						volumeBuffer._heightRange = (layer._maxHeight - layer._minHeight);
+
+						// Look up TerrainData file path via attribute if user has set it
+						volumeBuffer._terrainDataPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeBuffer._id,
+							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 					}
 					else
 					{
@@ -504,17 +513,34 @@ namespace HoudiniEngineUnity
 				if (numLayers > 0)
 				{
 					// Convert heightmap values from Houdini to Unity
-					volumeBuffer._heightMap = HEU_GeometryUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._rawHeights, layers[0]._minHeight, layers[0]._maxHeight);
+					volumeBuffer._heightMap = HEU_GeometryUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._normalizedHeights);
 
 					Sleep();
 
 					// Convert splatmap values from Houdini to Unity.
+					// Start at 2nd index since height is strictly for height values (not splatmap).
 					List<float[]> heightFields = new List<float[]>();
 					for(int m = 1; m < numLayers; ++m)
 					{
-						heightFields.Add(layers[m]._rawHeights);
+						heightFields.Add(layers[m]._normalizedHeights);
 					}
-					volumeBuffer._splatMaps = HEU_GeometryUtility.ConvertHeightSplatMapHoudiniToUnity(heightMapSize, heightFields);
+
+					// The number of maps are the number of splatmaps (ie. non height/mask layers)
+					int numMaps = heightFields.Count;
+					if (numMaps > 0)
+					{
+						// Using strength of 1 for all layers so its same as defined in Houdini
+						float[] strengths = new float[numMaps];
+						for (int m = 0; m < strengths.Length; ++m)
+						{
+							strengths[m] = 1f;
+						}
+						volumeBuffer._splatMaps = HEU_GeometryUtility.ConvertHeightFieldToAlphaMap(heightMapSize, heightFields, strengths);
+					}
+					else
+					{
+						volumeBuffer._splatMaps = null;
+					}
 
 					volumeBuffer._position = new Vector3((volumeBuffer._terrainSizeX + volumeBuffer._layers[0]._minBounds.x), volumeBuffer._layers[0]._minHeight + volumeBuffer._layers[0]._position.y, volumeBuffer._layers[0]._minBounds.z);
 				}

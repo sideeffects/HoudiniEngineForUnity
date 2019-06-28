@@ -44,7 +44,9 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public class HEU_ThreadManager
 	{
+#pragma warning disable 0649
 		private static HEU_ThreadManager _instance;
+#pragma warning restore 0649
 
 		public static HEU_ThreadManager Instance
 		{

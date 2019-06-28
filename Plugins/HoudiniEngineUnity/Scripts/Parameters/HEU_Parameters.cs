@@ -864,7 +864,7 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
-		public bool UploadValuesToHoudini(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bDoCheck = true)
+		public bool UploadValuesToHoudini(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bDoCheck = true, bool bForceUploadInputs = false)
 		{
 			if (!AreParametersValid())
 			{
@@ -989,7 +989,7 @@ namespace HoudiniEngineUnity
 					}
 					case HAPI_ParmType.HAPI_PARMTYPE_NODE:
 					{
-						if (!bDoCheck || (parameterData._paramInputNode.RequiresUpload))
+						if (!bDoCheck || (parameterData._paramInputNode.RequiresUpload) || bForceUploadInputs)
 						{
 							parameterData._paramInputNode.UploadInput(session);
 						}

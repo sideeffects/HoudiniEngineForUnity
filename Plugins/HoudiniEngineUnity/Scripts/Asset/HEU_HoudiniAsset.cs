@@ -183,6 +183,9 @@ namespace HoudiniEngineUnity
 		[SerializeField]
 		private bool _uploadParameters;
 
+		[SerializeField]
+		private bool _forceUploadInputs;
+
 		public enum AssetCookStatus
 		{
 			NONE,
@@ -546,8 +549,9 @@ namespace HoudiniEngineUnity
 					bool thisCkipCookCheck = _skipCookCheck;
 					bool thisUploadParameters = _uploadParameters;
 					bool thisUploadParameterPreset = false;
+					bool thisForceUploadInputs = _forceUploadInputs;
 					ClearBuildRequest();
-					RecookAsync(thisCheckParameterChangeForCook, thisCkipCookCheck, thisUploadParameters, thisUploadParameterPreset);
+					RecookAsync(thisCheckParameterChangeForCook, thisCkipCookCheck, thisUploadParameters, thisUploadParameterPreset, thisForceUploadInputs);
 				}
 				else if (_requestBuildAction == AssetBuildAction.STRIP_HEDATA)
 				{
@@ -571,7 +575,10 @@ namespace HoudiniEngineUnity
 				{
 					ClearBuildRequest();
 					ResetParametersToDefault();
-					RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true);
+
+					// Doing a Reload here to clear everything out after resetting the parameters.
+					// Originally was doing a Recook but because it will keep stuff around (e.g. terrain), a full reset seems better.
+					RequestReload(bAsync:true);
 				}
 			}
 #endif
@@ -653,7 +660,7 @@ namespace HoudiniEngineUnity
 			{
 				if (_cookStatus == AssetCookStatus.NONE)
 				{
-					RecookBlocking(bCheckParametersChanged, bSkipCookCheck, bUploadParameters, false);
+					RecookBlocking(bCheckParametersChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset: false, bForceUploadInputs: false);
 				}
 				else
 				{
@@ -678,6 +685,7 @@ namespace HoudiniEngineUnity
 			_checkParameterChangeForCook = false;
 			_skipCookCheck = false;
 			_uploadParameters = true;
+			_forceUploadInputs = false;
 		}
 
 		private bool HasValidAssetPath()
@@ -910,7 +918,7 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			GenerateObjectsGeometry(session);
+			GenerateObjectsGeometry(session, bRebuild: true);
 
 			GenerateInstances(session);
 
@@ -948,7 +956,7 @@ namespace HoudiniEngineUnity
 		/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 		/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
 		/// <returns>True if cooking started.</returns>
-		private bool RecookAsync(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset)
+		private bool RecookAsync(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 		{
 #if HEU_PROFILER_ON
 			_cookStartTime = Time.realtimeSinceStartup;
@@ -958,7 +966,7 @@ namespace HoudiniEngineUnity
 			bool bStarted = false;
 			try
 			{
-				 bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
+				 bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset, bForceUploadInputs);
 			}
 			catch (System.Exception ex)
 			{
@@ -982,8 +990,10 @@ namespace HoudiniEngineUnity
 		/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 		/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
 		/// <param name = "bUploadParameters" > If true, will upload parameter values before cooking.</param>
+		/// <param name="bUploadParameterPreset">If true, will upload parameter preset into Houdini before cooking.</param>
+		/// <param name="bForceUploadInputs">If true, will upload all input geometry into Houdini before cooking.</param>
 		/// <returns>True if cooking was done.</returns>
-		private bool RecookBlocking(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset)
+		private bool RecookBlocking(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 		{
 #if HEU_PROFILER_ON
 			_cookStartTime = Time.realtimeSinceStartup;
@@ -993,7 +1003,7 @@ namespace HoudiniEngineUnity
 
 			try
 			{
-				bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset);
+				bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset, bForceUploadInputs);
 			}
 			catch (System.Exception ex)
 			{
@@ -1050,8 +1060,10 @@ namespace HoudiniEngineUnity
 		/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 		/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
 		/// <param name="bUploadParameters">If true, will upload parameter values before cooking.</param>
+		/// <param name="bUploadParameterPreset">If true, will upload parameter preset into Houdini before cooking.</param>
+		/// <param name="bForceUploadInputs">If true, will upload all input geometry into Houdini before cooking.</param>
 		/// <returns></returns>
-		private bool InternalStartRecook(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset)
+		private bool InternalStartRecook(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 		{
 			HEU_SessionBase session = GetAssetSession(true);
 			if (session == null)
@@ -1185,7 +1197,7 @@ namespace HoudiniEngineUnity
 				}
 				else
 				{
-					if (!_parameters.UploadValuesToHoudini(session, this, bCheckParamsChanged))
+					if (!_parameters.UploadValuesToHoudini(session, this, bCheckParamsChanged, bForceUploadInputs))
 					{
 						Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}", AssetName);
 					}
@@ -1218,8 +1230,9 @@ namespace HoudiniEngineUnity
 			// button that invokes edit node's Reste All Changes.
 			UploadAttributeValues(session);
 
-			// Upload asset inputs
-			UploadInputNodes(session, _bForceUpdate, !bParamsUpdated);
+			// Upload asset inputs. 
+			// bForceUploadInputs allows to upload the input geometry when user hits Recook.
+			UploadInputNodes(session, _bForceUpdate | bForceUploadInputs, !bParamsUpdated);
 
 			bResult = StartHoudiniCookNode(session);
 			if (!bResult)
@@ -1313,7 +1326,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 
-			GenerateObjectsGeometry(session);
+			GenerateObjectsGeometry(session, bRebuild: false);
 
 			GenerateInstances(session);
 
@@ -1957,7 +1970,8 @@ namespace HoudiniEngineUnity
 			foreach (HEU_InputNode inputNode in _inputNodes)
 			{
 				// Upload all but parameter types, as those are taken care of in the parameter update
-				if((inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER || bUpdateAll) && (bForceUpdate || inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged())
+				if ((inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER || bUpdateAll) 
+					&& (bForceUpdate || inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged())
 					&& inputNode.InputNodeID != HEU_Defines.HEU_INVALID_NODE_ID)
 				{
 					if(bForceUpdate)
@@ -2214,11 +2228,12 @@ namespace HoudiniEngineUnity
 		/// Generate geometry (mesh, curves, terrain) for all object nodes.
 		/// </summary>
 		/// <param name="session">Current session</param>
-		private void GenerateObjectsGeometry(HEU_SessionBase session)
+		/// <param name="bRebuild">True if this is a rebuild or recook</param>
+		private void GenerateObjectsGeometry(HEU_SessionBase session, bool bRebuild)
 		{
 			foreach (HEU_ObjectNode objNode in _objectNodes)
 			{
-				objNode.GenerateGeometry(session);
+				objNode.GenerateGeometry(session, bRebuild);
 			}
 		}
 
@@ -3422,11 +3437,11 @@ namespace HoudiniEngineUnity
 		/// <param name="assetObjectFileName">File name of asset database object</param>
 		/// <param name="objectToAdd">The object to add</param>
 		/// <param name="targetAssetDBObject">Existing asset database object to overwrite or null. Returns valid written object.</param>
-		public void AddToAssetDBCache(string assetObjectFileName, UnityEngine.Object objectToAdd, ref UnityEngine.Object targetAssetDBObject)
+		public void AddToAssetDBCache(string assetObjectFileName, UnityEngine.Object objectToAdd, string relativeFolderPath, ref UnityEngine.Object targetAssetDBObject)
 		{
 			// Once the asset cache folder is set, CreateAddObjectInAssetCacheFolder will not update it
 			string assetCacheFolder = GetValidAssetCacheFolderPath();
-			HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(AssetName, assetObjectFileName, objectToAdd, ref assetCacheFolder, ref targetAssetDBObject);
+			HEU_AssetDatabase.CreateAddObjectInAssetCacheFolder(AssetName, assetObjectFileName, objectToAdd, relativeFolderPath, ref assetCacheFolder, ref targetAssetDBObject);
 		}
 
 		/// <summary>
@@ -3953,12 +3968,22 @@ namespace HoudiniEngineUnity
 			// Load input nodes (reattach connections)
 			ApplyInputPresets(session, assetPreset.inputPresets, true);
 
-			// Load volume caches (for terrain layers)
-			ApplyVolumeCachePresets(assetPreset.volumeCachePresets, true);
+			// Load volume caches (for terrain layers). Note that some of the volume cache presets
+			// might have already been applied during rebuild, but they should have been removed from this list.
+			// Whatever is leftover are for volume caches which might not have been created during this cook,
+			// so should be added to the recook presets.
+			if (assetPreset.volumeCachePresets != null && assetPreset.volumeCachePresets.Count > 0)
+			{
+				if (_recookPreset == null)
+				{
+					_recookPreset = new HEU_RecookPreset();
+				}
+				_recookPreset._volumeCachePresets.AddRange(assetPreset.volumeCachePresets);
+			}
 
 			Parameters.RecacheUI = true;
 
-			RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true);
+			RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true, bForceUploadInputs: false);
 		}
 
 		/// <summary>
@@ -3969,7 +3994,7 @@ namespace HoudiniEngineUnity
 			if (_recookPreset != null)
 			{
 				bool bApplied = ApplyInputPresets(GetAssetSession(true), _recookPreset._inputPresets, false);
-				bApplied |= ApplyVolumeCachePresets(_recookPreset._volumeCachePresets, false);
+				bApplied |= ApplyVolumeCachePresets(_recookPreset._volumeCachePresets);
 
 				_recookPreset = null;
 				if (bApplied)
@@ -4014,17 +4039,41 @@ namespace HoudiniEngineUnity
 			return bApplied;
 		}
 
+		public HEU_VolumeCachePreset GetVolumeCachePreset(string objName, string geoName, int tile)
+		{
+			if (_savedAssetPreset == null || _savedAssetPreset.volumeCachePresets == null)
+			{
+				return null;
+			}
+
+			foreach (HEU_VolumeCachePreset volumeCachePreset in _savedAssetPreset.volumeCachePresets)
+			{
+				if (volumeCachePreset._objName.Equals(objName) && volumeCachePreset._geoName.Equals(geoName) && volumeCachePreset._tile == tile)
+				{
+					return volumeCachePreset;
+				}
+			}
+			return null;
+		}
+
+		public void RemoveVolumeCachePreset(HEU_VolumeCachePreset preset)
+		{
+			if (_savedAssetPreset != null && _savedAssetPreset.volumeCachePresets != null)
+			{
+				_savedAssetPreset.volumeCachePresets.Remove(preset);
+			}
+		}
+
 		/// <summary>
 		/// Applies volumecache presets to volume parts. This sets terrain layer settings such as material.
 		/// </summary>
 		/// <param name="volumeCachePresets">The source volumecache preset to apply</param>
 		/// <param name="bAddMissingVolumesToRecookPreset">Whether to add unapplied presets to the RecookPreset for applying later</param>
 		/// <returns>True if applied the preset, therefore requiring another recook.</returns>
-		private bool ApplyVolumeCachePresets(List<HEU_VolumeCachePreset> volumeCachePresets, bool bAddMissingVolumesToRecookPreset)
+		private bool ApplyVolumeCachePresets(List<HEU_VolumeCachePreset> volumeCachePresets)
 		{
 			bool bApplied = false;
 
-			// Load volume caches (for terrain layers)
 			if (volumeCachePresets != null && volumeCachePresets.Count > 0)
 			{
 				foreach (HEU_VolumeCachePreset volumeCachePreset in volumeCachePresets)
@@ -4043,83 +4092,16 @@ namespace HoudiniEngineUnity
 						continue;
 					}
 
-					List<HEU_VolumeCache> volumeCaches = geoNode.VolumeCaches;
-					if (volumeCaches == null)
+					HEU_VolumeCache volumeCache = geoNode.GetVolumeCacheByTileIndex(volumeCachePreset._tile);
+					if (volumeCache == null)
 					{
-						if (bAddMissingVolumesToRecookPreset)
-						{
-							if (_recookPreset == null)
-							{
-								_recookPreset = new HEU_RecookPreset();
-							}
-							_recookPreset._volumeCachePresets.Add(volumeCachePreset);
-						}
-						else
-						{
-							Debug.LogWarningFormat("Volume caches not found for geo node {0}. Unable to set heightfield preset.", volumeCachePreset._geoName);
-						}
+						Debug.LogWarningFormat("Volume cache at tile {0} not found for geo node {1}. Unable to set heightfield preset.", volumeCachePreset._tile, volumeCachePreset._geoName);
 						continue;
 					}
 
-					foreach (HEU_VolumeLayerPreset layerPreset in volumeCachePreset._volumeLayersPresets)
-					{
-						HEU_VolumeCache volumeCache = geoNode.GetVolumeCacheByTileIndex(layerPreset._tile);
-						if (volumeCache == null)
-						{
-							Debug.LogWarningFormat("Volume cache at tile {0} not found for geo node {1} not found! Unable to set heightfield preset.", layerPreset._tile, geoNode.GeoName);
-							continue;
-						}
+					volumeCache.ApplyPreset(volumeCachePreset);
 
-						volumeCache.UIExpanded = volumeCachePreset._uiExpanded;
-
-						HEU_VolumeLayer layer = volumeCache.GetLayer(layerPreset._layerName);
-						if (layer == null)
-						{
-							Debug.LogWarningFormat("Volume layer with name {0} not found! Unable to set heightfield layer preset.", layerPreset._layerName);
-							continue;
-						}
-
-						layer._strength = layerPreset._strength;
-
-						Texture2D diffuseTexture = layer._diffuseTexture;
-						if (!string.IsNullOrEmpty(layerPreset._diffuseTexturePath))
-						{
-							diffuseTexture = HEU_MaterialFactory.LoadTexture(layerPreset._diffuseTexturePath);
-						}
-
-						if (diffuseTexture == null)
-						{
-							diffuseTexture = HEU_VolumeCache.LoadDefaultSplatTexture();
-						}
-						layer._diffuseTexture = diffuseTexture;
-
-						if (!string.IsNullOrEmpty(layerPreset._maskTexturePath))
-						{
-							layer._maskTexture = HEU_MaterialFactory.LoadTexture(layerPreset._maskTexturePath);
-						}
-
-						layer._metallic = layerPreset._metallic;
-
-						if (!string.IsNullOrEmpty(layerPreset._normalTexturePath))
-						{
-							layer._normalTexture = HEU_MaterialFactory.LoadTexture(layerPreset._normalTexturePath);
-						}
-
-						layer._normalScale = layerPreset._normalScale;
-						layer._smoothness = layerPreset._smoothness;
-						layer._specularColor = layerPreset._specularColor;
-
-						layer._tileSize = layerPreset._tileSize;
-						layer._tileOffset = layerPreset._tileOffset;
-
-						layer._uiExpanded = layerPreset._uiExpanded;
-						layer._tile = layerPreset._tile;
-						layer._overrides = layerPreset._overrides;
-
-						volumeCache.IsDirty = true;
-
-						bApplied = true;
-					}
+					bApplied = true;
 				}
 			}
 

@@ -72,9 +72,12 @@ namespace HoudiniEngineUnity
 
 		// NOTE: If adding a new field, add attribute: [OptionalField(VersionAdded=2)]
 		// See: https://docs.microsoft.com/en-us/dotnet/standard/serialization/version-tolerant-serialization
-		// Also increment HEU_AssetPresetUtility.PRESET_VERSION
+		// Also increment HEU_AssetPreset.PRESET_VERSION
 	}
 
+	/// <summary>
+	/// Container for input parms preset.
+	/// </summary>
 	[System.Serializable]
 	public class HEU_InputPreset
 	{
@@ -95,6 +98,9 @@ namespace HoudiniEngineUnity
 		public List<HEU_InputAssetPreset> _inputAssetPresets = new List<HEU_InputAssetPreset>();
 	}
 
+	/// <summary>
+	/// Container for HEU_InputObject preset which represents an input object parm for objects.
+	/// </summary>
 	[System.Serializable]
 	public class HEU_InputObjectPreset
 	{
@@ -108,47 +114,34 @@ namespace HoudiniEngineUnity
 		public Vector3 _scaleOffset = Vector3.one;
 	}
 
+	/// <summary>
+	/// Container for HEU_InputAsset preset which represents an input object parm for assets.
+	/// </summary>
 	[System.Serializable]
 	public class HEU_InputAssetPreset
 	{
 		public string _gameObjectName;
 	}
 
+	/// <summary>
+	/// Container for HEU_VolumeLayer preset which represents a Unity Terrain layer (or Heightfield layer).
+	/// </summary>
 	[System.Serializable]
 	public class HEU_VolumeLayerPreset
 	{
 		public string _layerName;
 		public float _strength;
-
-		[FormerlySerializedAs("_splatTexturePath")]
-		public string _diffuseTexturePath;
-
-		[OptionalField(VersionAdded = 5)]
-		public string _maskTexturePath;
-
-		public float _metallic;
-		public string _normalTexturePath;
-
-		[OptionalField(VersionAdded = 5)]
-		public float _normalScale;
-
-		public float _smoothness;
-
-		[OptionalField(VersionAdded = 5)]
-		public Color _specularColor;
-
-		public Vector2 _tileSize = Vector2.zero;
-		public Vector2 _tileOffset = Vector2.zero;
 		
 		public bool _uiExpanded;
 
+		// Tile index of HF volume
 		[OptionalField(VersionAdded = 5)]
 		public int _tile;
-
-		[OptionalField(VersionAdded = 5)]
-		public HEU_VolumeLayer.Overrides _overrides;
 	}
 
+	/// <summary>
+	/// Container for HEU_VolumeCache presets which represents a Unity Terrain (or Heightfield with layers).
+	/// </summary>
 	[System.Serializable]
 	public class HEU_VolumeCachePreset
 	{
@@ -157,6 +150,14 @@ namespace HoudiniEngineUnity
 		public bool _uiExpanded;
 
 		public List<HEU_VolumeLayerPreset> _volumeLayersPresets = new List<HEU_VolumeLayerPreset>();
+
+		// Path to TerrainData object
+		[OptionalField(VersionAdded = 6)]
+		public string _terrainDataPath;
+
+		// Tile index of HF volume
+		[OptionalField(VersionAdded = 6)]
+		public int _tile;
 	}
 
 	/// <summary>
@@ -184,7 +185,7 @@ namespace HoudiniEngineUnity
 		public static char[] PRESET_IDENTIFIER = "HDAPRESET".ToCharArray();
 
 		// Preset version for debugging (increment if added fields to HEU_AssetPreset)
-		public static int PRESET_VERSION = 5;
+		public static int PRESET_VERSION = 6;
 
 		/// <summary>
 		/// Save the specified asset's preset data to file at specified path.

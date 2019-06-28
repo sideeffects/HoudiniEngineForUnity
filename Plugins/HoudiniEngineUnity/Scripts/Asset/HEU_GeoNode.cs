@@ -924,7 +924,7 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		public void ProcessVolumeParts(HEU_SessionBase session, List<HEU_PartData> volumeParts)
+		public void ProcessVolumeParts(HEU_SessionBase session, List<HEU_PartData> volumeParts, bool bRebuild)
 		{
 			int numVolumeParts = volumeParts.Count;
 			if (numVolumeParts == 0)
@@ -937,12 +937,13 @@ namespace HoudiniEngineUnity
 			}
 
 			// First update volume caches. Each volume cache represents a set of terrain layers grouped by tile index.
+			// Therefore each volume cache represents a potential Unity Terrain (containing layers)
 			_volumeCaches = HEU_VolumeCache.UpdateVolumeCachesFromParts(session, this, volumeParts, _volumeCaches);
 
 			// Now generate the terrain for each volume cache
 			foreach(HEU_VolumeCache cache in _volumeCaches)
 			{
-				cache.GenerateTerrainWithAlphamaps(session, ParentAsset);
+				cache.GenerateTerrainWithAlphamaps(session, ParentAsset, bRebuild);
 
 				cache.IsDirty = false;
 			}
