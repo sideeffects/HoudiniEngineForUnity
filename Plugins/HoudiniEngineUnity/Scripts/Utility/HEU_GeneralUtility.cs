@@ -499,6 +499,21 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Returns true if given part in geometry has the given attribute with name.
+		/// </summary>
+		/// <param name="session">Houdini Engine session</param>
+		/// <param name="geoID">Geometry object ID</param>
+		/// <param name="partID">Part ID</param>
+		/// <param name="attribName">Name of the attribute</param>
+		/// <returns>True if attribute exists</returns>
+		public static bool HasValidInstanceAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string attribName)
+		{
+			HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
+			GetAttributeInfo(session, geoID, partID, attribName, ref instanceAttrInfo);
+			return (instanceAttrInfo.exists && instanceAttrInfo.count > 0);
+		}
+
+		/// <summary>
 		/// Copy the world transform values from src to dest.
 		/// </summary>
 		/// <param name="src"></param>

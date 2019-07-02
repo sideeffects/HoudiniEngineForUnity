@@ -596,9 +596,10 @@ namespace HoudiniEngineUnity
 					int numParts = parts.Count;
 					for(int j = 0; j < numParts; ++j)
 					{
-						if(parts[j].ObjectInstancesBeenGenerated)
+						if(parts[j].ObjectInstancesBeenGenerated || parts[j].IsPartVolume())
 						{
-							// This prevents instances being created unnecessarily (e.g. part hasn't changed since last cook)
+							// This prevents instances being created unnecessarily (e.g. part hasn't changed since last cook).
+							// Or for volumes that might have instance attributes.
 							continue;
 						}
 

@@ -126,6 +126,7 @@ namespace HoudiniEngineUnity
 		public const string HAPI_ATTRIB_ALPHA				= "Alpha";
 		public const string HAPI_ATTRIB_NAME				= "name";
 		public const string HAPI_ATTRIB_INSTANCE			= "instance";
+		public const string HAPI_ATTRIB_ORIENT				= "orient";
 
 		public const string HAPI_UNGROUPED_GROUP_NAME		= "__ungrouped_group";
 
@@ -204,6 +205,13 @@ namespace HoudiniEngineUnity
 
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR = "unity_hf_terraindata_file";
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR = "unity_hf_terrainlayer_file";
+
+		public const string HEIGHTFIELD_TREEPROTOTYPE = "unity_hf_tree_prototype";
+
+		public const string HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX = "unity_hf_treeinstance_prototypeindex";
+		public const string HEIGHTFIELD_TREEINSTANCE_HEIGHTSCALE = "unity_hf_treeinstance_heightscale";
+		public const string HEIGHTFIELD_TREEINSTANCE_WIDTHSCALE = "unity_hf_treeinstance_widthscale";
+		public const string HEIGHTFIELD_TREEINSTANCE_LIGHTMAPCOLOR = "unity_hf_treeinstance_lightmapcolor";
 
 		// General Heightfield
 		public const string HAPI_HEIGHTFIELD_TILE_ATTR = "tile";
