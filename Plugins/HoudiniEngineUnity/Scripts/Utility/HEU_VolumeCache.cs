@@ -1175,6 +1175,7 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		public void ApplyScatter(TerrainData terrainData)
 		{
+#if UNITY_2018_3_OR_NEWER
 			if (_scatterTrees == null || _scatterTrees._treePrototypes == null || _scatterTrees._treePrototypes.Length == 0)
 			{
 				return;
@@ -1204,6 +1205,7 @@ namespace HoudiniEngineUnity
 
 				_terrainData.SetTreeInstances(treeInstances, true);
 			}
+#endif
 		}
 
 		public void PopulatePreset(HEU_VolumeCachePreset cachePreset)
