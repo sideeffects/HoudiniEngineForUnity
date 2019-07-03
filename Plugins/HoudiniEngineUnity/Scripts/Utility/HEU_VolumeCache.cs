@@ -72,8 +72,8 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public class HEU_VolumeScatterTrees
 	{
-		// Array of TreePrototypes
-		public TreePrototype[] _treePrototypes;
+		// Data for creating TreePrototypes
+		public List<HEU_TreePrototypeInfo>_treePrototypInfos;
 
 		// Buffers for TreeInstance properties
 		public Color32[] _colors;
@@ -82,6 +82,17 @@ namespace HoudiniEngineUnity
 		public Vector3[] _positions;
 		public int[] _prototypeIndices;
 		public float[] _widthScales;
+	}
+
+	/// <summary>
+	/// Wrapper for TreePrototype.
+	/// Since unable to load the prefab in a non-main thread,
+	/// this holds the prefab path until we can load it.
+	/// </summary>
+	public class HEU_TreePrototypeInfo
+	{
+		public string _prefabPath;
+		public float _bendfactor;
 	}
 
 	/// <summary>
@@ -474,14 +485,14 @@ namespace HoudiniEngineUnity
 			{
 				// Height part
 
-				List<TreePrototype> treePrototypes = HEU_TerrainUtility.GetTreePrototypesFromPart(session, geoNode.GeoID, part.PartID);
-				if (treePrototypes != null)
+				List<HEU_TreePrototypeInfo> treePrototypeInfos = HEU_TerrainUtility.GetTreePrototypeInfosFromPart(session, geoNode.GeoID, part.PartID);
+				if (treePrototypeInfos != null)
 				{
 					if (_scatterTrees == null)
 					{
 						_scatterTrees = new HEU_VolumeScatterTrees();
 					}
-					_scatterTrees._treePrototypes = treePrototypes.ToArray();
+					_scatterTrees._treePrototypInfos = treePrototypeInfos;
 				}
 			}
 

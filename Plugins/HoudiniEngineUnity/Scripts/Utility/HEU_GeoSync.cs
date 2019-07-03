@@ -371,6 +371,7 @@ namespace HoudiniEngineUnity
 					terrainData.splatPrototypes = splatPrototypes;
 #endif
 
+					// Set the splatmaps
 					if (terrainBuffers[t]._splatMaps != null)
 					{
 						// Set the alphamap size before setting the alphamaps to get correct scaling
@@ -385,9 +386,11 @@ namespace HoudiniEngineUnity
 						terrainData.SetAlphamaps(0, 0, terrainBuffers[t]._splatMaps);
 					}
 
-					//string assetPath = HEU_AssetDatabase.CreateAssetCacheFolder("terrainData");
-					//AssetDatabase.CreateAsset(terrainData, assetPath);
-					//Debug.Log("Created asset data at " + assetPath);
+					// Set the tree scattering
+					if (terrainBuffers[t]._scatterTrees != null)
+					{
+						HEU_TerrainUtility.ApplyScatter(terrainData, terrainBuffers[t]._scatterTrees);
+					}
 
 					terrainBuffers[t]._generatedOutput = generatedOutput;
 					_generatedOutputs.Add(generatedOutput);

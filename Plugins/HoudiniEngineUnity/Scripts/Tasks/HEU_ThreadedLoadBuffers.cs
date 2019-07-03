@@ -86,6 +86,8 @@ namespace HoudiniEngineUnity
 		public Vector3 _position;
 
 		public string _terrainDataPath;
+
+		public HEU_VolumeScatterTrees _scatterTrees;
 	}
 
 	public class HEU_LoadBufferVolumeLayer
@@ -136,6 +138,5 @@ namespace HoudiniEngineUnity
 		// Instancing with asset path as source (single or multi)
 		public string[] _assetPaths;
 	}
-
 
 }   // HoudiniEngineUnity

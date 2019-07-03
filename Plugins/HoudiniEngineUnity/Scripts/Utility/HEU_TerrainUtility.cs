@@ -496,15 +496,15 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Returns list of TreePrototypes formed by querying data from given part.
+		/// Returns list of HEU_TreePrototypeInfo formed by querying data from given part.
 		/// </summary>
 		/// <param name="session">Houdini Engine session</param>
 		/// <param name="geoID">Geometry object</param>
 		/// <param name="partID">Part ID</param>
-		/// <returns>Returns list of TreePrototypes or null if none found.</returns>
-		public static List<TreePrototype> GetTreePrototypesFromPart(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID)
+		/// <returns>Returns list of HEU_TreePrototypeInfo or null if none found.</returns>
+		public static List<HEU_TreePrototypeInfo> GetTreePrototypeInfosFromPart(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID)
 		{
-			List<TreePrototype> treePrototypes = new List<TreePrototype>();
+			List<HEU_TreePrototypeInfo> treePrototypes = new List<HEU_TreePrototypeInfo>();
 
 			// Each TreePrototype data is stored as a string attribute, under the 'HEU_Defines.HEIGHTFIELD_TREEPROTOTYPE + index'
 			// name. So check and parse until no more valid attributes found.
@@ -532,27 +532,17 @@ namespace HoudiniEngineUnity
 				// Parse the attribute string value:
 				// Only expecting a single element here, comma-separated for the asset path and bend factor:
 				// => asset_path,bend_factor
-				float bend = 0f;
-				GameObject prefabGO = null;
 				string[] properties = protoAttrString[0].Split(',');
 				if (properties.Length > 0 && !string.IsNullOrEmpty(properties[0]))
 				{
-					prefabGO = HEU_AssetDatabase.LoadAssetAtPath(properties[0], typeof(GameObject)) as GameObject;
-					if (prefabGO != null)
+					HEU_TreePrototypeInfo prototype = new HEU_TreePrototypeInfo();
+					prototype._prefabPath = properties[0];
+					if (properties.Length >= 2)
 					{
-						bend = 0f;
-						if (properties.Length >= 2)
-						{
-							float.TryParse(properties[1], out bend);
-						}
-
-						TreePrototype prototype = new TreePrototype();
-						prototype.prefab = prefabGO;
-						prototype.bendFactor = bend;
-						treePrototypes.Add(prototype);
-
-						Debug.LogFormat("Added Tree Prototype: {0} - {1}", properties[0], bend);
+						float.TryParse(properties[1], out prototype._bendfactor);
 					}
+
+					treePrototypes.Add(prototype);
 				}
 			}
 
@@ -685,12 +675,28 @@ namespace HoudiniEngineUnity
 		public static void ApplyScatter(TerrainData terrainData, HEU_VolumeScatterTrees scatterTrees)
 		{
 #if UNITY_2018_3_OR_NEWER
-			if (scatterTrees == null || scatterTrees._treePrototypes == null || scatterTrees._treePrototypes.Length == 0)
+			if (scatterTrees == null || scatterTrees._treePrototypInfos == null || scatterTrees._treePrototypInfos.Count == 0)
 			{
 				return;
 			}
 
-			terrainData.treePrototypes = scatterTrees._treePrototypes;
+			// Load and set TreePrototypes
+			GameObject prefabGO;
+			List<TreePrototype> treePrototypes = new List<TreePrototype>();
+			for (int i = 0; i < scatterTrees._treePrototypInfos.Count; ++i)
+			{
+				prefabGO = HEU_AssetDatabase.LoadAssetAtPath(scatterTrees._treePrototypInfos[i]._prefabPath, typeof(GameObject)) as GameObject;
+				if (prefabGO != null)
+				{
+					TreePrototype prototype = new TreePrototype();
+					prototype.prefab = prefabGO;
+					prototype.bendFactor = scatterTrees._treePrototypInfos[i]._bendfactor;
+					treePrototypes.Add(prototype);
+
+					//Debug.LogFormat("Added Tree Prototype: {0} - {1}", scatterTrees._treePrototypInfos[i]._prefabPath, scatterTrees._treePrototypInfos[i]._bendfactor);
+				}
+			}
+			terrainData.treePrototypes = treePrototypes.ToArray();
 			terrainData.RefreshPrototypes();
 
 			if (scatterTrees._positions != null && scatterTrees._positions.Length > 0
