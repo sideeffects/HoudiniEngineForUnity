@@ -2020,7 +2020,7 @@ namespace HoudiniEngineUnity
 			HAPI_ObjectInfo[] objectInfos = null;
 			HAPI_Transform[] objectTransforms = null;
 
-			if (!GetObjectInfos(session, out objectInfos, out objectTransforms))
+			if (!HEU_HAPIUtility.GetObjectInfos(session, _assetID, ref _nodeInfo, out objectInfos, out objectTransforms))
 			{
 				return false;
 			}
@@ -2032,80 +2032,6 @@ namespace HoudiniEngineUnity
 			for (int i = 0; i < numObjects; ++i)
 			{
 				_objectNodes.Add(CreateObjectNode(session, ref objectInfos[i], ref objectTransforms[i]));
-			}
-
-			return true;
-		}
-
-		/// <summary>
-		/// Gets the object infos and transforms for this asset.
-		/// </summary>
-		/// <param name="objectInfos">Array of retrieved object infos</param>
-		/// <param name="objectTransforms">Array of retrieved object transforms</param>
-		/// <returns>True if succesfully retrieved object infos and transforms</returns>
-		private bool GetObjectInfos(HEU_SessionBase session, out HAPI_ObjectInfo[] objectInfos, out HAPI_Transform[] objectTransforms)
-		{
-			objectInfos = new HAPI_ObjectInfo[0];
-			objectTransforms = new HAPI_Transform[0];
-
-			if (_nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_SOP)
-			{
-				// For SOP assets, we use the parent IDs to get the object info and geo info
-
-				objectInfos = new HAPI_ObjectInfo[1];
-				if (!session.GetObjectInfo(_nodeInfo.parentId, ref objectInfos[0]))
-				{
-					return false;
-				}
-
-				// Identity transform will be used for SOP assets, so not querying transform
-				objectTransforms = new HAPI_Transform[1];
-				objectTransforms[0] = new HAPI_Transform(true);
-			}
-			else if (_nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_OBJ)
-			{
-				int objectCount = 0;
-				if (!session.ComposeObjectList(_assetID, out objectCount))
-				{
-					return false;
-				}
-
-				if (objectCount <= 0)
-				{
-					// Since this asset is an object type and has 0 object as children, we use the object itself
-
-					objectInfos = new HAPI_ObjectInfo[1];
-					if (!session.GetObjectInfo(_nodeInfo.id, ref objectInfos[0]))
-					{
-						return false;
-					}
-
-					// Identity transform will be used for single object assets, so not querying transform
-					objectTransforms = new HAPI_Transform[1];
-					objectTransforms[0] = new HAPI_Transform(true);
-				}
-				else
-				{
-					// This object has children, so use GetComposedObjectList to get list of HAPI_ObjectInfos
-
-					objectInfos = new HAPI_ObjectInfo[objectCount];
-					if (!session.GetComposedObjectList(_nodeInfo.parentId, objectInfos, 0, objectCount))
-					{
-						return false;
-					}
-
-					// Now get the object transforms
-					objectTransforms = new HAPI_Transform[objectCount];
-					if (!HEU_SessionManager.GetComposedObjectTransformsMemorySafe(session, _nodeInfo.parentId, HAPI_RSTOrder.HAPI_SRT, objectTransforms, 0, objectCount))
-					{
-						return false;
-					}
-				}
-			}
-			else
-			{
-				Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Unsupported node type {0}", _nodeInfo.type);
-				return false;
 			}
 
 			return true;
@@ -2124,7 +2050,7 @@ namespace HoudiniEngineUnity
 			HAPI_ObjectInfo[] objectInfos = null;
 			HAPI_Transform[] objectTransforms = null;
 
-			if (!GetObjectInfos(session, out objectInfos, out objectTransforms))
+			if (!HEU_HAPIUtility.GetObjectInfos(session, _assetID, ref _nodeInfo, out objectInfos, out objectTransforms))
 			{
 				return;
 			}
@@ -3046,15 +2972,6 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		public HEU_PartData GetPartWithID(HAPI_PartId partID)
-		{
-			foreach (HEU_ObjectNode objNode in _objectNodes)
-			{
-				return objNode.GetPartWithID(partID);
-			}
-			return null;
-		}
-
 		/// <summary>
 		/// Adds gameobjects that were output from this asset.
 		/// </summary>
@@ -3105,20 +3022,6 @@ namespace HoudiniEngineUnity
 				if(foundPart != null)
 				{
 					return foundPart;
-				}
-			}
-			return null;
-		}
-
-		public HEU_GeoNode GetInternalGeoNode(HAPI_NodeId nodeID)
-		{
-			HEU_GeoNode geoNode = null;
-			foreach (HEU_ObjectNode objNode in _objectNodes)
-			{
-				geoNode = objNode.GetGeoNode(nodeID);
-				if (geoNode != null)
-				{
-					return geoNode;
 				}
 			}
 			return null;

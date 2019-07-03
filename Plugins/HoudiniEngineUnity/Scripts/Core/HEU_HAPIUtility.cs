@@ -1174,7 +1174,7 @@ namespace HoudiniEngineUnity
 					// This object has children, so use GetComposedObjectList to get list of HAPI_ObjectInfos
 
 					objectInfos = new HAPI_ObjectInfo[objectCount];
-					if (!session.GetComposedObjectList(nodeInfo.parentId, objectInfos, 0, objectCount))
+					if (!HEU_SessionManager.GetComposedObjectListMemorySafe(session, nodeInfo.parentId, objectInfos, 0, objectCount))
 					{
 						return false;
 					}
