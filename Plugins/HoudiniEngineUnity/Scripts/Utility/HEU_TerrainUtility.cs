@@ -154,23 +154,12 @@ namespace HoudiniEngineUnity
 				float minHeight = 0;
 				float maxHeight = 0;
 				float heightRange = 0;
-				float[] normalizedHeights = GetNormalizedHeightmapFromPartWithMinMax(session, geoID, partID, volumeInfo.xLength,
-					ref minHeight, ref maxHeight, ref heightRange);
-				float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, normalizedHeights);
+				float[] normalizedHeights = GetNormalizedHeightmapFromPartWithMinMax(session, geoID, partID, 
+					volumeInfo.xLength, volumeInfo.yLength, ref minHeight, ref maxHeight, ref heightRange);
+				float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, heightMapResolution, normalizedHeights);
 
-				// Only updating baseMapResolution if it changed because Unity seems to reset the splatmaps
-				// when setting the value here, even if its the same value.
-				if (terrainData.baseMapResolution != heightMapResolution)
-				{
-					terrainData.baseMapResolution = Mathf.Clamp(heightMapResolution, 16, 2048);
-				}
-
-				// Only updating alphamapResolution if it changed because Unity seems to reset the splatmaps
-				// when setting the value here, even if its the same value.
-				if (terrainData.alphamapResolution != heightMapResolution)
-				{
-					terrainData.alphamapResolution = Mathf.Clamp(heightMapResolution, 16, 2048); ;
-				}
+				// The terrainData.baseMapResolution is not set here, but rather left to whatever default Unity uses
+				// The terrainData.alphamapResolution is set later when setting the alphamaps.
 
 				if (bNewTerrainData)
 				{
@@ -256,8 +245,8 @@ namespace HoudiniEngineUnity
 		/// <param name="maxHeight">Found maximum height value in the heightmap.</param>
 		/// <param name="heightRange">Found height range in the heightmap.</param>
 		/// <returns>The converted heightmap from Houdini.</returns>
-		public static float[] GetNormalizedHeightmapFromPartWithMinMax(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int heightMapSize,
-			ref float minHeight, ref float maxHeight, ref float heightRange)
+		public static float[] GetNormalizedHeightmapFromPartWithMinMax(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, 
+			int heightMapWidth, int heightMapHeight, ref float minHeight, ref float maxHeight, ref float heightRange)
 		{
 			minHeight = float.MaxValue;
 			maxHeight = float.MinValue;
@@ -299,14 +288,14 @@ namespace HoudiniEngineUnity
 			}
 
 			// Remap height values to fit terrain size
-			int paddingWidth = heightMapSize - volumeXLength;
+			int paddingWidth = heightMapWidth - volumeXLength;
 			int paddingLeft = Mathf.CeilToInt(paddingWidth * 0.5f);
-			int paddingRight = heightMapSize - paddingLeft;
+			int paddingRight = heightMapWidth - paddingLeft;
 			//Debug.LogFormat("Padding: Width={0}, Left={1}, Right={2}", paddingWidth, paddingLeft, paddingRight);
 
-			int paddingHeight = heightMapSize - volumeYLength;
+			int paddingHeight = heightMapHeight - volumeYLength;
 			int paddingTop = Mathf.CeilToInt(paddingHeight * 0.5f);
-			int paddingBottom = heightMapSize - paddingTop;
+			int paddingBottom = heightMapHeight - paddingTop;
 			//Debug.LogFormat("Padding: Height={0}, Top={1}, Bottom={2}", paddingHeight, paddingTop, paddingBottom);
 
 			// Normalize the height values into the range between 0 and 1, inclusive.
@@ -321,10 +310,10 @@ namespace HoudiniEngineUnity
 			}
 
 			// Set height values at centre of the terrain, with padding on the sides if we resized
-			float[] resizedHeightValues = new float[heightMapSize * heightMapSize];
-			for (int y = 0; y < heightMapSize; ++y)
+			float[] resizedHeightValues = new float[heightMapWidth * heightMapHeight];
+			for (int y = 0; y < heightMapHeight; ++y)
 			{
-				for (int x = 0; x < heightMapSize; ++x)
+				for (int x = 0; x < heightMapWidth; ++x)
 				{
 					if (y >= paddingTop && y < (paddingBottom) && x >= paddingLeft && x < (paddingRight))
 					{
@@ -336,10 +325,10 @@ namespace HoudiniEngineUnity
 
 						// Flip for right-hand to left-handed coordinate system
 						int ix = x;
-						int iy = heightMapSize - (y + 1);
+						int iy = heightMapHeight - (y + 1);
 
 						// Unity expects height array indexing to be [y, x].
-						resizedHeightValues[iy + ix * heightMapSize] = f;
+						resizedHeightValues[iy + ix * heightMapWidth] = f;
 					}
 				}
 			}
@@ -397,14 +386,14 @@ namespace HoudiniEngineUnity
 		/// <param name="heightMapSize">Size of each dimension of the heightmap (assumes equal sides).</param>
 		/// <param name="heightValues">List of height values that will be converted to the heightmap.</param>
 		/// <returns>Converted heightmap for Unity terrain.</returns>
-		public static float[,] ConvertHeightMapHoudiniToUnity(int heightMapSize, float[] heightValues)
+		public static float[,] ConvertHeightMapHoudiniToUnity(int heightMapWidth, int heightMapHeight, float[] heightValues)
 		{
-			float[,] unityHeights = new float[heightMapSize, heightMapSize];
-			for (int y = 0; y < heightMapSize; ++y)
+			float[,] unityHeights = new float[heightMapWidth, heightMapHeight];
+			for (int y = 0; y < heightMapHeight; ++y)
 			{
-				for (int x = 0; x < heightMapSize; ++x)
+				for (int x = 0; x < heightMapWidth; ++x)
 				{
-					float f = heightValues[y + x * heightMapSize];
+					float f = heightValues[y + x * heightMapWidth];
 					unityHeights[x, y] = f;
 				}
 			}
@@ -415,27 +404,25 @@ namespace HoudiniEngineUnity
 		/// <summary>
 		/// Converts the given heightfields (linear array) into a multi-dimensional array that Unity
 		/// needs for uploading splatmap values for terrain.
-		/// Values are multiplied by the given strengths.
 		/// Assumes the values have already been converted to Unity coordinates, and normalized between 0 and 1.
 		/// </summary>
 		/// <param name="heightMapSize">Size of each dimension of the heightmap (assumes equal sides).</param>
 		/// <param name="heightFields">List of height values that will be converted to alphamap.</param>
-		/// <param name="strengths">List of strength values to multiply corresponding layer in the array.</param>
-		/// <returns>Converted heightfields into Unity alphamap array, multiplied by strength values.</returns>
-		public static float[,,] ConvertHeightFieldToAlphaMap(int heightMapSize, List<float[]> heightFields, float[] strengths)
+		/// <returns>Converted heightfields into Unity alphamap array.</returns>
+		public static float[,,] ConvertHeightFieldToAlphaMap(int heightMapWidth, int heightMapHeight, List<float[]> heightFields)
 		{
 			int numMaps = heightFields.Count;
 
 			// Assign height floats to alpha map, with strength applied.
-			float[,,] alphamap = new float[heightMapSize, heightMapSize, numMaps];
-			for (int y = 0; y < heightMapSize; ++y)
+			float[,,] alphamap = new float[heightMapWidth, heightMapHeight, numMaps];
+			for (int y = 0; y < heightMapHeight; ++y)
 			{
-				for (int x = 0; x < heightMapSize; ++x)
+				for (int x = 0; x < heightMapWidth; ++x)
 				{
 					for (int m = numMaps - 1; m >= 0; --m)
 					{
-						float a = heightFields[m][y + heightMapSize * x];
-						a = Mathf.Clamp01(a) * strengths[m];
+						float a = heightFields[m][y + heightMapWidth * x];
+						a = Mathf.Clamp01(a);
 						alphamap[x, y, m] = a;
 					}
 				}
@@ -455,15 +442,15 @@ namespace HoudiniEngineUnity
 		/// <param name="alphaMapIndices">List of indices for each alphamap dictating whether to use existingAlphaMaps values or use heightFields values.
 		/// Negative values signal existing indices, while positive (>0) values signal heightField indices. Indices are offset by -1, and +1, respectively.</param>
 		/// <returns>Converted alphamap</returns>
-		public static float[,,] AppendConvertedHeightFieldToAlphaMap(int heightMapSize, float[,,] existingAlphaMaps, List<float[]> heightFields, float[] strengths, List<int> alphaMapIndices)
+		public static float[,,] AppendConvertedHeightFieldToAlphaMap(int heightMapWidth, int heightMapHeight, float[,,] existingAlphaMaps, List<float[]> heightFields, float[] strengths, List<int> alphaMapIndices)
 		{
 			// Assign height floats to alpha map, with strength applied.
 			int numMaps = alphaMapIndices.Count;
 			int index = 0;
-			float[,,] alphaMap = new float[heightMapSize, heightMapSize, numMaps];
-			for (int y = 0; y < heightMapSize; ++y)
+			float[,,] alphaMap = new float[heightMapWidth, heightMapHeight, numMaps];
+			for (int y = 0; y < heightMapHeight; ++y)
 			{
-				for (int x = 0; x < heightMapSize; ++x)
+				for (int x = 0; x < heightMapWidth; ++x)
 				{
 					for (int m = 0; m < numMaps; m++)
 					{
@@ -479,7 +466,7 @@ namespace HoudiniEngineUnity
 						{
 							// Use heightfield
 							index -= 1; // index is off by +1
-							float a = heightFields[index][y + heightMapSize * x];
+							float a = heightFields[index][y + heightMapWidth * x];
 							a = Mathf.Clamp01(a) * strengths[index];
 							alphaMap[x, y, m] = a;
 						}

@@ -49,6 +49,9 @@ namespace HoudiniEngineUnity
 		public bool _uiExpanded;
 		public int _tile = 0;
 
+		public int _xLength;
+		public int _yLength;
+
 		[System.NonSerialized]
 		public bool _hasLayerAttributes;
 
@@ -454,6 +457,8 @@ namespace HoudiniEngineUnity
 			}
 
 			layer._part = part;
+			layer._xLength = volumeInfo.xLength;
+			layer._yLength = volumeInfo.yLength;
 
 			if (!bMaskPart)
 			{
@@ -596,8 +601,8 @@ namespace HoudiniEngineUnity
 			// Note that mask shouldn't be part of _layers at this point.
 			for(int i = 1; i < numLayers; ++i)
 			{
-				float[] normalizedHF = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(session, _ownerNode.GeoID, _layers[i]._part.PartID, terrainSize,
-					ref minHeight, ref maxHeight, ref heightRange);
+				float[] normalizedHF = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(session, _ownerNode.GeoID, _layers[i]._part.PartID, 
+					_layers[i]._xLength, _layers[i]._yLength, ref minHeight, ref maxHeight, ref heightRange);
 				if (normalizedHF != null && normalizedHF.Length > 0)
 				{
 					heightFields.Add(normalizedHF);
@@ -769,7 +774,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// Get existing alpha maps so we can reuse the values if needed
-			float[,,] existingAlphaMaps = terrainData.GetAlphamaps(0, 0, terrainSize, terrainSize);
+			float[,,] existingAlphaMaps = terrainData.GetAlphamaps(0, 0, terrainData.alphamapWidth, terrainData.alphamapHeight);
 
 			terrainData.terrainLayers = finalTerrainLayers.ToArray();
 
@@ -833,7 +838,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// On regular cook, get existing alpha maps so we can reuse the values if needed.
-			float[,,] existingAlphaMaps = terrainData.GetAlphamaps(0, 0, terrainSize, terrainSize);
+			float[,,] existingAlphaMaps = terrainData.GetAlphamaps(0, 0, terrainData.alphamapWidth, terrainData.alphamapHeight);
 
 			terrainData.splatPrototypes = finalSplats.ToArray();
 
@@ -852,7 +857,15 @@ namespace HoudiniEngineUnity
 					strengths[m] = volumeLayersToProcess[m]._strength;
 				}
 
-				alphamap = HEU_TerrainUtility.AppendConvertedHeightFieldToAlphaMap(terrainSize, existingAlphaMaps, heightFields, strengths, alphaMapIndices);
+				alphamap = HEU_TerrainUtility.AppendConvertedHeightFieldToAlphaMap(
+					volumeLayersToProcess[0]._xLength, volumeLayersToProcess[0]._yLength, existingAlphaMaps, 
+					heightFields, strengths, alphaMapIndices);
+
+				// Update the alphamap resolution to the actual size of the first 
+				// heightfield layer used for the alphamaps.
+				// Setting the size before setting the alphamas applies proper scaling.
+				int alphamapResolution = volumeLayersToProcess[0]._xLength;
+				terrainData.alphamapResolution = alphamapResolution;
 
 				terrainData.SetAlphamaps(0, 0, alphamap);
 			}

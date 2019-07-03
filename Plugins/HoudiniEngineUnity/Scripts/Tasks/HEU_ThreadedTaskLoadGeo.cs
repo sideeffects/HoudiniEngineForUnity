@@ -407,7 +407,8 @@ namespace HoudiniEngineUnity
 				HEU_LoadBufferVolumeLayer layer = new HEU_LoadBufferVolumeLayer();
 				layer._layerName = volumeName;
 				layer._partID = volumeParts[i].id;
-				layer._heightMapSize = volumeInfo.xLength;
+				layer._heightMapWidth = volumeInfo.xLength;
+				layer._heightMapHeight = volumeInfo.yLength;
 
 				Matrix4x4 volumeTransformMatrix = HEU_HAPIUtility.GetMatrixFromHAPITransform(ref volumeInfo.transform, false);
 				layer._position = HEU_HAPIUtility.GetPosition(ref volumeTransformMatrix);
@@ -443,7 +444,7 @@ namespace HoudiniEngineUnity
 				LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
 
 				// Get the height values from Houdini along with the min and max height range.
-				layer._normalizedHeights = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
+				layer._normalizedHeights = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, volumeInfo.yLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
 
 				// Get the tile index, if it exists, for this part
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
@@ -483,7 +484,8 @@ namespace HoudiniEngineUnity
 						// Height layer always first layer
 						volumeBuffer._layers.Insert(0, layer);
 
-						volumeBuffer._heightMapSize = layer._heightMapSize;
+						volumeBuffer._heightMapWidth = layer._heightMapWidth;
+						volumeBuffer._heightMapHeight = layer._heightMapHeight;
 						volumeBuffer._terrainSizeX = layer._terrainSizeX;
 						volumeBuffer._terrainSizeY = layer._terrainSizeY;
 						volumeBuffer._heightRange = (layer._maxHeight - layer._minHeight);
@@ -493,8 +495,8 @@ namespace HoudiniEngineUnity
 							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 
 						// Load the TreePrototypes
-						List<TreePrototype> treePrototypes = HEU_TerrainUtility.GetTreePrototypesFromPart(session, nodeID, volumeBuffer._id);
-						if (treePrototypes != null)
+						//List<TreePrototype> treePrototypes = HEU_TerrainUtility.GetTreePrototypesFromPart(session, nodeID, volumeBuffer._id);
+						//if (treePrototypes != null)
 						{
 							// TODO
 						}
@@ -515,13 +517,14 @@ namespace HoudiniEngineUnity
 				List<HEU_LoadBufferVolumeLayer> layers = volumeBuffer._layers;
 				//Debug.LogFormat("Heightfield: tile={0}, layers={1}", tile._tileIndex, layers.Count);
 
-				int heightMapSize = volumeBuffer._heightMapSize;
+				int heightMapWidth = volumeBuffer._heightMapWidth;
+				int heightMapHeight = volumeBuffer._heightMapHeight;
 
 				int numLayers = layers.Count;
 				if (numLayers > 0)
 				{
 					// Convert heightmap values from Houdini to Unity
-					volumeBuffer._heightMap = HEU_TerrainUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._normalizedHeights);
+					volumeBuffer._heightMap = HEU_TerrainUtility.ConvertHeightMapHoudiniToUnity(heightMapWidth, heightMapHeight, layers[0]._normalizedHeights);
 
 					Sleep();
 
@@ -537,13 +540,8 @@ namespace HoudiniEngineUnity
 					int numMaps = heightFields.Count;
 					if (numMaps > 0)
 					{
-						// Using strength of 1 for all layers so its same as defined in Houdini
-						float[] strengths = new float[numMaps];
-						for (int m = 0; m < strengths.Length; ++m)
-						{
-							strengths[m] = 1f;
-						}
-						volumeBuffer._splatMaps = HEU_TerrainUtility.ConvertHeightFieldToAlphaMap(heightMapSize, heightFields, strengths);
+						// Using the first splatmap size for all splatmaps
+						volumeBuffer._splatMaps = HEU_TerrainUtility.ConvertHeightFieldToAlphaMap(layers[1]._heightMapWidth, layers[1]._heightMapHeight, heightFields);
 					}
 					else
 					{
