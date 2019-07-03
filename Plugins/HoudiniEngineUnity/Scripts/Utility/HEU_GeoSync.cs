@@ -205,7 +205,7 @@ namespace HoudiniEngineUnity
 					TerrainData terrainData = terrain.terrainData;
 					collider.terrainData = terrainData;
 
-					HEU_GeometryUtility.SetTerrainMaterial(terrain);
+					HEU_TerrainUtility.SetTerrainMaterial(terrain);
 
 #if UNITY_2018_3_OR_NEWER
 					terrain.allowAutoConnect = true;

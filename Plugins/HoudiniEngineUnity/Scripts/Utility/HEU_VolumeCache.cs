@@ -53,7 +53,9 @@ namespace HoudiniEngineUnity
 		public bool _hasLayerAttributes;
 
 #if UNITY_2018_3_OR_NEWER
-		// Not keeping reference to TerrainLayer (might revisit if needed).
+		// Keeping reference to the TerrainLayer being used for this
+		// heightfield layer, so that it can be reused or updated.
+		public TerrainLayer _terrainLayer;
 #else
 		// Index of the SplatPrototype in the TerrainData splatprototypes list.
 		// For reusing on recook.
@@ -467,7 +469,7 @@ namespace HoudiniEngineUnity
 			{
 				// Height part
 
-				List<TreePrototype> treePrototypes = GetTreePrototypesFromPart(session, geoNode.GeoID, part.PartID);
+				List<TreePrototype> treePrototypes = HEU_TerrainUtility.GetTreePrototypesFromPart(session, geoNode.GeoID, part.PartID);
 				if (treePrototypes != null)
 				{
 					if (_scatterTrees == null)
@@ -489,70 +491,6 @@ namespace HoudiniEngineUnity
 					_updatedLayers.Add(layer);
 				}
 			}
-		}
-
-		/// <summary>
-		/// Returns list of TreePrototypes formed by querying data from given part.
-		/// </summary>
-		/// <param name="session">Houdini Engine session</param>
-		/// <param name="geoID">Geometry object</param>
-		/// <param name="partID">Part ID</param>
-		/// <returns>Returns list of TreePrototypes or null if none found.</returns>
-		public static List<TreePrototype> GetTreePrototypesFromPart(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID)
-		{
-			List<TreePrototype> treePrototypes = new List<TreePrototype>();
-
-			// Each TreePrototype data is stored as a string attribute, under the 'HEU_Defines.HEIGHTFIELD_TREEPROTOTYPE + index'
-			// name. So check and parse until no more valid attributes found.
-			int index = 0;
-			while (true)
-			{
-				// Does this attribute exist?
-				string attrName = HEU_Defines.HEIGHTFIELD_TREEPROTOTYPE + index.ToString();
-				if (!HEU_GeneralUtility.HasAttribute(session, geoID, partID, attrName, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM))
-				{
-					break;
-				}
-
-				index++;
-
-				// Get the string value
-				HAPI_AttributeInfo treeAttrInfo = new HAPI_AttributeInfo();
-				string[] protoAttrString = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID,
-					attrName, ref treeAttrInfo);
-				if (protoAttrString == null || protoAttrString.Length == 0 || string.IsNullOrEmpty(protoAttrString[0]))
-				{
-					break;
-				}
-
-				// Parse the attribute string value:
-				// Only expecting a single element here, comma-separated for the asset path and bend factor:
-				// => asset_path,bend_factor
-				float bend = 0f;
-				GameObject prefabGO = null;
-				string[] properties = protoAttrString[0].Split(',');
-				if (properties.Length > 0 && !string.IsNullOrEmpty(properties[0]))
-				{
-					prefabGO = HEU_AssetDatabase.LoadAssetAtPath(properties[0], typeof(GameObject)) as GameObject;
-					if (prefabGO != null)
-					{
-						bend = 0f;
-						if (properties.Length >= 2)
-						{
-							float.TryParse(properties[1], out bend);
-						}
-
-						TreePrototype prototype = new TreePrototype();
-						prototype.prefab = prefabGO;
-						prototype.bendFactor = bend;
-						treePrototypes.Add(prototype);
-
-						Debug.LogFormat("Added Tree Prototype: {0} - {1}", properties[0], bend);
-					}
-				}
-			}
-
-			return treePrototypes.Count > 0 ? treePrototypes : null;
 		}
 
 		public void GenerateTerrainWithAlphamaps(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, bool bRebuild)
@@ -626,7 +564,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// Generate the terrain and terrain data from the height layer. This applies height values.
-			bResult = HEU_GeometryUtility.GenerateTerrainFromVolume(session, ref heightVolumeInfo, heightLayer._part.ParentGeoNode.GeoID,
+			bResult = HEU_TerrainUtility.GenerateTerrainFromVolume(session, ref heightVolumeInfo, heightLayer._part.ParentGeoNode.GeoID,
 				heightLayer._part.PartID, heightLayer._part.OutputGameObject, ref terrainData, out terrainOffsetPosition);
 			if (!bResult || terrainData == null)
 			{
@@ -658,7 +596,7 @@ namespace HoudiniEngineUnity
 			// Note that mask shouldn't be part of _layers at this point.
 			for(int i = 1; i < numLayers; ++i)
 			{
-				float[] normalizedHF = HEU_GeometryUtility.GetNormalizedHeightmapFromPartWithMinMax(session, _ownerNode.GeoID, _layers[i]._part.PartID, terrainSize,
+				float[] normalizedHF = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(session, _ownerNode.GeoID, _layers[i]._part.PartID, terrainSize,
 					ref minHeight, ref maxHeight, ref heightRange);
 				if (normalizedHF != null && normalizedHF.Length > 0)
 				{
@@ -708,70 +646,81 @@ namespace HoudiniEngineUnity
 				geoID = _ownerNode.GeoID;
 				partID = layer._part.PartID;
 
-				// Try to find existing TerrainLayer by name.
 				terrainLayer = null;
-				int terrainLayerIndex = GetTerrainLayerIndexByName(layer._layerName, existingTerrainLayers);
-				if (terrainLayerIndex >= 0)
-				{
-					// Note the terrainLayerIndex is same for finalTerrainLayers
-					terrainLayer = existingTerrainLayers[terrainLayerIndex];
 
-					// Positive index for alpha map from heightfield (starting at 1)
-					alphaMapIndices[terrainLayerIndex] = m + 1;
-				}
+				int terrainLayerIndex = -1;
 
-				if (terrainLayer == null)
-				{
-					// Not found, so look for TerrainLayer attribute (file path) or create one
-
-					string terrainLayerFile = HEU_GeneralUtility.GetAttributeStringValueSingle(session, geoID, partID,
+				// The TerrainLayer attribute overrides existing TerrainLayer. So if its set, load and use it.
+				string terrainLayerFile = HEU_GeneralUtility.GetAttributeStringValueSingle(session, geoID, partID,
 						HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
-					if (!string.IsNullOrEmpty(terrainLayerFile))
-					{
-						terrainLayer = HEU_AssetDatabase.LoadAssetAtPath(terrainLayerFile, typeof(TerrainLayer)) as TerrainLayer;
-						if (terrainLayer == null)
-						{
-							Debug.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", terrainLayerFile);
-							// Not earlying out or skipping this layer due to error because we want to keep proper indexing
-							// by creating a new TerrainLayer.
-						}
-						else
-						{
-							// Now check existing TerrainLayers again to see if we have this layer.
-							// This check is required because Unity uses the file name for layer name, which means
-							// the user could have specified a layer name different from the TerrainLayer file name.
-							terrainLayerIndex = GetTerrainLayerIndexByName(terrainLayer.name, existingTerrainLayers);
-							if (terrainLayerIndex >= 0)
-							{
-								// Note the terrainLayerIndex is same for finalTerrainLayers
-								terrainLayer = existingTerrainLayers[terrainLayerIndex];
-
-								// Positive index for alpha map from heightfield (starting at 1)
-								alphaMapIndices[terrainLayerIndex] = m + 1;
-							}
-						}
-					}
-
-					// Still not found, so just create a new one
+				if (!string.IsNullOrEmpty(terrainLayerFile))
+				{
+					terrainLayer = HEU_AssetDatabase.LoadAssetAtPath(terrainLayerFile, typeof(TerrainLayer)) as TerrainLayer;
 					if (terrainLayer == null)
 					{
-						terrainLayer = new TerrainLayer();
-						terrainLayer.name = layer._layerName;
-						//Debug.LogFormat("Created new TerrainLayer with name: {0} ", terrainLayer.name);
-						bNewTerrainLayer = true;
+						Debug.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", terrainLayerFile);
+						// Not earlying out or skipping this layer due to error because we want to keep proper indexing
+						// by creating a new TerrainLayer.
 					}
-
-					if (terrainLayerIndex == -1)
+					else
 					{
-						// Adding to the finalTerrainLayers if this is indeed a newly created or loaded TerrainLayer
-						// (i.e. isn't already part of the TerrainLayers for this Terrain).
-						// Save this layer's index for later on if we make a copy.
-						terrainLayerIndex = finalTerrainLayers.Count;
-						finalTerrainLayers.Add(terrainLayer);
+						// TerrainLayer loaded from attribute. 
+						// It could be an existing TerrainLayer that is already part of finalTerrainLayers 
+						// or could be a new one which needs to be added.
 
-						// Positive index for alpha map from heightfield (starting at 1)
-						alphaMapIndices.Add(m + 1);
+						// If its a different TerrainLayer than existing, update the finalTerrainLayers, and index.
+						if (layer._terrainLayer != null && layer._terrainLayer != terrainLayer)
+						{
+							terrainLayerIndex = HEU_TerrainUtility.GetTerrainLayerIndex(layer._terrainLayer, existingTerrainLayers);
+							if (terrainLayerIndex >= 0)
+							{
+								finalTerrainLayers[terrainLayerIndex] = terrainLayer;
+							}
+						}
+
+						if (terrainLayerIndex == -1)
+						{
+							// Always check if its part of existing list so as not to add it again
+							terrainLayerIndex = HEU_TerrainUtility.GetTerrainLayerIndex(terrainLayer, existingTerrainLayers);
+						}
 					}
+				}
+
+				// No terrain layer specified, so try using existing if we have it
+				if (terrainLayer == null)
+				{
+					terrainLayerIndex = HEU_TerrainUtility.GetTerrainLayerIndex(layer._terrainLayer, existingTerrainLayers);
+					if (terrainLayerIndex >= 0)
+					{
+						// Note the terrainLayerIndex is same for finalTerrainLayers as existingTerrainLayers
+						terrainLayer = existingTerrainLayers[terrainLayerIndex];
+					}
+				}
+
+				// Still not found, so just create a new one
+				if (terrainLayer == null)
+				{
+					terrainLayer = new TerrainLayer();
+					terrainLayer.name = layer._layerName;
+					//Debug.LogFormat("Created new TerrainLayer with name: {0} ", terrainLayer.name);
+					bNewTerrainLayer = true;
+				}
+
+				if (terrainLayerIndex == -1)
+				{
+					// Adding to the finalTerrainLayers if this is indeed a newly created or loaded TerrainLayer
+					// (i.e. isn't already part of the TerrainLayers for this Terrain).
+					// Save this layer's index for later on if we make a copy.
+					terrainLayerIndex = finalTerrainLayers.Count;
+					finalTerrainLayers.Add(terrainLayer);
+
+					// Positive index for alpha map from heightfield (starting at 1)
+					alphaMapIndices.Add(m + 1);
+				}
+				else
+				{
+					// Positive index for alpha map from heightfield (starting at 1)
+					alphaMapIndices[terrainLayerIndex] = m + 1;
 				}
 
 				// For existing TerrainLayer, make a copy of it if it has custom layer attributes
@@ -814,6 +763,9 @@ namespace HoudiniEngineUnity
 					}
 					houdiniAsset.AddToAssetDBCache(layerFileNameWithExt, terrainLayer, relativeFolderPath, ref savedObject);
 				}
+
+				// Store reference
+				layer._terrainLayer = terrainLayer;
 			}
 
 			// Get existing alpha maps so we can reuse the values if needed
@@ -900,13 +852,13 @@ namespace HoudiniEngineUnity
 					strengths[m] = volumeLayersToProcess[m]._strength;
 				}
 
-				alphamap = HEU_GeometryUtility.AppendConvertedHeightFieldToAlphaMap(terrainSize, existingAlphaMaps, heightFields, strengths, alphaMapIndices);
+				alphamap = HEU_TerrainUtility.AppendConvertedHeightFieldToAlphaMap(terrainSize, existingAlphaMaps, heightFields, strengths, alphaMapIndices);
 
 				terrainData.SetAlphamaps(0, 0, alphamap);
 			}
 
 			// Tree instances for scattering
-			ApplyScatter(terrainData);
+			HEU_TerrainUtility.ApplyScatter(terrainData, _scatterTrees);
 
 			// If the layers were writen out, this saves the asset DB. Otherwise user has to save it themselves.
 			// Not 100% sure this is needed, but without this the editor doesn't know the terrain asset has been updated
@@ -1051,161 +1003,9 @@ namespace HoudiniEngineUnity
 		}
 #endif
 
-		/// <summary>
-		/// Grab the scatter data for the given part.
-		/// This finds the properties of TreeInstances via attributes.
-		/// </summary>
-		/// <param name="session">Houdini session</param>
-		/// <param name="geoID">Geometry ID</param>
-		/// <param name="partID">Part (volume layer) ID</param>
-		/// <param name="pointCount">Number of expected scatter points</param>
 		public void PopulateScatterInfo(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount)
 		{
-			// The HEU_VolumeScatterTrees might already have been created when the volumecache was queried.
-			// The "height" layer might have had prototype data which is set in _scatterTrees.
-			if (_scatterTrees == null)
-			{
-				_scatterTrees = new HEU_VolumeScatterTrees();
-			}
-			Debug.Log("Point count is : " + pointCount);
-
-			// Get prototype indices. These indices refer to _scatterTrees._treePrototypes.
-			HAPI_AttributeInfo indicesAttrInfo = new HAPI_AttributeInfo();
-			int[] indices = new int[0];
-			if (HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX, ref indicesAttrInfo, ref indices, session.GetAttributeIntData))
-			{
-				if (indices != null && indices.Length == pointCount)
-				{
-					_scatterTrees._prototypeIndices = indices;
-				}
-				else
-				{
-					Debug.LogWarningFormat("Scatter instance index count for attribute {0} is not valid. Expected {1} but got {2}", 
-						HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX, pointCount, (indices != null ? indices.Length : 0));
-				}
-			}
-
-			// Using the UVs as position of the instances, since they are properly mapped to the terrain tile.
-			// Also getting other attributes for the TreeInstances, if they are set.
-			HAPI_AttributeInfo uvAttrInfo = new HAPI_AttributeInfo();
-			float[] uvs = new float[0];
-			if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_ATTRIB_UV, ref uvAttrInfo, ref uvs, session.GetAttributeFloatData))
-			{
-				Debug.LogWarning("UVs for scatter instances not found or valid.");
-			}
-
-			if (uvs != null && uvs.Length == (pointCount * uvAttrInfo.tupleSize))
-			{
-				// Get height scales
-				HAPI_AttributeInfo heightAttrInfo = new HAPI_AttributeInfo();
-				float[] heightscales = new float[0];
-				HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_HEIGHTSCALE, ref heightAttrInfo, ref heightscales, session.GetAttributeFloatData);
-
-				// Get width scales
-				HAPI_AttributeInfo widthAttrInfo = new HAPI_AttributeInfo();
-				float[] widthscales = new float[0];
-				HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_WIDTHSCALE, ref widthAttrInfo, ref widthscales, session.GetAttributeFloatData);
-
-				// Get orientation
-				HAPI_AttributeInfo orientAttrInfo = new HAPI_AttributeInfo();
-				float[] orients = new float[0];
-				HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_ATTRIB_ORIENT, ref orientAttrInfo, ref orients, session.GetAttributeFloatData);
-
-				// Get color
-				HAPI_AttributeInfo colorAttrInfo = new HAPI_AttributeInfo();
-				float[] colors = new float[0];
-				HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_ATTRIB_COLOR, ref colorAttrInfo, ref colors, session.GetAttributeFloatData);
-
-				// Get lightmap color
-				HAPI_AttributeInfo lightmapColorAttrInfo = new HAPI_AttributeInfo();
-				float[] lightmapColors = new float[0];
-				HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_LIGHTMAPCOLOR, ref lightmapColorAttrInfo, ref lightmapColors, session.GetAttributeFloatData);
-
-				_scatterTrees._positions = new Vector3[pointCount];
-
-				if (heightAttrInfo.exists && (heightscales.Length == pointCount))
-				{
-					_scatterTrees._heightScales = heightscales;
-				}
-
-				if (widthAttrInfo.exists && (widthscales.Length == pointCount))
-				{
-					_scatterTrees._widthScales = widthscales;
-				}
-
-				if (colorAttrInfo.exists && (colors.Length == colorAttrInfo.tupleSize * pointCount))
-				{
-					_scatterTrees._colors = new Color32[pointCount];
-				}
-
-				if (lightmapColorAttrInfo.exists && (lightmapColors.Length == lightmapColorAttrInfo.tupleSize * pointCount))
-				{
-					_scatterTrees._lightmapColors = new Color32[pointCount];
-				}
-
-				for (int i = 0; i < pointCount; ++i)
-				{
-					_scatterTrees._positions[i] = new Vector3(1.0f - uvs[i * uvAttrInfo.tupleSize + 1],
-																	 0,
-																	 uvs[i * uvAttrInfo.tupleSize + 0]);
-
-					if (_scatterTrees._colors != null)
-					{
-						_scatterTrees._colors[i] = 
-							new Color32((byte) (colors[i * colorAttrInfo.tupleSize + 0] * 255),
-										(byte) (colors[i * colorAttrInfo.tupleSize + 1] * 255),
-										(byte) (colors[i * colorAttrInfo.tupleSize + 2] * 255),
-										(byte) (colors[i * colorAttrInfo.tupleSize + 3] * 255));
-					}
-
-					if (_scatterTrees._lightmapColors != null)
-					{
-						_scatterTrees._lightmapColors[i] = 
-							new Color32((byte) (lightmapColors[i * lightmapColorAttrInfo.tupleSize + 0] * 255),
-										(byte) (lightmapColors[i * lightmapColorAttrInfo.tupleSize + 1] * 255),
-										(byte) (lightmapColors[i * lightmapColorAttrInfo.tupleSize + 2] * 255),
-										(byte) (lightmapColors[i * lightmapColorAttrInfo.tupleSize + 3] * 255));
-					}
-				}
-			}
-		}
-
-		/// <summary>
-		/// Apply the cached scatter prototypes and instances to the given TerrainData.
-		/// </summary>
-		public void ApplyScatter(TerrainData terrainData)
-		{
-#if UNITY_2018_3_OR_NEWER
-			if (_scatterTrees == null || _scatterTrees._treePrototypes == null || _scatterTrees._treePrototypes.Length == 0)
-			{
-				return;
-			}
-
-			_terrainData.treePrototypes = _scatterTrees._treePrototypes;
-			_terrainData.RefreshPrototypes();
-
-			if (_scatterTrees._positions != null && _scatterTrees._positions.Length > 0 
-				&& _scatterTrees._prototypeIndices != null && _scatterTrees._prototypeIndices.Length == _scatterTrees._positions.Length)
-			{
-				TreeInstance[] treeInstances = new TreeInstance[_scatterTrees._positions.Length];
-
-				for (int i = 0; i < _scatterTrees._positions.Length; ++i)
-				{
-					treeInstances[i] = new TreeInstance();
-					treeInstances[i].color = _scatterTrees._colors != null ? _scatterTrees._colors[i] : new Color32(255, 255, 255, 255);
-					treeInstances[i].heightScale = _scatterTrees._heightScales != null ? _scatterTrees._heightScales[i] : 1f;
-					treeInstances[i].lightmapColor = _scatterTrees._lightmapColors != null ? _scatterTrees._lightmapColors[i] : new Color32(255, 255, 255, 255);
-					treeInstances[i].position = _scatterTrees._positions[i];
-					treeInstances[i].prototypeIndex = _scatterTrees._prototypeIndices[i];
-					treeInstances[i].widthScale = _scatterTrees._widthScales != null ? _scatterTrees._widthScales[i] : 1f;
-
-					// Note that Unity's TreeInstance.rotation is read-only. 
-					// So unable to use the orientation/rotation out of Houdini to set treeInstances[i].rotation.
-				}
-
-				_terrainData.SetTreeInstances(treeInstances, true);
-			}
-#endif
+			HEU_TerrainUtility.PopulateScatterInfo(session, geoID, partID, pointCount, ref _scatterTrees);
 		}
 
 		public void PopulatePreset(HEU_VolumeCachePreset cachePreset)
@@ -1311,24 +1111,6 @@ namespace HoudiniEngineUnity
 			}
 			return texture;
 		}
-
-#if UNITY_2018_3_OR_NEWER
-		private static int GetTerrainLayerIndexByName(string layerName, TerrainLayer[] terrainLayers)
-		{
-			string layerFileName = layerName;
-			string layerFileNameWithSpaces = layerName.Replace('_', ' ');
-			for (int i = 0; i < terrainLayers.Length; ++i)
-			{
-				if (terrainLayers[i] != null && terrainLayers[i].name != null 
-					&& (terrainLayers[i].name.Equals(layerFileName, System.StringComparison.CurrentCultureIgnoreCase) 
-					|| terrainLayers[i].name.Equals(layerFileNameWithSpaces, System.StringComparison.CurrentCultureIgnoreCase)))
-				{
-					return i;
-				}
-			}
-			return -1;
-		}
-#endif
 	}
 
 }   // HoudiniEngineUnity

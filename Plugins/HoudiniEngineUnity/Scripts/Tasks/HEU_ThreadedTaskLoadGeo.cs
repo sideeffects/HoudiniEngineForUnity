@@ -443,7 +443,7 @@ namespace HoudiniEngineUnity
 				LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
 
 				// Get the height values from Houdini along with the min and max height range.
-				layer._normalizedHeights = HEU_GeometryUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
+				layer._normalizedHeights = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
 
 				// Get the tile index, if it exists, for this part
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
@@ -491,6 +491,14 @@ namespace HoudiniEngineUnity
 						// Look up TerrainData file path via attribute if user has set it
 						volumeBuffer._terrainDataPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeBuffer._id,
 							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
+
+						// Load the TreePrototypes
+						List<TreePrototype> treePrototypes = HEU_TerrainUtility.GetTreePrototypesFromPart(session, nodeID, volumeBuffer._id);
+						if (treePrototypes != null)
+						{
+							// TODO
+						}
+
 					}
 					else
 					{
@@ -513,7 +521,7 @@ namespace HoudiniEngineUnity
 				if (numLayers > 0)
 				{
 					// Convert heightmap values from Houdini to Unity
-					volumeBuffer._heightMap = HEU_GeometryUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._normalizedHeights);
+					volumeBuffer._heightMap = HEU_TerrainUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._normalizedHeights);
 
 					Sleep();
 
@@ -535,7 +543,7 @@ namespace HoudiniEngineUnity
 						{
 							strengths[m] = 1f;
 						}
-						volumeBuffer._splatMaps = HEU_GeometryUtility.ConvertHeightFieldToAlphaMap(heightMapSize, heightFields, strengths);
+						volumeBuffer._splatMaps = HEU_TerrainUtility.ConvertHeightFieldToAlphaMap(heightMapSize, heightFields, strengths);
 					}
 					else
 					{
