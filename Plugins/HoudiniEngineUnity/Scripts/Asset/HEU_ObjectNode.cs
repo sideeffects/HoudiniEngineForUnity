@@ -465,15 +465,6 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		public HEU_PartData GetPartWithID(HAPI_PartId partID)
-		{
-			foreach (HEU_GeoNode geoNode in _geoNodes)
-			{
-				geoNode.GetPartFromPartID(partID);
-			}
-			return null;
-		}
-
 		/// <summary>
 		/// Adds gameobjects that were output from this object.
 		/// </summary>
@@ -516,18 +507,6 @@ namespace HoudiniEngineUnity
 				}
 			}
 			
-			return null;
-		}
-
-		public HEU_GeoNode GetGeoNode(HAPI_NodeId nodeID)
-		{
-			foreach (HEU_GeoNode geoNode in _geoNodes)
-			{
-				if(geoNode.GeoID == nodeID)
-				{
-					return geoNode;
-				}
-			}
 			return null;
 		}
 
