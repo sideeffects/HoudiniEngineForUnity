@@ -80,6 +80,12 @@ namespace HoudiniEngineUnity
 			_terrainMaterial = null;
 		}
 
+		public void ResetStateAndRepaint()
+		{
+			_terrainMaterial = null;
+			this.Repaint();
+		}
+
 		public void OnGUI()
 		{
 			bool guiEnabled = GUI.enabled;
@@ -108,6 +114,19 @@ namespace HoudiniEngineUnity
 				using (var hs = new EditorGUILayout.HorizontalScope())
 				{
 					GUILayout.FlexibleSpace();
+					if (GUILayout.Button(HEU_EditorStrings.RELOAD_SETTINGS, yellowButtonStyle))
+					{
+						if (HEU_EditorUtility.DisplayDialog(HEU_EditorStrings.REVERT_SETTINGS + "?",
+							"Are you sure you want to reload plugin settings from heu_settings.ini file?",
+							"Yes", "No"))
+						{
+							HEU_PluginStorage.LoadFromSavedFile();
+							ResetStateAndRepaint();
+						}
+					}
+
+					GUILayout.Space(10);
+
 					if (GUILayout.Button(HEU_EditorStrings.REVERT_SETTINGS, yellowButtonStyle))
 					{
 						if (HEU_EditorUtility.DisplayDialog(HEU_EditorStrings.REVERT_SETTINGS + "?", 
@@ -115,7 +134,7 @@ namespace HoudiniEngineUnity
 							"Yes", "No"))
 						{
 							HEU_PluginStorage.ClearPluginData();
-							this.Repaint();
+							ResetStateAndRepaint();
 						}
 					}
 					GUILayout.FlexibleSpace();

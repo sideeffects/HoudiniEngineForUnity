@@ -859,7 +859,7 @@ namespace HoudiniEngineUnity
 			// Set alpha maps by combining with existing alpha maps, and appending new heightfields
 
 			float[,,] alphamap = null;
-			if (numTotalAlphaMaps > 0)
+			if (numTotalAlphaMaps > 0 && volumeLayersToProcess.Count > 0)
 			{
 				// Convert the heightfields into alpha maps with layer strengths
 				float[] strengths = new float[volumeLayersToProcess.Count];
@@ -869,7 +869,7 @@ namespace HoudiniEngineUnity
 				}
 
 				alphamap = HEU_TerrainUtility.AppendConvertedHeightFieldToAlphaMap(
-					volumeLayersToProcess[0]._xLength, volumeLayersToProcess[0]._yLength, existingAlphaMaps, 
+					volumeLayersToProcess[0]._xLength, volumeLayersToProcess[0]._yLength, existingAlphaMaps,
 					heightFields, strengths, alphaMapIndices);
 
 				// Update the alphamap resolution to the actual size of the first 

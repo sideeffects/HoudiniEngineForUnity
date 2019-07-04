@@ -51,7 +51,8 @@ namespace HoudiniEngineUnity
 
 		public const string OPEN_SCENE_IN_HOUDINI = "Open Scene In Houdini";
 
-		public const string REVERT_SETTINGS = "Revert All Settings";
+		public const string REVERT_SETTINGS = "Revert To Default";
+		public const string RELOAD_SETTINGS = "Reload From Saved File";
 
 		public const string HELP_DOCUMENTATION = "Online Documentation";
 		public const string HELP_DOCUMENTATION_URL = "http://www.sidefx.com/docs/unity/";
