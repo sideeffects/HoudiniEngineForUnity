@@ -263,7 +263,6 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			//HEU_PluginStorage.SaveSessionData(_sessionData);
 			Debug.LogFormat("Houdini Engine: Created Socket session with ID {0}.", _sessionData.SessionID);
 
 			// Make sure API version matches with plugin version
@@ -364,7 +363,6 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			//HEU_PluginStorage.SaveSessionData(_sessionData);
 			Debug.LogFormat("Houdini Engine: Created Pipe session with ID {0}.", _sessionData.SessionID);
 
 			// Make sure API version matches with plugin version

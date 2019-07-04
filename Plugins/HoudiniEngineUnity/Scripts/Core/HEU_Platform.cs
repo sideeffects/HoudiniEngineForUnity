@@ -448,6 +448,36 @@ namespace HoudiniEngineUnity
 			File.WriteAllBytes(path, bytes);
 		}
 
+		public static bool WriteAllText(string path, string text)
+		{
+			try
+			{
+				File.WriteAllText(path, text);
+				return true;
+			}
+			catch (System.Exception ex)
+			{
+				Debug.LogErrorFormat("Unable to save session to file: {0}. Exception: {1}", text, ex.ToString());
+			}
+			return false;
+		}
+
+		public static string ReadAllText(string path)
+		{
+			try
+			{
+				if (File.Exists(path))
+				{
+					return File.ReadAllText(path);
+				}
+			}
+			catch (System.Exception ex)
+			{
+				Debug.LogErrorFormat("Unable to load from file: {0}. Exception: {1}", path, ex.ToString());
+			}
+			return "";
+		}
+
 		/// <summary>
 		/// Returns environment value of given key, if found.
 		/// </summary>

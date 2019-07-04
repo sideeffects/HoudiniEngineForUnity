@@ -32,6 +32,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -45,7 +46,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public class HEU_PluginStorage
 	{
-		// Internally this is using JSON as the format. The JSON data is stored into EditorPrefs.
+		// Internally this is using JSON as the format, and stored in a file at project root.
 
 		// Note: Unity's JSON support is streamlined for predefined objects (JsonUtility).
 		// Unstructured data is not supported, but is a necessary part of this plugin.
@@ -357,49 +358,131 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		/// <summary>
-		/// Save plugin data to disk.
-		/// </summary>
-		private void SavePluginData()
+		public const string PluginSettingsLine1 = "Houdini Engine for Unity Plugin Settings";
+		public const string PluginSettingsLine2 = "Version=";
+		public const string PluginSettingsVersion = "1.0";
+
+		// Path to the plugin settings ini file. Placed in the project root (i.e. Assets/../)
+		public static string SettingsFilePath()
 		{
-#if HOUDINIENGINEUNITY_ENABLED
-			// Convert dictionary to JSON and store as string in EditorPrefs
-
-			// Retrieve dictionary keys and store as array in temporary class.
-			// Then write out array class using JsonUtility.
-			StoreDataArray<string> keyArray = new StoreDataArray<string>();
-			keyArray._array = new string[_dataMap.Count];
-			_dataMap.Keys.CopyTo(keyArray._array, 0);
-			string keyJson = JsonUtility.ToJson(keyArray);
-
-			// Retrieve dictionary values and store as array in temporary class.
-			// Then write out array class using JsonUtility.
-			StoreDataArray<StoreData> dataArray = new StoreDataArray<StoreData>();
-			dataArray._array = new StoreData[_dataMap.Count];
-			_dataMap.Values.CopyTo(dataArray._array, 0);
-			string dataJson = JsonUtility.ToJson(dataArray);
-
-			//Debug.Log("Save:: Keys: " + keyJson);
-			//Debug.Log("Save:: Data: " + dataJson);
-
-#if UNITY_EDITOR
-			// Store in Editor Prefs
-			UnityEditor.EditorPrefs.SetString(HEU_Defines.PLUGIN_STORE_KEYS, keyJson);
-			UnityEditor.EditorPrefs.SetString(HEU_Defines.PLUGIN_STORE_DATA, dataJson);
-#endif
-
-#endif
-			_requiresSave = false;
-
+			return Path.Combine(Application.dataPath, "..", HEU_Defines.PLUGIN_SETTINGS_FILE);
 		}
 
 		/// <summary>
-		/// Load plugin data from disk.
+		/// Save plugin data to disk.
 		/// </summary>
-		/// <returns>True if successfully found and loaded data.</returns>
-		private bool LoadPluginData()
+		public bool SavePluginData()
 		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+			try
+			{
+				string settingsFilePath = SettingsFilePath();
+				using (StreamWriter writer = new StreamWriter(settingsFilePath, false))
+				{
+					writer.WriteLine("Houdini Engine for Unity Plugin Settings");
+					writer.WriteLine("Version=" + PluginSettingsVersion);
+
+					foreach (KeyValuePair<string, StoreData> kvpair in _dataMap)
+					{
+						// key(type)=value
+						writer.WriteLine("{0}({1})={2}", kvpair.Key, kvpair.Value._type, kvpair.Value._valueStr);
+					}
+				}
+
+#if UNITY_EDITOR
+				// Remove old keys from EditorPrefs as its the deprecated method of saving the plugin settings
+				if (EditorPrefs.HasKey(HEU_Defines.PLUGIN_STORE_KEYS))
+				{
+					EditorPrefs.DeleteKey(HEU_Defines.PLUGIN_STORE_KEYS);
+				}
+				if (EditorPrefs.HasKey(HEU_Defines.PLUGIN_STORE_DATA))
+				{
+					EditorPrefs.DeleteKey(HEU_Defines.PLUGIN_STORE_DATA);
+				}
+#endif
+
+				_requiresSave = false;
+			}
+			catch (System.Exception ex)
+			{
+				Debug.LogErrorFormat("Exception when trying to save settings file: {0}", ex.ToString());
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		/// Load the saved plugin settings from disk.
+		/// </summary>
+		/// <returns>True if successfully loaded.</returns>
+		public bool LoadPluginData()
+		{
+			// First check if settings pref file exists
+			string settingsFilePath = SettingsFilePath();
+			if (!HEU_Platform.DoesFileExist(settingsFilePath))
+			{
+				// Try reading from EditorPrefs to see if this is still using the old method
+				return ReadFromEditorPrefs();
+			}
+
+			// Open file and read each line to create the settings entry
+			using (StreamReader reader = new StreamReader(settingsFilePath))
+			{
+				// Must match first line
+				string line = reader.ReadLine();
+				if (string.IsNullOrEmpty(line) || !line.Equals(PluginSettingsLine1))
+				{
+					Debug.LogWarningFormat("Unable to load Plugin settings file. {0} should have line 1: {1}", settingsFilePath, PluginSettingsLine1);
+					return false;
+				}
+
+				// Must match 2nd line
+				line = reader.ReadLine();
+				if (string.IsNullOrEmpty(line) || !line.StartsWith(PluginSettingsLine2))
+				{
+					Debug.LogWarningFormat("Unable to load Plugin settings file. {0} should start line 2 with: {1}", settingsFilePath, PluginSettingsLine2);
+					return false;
+				}
+
+				Dictionary<string, StoreData> storeMap = new Dictionary<string, StoreData>();
+				string keyStr;
+				string typeStr;
+				string valueStr;
+				DataType dataType;
+				// "key(type)=value"
+				System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"^(\w+)\((\w+)\)=(.*)");
+				while ((line = reader.ReadLine()) != null)
+				{
+					System.Text.RegularExpressions.Match match = regex.Match(line);
+					if (match.Success && match.Groups.Count >= 4)
+					{
+						keyStr = match.Groups[1].Value;
+						typeStr = match.Groups[2].Value;
+						valueStr = match.Groups[3].Value;
+						
+						if (!string.IsNullOrEmpty(keyStr) && !string.IsNullOrEmpty(typeStr) 
+							&& !string.IsNullOrEmpty(valueStr))
+						{
+							if (System.Enum.TryParse<DataType>(typeStr, out dataType))
+							{
+								StoreData store = new StoreData();
+								store._type = dataType;
+								store._valueStr = valueStr;
+								storeMap.Add(keyStr, store);
+							}
+						}
+					}
+				}
+
+				_dataMap = storeMap;
+			}
+
+			return true;
+		}
+
+		private bool ReadFromEditorPrefs()
+		{
+#if UNITY_EDITOR
 			if (UnityEditor.EditorPrefs.HasKey(HEU_Defines.PLUGIN_STORE_KEYS) && UnityEditor.EditorPrefs.HasKey(HEU_Defines.PLUGIN_STORE_DATA))
 			{
 				// Grab JSON strings from EditorPrefs, then use temporary array class to grab the JSON array.
@@ -417,15 +500,23 @@ namespace HoudiniEngineUnity
 				_dataMap = new Dictionary<string, StoreData>();
 				int numKeys = keyList.Length;
 				int numData = dataList.Length;
-				if (numKeys != numData)
+				if (numKeys == numData)
 				{
-					return false;
+					for (int i = 0; i < numKeys; ++i)
+					{
+						_dataMap.Add(keyList[i], dataList[i]);
+						//Debug.Log(string.Format("{0} : {1}", keyList[i], dataList[i]._valueStr));
+					}
 				}
-				// TODO: faster way to do this?
-				for (int i = 0; i < numKeys; ++i)
+
+				// Remove from EditorPrefs. This is the deprecated method of saving the plugin settings.
+				if (EditorPrefs.HasKey(HEU_Defines.PLUGIN_STORE_KEYS))
 				{
-					_dataMap.Add(keyList[i], dataList[i]);
-					//Debug.Log(string.Format("{0} : {1}", keyList[i], dataList[i]._valueStr));
+					EditorPrefs.DeleteKey(HEU_Defines.PLUGIN_STORE_KEYS);
+				}
+				if (EditorPrefs.HasKey(HEU_Defines.PLUGIN_STORE_DATA))
+				{
+					EditorPrefs.DeleteKey(HEU_Defines.PLUGIN_STORE_DATA);
 				}
 
 				return true;
@@ -447,31 +538,21 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Save session data to disk.
+		/// Load setings data from saved file.
 		/// </summary>
-		/// <param name="sessionData">The session to save.</param>
-		public static void SaveSessionData(HEU_SessionData sessionData)
+		public static void LoadFromSavedFile()
 		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			string jsonStr = JsonUtility.ToJson(sessionData);
-			UnityEditor.EditorPrefs.SetString(HEU_Defines.PLUGIN_SESSION_DATA, jsonStr);
-#endif
+			if (_instance != null)
+			{
+				_instance.LoadPluginData();
+			}
 		}
 
-		/// <summary>
-		/// Load session data from disk.
-		/// </summary>
-		/// <returns>Loaded session data.</returns>
-		public static HEU_SessionData LoadSessionData()
+
+		// Session file path. Stored at project root (i.e. Assets/../)
+		public static string SessionFilePath()
 		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			string jsonStr = UnityEditor.EditorPrefs.GetString(HEU_Defines.PLUGIN_SESSION_DATA);
-			//Debug.Log("LOAD json: " + jsonStr);
-			HEU_SessionData sessionData = JsonUtility.FromJson<HEU_SessionData>(jsonStr);
-			return sessionData;
-#else
-			return null;
-#endif
+			return Path.Combine(Application.dataPath, "..", HEU_Defines.PLUGIN_SESSION_FILE);
 		}
 
 		/// <summary>
@@ -491,7 +572,7 @@ namespace HoudiniEngineUnity
 					sb.AppendFormat("{0};", JsonUtility.ToJson(session.GetSessionData()));
 				}
 			}
-			UnityEditor.EditorPrefs.SetString(HEU_Defines.PLUGIN_SESSION_DATA, sb.ToString());
+			HEU_Platform.WriteAllText(SessionFilePath(), sb.ToString());
 #endif
 		}
 
@@ -504,8 +585,8 @@ namespace HoudiniEngineUnity
 			// Retrieve saved JSON string from storage, and parse it to create the session datas.
 			List<HEU_SessionData> sessions = new List<HEU_SessionData>();
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			string jsonStr = UnityEditor.EditorPrefs.GetString(HEU_Defines.PLUGIN_SESSION_DATA);
-			if (jsonStr != null && !string.IsNullOrEmpty(jsonStr))
+			string jsonStr = HEU_Platform.ReadAllText(SessionFilePath());
+			if (!string.IsNullOrEmpty(jsonStr))
 			{
 				string[] jsonSplit = jsonStr.Split(';');
 				foreach(string entry in jsonSplit)
@@ -524,21 +605,6 @@ namespace HoudiniEngineUnity
 			return sessions;
 		}
 
-		public static HEU_SessionData LoadSessionData(long SessionID)
-		{
-			// TODO: combine session string + session ID and look up in EditorPrefs
-			// return the found session data
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			string sessionKeyStr = string.Format("{0}_{1}", HEU_Defines.PLUGIN_SESSION_DATA, SessionID);
-			string jsonStr = UnityEditor.EditorPrefs.GetString(sessionKeyStr);
-			//Debug.Log("LOAD json: " + jsonStr);
-			HEU_SessionData sessionData = JsonUtility.FromJson<HEU_SessionData>(jsonStr);
-			return sessionData;
-#else
-			return null;
-#endif
-		}
-
 		/// <summary>
 		/// Build up the asset environment paths set in unity_houdini.env.
 		/// The paths must have key prefixes start with HEU_Defines.HEU_ENVPATH_PREFIX.
@@ -553,7 +619,7 @@ namespace HoudiniEngineUnity
 				char[] delimiter = new char[] { '=' };
 				char[] trimEnd = new char[] { '\\', '/' };
 
-				using (var file = new System.IO.StreamReader(envPath))
+				using (var file = new StreamReader(envPath))
 				{
 					string line;
 					while((line = file.ReadLine()) != null)

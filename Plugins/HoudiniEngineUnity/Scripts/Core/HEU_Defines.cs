@@ -181,6 +181,8 @@ namespace HoudiniEngineUnity
 		public const string PLUGIN_STORE_KEYS = "HoudiniEnginePluginKeys";
 		public const string PLUGIN_STORE_DATA = "HoudiniEnginePluginData";
 		public const string PLUGIN_SESSION_DATA = "HoudiniEngineSession";
+		public const string PLUGIN_SETTINGS_FILE = "heu_settings.ini";
+		public const string PLUGIN_SESSION_FILE = "heu_session.txt";
 
 		// Collision
 		public const string DEFAULT_COLLISION_GEO = "collision_geo";

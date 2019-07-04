@@ -319,6 +319,10 @@ namespace HoudiniEngineUnity
 			{
 				return HEU_AssetDatabase.LoadUnityAssetFromUniqueAssetPath<Material>(materialPath);
 			}
+			else if (materialPath.StartsWith("Packages/"))
+			{
+				return HEU_AssetDatabase.LoadAssetAtPath(materialPath, typeof(Material)) as Material;
+			}
 
 			string relativePath = materialPath;
 			if (relativePath.StartsWith(Application.dataPath))
