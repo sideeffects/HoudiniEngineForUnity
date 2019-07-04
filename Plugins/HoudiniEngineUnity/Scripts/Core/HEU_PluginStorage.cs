@@ -365,7 +365,7 @@ namespace HoudiniEngineUnity
 		// Path to the plugin settings ini file. Placed in the project root (i.e. Assets/../)
 		public static string SettingsFilePath()
 		{
-			return Path.Combine(Application.dataPath, "..", HEU_Defines.PLUGIN_SETTINGS_FILE);
+			return Path.Combine(Application.dataPath, ".." + Path.DirectorySeparatorChar + HEU_Defines.PLUGIN_SETTINGS_FILE);
 		}
 
 		/// <summary>
@@ -463,12 +463,18 @@ namespace HoudiniEngineUnity
 						if (!string.IsNullOrEmpty(keyStr) && !string.IsNullOrEmpty(typeStr) 
 							&& !string.IsNullOrEmpty(valueStr))
 						{
-							if (System.Enum.TryParse<DataType>(typeStr, out dataType))
+							try
 							{
+								dataType = (DataType)System.Enum.Parse(typeof(DataType), typeStr);
+
 								StoreData store = new StoreData();
 								store._type = dataType;
 								store._valueStr = valueStr;
 								storeMap.Add(keyStr, store);
+							}
+							catch( System.Exception ex)
+							{
+								Debug.LogError("Invalid data type found in settings: " + typeStr);
 							}
 						}
 					}
@@ -552,7 +558,7 @@ namespace HoudiniEngineUnity
 		// Session file path. Stored at project root (i.e. Assets/../)
 		public static string SessionFilePath()
 		{
-			return Path.Combine(Application.dataPath, "..", HEU_Defines.PLUGIN_SESSION_FILE);
+			return Path.Combine(Application.dataPath, ".." + Path.DirectorySeparatorChar + HEU_Defines.PLUGIN_SESSION_FILE);
 		}
 
 		/// <summary>
