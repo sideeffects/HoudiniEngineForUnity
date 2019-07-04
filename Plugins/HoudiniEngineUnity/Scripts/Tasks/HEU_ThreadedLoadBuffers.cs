@@ -74,7 +74,8 @@ namespace HoudiniEngineUnity
 		public int _tileIndex;
 		public List<HEU_LoadBufferVolumeLayer> _layers = new List<HEU_LoadBufferVolumeLayer>();
 
-		public int _heightMapSize;
+		public int _heightMapWidth;
+		public int _heightMapHeight;
 		public float[,] _heightMap;
 		public float[,,] _splatMaps;
 
@@ -85,13 +86,16 @@ namespace HoudiniEngineUnity
 		public Vector3 _position;
 
 		public string _terrainDataPath;
+
+		public HEU_VolumeScatterTrees _scatterTrees;
 	}
 
 	public class HEU_LoadBufferVolumeLayer
 	{
 		public string _layerName;
 		public HAPI_PartId _partID;
-		public int _heightMapSize;
+		public int _heightMapWidth;
+		public int _heightMapHeight;
 		public float _strength = 1.0f;
 
 		public string _diffuseTexturePath;
@@ -134,6 +138,5 @@ namespace HoudiniEngineUnity
 		// Instancing with asset path as source (single or multi)
 		public string[] _assetPaths;
 	}
-
 
 }   // HoudiniEngineUnity

@@ -373,9 +373,11 @@ namespace HoudiniEngineUnity
 				// Preliminary check for attribute instancing (mesh type with no verts but has points with instances)
 				if (HEU_HAPIUtility.IsSupportedPolygonType(partInfo.type) && partInfo.vertexCount == 0 && partInfo.pointCount > 0)
 				{
-					HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
-					HEU_GeneralUtility.GetAttributeInfo(session, GeoID, partID, HEU_PluginSettings.UnityInstanceAttr, ref instanceAttrInfo);
-					if (instanceAttrInfo.exists && instanceAttrInfo.count > 0)
+					if (HEU_GeneralUtility.HasValidInstanceAttribute(session, GeoID, partID, HEU_PluginSettings.UnityInstanceAttr))
+					{
+						isAttribInstancer = true;
+					}
+					else if(HEU_GeneralUtility.HasValidInstanceAttribute(session, GeoID, partID, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX))
 					{
 						isAttribInstancer = true;
 					}
@@ -940,8 +942,52 @@ namespace HoudiniEngineUnity
 			// Therefore each volume cache represents a potential Unity Terrain (containing layers)
 			_volumeCaches = HEU_VolumeCache.UpdateVolumeCachesFromParts(session, this, volumeParts, _volumeCaches);
 
+			// Heightfield scatter nodes come in as mesh-type parts with attribute instancing.
+			// So process them here to get all the tree/detail instance scatter information.
+			int numParts = _parts.Count;
+			for (int i = 0; i < numParts; ++i)
+			{
+				if (_parts[i].IsAttribInstancer())
+				{
+					HAPI_AttributeInfo treeInstAttrInfo = new HAPI_AttributeInfo();
+					if (HEU_GeneralUtility.GetAttributeInfo(session, GeoID, _parts[i].PartID, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX, ref treeInstAttrInfo))
+					{
+						if (treeInstAttrInfo.exists && treeInstAttrInfo.count > 0)
+						{
+							// Clear out outputs since it might have been created when the part was created.
+							_parts[i].DestroyAllData();
+							
+							// Mark the instancers as having been created so that the object instancer step skips this.
+							_parts[i].ObjectInstancesBeenGenerated = true;
+
+							// Find the terrain tile (use primitive attr). Assume 0 tile if not set (i.e. not split into tiles)
+							int terrainTile = 0;
+							HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
+							int[] tileAttrData = new int[0];
+							if (HEU_GeneralUtility.GetAttribute(session, GeoID, _parts[i].PartID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
+							{
+								if (tileAttrData != null && tileAttrData.Length > 0)
+								{
+									terrainTile = tileAttrData[0];
+								}
+							}
+
+							// Find the volumecache associated with this part using the terrain tile index
+							HEU_VolumeCache volumeCache = GetVolumeCacheByTileIndex(terrainTile);
+							if (volumeCache == null)
+							{
+								continue;
+							}
+
+							// Now populate scatter info based on attributes on this part
+							volumeCache.PopulateScatterInfo(session, GeoID, _parts[i].PartID, treeInstAttrInfo.count);
+						}
+					}
+				}
+			}
+
 			// Now generate the terrain for each volume cache
-			foreach(HEU_VolumeCache cache in _volumeCaches)
+			foreach (HEU_VolumeCache cache in _volumeCaches)
 			{
 				cache.GenerateTerrainWithAlphamaps(session, ParentAsset, bRebuild);
 

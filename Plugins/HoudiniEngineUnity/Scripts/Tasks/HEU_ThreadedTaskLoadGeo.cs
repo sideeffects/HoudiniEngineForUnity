@@ -182,7 +182,8 @@ namespace HoudiniEngineUnity
 			List<HAPI_PartInfo> volumeParts = new List<HAPI_PartInfo>();
 			List<HAPI_PartInfo> instancerParts = new List<HAPI_PartInfo>();
 			List<HAPI_PartInfo> curveParts = new List<HAPI_PartInfo>();
-			if (!QueryParts(displayNodeID, ref meshParts, ref volumeParts, ref instancerParts, ref curveParts))
+			List<HAPI_PartInfo> scatterInstancerParts = new List<HAPI_PartInfo>();
+			if (!QueryParts(displayNodeID, ref meshParts, ref volumeParts, ref instancerParts, ref curveParts, ref scatterInstancerParts))
 			{
 				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to query parts on node."));
 				return;
@@ -200,7 +201,7 @@ namespace HoudiniEngineUnity
 			}
 
 			// Create Unity terrain buffers
-			if (!GenerateTerrainBuffers(_session, displayNodeID, volumeParts, out _loadData._terrainBuffers))
+			if (!GenerateTerrainBuffers(_session, displayNodeID, volumeParts, scatterInstancerParts, out _loadData._terrainBuffers))
 			{
 				SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to generate terrain data from volume parts."));
 				return;
@@ -296,7 +297,7 @@ namespace HoudiniEngineUnity
 		/// Only part instancers and point instancers (via attributes) are returned.
 		/// </summary>
 		private bool QueryParts(HAPI_NodeId nodeID, ref List<HAPI_PartInfo> meshParts, ref List<HAPI_PartInfo> volumeParts,
-			ref List<HAPI_PartInfo> instancerParts, ref List<HAPI_PartInfo> curveParts)
+			ref List<HAPI_PartInfo> instancerParts, ref List<HAPI_PartInfo> curveParts, ref List<HAPI_PartInfo> scatterInstancerParts)
 		{
 			// Get display geo info
 			HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
@@ -322,18 +323,25 @@ namespace HoudiniEngineUnity
 					}
 
 					bool isAttribInstancer = false;
+					bool isScatterInstancer = false;
 					// Preliminary check for attribute instancing (mesh type with no verts but has points with instances)
 					if (HEU_HAPIUtility.IsSupportedPolygonType(partInfo.type) && partInfo.vertexCount == 0 && partInfo.pointCount > 0)
 					{
-						HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
-						HEU_GeneralUtility.GetAttributeInfo(_session, nodeID, partInfo.id, HEU_PluginSettings.UnityInstanceAttr, ref instanceAttrInfo);
-						if (instanceAttrInfo.exists && instanceAttrInfo.count > 0)
+						if (HEU_GeneralUtility.HasValidInstanceAttribute(_session, nodeID, partInfo.id, HEU_PluginSettings.UnityInstanceAttr))
 						{
 							isAttribInstancer = true;
 						}
+						else if (HEU_GeneralUtility.HasValidInstanceAttribute(_session, nodeID, partInfo.id, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX))
+						{
+							isScatterInstancer = true;
+						}
 					}
 
-					if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_VOLUME)
+					if (isScatterInstancer)
+					{
+						scatterInstancerParts.Add(partInfo);
+					}
+					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_VOLUME)
 					{
 						volumeParts.Add(partInfo);
 					}
@@ -365,7 +373,7 @@ namespace HoudiniEngineUnity
 		}
 
 		public bool GenerateTerrainBuffers(HEU_SessionBase session, HAPI_NodeId nodeID, List<HAPI_PartInfo> volumeParts,
-			out List<HEU_LoadBufferVolume> volumeBuffers)
+			List<HAPI_PartInfo> scatterInstancerParts, out List<HEU_LoadBufferVolume> volumeBuffers)
 		{
 			volumeBuffers = null;
 			if (volumeParts.Count == 0)
@@ -407,7 +415,8 @@ namespace HoudiniEngineUnity
 				HEU_LoadBufferVolumeLayer layer = new HEU_LoadBufferVolumeLayer();
 				layer._layerName = volumeName;
 				layer._partID = volumeParts[i].id;
-				layer._heightMapSize = volumeInfo.xLength;
+				layer._heightMapWidth = volumeInfo.xLength;
+				layer._heightMapHeight = volumeInfo.yLength;
 
 				Matrix4x4 volumeTransformMatrix = HEU_HAPIUtility.GetMatrixFromHAPITransform(ref volumeInfo.transform, false);
 				layer._position = HEU_HAPIUtility.GetPosition(ref volumeTransformMatrix);
@@ -443,7 +452,7 @@ namespace HoudiniEngineUnity
 				LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
 
 				// Get the height values from Houdini along with the min and max height range.
-				layer._normalizedHeights = HEU_GeometryUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
+				layer._normalizedHeights = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, volumeInfo.yLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
 
 				// Get the tile index, if it exists, for this part
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
@@ -483,7 +492,8 @@ namespace HoudiniEngineUnity
 						// Height layer always first layer
 						volumeBuffer._layers.Insert(0, layer);
 
-						volumeBuffer._heightMapSize = layer._heightMapSize;
+						volumeBuffer._heightMapWidth = layer._heightMapWidth;
+						volumeBuffer._heightMapHeight = layer._heightMapHeight;
 						volumeBuffer._terrainSizeX = layer._terrainSizeX;
 						volumeBuffer._terrainSizeY = layer._terrainSizeY;
 						volumeBuffer._heightRange = (layer._maxHeight - layer._minHeight);
@@ -491,6 +501,18 @@ namespace HoudiniEngineUnity
 						// Look up TerrainData file path via attribute if user has set it
 						volumeBuffer._terrainDataPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeBuffer._id,
 							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
+
+						// Load the TreePrototype buffers
+						List<HEU_TreePrototypeInfo> treePrototypeInfos = HEU_TerrainUtility.GetTreePrototypeInfosFromPart(session, nodeID, volumeBuffer._id);
+						if (treePrototypeInfos != null)
+						{
+							if (volumeBuffer._scatterTrees == null)
+							{
+								volumeBuffer._scatterTrees = new HEU_VolumeScatterTrees();
+							}
+							volumeBuffer._scatterTrees._treePrototypInfos = treePrototypeInfos;
+						}
+
 					}
 					else
 					{
@@ -507,13 +529,14 @@ namespace HoudiniEngineUnity
 				List<HEU_LoadBufferVolumeLayer> layers = volumeBuffer._layers;
 				//Debug.LogFormat("Heightfield: tile={0}, layers={1}", tile._tileIndex, layers.Count);
 
-				int heightMapSize = volumeBuffer._heightMapSize;
+				int heightMapWidth = volumeBuffer._heightMapWidth;
+				int heightMapHeight = volumeBuffer._heightMapHeight;
 
 				int numLayers = layers.Count;
 				if (numLayers > 0)
 				{
 					// Convert heightmap values from Houdini to Unity
-					volumeBuffer._heightMap = HEU_GeometryUtility.ConvertHeightMapHoudiniToUnity(heightMapSize, layers[0]._normalizedHeights);
+					volumeBuffer._heightMap = HEU_TerrainUtility.ConvertHeightMapHoudiniToUnity(heightMapWidth, heightMapHeight, layers[0]._normalizedHeights);
 
 					Sleep();
 
@@ -529,13 +552,8 @@ namespace HoudiniEngineUnity
 					int numMaps = heightFields.Count;
 					if (numMaps > 0)
 					{
-						// Using strength of 1 for all layers so its same as defined in Houdini
-						float[] strengths = new float[numMaps];
-						for (int m = 0; m < strengths.Length; ++m)
-						{
-							strengths[m] = 1f;
-						}
-						volumeBuffer._splatMaps = HEU_GeometryUtility.ConvertHeightFieldToAlphaMap(heightMapSize, heightFields, strengths);
+						// Using the first splatmap size for all splatmaps
+						volumeBuffer._splatMaps = HEU_TerrainUtility.ConvertHeightFieldToAlphaMap(layers[1]._heightMapWidth, layers[1]._heightMapHeight, heightFields);
 					}
 					else
 					{
@@ -544,6 +562,31 @@ namespace HoudiniEngineUnity
 
 					volumeBuffer._position = new Vector3((volumeBuffer._terrainSizeX + volumeBuffer._layers[0]._minBounds.x), volumeBuffer._layers[0]._minHeight + volumeBuffer._layers[0]._position.y, volumeBuffer._layers[0]._minBounds.z);
 				}
+			}
+
+			// Process the scatter instancer parts to get the scatter data
+			for (int i = 0; i < scatterInstancerParts.Count; ++i)
+			{
+				// Find the terrain tile (use primitive attr). Assume 0 tile if not set (i.e. not split into tiles)
+				int terrainTile = 0;
+				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
+				int[] tileAttrData = new int[0];
+				if (HEU_GeneralUtility.GetAttribute(session, nodeID, scatterInstancerParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
+				{
+					if (tileAttrData != null && tileAttrData.Length > 0)
+					{
+						terrainTile = tileAttrData[0];
+					}
+				}
+
+				// Find the volume layer associated with this part using the terrain tile index
+				HEU_LoadBufferVolume volumeBuffer = GetLoadBufferVolumeFromTileIndex(terrainTile, volumeBuffers);
+				if (volumeBuffer == null)
+				{
+					continue;
+				}
+
+				HEU_TerrainUtility.PopulateScatterInfo(session, nodeID, scatterInstancerParts[i].id, scatterInstancerParts[i].pointCount, ref volumeBuffer._scatterTrees);
 			}
 
 			return true;
@@ -860,6 +903,18 @@ namespace HoudiniEngineUnity
 			return null;
 		}
 
+
+		public static HEU_LoadBufferVolume GetLoadBufferVolumeFromTileIndex(int tileIndex, List<HEU_LoadBufferVolume> buffers)
+		{
+			foreach(HEU_LoadBufferVolume buffer in buffers)
+			{
+				if (buffer._tileIndex == tileIndex)
+				{
+					return buffer;
+				}
+			}
+			return null;
+		}
 
 		//	DATA ------------------------------------------------------------------------------------------------------
 

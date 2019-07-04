@@ -292,6 +292,8 @@ namespace HoudiniEngineUnity
 
 			SetTerrainDataAttributesToHeightField(session, geoInfo.nodeId, 0, idt._terrainData);
 
+			SetTreePrototypes(session, geoInfo.nodeId, 0, idt._terrainData);
+
 			if (!session.CommitGeo(idt._heightNodeID))
 			{
 				Debug.LogError("Unable to commit geo on input heightfield node!");
@@ -319,13 +321,6 @@ namespace HoudiniEngineUnity
 			{
 				return bResult;
 			}
-
-#if UNITY_2018_3_OR_NEWER
-			int numTerrainLayers = (idt._terrainData.terrainLayers != null) ? idt._terrainData.terrainLayers.Length : 0;
-#else
-			// Not supporting SplatPrototypes as these are deprecated
-			int numTerrainLayers = 0; //(idt._terrainData.splatPrototypes != null) ? idt._terrainData.splatPrototypes.Length : 0;
-#endif
 
 			int sizeX = idt._terrainData.alphamapWidth;
 			int sizeY = idt._terrainData.alphamapHeight;
@@ -573,6 +568,90 @@ namespace HoudiniEngineUnity
 			return true;
 		}
 #endif
+
+		/// <summary>
+		/// Set the given TerrainData's TreePrototyes as attributes on the given part.
+		/// The TreePrototypes as stored a string attributes where the name is HEU_Defines.HEIGHTFIELD_TREEPROTOTYPE + index.
+		/// The string value is the tree prefab's file path comme-separated with the bend factor:
+		/// e.g: Assets/Trees/redtree.prefab,0.9
+		/// This does nothing if the given TerrainData doesn't have TreePrototype.
+		/// </summary>
+		/// <param name="session">Houdini Engine session</param>
+		/// <param name="geoNodeID">Geometry object ID</param>
+		/// <param name="partID">Part ID</param>
+		/// <param name="terrainData">The TerrainData containing TreePrototypes.</param>
+		public void SetTreePrototypes(HEU_SessionBase session, HAPI_NodeId geoNodeID, HAPI_PartId partID, TerrainData terrainData)
+		{
+			TreePrototype[] treePrototypes = terrainData.treePrototypes;
+			if (treePrototypes == null || treePrototypes.Length == 0)
+			{
+				return;
+			}
+
+			// For each prototype, fill up a string attribute owned by primtive.
+			// The string format is: tree_prefab_path,bend_factor
+			string prefabPath;
+			float bendFactor;
+			for(int i = 0; i < treePrototypes.Length; ++i)
+			{
+				if (treePrototypes[i] == null)
+				{
+					continue;
+				}
+
+				prefabPath = HEU_AssetDatabase.GetAssetPath(treePrototypes[i].prefab);
+				if (prefabPath == null)
+				{
+					continue;
+				}
+
+				bendFactor = treePrototypes[i].bendFactor;
+
+				HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+				attrInfo.exists = true;
+				attrInfo.owner = HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM;
+				attrInfo.storage = HAPI_StorageType.HAPI_STORAGETYPE_STRING;
+				attrInfo.count = 1;
+				attrInfo.tupleSize = 1;
+				attrInfo.originalOwner = HAPI_AttributeOwner.HAPI_ATTROWNER_INVALID;
+
+				string attrName = HEU_Defines.HEIGHTFIELD_TREEPROTOTYPE + i.ToString();
+				if (!session.AddAttribute(geoNodeID, partID, attrName, ref attrInfo))
+				{
+					Debug.LogError("Failed to add TreePrototype string attribute to input heightfield.");
+					return;
+				}
+
+				string[] pathData = new string[] { string.Format("{0},{1}", prefabPath, bendFactor) };
+				if (!session.SetAttributeStringData(geoNodeID, partID, attrName, ref attrInfo, pathData, 0, 1))
+				{
+					Debug.LogError("Failed to set TreePrototype string value to input heightfield.");
+					return;
+				}
+			}
+		}
+
+		public void SetTreeInstances(HEU_SessionBase session, HAPI_NodeId geoNodeID, HAPI_PartId partID, TerrainData terrainData)
+		{
+			TreeInstance[] treeInstances = terrainData.treeInstances;
+			if (treeInstances == null || treeInstances.Length == 0)
+			{
+				return;
+			}
+
+			for(int i = 0; i < treeInstances.Length; ++i)
+			{
+				// Upload:
+				// treeInstances[i].color
+				// treeInstances[i].lightmapColor
+				// treeInstances[i].heightScale
+				// treeInstances[i].widthScale
+				// treeInstances[i].position
+				// treeInstances[i].prototypeIndex
+
+				// Upload position as UVs?
+			}
+		}
 
 		/// <summary>
 		/// Holds terrain data for uploading as heightfields

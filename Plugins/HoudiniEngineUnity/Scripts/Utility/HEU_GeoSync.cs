@@ -205,7 +205,7 @@ namespace HoudiniEngineUnity
 					TerrainData terrainData = terrain.terrainData;
 					collider.terrainData = terrainData;
 
-					HEU_GeometryUtility.SetTerrainMaterial(terrain);
+					HEU_TerrainUtility.SetTerrainMaterial(terrain);
 
 #if UNITY_2018_3_OR_NEWER
 					terrain.allowAutoConnect = true;
@@ -213,7 +213,7 @@ namespace HoudiniEngineUnity
 					terrain.drawInstanced = true;
 #endif
 
-					int heightMapSize = terrainBuffers[t]._heightMapSize;
+					int heightMapSize = terrainBuffers[t]._heightMapWidth;
 
 					terrainData.heightmapResolution = heightMapSize;
 					if (terrainData.heightmapResolution != heightMapSize)
@@ -222,8 +222,8 @@ namespace HoudiniEngineUnity
 						continue;
 					}
 
-					terrainData.baseMapResolution = heightMapSize;
-					terrainData.alphamapResolution = heightMapSize;
+					// The terrainData.baseMapResolution is not set here, but rather left to whatever default Unity uses
+					// The terrainData.alphamapResolution is set later when setting the alphamaps.
 
 					// 32 is the default for resolutionPerPatch
 					const int detailResolution = 1024;
@@ -371,14 +371,26 @@ namespace HoudiniEngineUnity
 					terrainData.splatPrototypes = splatPrototypes;
 #endif
 
+					// Set the splatmaps
 					if (terrainBuffers[t]._splatMaps != null)
 					{
+						// Set the alphamap size before setting the alphamaps to get correct scaling
+						// The alphamap size comes from the first alphamap layer
+						int alphamapResolution = terrainBuffers[t]._heightMapWidth;
+						if (numLayers > 1)
+						{
+							alphamapResolution = terrainBuffers[t]._layers[1]._heightMapWidth;
+						}
+						terrainData.alphamapResolution = alphamapResolution;
+
 						terrainData.SetAlphamaps(0, 0, terrainBuffers[t]._splatMaps);
 					}
 
-					//string assetPath = HEU_AssetDatabase.CreateAssetCacheFolder("terrainData");
-					//AssetDatabase.CreateAsset(terrainData, assetPath);
-					//Debug.Log("Created asset data at " + assetPath);
+					// Set the tree scattering
+					if (terrainBuffers[t]._scatterTrees != null)
+					{
+						HEU_TerrainUtility.ApplyScatter(terrainData, terrainBuffers[t]._scatterTrees);
+					}
 
 					terrainBuffers[t]._generatedOutput = generatedOutput;
 					_generatedOutputs.Add(generatedOutput);
