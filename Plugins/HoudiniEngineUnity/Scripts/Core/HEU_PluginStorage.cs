@@ -474,7 +474,7 @@ namespace HoudiniEngineUnity
 							}
 							catch( System.Exception ex)
 							{
-								Debug.LogError("Invalid data type found in settings: " + typeStr);
+								Debug.LogErrorFormat("Invalid data type found in settings: {0}. Exception: {1}", typeStr, ex.ToString());
 							}
 						}
 					}
