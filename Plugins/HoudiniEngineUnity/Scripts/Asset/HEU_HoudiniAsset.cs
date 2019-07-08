@@ -727,14 +727,14 @@ namespace HoudiniEngineUnity
 			if (!bResult)
 			{
 				SetCookStatus(AssetCookStatus.POSTLOAD, AssetCookResult.ERRORED);
+			}
 
-				if (_reloadEvent != null)
-				{
-					// Do callbacks regardless of success or failure as listeners might need to know
-					List<GameObject> outputObjects = new List<GameObject>();
-					GetOutputGameObjects(outputObjects);
-					_reloadEvent.Invoke(this, bResult, outputObjects);
-				}
+			if (_reloadEvent != null)
+			{
+				// Do callbacks regardless of success or failure as listeners might need to know
+				List<GameObject> outputObjects = new List<GameObject>();
+				GetOutputGameObjects(outputObjects);
+				_reloadEvent.Invoke(this, bResult, outputObjects);
 			}
 		}
 		
