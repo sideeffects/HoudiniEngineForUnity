@@ -60,7 +60,7 @@ namespace HoudiniEngineUnity
 			bool bFocus = true;
 			string title = HEU_Defines.HEU_PRODUCT_NAME + " Plugin Settings";
 
-			Rect rect = new Rect(Screen.width * 0.5f, Screen.height * 0.5f, 600, 650);
+			Rect rect = new Rect(Screen.width * 0.5f, Screen.height * 0.5f, 610, 650);
 			EditorWindow window = EditorWindow.GetWindowWithRect<HEU_SettingsWindow>(rect, bUtility, title, bFocus);
 			window.autoRepaintOnSceneChange = true;
 		}
@@ -102,7 +102,7 @@ namespace HoudiniEngineUnity
 				DrawSection(this, "ADVANCED", this.DrawAdvancedSettings, ref _showAdvanced);
 
 				float buttonHeight = 25;
-				float buttonWidth = 280;
+				float buttonWidth = 200;
 
 				GUIStyle yellowButtonStyle = new GUIStyle(GUI.skin.button);
 				yellowButtonStyle.normal.textColor = HEU_EditorUI.GetUISafeTextColorYellow();
