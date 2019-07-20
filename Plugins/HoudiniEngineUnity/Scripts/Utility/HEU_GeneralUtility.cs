@@ -1228,11 +1228,7 @@ namespace HoudiniEngineUnity
 			HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityScriptAttributeName, ref scriptAttributeInfo, ref scriptAttr, session.GetAttributeStringData);
 			if (scriptAttributeInfo.exists)
 			{
-				if (scriptAttributeInfo.owner != HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
-				{
-					Debug.LogWarningFormat("Houdini Engine for Unity only supports {0} as detail attributes!", HEU_PluginSettings.UnityScriptAttributeName);
-				}
-				else if (scriptAttr.Length > 0)
+				if (scriptAttr.Length > 0)
 				{
 					scriptString = HEU_SessionManager.GetString(scriptAttr[0]);
 				}
@@ -1319,16 +1315,25 @@ namespace HoudiniEngineUnity
 					return;
 				}
 
-				Component component = gameObject.GetComponent(scriptType);
-				if (component == null)
+				Component component = null;
+				try
 				{
-					Debug.LogFormat("Attaching script {0} to gameobject", scriptType);
-					component = gameObject.AddComponent(scriptType);
+					component = gameObject.GetComponent(scriptType);
 					if (component == null)
 					{
-						Debug.LogFormat("Unable to attach script component with type '{0}' from script attribute: {1}", scriptType.ToString(), scriptToAttach);
-						return;
+						Debug.LogFormat("Attaching script {0} to gameobject", scriptType);
+						component = gameObject.AddComponent(scriptType);
+						if (component == null)
+						{
+							Debug.LogFormat("Unable to attach script component with type '{0}' from script attribute: {1}", scriptType.ToString(), scriptToAttach);
+							return;
+						}
 					}
+				}
+				catch(System.ArgumentException ex)
+				{
+					Debug.LogWarningFormat("Specified unity_script '{0}' does not derive from MonoBehaviour. Unable to attach script.\n{1}", scriptTypeName, ex.ToString());
+					return;
 				}
 
 				if (scriptColon + 1 >= scriptToAttach.Length)
