@@ -3886,7 +3886,7 @@ namespace HoudiniEngineUnity
 
 			Parameters.RecacheUI = true;
 
-			RecookAsync(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true, bForceUploadInputs: false);
+			RecookBlocking(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true, bForceUploadInputs: false);
 		}
 
 		/// <summary>
