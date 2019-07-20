@@ -674,7 +674,7 @@ namespace HoudiniEngineUnity
 		/// </summary>
 		public static void ApplyScatter(TerrainData terrainData, HEU_VolumeScatterTrees scatterTrees)
 		{
-#if UNITY_2018_3_OR_NEWER
+#if UNITY_2019_1_OR_NEWER
 			if (scatterTrees == null || scatterTrees._treePrototypInfos == null || scatterTrees._treePrototypInfos.Count == 0)
 			{
 				return;
