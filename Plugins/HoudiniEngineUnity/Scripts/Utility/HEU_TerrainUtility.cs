@@ -225,8 +225,12 @@ namespace HoudiniEngineUnity
 				Material material = HEU_MaterialFactory.LoadUnityMaterial(terrainMaterialPath);
 				if (material != null)
 				{
+#if UNITY_2019_2_OR_NEWER
+					terrain.materialTemplate = material;
+#else
 					terrain.materialType = Terrain.MaterialType.Custom;
 					terrain.materialTemplate = material;
+#endif
 				}
 			}
 
