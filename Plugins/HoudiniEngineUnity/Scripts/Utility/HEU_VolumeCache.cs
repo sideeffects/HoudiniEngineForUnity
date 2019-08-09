@@ -81,6 +81,7 @@ namespace HoudiniEngineUnity
 		public Color32[] _lightmapColors;
 		public Vector3[] _positions;
 		public int[] _prototypeIndices;
+		public float[] _rotations;
 		public float[] _widthScales;
 	}
 

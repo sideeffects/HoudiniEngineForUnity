@@ -632,6 +632,11 @@ namespace HoudiniEngineUnity
 					scatterTrees._widthScales = widthscales;
 				}
 
+				if (orientAttrInfo.exists && (orients.Length == orientAttrInfo.tupleSize * pointCount))
+				{
+					scatterTrees._rotations = new float[pointCount];
+				}
+
 				if (colorAttrInfo.exists && (colors.Length == colorAttrInfo.tupleSize * pointCount))
 				{
 					scatterTrees._colors = new Color32[pointCount];
@@ -664,6 +669,19 @@ namespace HoudiniEngineUnity
 										(byte)(lightmapColors[i * lightmapColorAttrInfo.tupleSize + 1] * 255),
 										(byte)(lightmapColors[i * lightmapColorAttrInfo.tupleSize + 2] * 255),
 										(byte)(lightmapColors[i * lightmapColorAttrInfo.tupleSize + 3] * 255));
+					}
+
+					if (scatterTrees._rotations != null)
+					{
+						Quaternion quaternion = new Quaternion(
+							orients[i * orientAttrInfo.tupleSize + 0], 
+							orients[i * orientAttrInfo.tupleSize + 1], 
+							orients[i * orientAttrInfo.tupleSize + 2], 
+							orients[i * orientAttrInfo.tupleSize + 3]);
+						Vector3 euler = quaternion.eulerAngles;
+						euler.y = -euler.y;
+						euler.z = -euler.z;
+						scatterTrees._rotations[i] = euler.y * Mathf.Deg2Rad;
 					}
 				}
 			}
@@ -712,10 +730,8 @@ namespace HoudiniEngineUnity
 					treeInstances[i].lightmapColor = scatterTrees._lightmapColors != null ? scatterTrees._lightmapColors[i] : new Color32(255, 255, 255, 255);
 					treeInstances[i].position = scatterTrees._positions[i];
 					treeInstances[i].prototypeIndex = scatterTrees._prototypeIndices[i];
+					treeInstances[i].rotation = scatterTrees._rotations[i];
 					treeInstances[i].widthScale = scatterTrees._widthScales != null ? scatterTrees._widthScales[i] : 1f;
-
-					// Note that Unity's TreeInstance.rotation is read-only. 
-					// So unable to use the orientation/rotation out of Houdini to set treeInstances[i].rotation.
 				}
 
 				terrainData.SetTreeInstances(treeInstances, true);
