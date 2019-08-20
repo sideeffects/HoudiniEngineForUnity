@@ -337,33 +337,7 @@ namespace HoudiniEngineUnity
 				layer._tile = 0;
 			}
 
-
-			string[] layerAttrNames =
-			{
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_NORMAL_SCALE_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_METALLIC_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SMOOTHNESS_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SPECULAR_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR
-			};
-
-			// Check if any of the layer attribute names show up in the existing primitive attributes
-			layer._hasLayerAttributes = false;
-			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
-			bool bResult = false;
-			foreach (string layerAttr in layerAttrNames)
-			{
-				bResult = session.GetAttributeInfo(geoID, partID, layerAttr, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM, ref attrInfo);
-				if (bResult && attrInfo.exists)
-				{
-					layer._hasLayerAttributes = true;
-					break;
-				}
-			}
+			layer._hasLayerAttributes = HEU_TerrainUtility.VolumeLayerHasAttributes(session, geoID, partID);
 		}
 
 		private bool LoadLayerTextureFromAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_NodeId partID, string attrName, out Texture2D outTexture)

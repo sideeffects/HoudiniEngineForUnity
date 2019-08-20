@@ -125,6 +125,10 @@ namespace HoudiniEngineUnity
 			_assetPath = _heu.AssetPath;
 			_assetName = _heu.AssetName;
 
+			// Use the HDAs cache folder for generating output files
+			string hdaCachePath = _heu.GetValidAssetCacheFolderPath();
+			_outputCachePathRoot = HEU_Platform.BuildPath(hdaCachePath, "PDGCache");
+
 			Reset();
 			Refresh();
 		}
@@ -817,6 +821,7 @@ namespace HoudiniEngineUnity
 				if (geoSync != null)
 				{
 					geoSync._filePath = path;
+					geoSync.SetOutputCacheDirectory(_outputCachePathRoot);
 					geoSync.StartSync();
 				}
 			}
@@ -1020,6 +1025,10 @@ namespace HoudiniEngineUnity
 
 		// The root gameobject to place all loaded geometry under
 		public GameObject _loadRootGameObject;
+
+		// The root directory for generated output
+		[SerializeField]
+		private string _outputCachePathRoot;
 	}
 
 }   // HoudiniEngineUnity
