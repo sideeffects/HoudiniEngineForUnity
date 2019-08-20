@@ -414,6 +414,23 @@ namespace HoudiniEngineUnity
 #endif
 		}
 
+		/// <summary>
+		/// Delete the asset object.
+		/// </summary>
+		/// <param name="asset">The asset object to delete</param>
+		public static void DeleteAssetAtPath(string path)
+		{
+#if UNITY_EDITOR
+			if (!string.IsNullOrEmpty(path))
+			{
+				AssetDatabase.DeleteAsset(path);
+			}
+#else
+			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
+			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+#endif
+		}
+
 		public static void DeleteAssetIfInBakedFolder(Object asset)
 		{
 #if UNITY_EDITOR
@@ -593,6 +610,54 @@ namespace HoudiniEngineUnity
 #endif
 		}
 
+		/// <summary>
+		/// Creates a unique copy of the srcAsset at copyPath, and loads it.
+		/// If another asset is at copyPath, it creates another (unique) file name.
+		/// </summary>
+		/// <param name="srcAsset">The source asset object</param>
+		/// <param name="copyPath">The full path to the copy</param>
+		/// <param name="type">The type of source asset</param>
+		/// <returns>Returns loaded copy if exists or created, otherwise null</returns>
+		public static Object CopyUniqueAndLoadAssetAtAnyPath(Object srcAsset, string copyPath, System.Type type)
+		{
+#if UNITY_EDITOR
+			string srcAssetPath = GetAssetPath(srcAsset);
+			if (!string.IsNullOrEmpty(srcAssetPath))
+			{
+				CreatePathWithFolders(copyPath);
+
+				string fileName = HEU_Platform.GetFileName(srcAssetPath);
+				string fullCopyPath = HEU_Platform.BuildPath(copyPath, fileName);
+
+				if (HEU_Platform.DoesFileExist(fullCopyPath))
+				{
+					fullCopyPath = GetUniqueAssetPath(fullCopyPath);
+					if (HEU_Platform.DoesFileExist(fullCopyPath))
+					{
+						Debug.LogErrorFormat("Failed to get unique path to make copy for {0} at {1}!", srcAssetPath, fullCopyPath);
+						return null;
+					}
+				}
+
+				if (CopyAsset(srcAssetPath, fullCopyPath))
+				{
+					// Refresh database as otherwise we won't be able to load it in the next line.
+					SaveAndRefreshDatabase();
+
+					return LoadAssetAtPath(fullCopyPath, type);
+				}
+				else
+				{
+					Debug.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, fullCopyPath);
+				}
+			}
+			return null;
+#else
+			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
+			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			return null;
+#endif
+		}
 
 		/// <summary>
 		/// Create the given object inside the asset cache folder path, with relative folder path.

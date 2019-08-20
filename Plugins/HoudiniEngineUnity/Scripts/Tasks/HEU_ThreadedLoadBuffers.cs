@@ -125,6 +125,8 @@ namespace HoudiniEngineUnity
 		public Vector3 _center;
 
 		public string _layerPath;
+
+		public bool _hasLayerAttributes;
 	}
 
 	public class HEU_LoadBufferInstancer : HEU_LoadBufferBase
