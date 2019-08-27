@@ -473,7 +473,19 @@ namespace HoudiniEngineUnity
 				Material newMaterial = EditorGUILayout.ObjectField("Default Terrain Material", _terrainMaterial, typeof(Material), false) as Material;
 				if (newMaterial != _terrainMaterial)
 				{
-					HEU_PluginSettings.DefaultTerrainMaterial = (newMaterial != null) ? HEU_AssetDatabase.GetAssetPathWithSubAssetSupport(newMaterial) : "";
+					string materialPath = "";
+					if (newMaterial != null)
+					{
+						materialPath = HEU_AssetDatabase.GetAssetPathWithSubAssetSupport(newMaterial);
+						if (!string.IsNullOrEmpty(materialPath) && (materialPath.StartsWith(HEU_Defines.DEFAULT_UNITY_BUILTIN_RESOURCES)))
+						{
+							// Default materials need to be specially handled
+							materialPath = HEU_AssetDatabase.GetUniqueAssetPathForUnityAsset(newMaterial);
+							newMaterial = HEU_AssetDatabase.LoadUnityAssetFromUniqueAssetPath<Material>(materialPath);
+						}
+					}
+
+					HEU_PluginSettings.DefaultTerrainMaterial = materialPath;
 					_terrainMaterial = newMaterial;
 					bChanged = true;
 				}

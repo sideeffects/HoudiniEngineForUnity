@@ -106,13 +106,25 @@ namespace HoudiniEngineUnity
 
 			// Unity mouse coordinate y is inverted
 			mousePosition.y = camera.pixelHeight - mousePosition.y;
-
 			return mousePosition;
 		}
 
 		public static Vector3 GetHandleWorldToScreenPosition(Vector3 worldPosition, Camera camera)
 		{
 			return camera.WorldToScreenPoint(Handles.matrix.MultiplyPoint(worldPosition));
+		}
+
+		public static Vector3 GetSnapPosition(Vector3 inPos)
+		{
+			// For earlier versions than Unity 2019.3, need to get the
+			// snap values from EditorProfes, then use Handles.SnapValue.
+			// In future, there will be new APIs to handle this.
+
+			float sx = EditorPrefs.GetFloat("MoveSnapX");
+			float sz = EditorPrefs.GetFloat("MoveSnapZ");
+			inPos.x = Handles.SnapValue(inPos.x, sx);
+			inPos.z = Handles.SnapValue(inPos.z, sz);
+			return inPos;
 		}
 
 		/// <summary>
