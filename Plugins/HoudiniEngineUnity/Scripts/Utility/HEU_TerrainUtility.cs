@@ -54,7 +54,7 @@ namespace HoudiniEngineUnity
 		/// <param name="volumePositionOffset">Heightfield offset</param>
 		/// <returns>True if successfully popupated the terrain</returns>
 		public static bool GenerateTerrainFromVolume(HEU_SessionBase session, ref HAPI_VolumeInfo volumeInfo, HAPI_NodeId geoID, HAPI_PartId partID,
-			GameObject gameObject, ref TerrainData terrainData, out Vector3 volumePositionOffset)
+			GameObject gameObject, ref TerrainData terrainData, out Vector3 volumePositionOffset, ref Terrain terrain)
 		{
 			volumePositionOffset = Vector3.zero;
 
@@ -97,7 +97,7 @@ namespace HoudiniEngineUnity
 
 				bool bNewTerrain = false;
 				bool bNewTerrainData = false;
-				Terrain terrain = gameObject.GetComponent<Terrain>();
+				terrain = gameObject.GetComponent<Terrain>();
 				if (terrain == null)
 				{
 					terrain = gameObject.AddComponent<Terrain>();
@@ -341,6 +341,72 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Returns the DetailLayer values for the given heightfield part.
+		/// Converts from HF float[] values into int[,] array.
+		/// </summary>
+		/// <param name="session">Houdini Engine session to query</param>
+		/// <param name="geoID">The geometry ID in Houdini</param>
+		/// <param name="partID">The part ID in Houdini</param>
+		/// <param name="detailResolution">Out value specifying the detail resolution acquired
+		/// from the heightfield size.</param>
+		/// <returns>The DetailLayer values</returns>
+		public static int[,] GetDetailMapFromPart(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
+			out int detailResolution)
+		{
+			detailResolution = 0;
+
+			HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
+			bool bResult = session.GetVolumeInfo(geoID, partID, ref volumeInfo);
+			if (!bResult)
+			{
+				return null;
+			}
+
+			int volumeXLength = volumeInfo.xLength;
+			int volumeYLength = volumeInfo.yLength;
+
+			// Unity requires square size
+			if (volumeXLength != volumeYLength)
+			{
+				Debug.LogErrorFormat("Detail layer size must be square. Got {0}x{1} instead. Unable to apply detail layer.", 
+					volumeXLength, volumeYLength);
+				return null;
+			}
+
+			// Use the size of the volume as the detail resolution size
+			detailResolution = volumeXLength;
+
+			// Number of heightfield values
+			int totalHeightValues = volumeXLength * volumeYLength;
+
+			// Get the floating point values from the heightfield
+			float[] heightValues = new float[totalHeightValues];
+			bResult = HEU_GeneralUtility.GetArray2Arg(geoID, partID, session.GetHeightFieldData, heightValues, 0, totalHeightValues);
+			if (!bResult)
+			{
+				return null;
+			}
+
+			// Convert float[] to int[,]. No conversion or scaling done since just want to use values as they are.
+			int[,] intMap = new int[volumeXLength, volumeYLength];
+			for (int y = 0; y < volumeYLength; ++y)
+			{
+				for (int x = 0; x < volumeXLength; ++x)
+				{
+					float f = heightValues[x + y * volumeXLength];
+
+					// Flip for right-hand to left-handed coordinate system
+					int ix = x;
+					int iy = volumeYLength - (y + 1);
+
+					intMap[ix, iy] = (int)f;
+				}
+			}
+
+			return intMap;
+		}
+
+		/// <summary>
 		/// Retrieve the heightmap from Houdini for given part (volume), along with min and max height values.
 		/// </summary>
 		/// <param name="session">Current Houdini session.</param>
@@ -561,7 +627,7 @@ namespace HoudiniEngineUnity
 		/// <param name="geoID">Geometry ID</param>
 		/// <param name="partID">Part (volume layer) ID</param>
 		/// <param name="pointCount">Number of expected scatter points</param>
-		public static void PopulateScatterInfo(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount,
+		public static void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount,
 			ref HEU_VolumeScatterTrees scatterTrees)
 		{
 			// The HEU_VolumeScatterTrees might already have been created when the volumecache was queried.
@@ -570,7 +636,6 @@ namespace HoudiniEngineUnity
 			{
 				scatterTrees = new HEU_VolumeScatterTrees();
 			}
-			Debug.Log("Point count is : " + pointCount);
 
 			// Get prototype indices. These indices refer to _scatterTrees._treePrototypes.
 			HAPI_AttributeInfo indicesAttrInfo = new HAPI_AttributeInfo();
@@ -694,7 +759,7 @@ namespace HoudiniEngineUnity
 		/// <summary>
 		/// Apply the cached scatter prototypes and instances to the given TerrainData.
 		/// </summary>
-		public static void ApplyScatter(TerrainData terrainData, HEU_VolumeScatterTrees scatterTrees)
+		public static void ApplyScatterTrees(TerrainData terrainData, HEU_VolumeScatterTrees scatterTrees)
 		{
 #if UNITY_2019_1_OR_NEWER
 			if (scatterTrees == null || scatterTrees._treePrototypInfos == null || scatterTrees._treePrototypInfos.Count == 0)
@@ -739,6 +804,189 @@ namespace HoudiniEngineUnity
 				}
 
 				terrainData.SetTreeInstances(treeInstances, true);
+			}
+#endif
+		}
+
+		/// <summary>
+		/// Fill up the given detailPrototype with values from the specified heightfield part.
+		/// </summary>
+		/// <param name="session">Houdini Engine session to query</param>
+		/// <param name="geoID">The geometry ID in Houdini</param>
+		/// <param name="partID">The part ID in Houdini</param>
+		/// <param name="detailPrototype">The detail prototype object to populate</param>
+		public static void PopulateDetailPrototype(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
+			ref HEU_DetailPrototype detailPrototype)
+		{
+			// Get the detail prototype properties from attributes on this layer
+
+			if (detailPrototype == null)
+			{
+				detailPrototype = new HEU_DetailPrototype();
+			}
+
+			HAPI_AttributeInfo prefabAttrInfo = new HAPI_AttributeInfo();
+			string[] prefabPaths = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, 
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_PREFAB, ref prefabAttrInfo);
+
+			if (prefabAttrInfo.exists && prefabPaths.Length >= 1)
+			{
+				detailPrototype._prototypePrefab = prefabPaths[0];
+			}
+
+			HAPI_AttributeInfo textureAttrInfo = new HAPI_AttributeInfo();
+			string[] texturePaths = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, 
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_TEXTURE, ref textureAttrInfo);
+
+			if (textureAttrInfo.exists && texturePaths.Length >= 1)
+			{
+				detailPrototype._prototypeTexture = texturePaths[0];
+			}
+
+			float fvalue = 0;
+			if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_BENDFACTOR, out fvalue))
+			{
+				detailPrototype._bendFactor = fvalue;
+			}
+
+			Color color = Color.white;
+			if (HEU_GeneralUtility.GetAttributeColorSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_DRYCOLOR, ref color))
+			{
+				detailPrototype._dryColor = color;
+			}
+
+			if (HEU_GeneralUtility.GetAttributeColorSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_HEALTHYCOLOR, ref color))
+			{
+				detailPrototype._healthyColor = color;
+			}
+
+			if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_MAXHEIGHT, out fvalue))
+			{
+				detailPrototype._maxHeight = fvalue;
+			}
+
+			if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_MAXWIDTH, out fvalue))
+			{
+				detailPrototype._maxWidth = fvalue;
+			}
+
+			if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_MINHEIGHT, out fvalue))
+			{
+				detailPrototype._minHeight = fvalue;
+			}
+
+			if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_MINWIDTH, out fvalue))
+			{
+				detailPrototype._minWidth = fvalue;
+			}
+
+			if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_NOISESPREAD, out fvalue))
+			{
+				detailPrototype._noiseSpread = fvalue;
+			}
+
+			int iValue = 0;
+			if (HEU_GeneralUtility.GetAttributeIntSingle(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_PROTOTYPE_RENDERMODE, out iValue))
+			{
+				detailPrototype._renderMode = iValue;
+			}
+		}
+
+		/// <summary>
+		/// Apply the given detail layers and properties to the given terrain.
+		/// The detail distance and resolution will be set, along with detail prototypes, and layers.
+		/// </summary>
+		/// <param name="terrain">The Terrain to set the detail properies on</param>
+		/// <param name="terrainData">The TerrainData to apply the layers to</param>
+		/// <param name="detailProperties">Container for detail distance and resolution</param>
+		/// <param name="volumeDetailLayers">The volume layers specifically flagged as detail layers, 
+		/// and containing detail data</param>
+		/// <param name="convertedDetailMaps">The detail maps to set for the detail layers</param>
+		public static void ApplyDetailLayers(Terrain terrain, TerrainData terrainData, HEU_DetailProperties detailProperties,
+			List<HEU_VolumeLayer> volumeDetailLayers, List<int[,]> convertedDetailMaps)
+		{
+#if UNITY_2018_3_OR_NEWER
+
+			if (detailProperties != null)
+			{
+				if (detailProperties._detailDistance > 0)
+				{
+					terrain.detailObjectDistance = detailProperties._detailDistance;
+				}
+
+				if (detailProperties._detailResolution > 0)
+				{
+					int resPerPath = detailProperties._detailResolutionPerPatch > 0 ?
+						detailProperties._detailResolutionPerPatch : terrainData.detailResolutionPerPatch;
+
+					// This should match with half the terrain size
+					terrainData.SetDetailResolution(detailProperties._detailResolution, resPerPath);
+				}
+			}
+
+			if (volumeDetailLayers.Count != convertedDetailMaps.Count)
+			{
+				Debug.LogError("Number of volume detail layers differs from converted detail maps. Unable to apply detail layers.");
+				return;
+			}
+
+			// For now, just override existing detail prototypes and layers
+			// If user asks for appending/overwriting them, then can use a new index attribute to map them
+
+			List<DetailPrototype> detailPrototypes = new List<DetailPrototype>();
+
+			int numDetailLayers = volumeDetailLayers.Count;
+			for(int i = 0; i < numDetailLayers; ++i)
+			{
+				DetailPrototype detailPrototype = new DetailPrototype();
+
+				HEU_DetailPrototype heuDetail = volumeDetailLayers[i]._detailPrototype;
+
+				if (!string.IsNullOrEmpty(heuDetail._prototypePrefab))
+				{
+					detailPrototype.prototype = HEU_AssetDatabase.LoadAssetAtPath(heuDetail._prototypePrefab, typeof(GameObject)) as GameObject;
+					detailPrototype.usePrototypeMesh = true;
+				}
+				else if (!string.IsNullOrEmpty(heuDetail._prototypeTexture))
+				{
+					detailPrototype.prototypeTexture = HEU_MaterialFactory.LoadTexture(heuDetail._prototypeTexture);
+					detailPrototype.usePrototypeMesh = false;
+				}
+
+				detailPrototype.bendFactor = heuDetail._bendFactor;
+				detailPrototype.dryColor = heuDetail._dryColor;
+				detailPrototype.healthyColor = heuDetail._healthyColor;
+				detailPrototype.maxHeight = heuDetail._maxHeight;
+				detailPrototype.maxWidth = heuDetail._maxWidth;
+				detailPrototype.minHeight = heuDetail._minHeight;
+				detailPrototype.minWidth = heuDetail._minWidth;
+				detailPrototype.noiseSpread = heuDetail._noiseSpread;
+
+				detailPrototype.renderMode = (DetailRenderMode)heuDetail._renderMode;
+
+				detailPrototypes.Add(detailPrototype);
+			}
+
+			// Set the DetailPrototypes
+
+			if (detailPrototypes.Count > 0)
+			{
+				terrainData.detailPrototypes = detailPrototypes.ToArray();
+			}
+
+			// Set the DetailLayers
+			for(int i = 0; i < numDetailLayers; ++i)
+			{
+				terrainData.SetDetailLayer(0, 0, i, convertedDetailMaps[i]);
 			}
 #endif
 		}
