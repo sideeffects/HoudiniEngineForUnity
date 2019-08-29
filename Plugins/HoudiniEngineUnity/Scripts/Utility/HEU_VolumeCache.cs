@@ -64,6 +64,17 @@ namespace HoudiniEngineUnity
 		// For reusing on recook.
 		public int _splatPrototypeIndex = -1;
 #endif
+
+		public enum HFLayerType
+		{
+			DEFAULT,
+			HEIGHT,
+			MASK,
+			DETAIL
+		}
+		public HFLayerType _layerType;
+
+		public HEU_DetailPrototype _detailPrototype;
 	}
 
 	/// <summary>
@@ -73,7 +84,7 @@ namespace HoudiniEngineUnity
 	public class HEU_VolumeScatterTrees
 	{
 		// Data for creating TreePrototypes
-		public List<HEU_TreePrototypeInfo>_treePrototypInfos;
+		public List<HEU_TreePrototypeInfo> _treePrototypInfos;
 
 		// Buffers for TreeInstance properties
 		public Color32[] _colors;
@@ -94,6 +105,57 @@ namespace HoudiniEngineUnity
 	{
 		public string _prefabPath;
 		public float _bendfactor;
+	}
+
+	/// <summary>
+	/// Terrain detail properties
+	/// </summary>
+	public class HEU_DetailProperties
+	{
+		public float _detailDistance;
+		public int _detailResolution;
+		public int _detailResolutionPerPatch;
+	}
+
+	/// <summary>
+	/// Wrapper for DetailPrototype.
+	/// https://docs.unity3d.com/ScriptReference/DetailPrototype.html
+	/// Reason for using this instead of DetailPrototype
+	/// directly is to support storing of the asset paths
+	/// instead of assets directly, as well as to mitigate
+	/// Unity changes with DetailPrototype.
+	/// </summary>
+	public class HEU_DetailPrototype
+	{
+		public string _prototypePrefab;
+		public string _prototypeTexture;
+		public float _bendFactor;
+		public Color _dryColor = Color.white;
+		public Color _healthyColor = Color.white;
+		public float _maxHeight;
+		public float _maxWidth;
+		public float _minHeight;
+		public float _minWidth;
+		public float _noiseSpread;
+
+		public int _renderMode;
+
+		public HEU_DetailPrototype()
+		{
+#if UNITY_2018_3_OR_NEWER
+			// Set to default Unity values
+			DetailPrototype proto = new DetailPrototype();
+			_bendFactor = proto.bendFactor;
+			_dryColor = proto.dryColor;
+			_healthyColor = proto.healthyColor;
+			_maxHeight = proto.maxHeight;
+			_maxWidth = proto.maxWidth;
+			_minHeight = proto.minHeight;
+			_minWidth = proto.minWidth;
+			_noiseSpread = proto.noiseSpread;
+			_renderMode = (int)proto.renderMode;
+#endif
+		}
 	}
 
 	/// <summary>
@@ -142,6 +204,9 @@ namespace HoudiniEngineUnity
 
 		[SerializeField]
 		private HEU_VolumeScatterTrees _scatterTrees;
+
+		[SerializeField]
+		private HEU_DetailProperties _detailProperties;
 
 
 		//	LOGIC -----------------------------------------------------------------------------------------------------
@@ -281,12 +346,14 @@ namespace HoudiniEngineUnity
 			_tileIndex = tileIndex;
 			_terrainData = null;
 			_scatterTrees = null;
+			_detailProperties = null;
 		}
 
 		public void ResetParameters()
 		{
 			_terrainData = null;
 			_scatterTrees = null;
+			_detailProperties = null;
 
 			HEU_VolumeLayer defaultLayer = new HEU_VolumeLayer();
 
@@ -423,8 +490,7 @@ namespace HoudiniEngineUnity
 
 			//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
 
-			bool bHeightPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT);
-			bool bMaskPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK);
+			HEU_VolumeLayer.HFLayerType layerType = GetHeightfieldLayerType(session, geoNode.GeoID, part.PartID, volumeName);
 
 			HEU_VolumeLayer layer = GetLayer(volumeName);
 			if (layer == null)
@@ -432,11 +498,11 @@ namespace HoudiniEngineUnity
 				layer = new HEU_VolumeLayer();
 				layer._layerName = volumeName;
 
-				if (bHeightPart)
+				if (layerType == HEU_VolumeLayer.HFLayerType.HEIGHT)
 				{
 					_layers.Insert(0, layer);
 				}
-				else if(!bMaskPart)
+				else if(layerType != HEU_VolumeLayer.HFLayerType.MASK)
 				{
 					_layers.Add(layer);
 				}
@@ -445,13 +511,14 @@ namespace HoudiniEngineUnity
 			layer._part = part;
 			layer._xLength = volumeInfo.xLength;
 			layer._yLength = volumeInfo.yLength;
+			layer._layerType = layerType;
 
-			if (!bMaskPart)
+			if (layerType != HEU_VolumeLayer.HFLayerType.MASK)
 			{
 				GetPartLayerAttributes(session, geoNode.GeoID, part.PartID, layer);
 			}
 
-			if (!bHeightPart)
+			if (layerType != HEU_VolumeLayer.HFLayerType.HEIGHT)
 			{
 				// Non-height parts don't have any outputs as they are simply layers carrying info
 				part.DestroyAllData();
@@ -459,7 +526,9 @@ namespace HoudiniEngineUnity
 			else
 			{
 				// Height part
+				// Might contain terrain properties via attributes (i.e. not layer specific, but for entire terrain)
 
+				// Scatter Tree Prototypes
 				List<HEU_TreePrototypeInfo> treePrototypeInfos = HEU_TerrainUtility.GetTreePrototypeInfosFromPart(session, geoNode.GeoID, part.PartID);
 				if (treePrototypeInfos != null)
 				{
@@ -469,19 +538,77 @@ namespace HoudiniEngineUnity
 					}
 					_scatterTrees._treePrototypInfos = treePrototypeInfos;
 				}
+
+				// Detail distance
+				HAPI_AttributeInfo detailDistanceAttrInfo = new HAPI_AttributeInfo();
+				int[] detailDistances = new int[0];
+				HEU_GeneralUtility.GetAttribute(session, geoNode.GeoID, part.PartID, 
+					HEU_Defines.HEIGHTFIELD_DETAIL_DISTANCE, ref detailDistanceAttrInfo, ref detailDistances, 
+					session.GetAttributeIntData);
+
+				// Scatter Detail Resolution Per Patch (note that Detail Resolution comes from HF layer size)
+				HAPI_AttributeInfo resolutionPatchAttrInfo = new HAPI_AttributeInfo();
+				int[] resolutionPatches = new int[0];
+				HEU_GeneralUtility.GetAttribute(session, geoNode.GeoID, part.PartID, 
+					HEU_Defines.HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH, ref resolutionPatchAttrInfo, 
+					ref resolutionPatches, session.GetAttributeIntData);
+
+
+				if (_detailProperties == null)
+				{
+					_detailProperties = new HEU_DetailProperties();
+				}
+
+				// Unity only supports 1 set of detail resolution properties per terrain
+				int arraySize = 1;
+
+				if (detailDistanceAttrInfo.exists && detailDistances.Length >= arraySize)
+				{
+					_detailProperties._detailDistance = detailDistances[0];
+				}
+
+				if (resolutionPatchAttrInfo.exists && resolutionPatches.Length >= arraySize)
+				{
+					_detailProperties._detailResolutionPerPatch = resolutionPatches[0];
+				}
 			}
 
 			if (!_updatedLayers.Contains(layer))
 			{
-				if (bHeightPart)
+				if (layerType == HEU_VolumeLayer.HFLayerType.HEIGHT)
 				{
 					_updatedLayers.Insert(0, layer);
 				}
-				else if (!bMaskPart)
+				else if (layerType != HEU_VolumeLayer.HFLayerType.MASK)
 				{
 					_updatedLayers.Add(layer);
 				}
 			}
+		}
+
+		public HEU_VolumeLayer.HFLayerType GetHeightfieldLayerType(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string volumeName)
+		{
+			HEU_VolumeLayer.HFLayerType layerType = HEU_VolumeLayer.HFLayerType.DEFAULT;
+
+			if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT))
+			{
+				layerType = HEU_VolumeLayer.HFLayerType.HEIGHT;
+			}
+			else if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK))
+			{
+				layerType = HEU_VolumeLayer.HFLayerType.MASK;
+			}
+			else
+			{
+				HAPI_AttributeInfo layerTypeAttr = new HAPI_AttributeInfo();
+				string[] layerTypeStr = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.HEIGHTFIELD_LAYER_ATTR_TYPE,
+					ref layerTypeAttr);
+				if (layerTypeStr != null && layerTypeStr.Length >= 0 && layerTypeStr[0].Equals(HEU_Defines.HEIGHTFIELD_LAYER_TYPE_DETAIL))
+				{
+					layerType = HEU_VolumeLayer.HFLayerType.DETAIL;
+				}
+			}
+			return layerType;
 		}
 
 		public void GenerateTerrainWithAlphamaps(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, bool bRebuild)
@@ -554,9 +681,12 @@ namespace HoudiniEngineUnity
 				}
 			}
 
+			Terrain terrain = null;
+
 			// Generate the terrain and terrain data from the height layer. This applies height values.
 			bResult = HEU_TerrainUtility.GenerateTerrainFromVolume(session, ref heightVolumeInfo, heightLayer._part.ParentGeoNode.GeoID,
-				heightLayer._part.PartID, heightLayer._part.OutputGameObject, ref terrainData, out terrainOffsetPosition);
+				heightLayer._part.PartID, heightLayer._part.OutputGameObject, ref terrainData, out terrainOffsetPosition,
+				ref terrain);
 			if (!bResult || terrainData == null)
 			{
 				return;
@@ -575,28 +705,53 @@ namespace HoudiniEngineUnity
 			// Now process TerrainLayers and alpha maps
 
 			// First, preprocess all layers to get heightfield arrays, converted to proper size
-			List<float[]> heightFields = new List<float[]>();
+			List<float[]> normalizedHeightfields = new List<float[]>();
 			// Corresponding list of HF volume layers to process as splatmaps
-			List<HEU_VolumeLayer> volumeLayersToProcess = new List<HEU_VolumeLayer>();
+			List<HEU_VolumeLayer> terrainLayersToProcess = new List<HEU_VolumeLayer>();
+
+			List<int[,]> convertedDetailMaps = new List<int[,]>();
+			List<HEU_VolumeLayer> detailLayersToProcess = new List<HEU_VolumeLayer>();
 
 			int numLayers = _layers.Count;
 			float minHeight = 0;
 			float maxHeight = 0;
-			float  heightRange = 0;
+			float heightRange = 0;
 			// This skips the height layer, and processes all other layers.
 			// Note that mask shouldn't be part of _layers at this point.
+			// The layers are normalized and split into detail and terrain layers.
 			for(int i = 1; i < numLayers; ++i)
 			{
-				float[] normalizedHF = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(session, _ownerNode.GeoID, _layers[i]._part.PartID, 
-					_layers[i]._xLength, _layers[i]._yLength, ref minHeight, ref maxHeight, ref heightRange);
-				if (normalizedHF != null && normalizedHF.Length > 0)
+				if (_layers[i]._layerType == HEU_VolumeLayer.HFLayerType.DETAIL)
 				{
-					heightFields.Add(normalizedHF);
-					volumeLayersToProcess.Add(_layers[i]);
+					if (_detailProperties == null)
+					{
+						_detailProperties = new HEU_DetailProperties();
+					}
+
+					// Convert to detail map, and add to list to set later
+					int[,] normalizedDetail = HEU_TerrainUtility.GetDetailMapFromPart(
+						session, _ownerNode.GeoID, _layers[i]._part.PartID, out _detailProperties._detailResolution);
+					if (normalizedDetail != null && normalizedDetail.Length > 0)
+					{
+						convertedDetailMaps.Add(normalizedDetail);
+						detailLayersToProcess.Add(_layers[i]);
+					}
+				}
+				else
+				{
+					// Convert to normalized heightfield
+					float[] normalizedHF = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(
+						session, _ownerNode.GeoID, _layers[i]._part.PartID, _layers[i]._xLength, 
+						_layers[i]._yLength, ref minHeight, ref maxHeight, ref heightRange);
+					if (normalizedHF != null && normalizedHF.Length > 0)
+					{
+						normalizedHeightfields.Add(normalizedHF);
+						terrainLayersToProcess.Add(_layers[i]);
+					}
 				}
 			}
 
-			int numVolumeLayers = volumeLayersToProcess.Count;
+			int numTerrainLayersToProcess = terrainLayersToProcess.Count;
 
 			HAPI_NodeId geoID;
 			HAPI_PartId partID;
@@ -627,12 +782,12 @@ namespace HoudiniEngineUnity
 			HEU_VolumeLayer layer = null;
 			TerrainLayer terrainLayer = null;
 			bool bSetTerrainLayerProperties = true;
-			for (int m = 0; m < numVolumeLayers; ++m)
+			for (int m = 0; m < numTerrainLayersToProcess; ++m)
 			{
 				bNewTerrainLayer = false;
 				bSetTerrainLayerProperties = true;
 
-				layer = volumeLayersToProcess[m];
+				layer = terrainLayersToProcess[m];
 
 				geoID = _ownerNode.GeoID;
 				partID = layer._part.PartID;
@@ -790,11 +945,11 @@ namespace HoudiniEngineUnity
 			HEU_VolumeLayer layer = null;
 			SplatPrototype splatPrototype = null;
 
-			for (int m = 0; m < numVolumeLayers; ++m)
+			for (int m = 0; m < numTerrainLayersToProcess; ++m)
 			{
 				bNewSplat = false;
 
-				layer = volumeLayersToProcess[m];
+				layer = terrainLayersToProcess[m];
 
 				geoID = _ownerNode.GeoID;
 				partID = layer._part.PartID;
@@ -834,30 +989,31 @@ namespace HoudiniEngineUnity
 			// Set alpha maps by combining with existing alpha maps, and appending new heightfields
 
 			float[,,] alphamap = null;
-			if (numTotalAlphaMaps > 0 && volumeLayersToProcess.Count > 0)
+			if (numTotalAlphaMaps > 0 && terrainLayersToProcess.Count > 0)
 			{
 				// Convert the heightfields into alpha maps with layer strengths
-				float[] strengths = new float[volumeLayersToProcess.Count];
-				for (int m = 0; m < volumeLayersToProcess.Count; ++m)
+				float[] strengths = new float[terrainLayersToProcess.Count];
+				for (int m = 0; m < terrainLayersToProcess.Count; ++m)
 				{
-					strengths[m] = volumeLayersToProcess[m]._strength;
+					strengths[m] = terrainLayersToProcess[m]._strength;
 				}
 
 				alphamap = HEU_TerrainUtility.AppendConvertedHeightFieldToAlphaMap(
-					volumeLayersToProcess[0]._xLength, volumeLayersToProcess[0]._yLength, existingAlphaMaps,
-					heightFields, strengths, alphaMapIndices);
+					terrainLayersToProcess[0]._xLength, terrainLayersToProcess[0]._yLength, existingAlphaMaps,
+					normalizedHeightfields, strengths, alphaMapIndices);
 
 				// Update the alphamap resolution to the actual size of the first 
 				// heightfield layer used for the alphamaps.
 				// Setting the size before setting the alphamas applies proper scaling.
-				int alphamapResolution = volumeLayersToProcess[0]._xLength;
+				int alphamapResolution = terrainLayersToProcess[0]._xLength;
 				terrainData.alphamapResolution = alphamapResolution;
 
 				terrainData.SetAlphamaps(0, 0, alphamap);
 			}
 
-			// Tree instances for scattering
-			HEU_TerrainUtility.ApplyScatter(terrainData, _scatterTrees);
+			// Scattering - trees and details
+			HEU_TerrainUtility.ApplyScatterTrees(terrainData, _scatterTrees);
+			HEU_TerrainUtility.ApplyDetailLayers(terrain, terrainData, _detailProperties, detailLayersToProcess, convertedDetailMaps);
 
 			// If the layers were writen out, this saves the asset DB. Otherwise user has to save it themselves.
 			// Not 100% sure this is needed, but without this the editor doesn't know the terrain asset has been updated
@@ -1002,9 +1158,15 @@ namespace HoudiniEngineUnity
 		}
 #endif
 
-		public void PopulateScatterInfo(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount)
+		public void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount)
 		{
-			HEU_TerrainUtility.PopulateScatterInfo(session, geoID, partID, pointCount, ref _scatterTrees);
+			HEU_TerrainUtility.PopulateScatterTrees(session, geoID, partID, pointCount, ref _scatterTrees);
+		}
+
+		public void PopulateDetailPrototype(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
+			HEU_VolumeLayer layer)
+		{
+			HEU_TerrainUtility.PopulateDetailPrototype(session, geoID, partID, ref layer._detailPrototype);
 		}
 
 		public void PopulatePreset(HEU_VolumeCachePreset cachePreset)
@@ -1074,6 +1236,19 @@ namespace HoudiniEngineUnity
 
 			destCache._terrainData = Object.Instantiate(_terrainData);
 
+			if (_detailProperties != null)
+			{
+				if (destCache._detailProperties == null)
+				{
+					destCache._detailProperties = new HEU_DetailProperties();
+				}
+				CopyDetailProperties(_detailProperties, destCache._detailProperties);
+			}
+			else
+			{
+				destCache._detailProperties = null;
+			}
+
 			foreach (HEU_VolumeLayer srcLayer in _layers)
 			{
 				HEU_VolumeLayer destLayer = destCache.GetLayer(srcLayer._layerName);
@@ -1084,11 +1259,50 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public static void CopyDetailProperties(HEU_DetailProperties srcProp, 
+			HEU_DetailProperties destProp)
+		{
+			destProp._detailDistance = srcProp._detailDistance;
+			destProp._detailResolution = srcProp._detailResolution;
+			destProp._detailResolutionPerPatch = srcProp._detailResolutionPerPatch;
+		}
+
 		public static void CopyLayer(HEU_VolumeLayer srcLayer, HEU_VolumeLayer destLayer)
 		{
 			destLayer._strength = srcLayer._strength;
 			destLayer._uiExpanded = srcLayer._uiExpanded;
 			destLayer._tile = srcLayer._tile;
+
+			destLayer._xLength = srcLayer._xLength;
+			destLayer._yLength = srcLayer._yLength;
+
+			destLayer._layerType = srcLayer._layerType;
+
+			if (srcLayer._detailPrototype != null)
+			{
+				if (destLayer._detailPrototype == null)
+				{
+					destLayer._detailPrototype = new HEU_DetailPrototype();
+				}
+				CopyPrototype(srcLayer._detailPrototype, destLayer._detailPrototype);
+			}
+			else
+			{
+				destLayer._detailPrototype = null;
+			}
+		}
+
+		public static void CopyPrototype(HEU_DetailPrototype srcProto, HEU_DetailPrototype destProto)
+		{
+			destProto._bendFactor = srcProto._bendFactor;
+			destProto._dryColor = srcProto._dryColor;
+			destProto._healthyColor = srcProto._healthyColor;
+			destProto._maxHeight = srcProto._maxHeight;
+			destProto._maxWidth = srcProto._maxWidth;
+			destProto._minHeight = srcProto._minHeight;
+			destProto._minWidth = srcProto._minWidth;
+			destProto._noiseSpread = srcProto._noiseSpread;
+			destProto._renderMode = srcProto._renderMode;
 		}
 
 		public static Texture2D LoadDefaultSplatTexture()

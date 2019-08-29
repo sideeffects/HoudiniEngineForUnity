@@ -591,7 +591,7 @@ namespace HoudiniEngineUnity
 					continue;
 				}
 
-				HEU_TerrainUtility.PopulateScatterInfo(session, nodeID, scatterInstancerParts[i].id, scatterInstancerParts[i].pointCount, ref volumeBuffer._scatterTrees);
+				HEU_TerrainUtility.PopulateScatterTrees(session, nodeID, scatterInstancerParts[i].id, scatterInstancerParts[i].pointCount, ref volumeBuffer._scatterTrees);
 			}
 
 			return true;

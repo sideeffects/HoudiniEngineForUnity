@@ -947,7 +947,34 @@ namespace HoudiniEngineUnity
 			int numParts = _parts.Count;
 			for (int i = 0; i < numParts; ++i)
 			{
-				if (_parts[i].IsAttribInstancer())
+				// Find the terrain tile (use primitive attr). Assume 0 tile if not set (i.e. not split into tiles)
+				int terrainTile = 0;
+				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
+				int[] tileAttrData = new int[0];
+				if (HEU_GeneralUtility.GetAttribute(session, GeoID, _parts[i].PartID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
+				{
+					if (tileAttrData != null && tileAttrData.Length > 0)
+					{
+						terrainTile = tileAttrData[0];
+					}
+				}
+
+				// Find the volumecache associated with this part using the terrain tile index
+				HEU_VolumeCache volumeCache = GetVolumeCacheByTileIndex(terrainTile);
+				if (volumeCache == null)
+				{
+					continue;
+				}
+
+				HEU_VolumeLayer volumeLayer = volumeCache.GetLayer(_parts[i].GetVolumeLayerName());
+				if (volumeLayer != null && volumeLayer._layerType == HEU_VolumeLayer.HFLayerType.DETAIL)
+				{
+					// Clear out outputs since it might have been created when the part was created.
+					_parts[i].DestroyAllData();
+
+					volumeCache.PopulateDetailPrototype(session, GeoID, _parts[i].PartID, volumeLayer);
+				}
+				else if (_parts[i].IsAttribInstancer())
 				{
 					HAPI_AttributeInfo treeInstAttrInfo = new HAPI_AttributeInfo();
 					if (HEU_GeneralUtility.GetAttributeInfo(session, GeoID, _parts[i].PartID, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX, ref treeInstAttrInfo))
@@ -960,27 +987,8 @@ namespace HoudiniEngineUnity
 							// Mark the instancers as having been created so that the object instancer step skips this.
 							_parts[i].ObjectInstancesBeenGenerated = true;
 
-							// Find the terrain tile (use primitive attr). Assume 0 tile if not set (i.e. not split into tiles)
-							int terrainTile = 0;
-							HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
-							int[] tileAttrData = new int[0];
-							if (HEU_GeneralUtility.GetAttribute(session, GeoID, _parts[i].PartID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
-							{
-								if (tileAttrData != null && tileAttrData.Length > 0)
-								{
-									terrainTile = tileAttrData[0];
-								}
-							}
-
-							// Find the volumecache associated with this part using the terrain tile index
-							HEU_VolumeCache volumeCache = GetVolumeCacheByTileIndex(terrainTile);
-							if (volumeCache == null)
-							{
-								continue;
-							}
-
-							// Now populate scatter info based on attributes on this part
-							volumeCache.PopulateScatterInfo(session, GeoID, _parts[i].PartID, treeInstAttrInfo.count);
+							// Now populate scatter trees based on attributes on this part
+							volumeCache.PopulateScatterTrees(session, GeoID, _parts[i].PartID, treeInstAttrInfo.count);
 						}
 					}
 				}

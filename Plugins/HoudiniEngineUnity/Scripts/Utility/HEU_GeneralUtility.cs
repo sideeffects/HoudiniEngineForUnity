@@ -1271,6 +1271,107 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Helper to get a single float value for the Attribute with given name, or 0 if none found.
+		/// Returns true if successful, otherwise false.
+		/// </summary>
+		/// <param name="session">Houdini Engine session to query</param>
+		/// <param name="geoID">The geometry ID in Houdini</param>
+		/// <param name="partID">The part ID in Houdini</param>
+		/// <param name="attrName">Name of the attribute to query</param>
+		/// <param name="value">Float attribute value</param>
+		/// <returns>True if successfully found and acquired value, otherwise false</returns>
+		public static bool GetAttributeFloatSingle(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, 
+			string attrName, out float value)
+		{
+			value = 0;
+			bool bResult = false;
+
+			if (!string.IsNullOrEmpty(attrName))
+			{
+				HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+				float[] values = new float[0];
+				HEU_GeneralUtility.GetAttribute(session, geoID, partID, attrName, ref attrInfo,
+					ref values, session.GetAttributeFloatData);
+				if (attrInfo.exists && values.Length > 0)
+				{
+					value = values[0];
+					bResult = true;
+				}
+			}
+			return bResult;
+		}
+
+		/// <summary>
+		/// Helper to get a single int value for the Attribute with given name, or 0 if none found.
+		/// Returns true if successful, otherwise false.
+		/// </summary>
+		/// <param name="session">Houdini Engine session to query</param>
+		/// <param name="geoID">The geometry ID in Houdini</param>
+		/// <param name="partID">The part ID in Houdini</param>
+		/// <param name="attrName">Name of the attribute to query</param>
+		/// <param name="value">Int attribute value</param>
+		/// <returns>True if successfully found and acquired value, otherwise false</returns>
+		public static bool GetAttributeIntSingle(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
+			string attrName, out int value)
+		{
+			value = 0;
+			bool bResult = false;
+
+			if (!string.IsNullOrEmpty(attrName))
+			{
+				HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+				int[] values = new int[0];
+				HEU_GeneralUtility.GetAttribute(session, geoID, partID, attrName, ref attrInfo,
+					ref values, session.GetAttributeIntData);
+				if (attrInfo.exists && values.Length > 0)
+				{
+					value = values[0];
+					bResult = true;
+				}
+			}
+			return bResult;
+		}
+
+		/// <summary>
+		/// Helper to get a single color value for the Attribute with given name, or 0 if none found.
+		/// Returns true if successful, otherwise false.
+		/// </summary>
+		/// <param name="session">Houdini Engine session to query</param>
+		/// <param name="geoID">The geometry ID in Houdini</param>
+		/// <param name="partID">The part ID in Houdini</param>
+		/// <param name="attrName">Name of the attribute to query</param>
+		/// <param name="value">Color attribute value</param>
+		/// <returns>True if successfully found and acquired value, otherwise false</returns>
+		public static bool GetAttributeColorSingle(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
+			string attrName, ref Color value)
+		{
+			bool bResult = false;
+
+			if (!string.IsNullOrEmpty(attrName))
+			{
+				HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+				float[] values = new float[0];
+				HEU_GeneralUtility.GetAttribute(session, geoID, partID, attrName, ref attrInfo,
+					ref values, session.GetAttributeFloatData);
+				if (attrInfo.exists && values.Length >= 3)
+				{
+					value = new Color();
+					value.r = Mathf.Clamp01(values[0]);
+					value.g = Mathf.Clamp01(values[1]);
+					value.b = Mathf.Clamp01(values[2]);
+
+					if (values.Length >= 4)
+					{
+						value.a = Mathf.Clamp01(values[3]);
+					}
+
+					bResult = true;
+				}
+			}
+			return bResult;
+		}
+
+		/// <summary>
 		/// Returns true if specified geometry and part has the given atttribute name.
 		/// </summary>
 		/// <param name="session">Houdini session to check</param>
