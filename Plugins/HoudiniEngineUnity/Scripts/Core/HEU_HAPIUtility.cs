@@ -656,7 +656,7 @@ namespace HoudiniEngineUnity
 		public static GameObject LoadGeoWithNewGeoSync(HEU_SessionBase session = null)
 		{
 #if UNITY_EDITOR
-			string filePattern = "*.bgeo;*.bgeo.sc";
+			string filePattern = "bgeo,bgeo.sc";
 			string filePath = EditorUtility.OpenFilePanel("Select Geo File To Load", "", filePattern);
 			if (string.IsNullOrEmpty(filePath))
 			{
