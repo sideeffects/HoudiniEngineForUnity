@@ -267,7 +267,7 @@ namespace HoudiniEngineUnity
 
 					// Set layers
 					Texture2D defaultTexture = HEU_VolumeCache.LoadDefaultSplatTexture();
-					int numLayers = terrainBuffers[t]._layers.Count;
+					int numLayers = terrainBuffers[t]._splatLayers.Count;
 
 #if UNITY_2018_3_OR_NEWER
 
@@ -290,7 +290,7 @@ namespace HoudiniEngineUnity
 
 							bool bSetTerrainLayerProperties = true;
 
-							HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._layers[m];
+							HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._splatLayers[m];
 
 							// Look up TerrainLayer file via attribute if user has set it
 							if (!string.IsNullOrEmpty(layer._layerPath))
@@ -395,7 +395,7 @@ namespace HoudiniEngineUnity
 					{
 						splatPrototypes[m] = new SplatPrototype();
 
-						HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._layers[m];
+						HEU_LoadBufferVolumeLayer layer = terrainBuffers[t]._splatLayers[m];
 
 						Texture2D diffuseTexture = null;
 						if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
@@ -435,7 +435,7 @@ namespace HoudiniEngineUnity
 						int alphamapResolution = terrainBuffers[t]._heightMapWidth;
 						if (numLayers > 1)
 						{
-							alphamapResolution = terrainBuffers[t]._layers[1]._heightMapWidth;
+							alphamapResolution = terrainBuffers[t]._splatLayers[1]._heightMapWidth;
 						}
 						terrainData.alphamapResolution = alphamapResolution;
 
@@ -446,6 +446,13 @@ namespace HoudiniEngineUnity
 					if (terrainBuffers[t]._scatterTrees != null)
 					{
 						HEU_TerrainUtility.ApplyScatterTrees(terrainData, terrainBuffers[t]._scatterTrees);
+					}
+
+					// Set the detail layers
+					if (terrainBuffers[t]._detailPrototypes != null)
+					{
+						HEU_TerrainUtility.ApplyDetailLayers(terrain, terrainData, terrainBuffers[t]._detailProperties,
+							terrainBuffers[t]._detailPrototypes, terrainBuffers[t]._detailMaps);
 					}
 
 					terrainBuffers[t]._generatedOutput = generatedOutput;

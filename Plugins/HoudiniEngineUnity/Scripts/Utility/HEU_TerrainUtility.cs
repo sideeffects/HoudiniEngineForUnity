@@ -908,11 +908,10 @@ namespace HoudiniEngineUnity
 		/// <param name="terrain">The Terrain to set the detail properies on</param>
 		/// <param name="terrainData">The TerrainData to apply the layers to</param>
 		/// <param name="detailProperties">Container for detail distance and resolution</param>
-		/// <param name="volumeDetailLayers">The volume layers specifically flagged as detail layers, 
-		/// and containing detail data</param>
+		/// <param name="heuDetailPrototypes">Data for creating DetailPrototypes</param>
 		/// <param name="convertedDetailMaps">The detail maps to set for the detail layers</param>
 		public static void ApplyDetailLayers(Terrain terrain, TerrainData terrainData, HEU_DetailProperties detailProperties,
-			List<HEU_VolumeLayer> volumeDetailLayers, List<int[,]> convertedDetailMaps)
+			List<HEU_DetailPrototype> heuDetailPrototypes, List<int[,]> convertedDetailMaps)
 		{
 #if UNITY_2018_3_OR_NEWER
 
@@ -933,7 +932,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 
-			if (volumeDetailLayers.Count != convertedDetailMaps.Count)
+			if (heuDetailPrototypes.Count != convertedDetailMaps.Count)
 			{
 				Debug.LogError("Number of volume detail layers differs from converted detail maps. Unable to apply detail layers.");
 				return;
@@ -944,12 +943,12 @@ namespace HoudiniEngineUnity
 
 			List<DetailPrototype> detailPrototypes = new List<DetailPrototype>();
 
-			int numDetailLayers = volumeDetailLayers.Count;
+			int numDetailLayers = heuDetailPrototypes.Count;
 			for(int i = 0; i < numDetailLayers; ++i)
 			{
 				DetailPrototype detailPrototype = new DetailPrototype();
 
-				HEU_DetailPrototype heuDetail = volumeDetailLayers[i]._detailPrototype;
+				HEU_DetailPrototype heuDetail = heuDetailPrototypes[i];
 
 				if (!string.IsNullOrEmpty(heuDetail._prototypePrefab))
 				{
@@ -1050,6 +1049,39 @@ namespace HoudiniEngineUnity
 
             return false;
         }
-    }
+
+		/// <summary>
+		/// Returns the heightfield layer type (HFLayerType) for the specified part.
+		/// </summary>
+		/// <param name="session">Current Houdini Engine session</param>
+		/// <param name="geoID">Heightfield object</param>
+		/// <param name="partID">Heightfield layer</param>
+		/// <param name="volumeName">Heightfield name</param>
+		/// <returns>The HFLayerType of the specified part, or HFLayerType.DEFAULT if not valid</returns>
+		public static HFLayerType GetHeightfieldLayerType(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string volumeName)
+		{
+			HFLayerType layerType = HFLayerType.DEFAULT;
+
+			if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT))
+			{
+				layerType = HFLayerType.HEIGHT;
+			}
+			else if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK))
+			{
+				layerType = HFLayerType.MASK;
+			}
+			else
+			{
+				HAPI_AttributeInfo layerTypeAttr = new HAPI_AttributeInfo();
+				string[] layerTypeStr = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.HEIGHTFIELD_LAYER_ATTR_TYPE,
+					ref layerTypeAttr);
+				if (layerTypeStr != null && layerTypeStr.Length >= 0 && layerTypeStr[0].Equals(HEU_Defines.HEIGHTFIELD_LAYER_TYPE_DETAIL))
+				{
+					layerType = HFLayerType.DETAIL;
+				}
+			}
+			return layerType;
+		}
+	}
 
 }   // HoudiniEngineUnity

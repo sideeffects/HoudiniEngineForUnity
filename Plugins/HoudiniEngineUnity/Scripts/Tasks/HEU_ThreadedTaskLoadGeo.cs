@@ -382,6 +382,7 @@ namespace HoudiniEngineUnity
 			}
 
 			volumeBuffers = new List<HEU_LoadBufferVolume>();
+			int detailResolution = 0;
 
 			int numParts = volumeParts.Count;
 			for (int i = 0; i < numParts; ++i)
@@ -401,13 +402,13 @@ namespace HoudiniEngineUnity
 				}
 
 				string volumeName = HEU_SessionManager.GetString(volumeInfo.nameSH, session);
-				bool bHeightPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT);
-				bool bMaskPart = volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK);
+
+				HFLayerType layerType = HEU_TerrainUtility.GetHeightfieldLayerType(session, nodeID, volumeParts[i].id, volumeName);
 
 				//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
 
 				// Ignoring mask layer because it is Houdini-specific (same behaviour as regular HDA terrain generation)
-				if (bMaskPart)
+				if (layerType == HFLayerType.MASK)
 				{
 					continue;
 				}
@@ -417,6 +418,7 @@ namespace HoudiniEngineUnity
 				layer._partID = volumeParts[i].id;
 				layer._heightMapWidth = volumeInfo.xLength;
 				layer._heightMapHeight = volumeInfo.yLength;
+				layer._layerType = layerType;
 
 				Matrix4x4 volumeTransformMatrix = HEU_HAPIUtility.GetMatrixFromHAPITransform(ref volumeInfo.transform, false);
 				layer._position = HEU_HAPIUtility.GetPosition(ref volumeTransformMatrix);
@@ -439,25 +441,30 @@ namespace HoudiniEngineUnity
 				layer._layerPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeParts[i].id,
 					HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 
-				layer._hasLayerAttributes = HEU_TerrainUtility.VolumeLayerHasAttributes(session, nodeID, volumeParts[i].id);
-
-				if (layer._hasLayerAttributes)
+				if (layerType != HFLayerType.DETAIL)
 				{
-					LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR, ref layer._diffuseTexturePath);
-					LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR, ref layer._maskTexturePath);
-					LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR, ref layer._normalTexturePath);
+					layer._hasLayerAttributes = HEU_TerrainUtility.VolumeLayerHasAttributes(session, nodeID, volumeParts[i].id);
 
-					LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_NORMAL_SCALE_ATTR, ref layer._normalScale);
-					LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_METALLIC_ATTR, ref layer._metallic);
-					LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SMOOTHNESS_ATTR, ref layer._smoothness);
+					if (layer._hasLayerAttributes)
+					{
+						LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_DIFFUSE_ATTR, ref layer._diffuseTexturePath);
+						LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_MASK_ATTR, ref layer._maskTexturePath);
+						LoadStringFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TEXTURE_NORMAL_ATTR, ref layer._normalTexturePath);
 
-					LoadLayerColorFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SPECULAR_ATTR, ref layer._specularColor);
-					LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR, ref layer._tileOffset);
-					LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
+						LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_NORMAL_SCALE_ATTR, ref layer._normalScale);
+						LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_METALLIC_ATTR, ref layer._metallic);
+						LoadFloatFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SMOOTHNESS_ATTR, ref layer._smoothness);
+
+						LoadLayerColorFromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_SPECULAR_ATTR, ref layer._specularColor);
+						LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_OFFSET_ATTR, ref layer._tileOffset);
+						LoadLayerVector2FromAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TILE_SIZE_ATTR, ref layer._tileSize);
+					}
+
+					// Get the height values from Houdini along with the min and max height range.
+					layer._normalizedHeights = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(
+						_session, nodeID, volumeParts[i].id, volumeInfo.xLength, volumeInfo.yLength,
+						ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
 				}
-
-				// Get the height values from Houdini along with the min and max height range.
-				layer._normalizedHeights = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(_session, nodeID, volumeParts[i].id, volumeInfo.xLength, volumeInfo.yLength, ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
 
 				// Get the tile index, if it exists, for this part
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
@@ -492,10 +499,10 @@ namespace HoudiniEngineUnity
 						volumeBuffers.Add(volumeBuffer);
 					}
 
-					if (bHeightPart)
+					if (layerType == HFLayerType.HEIGHT)
 					{
 						// Height layer always first layer
-						volumeBuffer._layers.Insert(0, layer);
+						volumeBuffer._splatLayers.Insert(0, layer);
 
 						volumeBuffer._heightMapWidth = layer._heightMapWidth;
 						volumeBuffer._heightMapHeight = layer._heightMapHeight;
@@ -518,10 +525,60 @@ namespace HoudiniEngineUnity
 							volumeBuffer._scatterTrees._treePrototypInfos = treePrototypeInfos;
 						}
 
+						// Detail distance
+						HAPI_AttributeInfo detailDistanceAttrInfo = new HAPI_AttributeInfo();
+						int[] detailDistances = new int[0];
+						HEU_GeneralUtility.GetAttribute(session, nodeID, volumeBuffer._id,
+							HEU_Defines.HEIGHTFIELD_DETAIL_DISTANCE, ref detailDistanceAttrInfo, ref detailDistances,
+							session.GetAttributeIntData);
+
+						// Scatter Detail Resolution Per Patch (note that Detail Resolution comes from HF layer size)
+						HAPI_AttributeInfo resolutionPatchAttrInfo = new HAPI_AttributeInfo();
+						int[] resolutionPatches = new int[0];
+						HEU_GeneralUtility.GetAttribute(session, nodeID, volumeBuffer._id,
+							HEU_Defines.HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH, ref resolutionPatchAttrInfo,
+							ref resolutionPatches, session.GetAttributeIntData);
+
+						if (volumeBuffer._detailProperties == null)
+						{
+							volumeBuffer._detailProperties = new HEU_DetailProperties();
+						}
+
+						// Unity only supports 1 set of detail resolution properties per terrain
+						int arraySize = 1;
+
+						if (detailDistanceAttrInfo.exists && detailDistances.Length >= arraySize)
+						{
+							volumeBuffer._detailProperties._detailDistance = detailDistances[0];
+						}
+
+						if (resolutionPatchAttrInfo.exists && resolutionPatches.Length >= arraySize)
+						{
+							volumeBuffer._detailProperties._detailResolutionPerPatch = resolutionPatches[0];
+						}
+					}
+					else if(layer._layerType == HFLayerType.DETAIL)
+					{
+						// Get detail prototype
+						HEU_DetailPrototype detailPrototype = null;
+						HEU_TerrainUtility.PopulateDetailPrototype(session, nodeID, volumeParts[i].id, ref detailPrototype);
+
+						int[,] detailMap = HEU_TerrainUtility.GetDetailMapFromPart(session, nodeID,
+							volumeParts[i].id, out detailResolution);
+
+						volumeBuffer._detailPrototypes.Add(detailPrototype);
+						volumeBuffer._detailMaps.Add(detailMap);
+
+						// Set the detail resolution which is formed from the detail layer
+						if (volumeBuffer._detailProperties == null)
+						{
+							volumeBuffer._detailProperties = new HEU_DetailProperties();
+						}
+						volumeBuffer._detailProperties._detailResolution = detailResolution;
 					}
 					else
 					{
-						volumeBuffer._layers.Add(layer);
+						volumeBuffer._splatLayers.Add(layer);
 					}
 				}
 
@@ -531,7 +588,7 @@ namespace HoudiniEngineUnity
 			// Each volume buffer is a self contained terrain tile
 			foreach(HEU_LoadBufferVolume volumeBuffer in volumeBuffers)
 			{
-				List<HEU_LoadBufferVolumeLayer> layers = volumeBuffer._layers;
+				List<HEU_LoadBufferVolumeLayer> layers = volumeBuffer._splatLayers;
 				//Debug.LogFormat("Heightfield: tile={0}, layers={1}", tile._tileIndex, layers.Count);
 
 				int heightMapWidth = volumeBuffer._heightMapWidth;
@@ -550,7 +607,11 @@ namespace HoudiniEngineUnity
 					List<float[]> heightFields = new List<float[]>();
 					for(int m = 1; m < numLayers; ++m)
 					{
-						heightFields.Add(layers[m]._normalizedHeights);
+						// Ignore Detail layers as they are handled differently
+						if(layers[m]._layerType != HFLayerType.DETAIL)
+						{
+							heightFields.Add(layers[m]._normalizedHeights);
+						}
 					}
 
 					// The number of maps are the number of splatmaps (ie. non height/mask layers)
@@ -565,7 +626,7 @@ namespace HoudiniEngineUnity
 						volumeBuffer._splatMaps = null;
 					}
 
-					volumeBuffer._position = new Vector3((volumeBuffer._terrainSizeX + volumeBuffer._layers[0]._minBounds.x), volumeBuffer._layers[0]._minHeight + volumeBuffer._layers[0]._position.y, volumeBuffer._layers[0]._minBounds.z);
+					volumeBuffer._position = new Vector3((volumeBuffer._terrainSizeX + volumeBuffer._splatLayers[0]._minBounds.x), volumeBuffer._splatLayers[0]._minHeight + volumeBuffer._splatLayers[0]._position.y, volumeBuffer._splatLayers[0]._minBounds.z);
 				}
 			}
 
