@@ -38,6 +38,17 @@ namespace HoudiniEngineUnity
 	using HAPI_StringHandle = System.Int32;
 
 	/// <summary>
+	/// Type of heighfield for terrain
+	/// </summary>
+	public enum HFLayerType
+	{
+		DEFAULT,
+		HEIGHT,
+		MASK,
+		DETAIL
+	}
+
+	/// <summary>
 	/// Represents a volume-based terrain layer
 	/// </summary>
 	[System.Serializable]
@@ -65,13 +76,6 @@ namespace HoudiniEngineUnity
 		public int _splatPrototypeIndex = -1;
 #endif
 
-		public enum HFLayerType
-		{
-			DEFAULT,
-			HEIGHT,
-			MASK,
-			DETAIL
-		}
 		public HFLayerType _layerType;
 
 		public HEU_DetailPrototype _detailPrototype;
@@ -112,9 +116,10 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public class HEU_DetailProperties
 	{
-		public float _detailDistance;
+		public float _detailDistance = -1;
+		public float _detailDensity = -1;
 		public int _detailResolution;
-		public int _detailResolutionPerPatch;
+		public int _detailResolutionPerPatch = -1;
 	}
 
 	/// <summary>
@@ -490,7 +495,7 @@ namespace HoudiniEngineUnity
 
 			//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
 
-			HEU_VolumeLayer.HFLayerType layerType = GetHeightfieldLayerType(session, geoNode.GeoID, part.PartID, volumeName);
+			HFLayerType layerType = HEU_TerrainUtility.GetHeightfieldLayerType(session, geoNode.GeoID, part.PartID, volumeName);
 
 			HEU_VolumeLayer layer = GetLayer(volumeName);
 			if (layer == null)
@@ -498,11 +503,11 @@ namespace HoudiniEngineUnity
 				layer = new HEU_VolumeLayer();
 				layer._layerName = volumeName;
 
-				if (layerType == HEU_VolumeLayer.HFLayerType.HEIGHT)
+				if (layerType == HFLayerType.HEIGHT)
 				{
 					_layers.Insert(0, layer);
 				}
-				else if(layerType != HEU_VolumeLayer.HFLayerType.MASK)
+				else if(layerType != HFLayerType.MASK)
 				{
 					_layers.Add(layer);
 				}
@@ -513,12 +518,12 @@ namespace HoudiniEngineUnity
 			layer._yLength = volumeInfo.yLength;
 			layer._layerType = layerType;
 
-			if (layerType != HEU_VolumeLayer.HFLayerType.MASK)
+			if (layerType != HFLayerType.MASK)
 			{
 				GetPartLayerAttributes(session, geoNode.GeoID, part.PartID, layer);
 			}
 
-			if (layerType != HEU_VolumeLayer.HFLayerType.HEIGHT)
+			if (layerType != HFLayerType.HEIGHT)
 			{
 				// Non-height parts don't have any outputs as they are simply layers carrying info
 				part.DestroyAllData();
@@ -539,76 +544,21 @@ namespace HoudiniEngineUnity
 					_scatterTrees._treePrototypInfos = treePrototypeInfos;
 				}
 
-				// Detail distance
-				HAPI_AttributeInfo detailDistanceAttrInfo = new HAPI_AttributeInfo();
-				int[] detailDistances = new int[0];
-				HEU_GeneralUtility.GetAttribute(session, geoNode.GeoID, part.PartID, 
-					HEU_Defines.HEIGHTFIELD_DETAIL_DISTANCE, ref detailDistanceAttrInfo, ref detailDistances, 
-					session.GetAttributeIntData);
-
-				// Scatter Detail Resolution Per Patch (note that Detail Resolution comes from HF layer size)
-				HAPI_AttributeInfo resolutionPatchAttrInfo = new HAPI_AttributeInfo();
-				int[] resolutionPatches = new int[0];
-				HEU_GeneralUtility.GetAttribute(session, geoNode.GeoID, part.PartID, 
-					HEU_Defines.HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH, ref resolutionPatchAttrInfo, 
-					ref resolutionPatches, session.GetAttributeIntData);
-
-
-				if (_detailProperties == null)
-				{
-					_detailProperties = new HEU_DetailProperties();
-				}
-
-				// Unity only supports 1 set of detail resolution properties per terrain
-				int arraySize = 1;
-
-				if (detailDistanceAttrInfo.exists && detailDistances.Length >= arraySize)
-				{
-					_detailProperties._detailDistance = detailDistances[0];
-				}
-
-				if (resolutionPatchAttrInfo.exists && resolutionPatches.Length >= arraySize)
-				{
-					_detailProperties._detailResolutionPerPatch = resolutionPatches[0];
-				}
+				HEU_TerrainUtility.PopulateDetailProperties(session, geoNode.GeoID, 
+					part.PartID, ref _detailProperties);
 			}
 
 			if (!_updatedLayers.Contains(layer))
 			{
-				if (layerType == HEU_VolumeLayer.HFLayerType.HEIGHT)
+				if (layerType == HFLayerType.HEIGHT)
 				{
 					_updatedLayers.Insert(0, layer);
 				}
-				else if (layerType != HEU_VolumeLayer.HFLayerType.MASK)
+				else if (layerType != HFLayerType.MASK)
 				{
 					_updatedLayers.Add(layer);
 				}
 			}
-		}
-
-		public HEU_VolumeLayer.HFLayerType GetHeightfieldLayerType(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string volumeName)
-		{
-			HEU_VolumeLayer.HFLayerType layerType = HEU_VolumeLayer.HFLayerType.DEFAULT;
-
-			if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT))
-			{
-				layerType = HEU_VolumeLayer.HFLayerType.HEIGHT;
-			}
-			else if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK))
-			{
-				layerType = HEU_VolumeLayer.HFLayerType.MASK;
-			}
-			else
-			{
-				HAPI_AttributeInfo layerTypeAttr = new HAPI_AttributeInfo();
-				string[] layerTypeStr = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.HEIGHTFIELD_LAYER_ATTR_TYPE,
-					ref layerTypeAttr);
-				if (layerTypeStr != null && layerTypeStr.Length >= 0 && layerTypeStr[0].Equals(HEU_Defines.HEIGHTFIELD_LAYER_TYPE_DETAIL))
-				{
-					layerType = HEU_VolumeLayer.HFLayerType.DETAIL;
-				}
-			}
-			return layerType;
 		}
 
 		public void GenerateTerrainWithAlphamaps(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, bool bRebuild)
@@ -710,7 +660,7 @@ namespace HoudiniEngineUnity
 			List<HEU_VolumeLayer> terrainLayersToProcess = new List<HEU_VolumeLayer>();
 
 			List<int[,]> convertedDetailMaps = new List<int[,]>();
-			List<HEU_VolumeLayer> detailLayersToProcess = new List<HEU_VolumeLayer>();
+			List<HEU_DetailPrototype> detailPrototypes = new List<HEU_DetailPrototype>();
 
 			int numLayers = _layers.Count;
 			float minHeight = 0;
@@ -721,7 +671,7 @@ namespace HoudiniEngineUnity
 			// The layers are normalized and split into detail and terrain layers.
 			for(int i = 1; i < numLayers; ++i)
 			{
-				if (_layers[i]._layerType == HEU_VolumeLayer.HFLayerType.DETAIL)
+				if (_layers[i]._layerType == HFLayerType.DETAIL)
 				{
 					if (_detailProperties == null)
 					{
@@ -734,7 +684,7 @@ namespace HoudiniEngineUnity
 					if (normalizedDetail != null && normalizedDetail.Length > 0)
 					{
 						convertedDetailMaps.Add(normalizedDetail);
-						detailLayersToProcess.Add(_layers[i]);
+						detailPrototypes.Add(_layers[i]._detailPrototype);
 					}
 				}
 				else
@@ -1013,7 +963,7 @@ namespace HoudiniEngineUnity
 
 			// Scattering - trees and details
 			HEU_TerrainUtility.ApplyScatterTrees(terrainData, _scatterTrees);
-			HEU_TerrainUtility.ApplyDetailLayers(terrain, terrainData, _detailProperties, detailLayersToProcess, convertedDetailMaps);
+			HEU_TerrainUtility.ApplyDetailLayers(terrain, terrainData, _detailProperties, detailPrototypes, convertedDetailMaps);
 
 			// If the layers were writen out, this saves the asset DB. Otherwise user has to save it themselves.
 			// Not 100% sure this is needed, but without this the editor doesn't know the terrain asset has been updated

@@ -217,6 +217,7 @@ namespace HoudiniEngineUnity
 
 		public const string HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH = "unity_hf_detail_resolution_patch";
 		public const string HEIGHTFIELD_DETAIL_DISTANCE = "unity_hf_detail_distance";
+		public const string HEIGHTFIELD_DETAIL_DENSITY = "unity_hf_detail_density";
 
 		public const string HEIGHTFIELD_DETAIL_PROTOTYPE_PREFAB = "unity_hf_detail_prototype_prefab";
 		public const string HEIGHTFIELD_DETAIL_PROTOTYPE_TEXTURE = "unity_hf_detail_prototype_texture";

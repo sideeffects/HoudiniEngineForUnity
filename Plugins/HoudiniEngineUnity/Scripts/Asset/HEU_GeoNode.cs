@@ -967,7 +967,7 @@ namespace HoudiniEngineUnity
 				}
 
 				HEU_VolumeLayer volumeLayer = volumeCache.GetLayer(_parts[i].GetVolumeLayerName());
-				if (volumeLayer != null && volumeLayer._layerType == HEU_VolumeLayer.HFLayerType.DETAIL)
+				if (volumeLayer != null && volumeLayer._layerType == HFLayerType.DETAIL)
 				{
 					// Clear out outputs since it might have been created when the part was created.
 					_parts[i].DestroyAllData();

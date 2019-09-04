@@ -902,38 +902,102 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Retrieve and set the detail properties from the specified heightfield.
+		/// This includes detail distance, density, and resolution per patch.
+		/// </summary>
+		/// <param name="session">Current Houdini Engine session</param>
+		/// <param name="geoID">Heightfield object</param>
+		/// <param name="partID">Heightfield layer</param>
+		/// <param name="detailProperties">Reference to a HEU_DetailProperties which will
+		/// be populated.</param>
+		public static void PopulateDetailProperties(HEU_SessionBase session, HAPI_NodeId geoID,
+			HAPI_PartId partID, ref HEU_DetailProperties detailProperties)
+		{
+			// Detail distance
+			HAPI_AttributeInfo detailDistanceAttrInfo = new HAPI_AttributeInfo();
+			int[] detailDistances = new int[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_DISTANCE, ref detailDistanceAttrInfo, ref detailDistances,
+				session.GetAttributeIntData);
+
+			// Detail density
+			HAPI_AttributeInfo detailDensityAttrInfo = new HAPI_AttributeInfo();
+			float[] detailDensity = new float[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_DENSITY, ref detailDensityAttrInfo, ref detailDensity,
+				session.GetAttributeFloatData);
+
+			// Scatter Detail Resolution Per Patch (note that Detail Resolution comes from HF layer size)
+			HAPI_AttributeInfo resolutionPatchAttrInfo = new HAPI_AttributeInfo();
+			int[] resolutionPatches = new int[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH, ref resolutionPatchAttrInfo,
+				ref resolutionPatches, session.GetAttributeIntData);
+
+			if (detailProperties == null)
+			{
+				detailProperties = new HEU_DetailProperties();
+			}
+
+			// Unity only supports 1 set of detail resolution properties per terrain
+			int arraySize = 1;
+
+			if (detailDistanceAttrInfo.exists && detailDistances.Length >= arraySize)
+			{
+				detailProperties._detailDistance = detailDistances[0];
+			}
+
+			if (detailDensityAttrInfo.exists && detailDensity.Length >= arraySize)
+			{
+				detailProperties._detailDensity = detailDensity[0];
+			}
+
+			if (resolutionPatchAttrInfo.exists && resolutionPatches.Length >= arraySize)
+			{
+				detailProperties._detailResolutionPerPatch = resolutionPatches[0];
+			}
+		}
+
+		/// <summary>
 		/// Apply the given detail layers and properties to the given terrain.
 		/// The detail distance and resolution will be set, along with detail prototypes, and layers.
 		/// </summary>
 		/// <param name="terrain">The Terrain to set the detail properies on</param>
 		/// <param name="terrainData">The TerrainData to apply the layers to</param>
 		/// <param name="detailProperties">Container for detail distance and resolution</param>
-		/// <param name="volumeDetailLayers">The volume layers specifically flagged as detail layers, 
-		/// and containing detail data</param>
+		/// <param name="heuDetailPrototypes">Data for creating DetailPrototypes</param>
 		/// <param name="convertedDetailMaps">The detail maps to set for the detail layers</param>
 		public static void ApplyDetailLayers(Terrain terrain, TerrainData terrainData, HEU_DetailProperties detailProperties,
-			List<HEU_VolumeLayer> volumeDetailLayers, List<int[,]> convertedDetailMaps)
+			List<HEU_DetailPrototype> heuDetailPrototypes, List<int[,]> convertedDetailMaps)
 		{
 #if UNITY_2018_3_OR_NEWER
 
 			if (detailProperties != null)
 			{
-				if (detailProperties._detailDistance > 0)
+				if (detailProperties._detailDistance >= 0)
 				{
 					terrain.detailObjectDistance = detailProperties._detailDistance;
 				}
 
-				if (detailProperties._detailResolution > 0)
+				if (detailProperties._detailDensity >= 0)
 				{
-					int resPerPath = detailProperties._detailResolutionPerPatch > 0 ?
+					terrain.detailObjectDensity = detailProperties._detailDensity;
+				}
+
+				int resPerPath = detailProperties._detailResolutionPerPatch > 0 ?
 						detailProperties._detailResolutionPerPatch : terrainData.detailResolutionPerPatch;
 
+				int detailRes = detailProperties._detailResolution > 0 ?
+					detailProperties._detailResolution : terrainData.detailResolutionPerPatch;
+
+				if (resPerPath > 0 && detailRes > 0)
+				{
 					// This should match with half the terrain size
-					terrainData.SetDetailResolution(detailProperties._detailResolution, resPerPath);
+					terrainData.SetDetailResolution(detailRes, resPerPath);
 				}
 			}
 
-			if (volumeDetailLayers.Count != convertedDetailMaps.Count)
+			if (heuDetailPrototypes.Count != convertedDetailMaps.Count)
 			{
 				Debug.LogError("Number of volume detail layers differs from converted detail maps. Unable to apply detail layers.");
 				return;
@@ -944,12 +1008,12 @@ namespace HoudiniEngineUnity
 
 			List<DetailPrototype> detailPrototypes = new List<DetailPrototype>();
 
-			int numDetailLayers = volumeDetailLayers.Count;
+			int numDetailLayers = heuDetailPrototypes.Count;
 			for(int i = 0; i < numDetailLayers; ++i)
 			{
 				DetailPrototype detailPrototype = new DetailPrototype();
 
-				HEU_DetailPrototype heuDetail = volumeDetailLayers[i]._detailPrototype;
+				HEU_DetailPrototype heuDetail = heuDetailPrototypes[i];
 
 				if (!string.IsNullOrEmpty(heuDetail._prototypePrefab))
 				{
@@ -1050,6 +1114,39 @@ namespace HoudiniEngineUnity
 
             return false;
         }
-    }
+
+		/// <summary>
+		/// Returns the heightfield layer type (HFLayerType) for the specified part.
+		/// </summary>
+		/// <param name="session">Current Houdini Engine session</param>
+		/// <param name="geoID">Heightfield object</param>
+		/// <param name="partID">Heightfield layer</param>
+		/// <param name="volumeName">Heightfield name</param>
+		/// <returns>The HFLayerType of the specified part, or HFLayerType.DEFAULT if not valid</returns>
+		public static HFLayerType GetHeightfieldLayerType(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string volumeName)
+		{
+			HFLayerType layerType = HFLayerType.DEFAULT;
+
+			if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT))
+			{
+				layerType = HFLayerType.HEIGHT;
+			}
+			else if (volumeName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK))
+			{
+				layerType = HFLayerType.MASK;
+			}
+			else
+			{
+				HAPI_AttributeInfo layerTypeAttr = new HAPI_AttributeInfo();
+				string[] layerTypeStr = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.HEIGHTFIELD_LAYER_ATTR_TYPE,
+					ref layerTypeAttr);
+				if (layerTypeStr != null && layerTypeStr.Length >= 0 && layerTypeStr[0].Equals(HEU_Defines.HEIGHTFIELD_LAYER_TYPE_DETAIL))
+				{
+					layerType = HFLayerType.DETAIL;
+				}
+			}
+			return layerType;
+		}
+	}
 
 }   // HoudiniEngineUnity

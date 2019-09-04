@@ -72,7 +72,7 @@ namespace HoudiniEngineUnity
 	public class HEU_LoadBufferVolume : HEU_LoadBufferBase
 	{
 		public int _tileIndex;
-		public List<HEU_LoadBufferVolumeLayer> _layers = new List<HEU_LoadBufferVolumeLayer>();
+		public List<HEU_LoadBufferVolumeLayer> _splatLayers = new List<HEU_LoadBufferVolumeLayer>();
 
 		public int _heightMapWidth;
 		public int _heightMapHeight;
@@ -88,6 +88,11 @@ namespace HoudiniEngineUnity
 		public string _terrainDataPath;
 
 		public HEU_VolumeScatterTrees _scatterTrees;
+
+		// Detail Layers
+		public List<HEU_DetailPrototype> _detailPrototypes = new List<HEU_DetailPrototype>();
+		public List<int[,]> _detailMaps = new List<int[,]>();
+		public HEU_DetailProperties _detailProperties;
 	}
 
 	public class HEU_LoadBufferVolumeLayer
@@ -127,6 +132,8 @@ namespace HoudiniEngineUnity
 		public string _layerPath;
 
 		public bool _hasLayerAttributes;
+
+		public HFLayerType _layerType;
 	}
 
 	public class HEU_LoadBufferInstancer : HEU_LoadBufferBase

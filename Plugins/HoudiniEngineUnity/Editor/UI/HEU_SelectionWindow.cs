@@ -89,6 +89,14 @@ namespace HoudiniEngineUnity
 					_sceneObjectState.Clear();
 					PopulateFromScene();
 				}
+
+				if (GUILayout.Button(_selectFound, GUILayout.MaxHeight(_buttonHeight)))
+				{
+					foreach (GameObject go in _sortedObjects)
+					{
+						_sceneObjectState[go] = true;
+					}
+				}
 			}
 
 			using (new EditorGUILayout.VerticalScope(_backgroundStyle))
@@ -306,6 +314,8 @@ namespace HoudiniEngineUnity
 			_acceptLabel = new GUIContent("Accept", "Accept current selections.");
 			_cancelLabel = new GUIContent("Cancel", "Cancel this selection.");
 
+			_selectFound = new GUIContent("Select Found", "Select all of the found objects.");
+
 			_selectionObjectsLabel = new GUIContent("FOUND OBJECTS:");
 
 			_filterLabel = new GUIContent("FILTER OPTIONS:");
@@ -348,6 +358,8 @@ namespace HoudiniEngineUnity
 		private GUIContent _clearLabel;
 		private GUIContent _acceptLabel;
 		private GUIContent _cancelLabel;
+
+		private GUIContent _selectFound;
 
 		private GUIStyle _textButtonStyle;
 
