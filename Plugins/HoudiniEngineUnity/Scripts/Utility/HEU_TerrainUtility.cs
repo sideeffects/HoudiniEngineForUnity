@@ -902,6 +902,63 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Retrieve and set the detail properties from the specified heightfield.
+		/// This includes detail distance, density, and resolution per patch.
+		/// </summary>
+		/// <param name="session">Current Houdini Engine session</param>
+		/// <param name="geoID">Heightfield object</param>
+		/// <param name="partID">Heightfield layer</param>
+		/// <param name="detailProperties">Reference to a HEU_DetailProperties which will
+		/// be populated.</param>
+		public static void PopulateDetailProperties(HEU_SessionBase session, HAPI_NodeId geoID,
+			HAPI_PartId partID, ref HEU_DetailProperties detailProperties)
+		{
+			// Detail distance
+			HAPI_AttributeInfo detailDistanceAttrInfo = new HAPI_AttributeInfo();
+			int[] detailDistances = new int[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_DISTANCE, ref detailDistanceAttrInfo, ref detailDistances,
+				session.GetAttributeIntData);
+
+			// Detail density
+			HAPI_AttributeInfo detailDensityAttrInfo = new HAPI_AttributeInfo();
+			float[] detailDensity = new float[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_DENSITY, ref detailDensityAttrInfo, ref detailDensity,
+				session.GetAttributeFloatData);
+
+			// Scatter Detail Resolution Per Patch (note that Detail Resolution comes from HF layer size)
+			HAPI_AttributeInfo resolutionPatchAttrInfo = new HAPI_AttributeInfo();
+			int[] resolutionPatches = new int[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID,
+				HEU_Defines.HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH, ref resolutionPatchAttrInfo,
+				ref resolutionPatches, session.GetAttributeIntData);
+
+			if (detailProperties == null)
+			{
+				detailProperties = new HEU_DetailProperties();
+			}
+
+			// Unity only supports 1 set of detail resolution properties per terrain
+			int arraySize = 1;
+
+			if (detailDistanceAttrInfo.exists && detailDistances.Length >= arraySize)
+			{
+				detailProperties._detailDistance = detailDistances[0];
+			}
+
+			if (detailDensityAttrInfo.exists && detailDensity.Length >= arraySize)
+			{
+				detailProperties._detailDensity = detailDensity[0];
+			}
+
+			if (resolutionPatchAttrInfo.exists && resolutionPatches.Length >= arraySize)
+			{
+				detailProperties._detailResolutionPerPatch = resolutionPatches[0];
+			}
+		}
+
+		/// <summary>
 		/// Apply the given detail layers and properties to the given terrain.
 		/// The detail distance and resolution will be set, along with detail prototypes, and layers.
 		/// </summary>
@@ -917,18 +974,26 @@ namespace HoudiniEngineUnity
 
 			if (detailProperties != null)
 			{
-				if (detailProperties._detailDistance > 0)
+				if (detailProperties._detailDistance >= 0)
 				{
 					terrain.detailObjectDistance = detailProperties._detailDistance;
 				}
 
-				if (detailProperties._detailResolution > 0)
+				if (detailProperties._detailDensity >= 0)
 				{
-					int resPerPath = detailProperties._detailResolutionPerPatch > 0 ?
+					terrain.detailObjectDensity = detailProperties._detailDensity;
+				}
+
+				int resPerPath = detailProperties._detailResolutionPerPatch > 0 ?
 						detailProperties._detailResolutionPerPatch : terrainData.detailResolutionPerPatch;
 
+				int detailRes = detailProperties._detailResolution > 0 ?
+					detailProperties._detailResolution : terrainData.detailResolutionPerPatch;
+
+				if (resPerPath > 0 && detailRes > 0)
+				{
 					// This should match with half the terrain size
-					terrainData.SetDetailResolution(detailProperties._detailResolution, resPerPath);
+					terrainData.SetDetailResolution(detailRes, resPerPath);
 				}
 			}
 

@@ -525,37 +525,8 @@ namespace HoudiniEngineUnity
 							volumeBuffer._scatterTrees._treePrototypInfos = treePrototypeInfos;
 						}
 
-						// Detail distance
-						HAPI_AttributeInfo detailDistanceAttrInfo = new HAPI_AttributeInfo();
-						int[] detailDistances = new int[0];
-						HEU_GeneralUtility.GetAttribute(session, nodeID, volumeBuffer._id,
-							HEU_Defines.HEIGHTFIELD_DETAIL_DISTANCE, ref detailDistanceAttrInfo, ref detailDistances,
-							session.GetAttributeIntData);
-
-						// Scatter Detail Resolution Per Patch (note that Detail Resolution comes from HF layer size)
-						HAPI_AttributeInfo resolutionPatchAttrInfo = new HAPI_AttributeInfo();
-						int[] resolutionPatches = new int[0];
-						HEU_GeneralUtility.GetAttribute(session, nodeID, volumeBuffer._id,
-							HEU_Defines.HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH, ref resolutionPatchAttrInfo,
-							ref resolutionPatches, session.GetAttributeIntData);
-
-						if (volumeBuffer._detailProperties == null)
-						{
-							volumeBuffer._detailProperties = new HEU_DetailProperties();
-						}
-
-						// Unity only supports 1 set of detail resolution properties per terrain
-						int arraySize = 1;
-
-						if (detailDistanceAttrInfo.exists && detailDistances.Length >= arraySize)
-						{
-							volumeBuffer._detailProperties._detailDistance = detailDistances[0];
-						}
-
-						if (resolutionPatchAttrInfo.exists && resolutionPatches.Length >= arraySize)
-						{
-							volumeBuffer._detailProperties._detailResolutionPerPatch = resolutionPatches[0];
-						}
+						HEU_TerrainUtility.PopulateDetailProperties(session, nodeID, 
+							volumeBuffer._id, ref volumeBuffer._detailProperties);
 					}
 					else if(layer._layerType == HFLayerType.DETAIL)
 					{
