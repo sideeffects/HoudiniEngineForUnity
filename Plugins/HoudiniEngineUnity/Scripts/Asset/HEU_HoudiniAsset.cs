@@ -234,10 +234,6 @@ namespace HoudiniEngineUnity
 		[SerializeField]
 		private bool _uiLocked = true;
 
-		// Whether to show object instance inputs on the UI
-		[SerializeField]
-		private bool _showInstanceInputs = true;
-
 		[SerializeField]
 		private bool _showHDAOptions = false;
 
@@ -261,6 +257,14 @@ namespace HoudiniEngineUnity
 
 		[SerializeField]
 		private bool _showTerrainSection = false;
+
+		[SerializeField]
+		private HEU_InstanceInputUIState _instanceInputUIState;
+
+		public HEU_InstanceInputUIState InstanceInputUIState {
+			get { return _instanceInputUIState; }
+			set { _instanceInputUIState = value; }
+		}
 
 #pragma warning restore 0414
 
@@ -430,6 +434,8 @@ namespace HoudiniEngineUnity
 			_showCurvesSection = _assetType == HEU_AssetType.TYPE_CURVE;
 			_showInputNodesSection = _assetType == HEU_AssetType.TYPE_INPUT;
 			_showTerrainSection = false;
+
+			_instanceInputUIState = ScriptableObject.CreateInstance<HEU_InstanceInputUIState>();
 
 			Debug.AssertFormat(session != null && session.IsSessionValid(), "Must have valid session for new asset");
 			_sessionID = session.GetSessionData().SessionID;
@@ -3529,8 +3535,9 @@ namespace HoudiniEngineUnity
 			// Upload parameter preset
 			newAsset.UploadParameterPresetToHoudini(newAsset.GetAssetSession(false));
 
+			this._instanceInputUIState.CopyTo(newAsset._instanceInputUIState);
+
 			// Copy over asset options
-			newAsset._showInstanceInputs	= this._showInstanceInputs;
 			newAsset._showHDAOptions		= this._showHDAOptions;
 			newAsset._showGenerateSection	= this._showGenerateSection;
 			newAsset._showBakeSection		= this._showBakeSection;
