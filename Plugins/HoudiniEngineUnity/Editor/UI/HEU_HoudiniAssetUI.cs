@@ -69,6 +69,9 @@ namespace HoudiniEngineUnity
 		// Cache reference to the custom Handles editor
 		private Editor _handlesEditor;
 
+		// Draws UI for instance inputs
+		private HEU_InstanceInputUI _instanceInputUI;
+
 		//	GUI CONTENT -----------------------------------------------------------------------------------------------
 
 		private static Texture2D _reloadhdaIcon;
@@ -141,6 +144,10 @@ namespace HoudiniEngineUnity
 
 		public void RefreshUI()
 		{
+			// Clear out the instance input cache.
+			// Needed after a cook.
+			_instanceInputUI = null;
+
 			Repaint();
 		}
 
@@ -300,67 +307,11 @@ namespace HoudiniEngineUnity
 		/// <param name="assetObject">Serialized HDA asset object</param>
 		private void DrawInstanceInputs(HEU_HoudiniAsset asset, SerializedObject assetObject)
 		{
-			HEU_EditorUI.DrawSeparator();
-
-			// Get list of object input fields
-			List<HEU_ObjectInstanceInfo> objInstanceInfos = new List<HEU_ObjectInstanceInfo>();
-			asset.PopulateObjectInstanceInfos(objInstanceInfos);
-
-			int numObjInstances = objInstanceInfos.Count;
-
-			// Display input section if at least have 1 input field
-			if (numObjInstances > 0)
+			if (_instanceInputUI == null)
 			{
-				HEU_EditorUI.BeginSection();
-
-				SerializedProperty showInstanceInputsProperty = assetObject.FindProperty("_showInstanceInputs");
-
-				showInstanceInputsProperty.boolValue = HEU_EditorUI.DrawFoldOut(showInstanceInputsProperty.boolValue, "INSTANCE INPUTS");
-				if (showInstanceInputsProperty.boolValue)
-				{
-					EditorGUI.BeginChangeCheck();
-
-					// Draw each instanced input info
-					for (int i = 0; i < numObjInstances; ++i)
-					{
-						EditorGUILayout.BeginVertical();
-
-						string inputName = objInstanceInfos[i]._partTarget.PartName + "_" + i;
-
-						SerializedObject objInstanceSerialized = new SerializedObject(objInstanceInfos[i]);
-
-						SerializedProperty instancedInputsProperty = HEU_EditorUtility.GetSerializedProperty(objInstanceSerialized, "_instancedInputs");
-						if (instancedInputsProperty != null)
-						{
-							int inputCount = instancedInputsProperty.arraySize;
-							EditorGUILayout.PropertyField(instancedInputsProperty, new GUIContent(inputName), true);
-
-							// When input size increases, Unity creates default values for HEU_InstancedInput which results in
-							// zero value for scale offset. This fixes it up.
-							int newInputCount = instancedInputsProperty.arraySize;
-							if (inputCount < newInputCount)
-							{
-								for (int inputIndex = inputCount; inputIndex < newInputCount; ++inputIndex)
-								{
-									SerializedProperty scaleProperty = instancedInputsProperty.GetArrayElementAtIndex(inputIndex).FindPropertyRelative("_scaleOffset");
-									scaleProperty.vector3Value = Vector3.one;
-								}
-							}
-						}
-
-						objInstanceSerialized.ApplyModifiedProperties();
-
-						EditorGUILayout.EndVertical();
-					}
-
-					if(EditorGUI.EndChangeCheck())
-					{
-						asset.RequestCook(bCheckParametersChanged: true, bAsync: true, bSkipCookCheck: false, bUploadParameters: true);
-					}
-				}
-
-				HEU_EditorUI.EndSection();
+				_instanceInputUI = new HEU_InstanceInputUI();
 			}
+			_instanceInputUI.DrawInstanceInputs(asset, assetObject);
 		}
 
 		/// <summary>
