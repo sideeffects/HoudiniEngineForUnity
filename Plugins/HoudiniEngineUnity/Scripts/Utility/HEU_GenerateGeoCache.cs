@@ -1847,9 +1847,10 @@ namespace HoudiniEngineUnity
 							}
 
 							// Convert all UVs to vector format
+							
 							for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
 							{
-								if (geoCache._uvsAttrInfo[u].exists && geoCache._uvsAttrInfo[u].owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT && positionIndex < geoCache._uvsAttr.Length)
+								if (geoCache._uvsAttrInfo[u].exists && geoCache._uvsAttrInfo[u].owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
 								{
 									int uvSize = geoCache._uvsAttrInfo[u].tupleSize;
 									switch (uvSize)
