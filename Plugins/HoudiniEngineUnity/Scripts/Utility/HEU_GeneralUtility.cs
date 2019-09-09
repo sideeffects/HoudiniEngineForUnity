@@ -1657,6 +1657,30 @@ namespace HoudiniEngineUnity
 
 			dest.rstOrder = src.rstOrder;
 		}
+
+		/// <summary>
+		/// Get the assigned material via string attribute from the given part.
+		/// </summary>
+		public static string GetMaterialAttributeValueFromPart(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID)
+		{
+			string materialName = null;
+			HAPI_AttributeInfo unityMaterialAttrInfo = new HAPI_AttributeInfo();
+			HAPI_StringHandle[] unityMaterialAttrName = new HAPI_StringHandle[0];
+			HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityMaterialAttribName,
+				ref unityMaterialAttrInfo, ref unityMaterialAttrName, session.GetAttributeStringData);
+
+			if (unityMaterialAttrInfo.exists && unityMaterialAttrName.Length > 0)
+			{
+				materialName = HEU_SessionManager.GetString(unityMaterialAttrName[0], session);
+				if (string.IsNullOrEmpty(materialName))
+				{
+					// Warn user of empty string, but add it anyway to our map so we don't keep trying to parse it
+					Debug.LogWarningFormat("Found empty material attribute value for terrain heightfield part.");
+				}
+			}
+
+			return materialName;
+		}
 	}
 
 

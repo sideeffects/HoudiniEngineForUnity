@@ -93,6 +93,9 @@ namespace HoudiniEngineUnity
 		public List<HEU_DetailPrototype> _detailPrototypes = new List<HEU_DetailPrototype>();
 		public List<int[,]> _detailMaps = new List<int[,]>();
 		public HEU_DetailProperties _detailProperties;
+
+		// Specified terrain material
+		public string _specifiedTerrainMaterialName;
 	}
 
 	public class HEU_LoadBufferVolumeLayer
