@@ -34,6 +34,7 @@ namespace HoudiniEngineUnity
 	// Typedefs (copy these from HEU_Common.cs)
 	using HAPI_NodeId = System.Int32;
 	using HAPI_PartId = System.Int32;
+	using HAPI_StringHandle = System.Int32;
 
 	public static class HEU_TerrainUtility
 	{
@@ -106,6 +107,10 @@ namespace HoudiniEngineUnity
 
 				TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(gameObject);
 
+				// Look up terrain material, if specified, on the height layer
+				string specifiedTerrainMaterialName = HEU_GeneralUtility.GetMaterialAttributeValueFromPart(session,
+					geoID, partID);
+
 				// This ensures to reuse existing terraindata, and only creates new if none exist or none provided
 				if (terrain.terrainData == null)
 				{
@@ -116,7 +121,7 @@ namespace HoudiniEngineUnity
 					}
 
 					terrain.terrainData = terrainData;
-					SetTerrainMaterial(terrain);
+					SetTerrainMaterial(terrain, specifiedTerrainMaterialName);
 				}
 
 				terrainData = terrain.terrainData;
@@ -216,10 +221,11 @@ namespace HoudiniEngineUnity
 		/// Currently sets the default Terrain material from the plugin settings, if its valid.
 		/// </summary>
 		/// <param name="terrain">The terrain to set material for</param>
-		public static void SetTerrainMaterial(Terrain terrain)
+		public static void SetTerrainMaterial(Terrain terrain, string specifiedMaterialName)
 		{
 			// Use material specified in Plugin settings.
-			string terrainMaterialPath = HEU_PluginSettings.DefaultTerrainMaterial;
+			string terrainMaterialPath = string.IsNullOrEmpty(specifiedMaterialName) ? HEU_PluginSettings.DefaultTerrainMaterial :
+				specifiedMaterialName;
 			if (!string.IsNullOrEmpty(terrainMaterialPath))
 			{
 				Material material = HEU_MaterialFactory.LoadUnityMaterial(terrainMaterialPath);

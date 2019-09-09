@@ -527,6 +527,10 @@ namespace HoudiniEngineUnity
 
 						HEU_TerrainUtility.PopulateDetailProperties(session, nodeID, 
 							volumeBuffer._id, ref volumeBuffer._detailProperties);
+
+						// Get specified material if any
+						volumeBuffer._specifiedTerrainMaterialName = HEU_GeneralUtility.GetMaterialAttributeValueFromPart(session,
+							nodeID, volumeBuffer._id);
 					}
 					else if(layer._layerType == HFLayerType.DETAIL)
 					{
