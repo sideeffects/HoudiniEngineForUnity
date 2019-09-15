@@ -207,6 +207,9 @@ namespace HoudiniEngineUnity
 
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR = "unity_hf_terraindata_file";
 		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR = "unity_hf_terrainlayer_file";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_EXPORT_PATH = "unity_hf_terraindata_export_path";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_HEIGHT_RANGE = "unity_hf_height_range";
+		public const string DEFAULT_UNITY_HEIGHTFIELD_YPOS = "unity_hf_ypos";
 
 		public const string HEIGHTFIELD_TREEPROTOTYPE = "unity_hf_tree_prototype";
 
