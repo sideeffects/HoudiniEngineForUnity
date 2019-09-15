@@ -510,6 +510,24 @@ namespace HoudiniEngineUnity
 						volumeBuffer._terrainSizeY = layer._terrainSizeY;
 						volumeBuffer._heightRange = (layer._maxHeight - layer._minHeight);
 
+						// Use the height range if user has set via attribute
+						float userHeightRange = HEU_TerrainUtility.GetHeightRangeFromHeightfield(session, nodeID, volumeBuffer._id);
+						if (userHeightRange > 0)
+						{
+							volumeBuffer._heightRange = userHeightRange;
+						}
+
+						// The terrain heightfield position in y requires offset of min height
+						layer._position.y += layer._minHeight;
+
+						// Use y position from attribute if user has set it
+						float userYPos;
+						if (HEU_GeneralUtility.GetAttributeFloatSingle(session, nodeID, volumeParts[i].id,
+							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_YPOS, out userYPos))
+						{
+							layer._position.y = userYPos;
+						}
+
 						// Look up TerrainData file path via attribute if user has set it
 						volumeBuffer._terrainDataPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeBuffer._id,
 							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
@@ -601,7 +619,11 @@ namespace HoudiniEngineUnity
 						volumeBuffer._splatMaps = null;
 					}
 
-					volumeBuffer._position = new Vector3((volumeBuffer._terrainSizeX + volumeBuffer._splatLayers[0]._minBounds.x), volumeBuffer._splatLayers[0]._minHeight + volumeBuffer._splatLayers[0]._position.y, volumeBuffer._splatLayers[0]._minBounds.z);
+					// TODO: revisit how the position is calculated
+					volumeBuffer._position = new Vector3(
+						volumeBuffer._terrainSizeX + volumeBuffer._splatLayers[0]._minBounds.x, 
+						volumeBuffer._splatLayers[0]._position.y, 
+						volumeBuffer._splatLayers[0]._minBounds.z);
 				}
 			}
 

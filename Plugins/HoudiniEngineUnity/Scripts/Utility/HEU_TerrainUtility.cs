@@ -80,6 +80,10 @@ namespace HoudiniEngineUnity
 				float terrainSizeX = Mathf.Round((volumeInfo.xLength - 1) * gridSpacingX);
 				float terrainSizeY = Mathf.Round((volumeInfo.yLength - 1) * gridSpacingY);
 
+				// Test size
+				//float terrainSizeX = Mathf.Round((volumeInfo.xLength) * gridSpacingX);
+				//float terrainSizeY = Mathf.Round((volumeInfo.yLength) * gridSpacingY);
+
 				//Debug.LogFormat("GS = {0},{1},{2}. SX = {1}. SY = {2}", gridSpacingX, gridSpacingY, terrainSizeX, terrainSizeY);
 
 				//Debug.LogFormat("HeightField Pos:{0}, Scale:{1}", position, scale.ToString("{0.00}"));
@@ -163,6 +167,13 @@ namespace HoudiniEngineUnity
 					volumeInfo.xLength, volumeInfo.yLength, ref minHeight, ref maxHeight, ref heightRange);
 				float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, heightMapResolution, normalizedHeights);
 
+				// Use the height range if user has set via attribute
+				float userHeightRange = GetHeightRangeFromHeightfield(session, geoID, partID);
+				if (userHeightRange > 0)
+				{
+					heightRange = userHeightRange;
+				}
+
 				// The terrainData.baseMapResolution is not set here, but rather left to whatever default Unity uses
 				// The terrainData.alphamapResolution is set later when setting the alphamaps.
 
@@ -204,7 +215,20 @@ namespace HoudiniEngineUnity
 				float offsetZ = (float)heightMapResolution / (float)mapHeight;
 				//Debug.LogFormat("offsetX: {0}, offsetZ: {1}", offsetX, offsetZ);
 
-				volumePositionOffset = new Vector3((terrainSizeX + xmin) * offsetX, minHeight + position.y, zmin * offsetZ);
+				// Use y position from attribute if user has set it
+				float ypos = minHeight + position.y;
+				float userYPos;
+				if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+					HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_YPOS, out userYPos))
+				{
+					ypos = userYPos;
+				}
+
+				// TODO: revisit how the position is calculated
+				volumePositionOffset = new Vector3((terrainSizeX + xmin) * offsetX, ypos, zmin * offsetZ);
+
+				// Test position
+				//volumePositionOffset = new Vector3(xcenter + mapWidth, ycenter, zcenter - mapHeight);
 
 				return true;
 			}
@@ -1152,6 +1176,28 @@ namespace HoudiniEngineUnity
 				}
 			}
 			return layerType;
+		}
+
+		public static float GetHeightRangeFromHeightfield(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID)
+		{
+			float heightRange = 0f;
+			HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
+				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_HEIGHT_RANGE, out heightRange);
+			return heightRange;
+		}
+
+		public static string GetTerrainDataExportPathFromHeightfieldAttribute(HEU_SessionBase session, HAPI_NodeId geoID, 
+			HAPI_PartId partID)
+		{
+			HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+			string[] attrValue = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, 
+				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_EXPORT_PATH,
+				ref attrInfo);
+			if (attrInfo.exists && attrValue.Length > 0 && string.IsNullOrEmpty(attrValue[0]))
+			{
+				return attrValue[0];
+			}
+			return "";
 		}
 	}
 
