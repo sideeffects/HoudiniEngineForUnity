@@ -676,7 +676,8 @@ namespace HoudiniEngineUnity
 
 		public void ClearEventMessages()
 		{
-			_pdgEventMessages.Clear();
+			// .Net 3.5 and lower does not have StringBuilder.clear()
+			_pdgEventMessages.Length = 0;
 		}
 
 		//	DATA ------------------------------------------------------------------------------------------------------
