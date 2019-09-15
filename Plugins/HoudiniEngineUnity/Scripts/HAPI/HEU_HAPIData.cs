@@ -1513,6 +1513,7 @@ namespace HoudiniEngineUnity
 		public int currentState;                       /// (HAPI_PDG_WorkItemState) value of current state for state change
 		public int lastState;                          /// (HAPI_PDG_WorkItemState) value of last state for state change
 		public int eventType;                          /// (HAPI_PDG_EventType) event type
+		public HAPI_StringHandle msgSH;                /// String handle of the event message (> 0 if there is a message)
 	};
 
 	[StructLayout(LayoutKind.Sequential)]
