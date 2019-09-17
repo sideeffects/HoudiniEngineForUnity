@@ -55,7 +55,7 @@ Shader "Houdini/AlphaSpecularVertexColor" {
 				fixed4 tex = tex2D( _MainTex, IN.uv_MainTex );
 				o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
 				o.Gloss = tex.a;
-				o.Alpha = tex.a * _Color.a;
+				o.Alpha = tex.a * _Color.a * IN.color.a;
 				o.Specular = _Shininess;
 				o.Normal = UnpackNormal( tex2D( _BumpMap, IN.uv_BumpMap ) );
 			}
