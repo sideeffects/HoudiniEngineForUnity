@@ -318,15 +318,24 @@ namespace HoudiniEngineUnity
 							{
 								// For existing TerrainLayer, make a copy of it if it has custom layer attributes
 								// because we don't want to change the original TerrainLayer.
-								if (layer._hasLayerAttributes && terrainLayerIndex >= 0)
+								if (layer._hasLayerAttributes)
 								{
 									// Copy the TerrainLayer file
 									TerrainLayer prevTerrainLayer = terrainlayer;
 									terrainlayer = HEU_AssetDatabase.CopyAndLoadAssetAtAnyPath(terrainlayer, outputTerrainpath, typeof(TerrainLayer), true) as TerrainLayer;
 									if (terrainlayer != null)
 									{
-										// Update the TerrainLayer reference in the list with this copy
-										finalTerrainLayers[terrainLayerIndex] = terrainlayer;
+										if (terrainLayerIndex >= 0)
+										{
+											// Update the TerrainLayer reference in the list with this copy
+											finalTerrainLayers[terrainLayerIndex] = terrainlayer;
+										}
+										else
+										{
+											// Newly added
+											terrainLayerIndex = finalTerrainLayers.Count;
+											finalTerrainLayers.Add(terrainlayer);
+										}
 
 										// Store path for clean up later
 										AddGeneratedOutputFilePath(HEU_AssetDatabase.GetAssetPath(terrainlayer));
@@ -339,6 +348,13 @@ namespace HoudiniEngineUnity
 										bSetTerrainLayerProperties = false;
 										// Again, continuing on to keep proper indexing.
 									}
+								}
+								else
+								{
+									// Could be a layer in Assets/ but not part of existing layers in TerrainData
+									terrainLayerIndex = finalTerrainLayers.Count;
+									finalTerrainLayers.Add(terrainlayer);
+									bSetTerrainLayerProperties = false;
 								}
 							}
 

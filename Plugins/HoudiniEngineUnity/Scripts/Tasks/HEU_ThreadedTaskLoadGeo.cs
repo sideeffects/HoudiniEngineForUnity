@@ -463,7 +463,8 @@ namespace HoudiniEngineUnity
 					// Get the height values from Houdini along with the min and max height range.
 					layer._normalizedHeights = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(
 						_session, nodeID, volumeParts[i].id, volumeInfo.xLength, volumeInfo.yLength,
-						ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange);
+						ref layer._minHeight, ref layer._maxHeight, ref layer._heightRange,
+						(layerType == HFLayerType.HEIGHT));
 				}
 
 				// Get the tile index, if it exists, for this part
@@ -508,14 +509,7 @@ namespace HoudiniEngineUnity
 						volumeBuffer._heightMapHeight = layer._heightMapHeight;
 						volumeBuffer._terrainSizeX = layer._terrainSizeX;
 						volumeBuffer._terrainSizeY = layer._terrainSizeY;
-						volumeBuffer._heightRange = (layer._maxHeight - layer._minHeight);
-
-						// Use the height range if user has set via attribute
-						float userHeightRange = HEU_TerrainUtility.GetHeightRangeFromHeightfield(session, nodeID, volumeBuffer._id);
-						if (userHeightRange > 0)
-						{
-							volumeBuffer._heightRange = userHeightRange;
-						}
+						volumeBuffer._heightRange = layer._heightRange;
 
 						// The terrain heightfield position in y requires offset of min height
 						layer._position.y += layer._minHeight;
@@ -525,7 +519,7 @@ namespace HoudiniEngineUnity
 						if (HEU_GeneralUtility.GetAttributeFloatSingle(session, nodeID, volumeParts[i].id,
 							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_YPOS, out userYPos))
 						{
-							layer._position.y = userYPos;
+							layer._position.y = userYPos + layer._minHeight;
 						}
 
 						// Look up TerrainData file path via attribute if user has set it

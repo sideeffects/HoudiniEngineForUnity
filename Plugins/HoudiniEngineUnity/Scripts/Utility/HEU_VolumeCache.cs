@@ -692,7 +692,7 @@ namespace HoudiniEngineUnity
 					// Convert to normalized heightfield
 					float[] normalizedHF = HEU_TerrainUtility.GetNormalizedHeightmapFromPartWithMinMax(
 						session, _ownerNode.GeoID, _layers[i]._part.PartID, _layers[i]._xLength, 
-						_layers[i]._yLength, ref minHeight, ref maxHeight, ref heightRange);
+						_layers[i]._yLength, ref minHeight, ref maxHeight, ref heightRange, false);
 					if (normalizedHF != null && normalizedHF.Length > 0)
 					{
 						normalizedHeightfields.Add(normalizedHF);

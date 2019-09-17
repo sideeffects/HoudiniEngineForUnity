@@ -163,16 +163,12 @@ namespace HoudiniEngineUnity
 				float minHeight = 0;
 				float maxHeight = 0;
 				float heightRange = 0;
-				float[] normalizedHeights = GetNormalizedHeightmapFromPartWithMinMax(session, geoID, partID, 
-					volumeInfo.xLength, volumeInfo.yLength, ref minHeight, ref maxHeight, ref heightRange);
-				float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, heightMapResolution, normalizedHeights);
+				bool bUseHeightRangeOverride = true;
 
-				// Use the height range if user has set via attribute
-				float userHeightRange = GetHeightRangeFromHeightfield(session, geoID, partID);
-				if (userHeightRange > 0)
-				{
-					heightRange = userHeightRange;
-				}
+				float[] normalizedHeights = GetNormalizedHeightmapFromPartWithMinMax(session, geoID, partID, 
+					volumeInfo.xLength, volumeInfo.yLength, ref minHeight, ref maxHeight, ref heightRange, 
+					bUseHeightRangeOverride);
+				float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, heightMapResolution, normalizedHeights);
 
 				// The terrainData.baseMapResolution is not set here, but rather left to whatever default Unity uses
 				// The terrainData.alphamapResolution is set later when setting the alphamaps.
@@ -216,12 +212,12 @@ namespace HoudiniEngineUnity
 				//Debug.LogFormat("offsetX: {0}, offsetZ: {1}", offsetX, offsetZ);
 
 				// Use y position from attribute if user has set it
-				float ypos = minHeight + position.y;
+				float ypos = position.y + minHeight;
 				float userYPos;
 				if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
 					HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_YPOS, out userYPos))
 				{
-					ypos = userYPos;
+					ypos = userYPos + minHeight;
 				}
 
 				// TODO: revisit how the position is calculated
@@ -280,7 +276,7 @@ namespace HoudiniEngineUnity
 		/// <param name="heightRange">Found height range in the heightmap.</param>
 		/// <returns>The converted heightmap from Houdini.</returns>
 		public static float[] GetNormalizedHeightmapFromPartWithMinMax(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, 
-			int heightMapWidth, int heightMapHeight, ref float minHeight, ref float maxHeight, ref float heightRange)
+			int heightMapWidth, int heightMapHeight, ref float minHeight, ref float maxHeight, ref float heightRange, bool bUseHeightRangeOverride)
 		{
 			minHeight = float.MaxValue;
 			maxHeight = float.MinValue;
@@ -306,11 +302,23 @@ namespace HoudiniEngineUnity
 			}
 
 			heightRange = (maxHeight - minHeight);
+
+			// Use the override height range if user has set via attribute
+			if (bUseHeightRangeOverride)
+			{
+				float userHeightRange = GetHeightRangeFromHeightfield(session, geoID, partID);
+				if (userHeightRange > 0)
+				{
+					heightRange = userHeightRange;
+				}
+			}
+
 			if (heightRange == 0f)
 			{
 				// Always use a non-zero height range, otherwise user can't paint height on Terrain.
 				heightRange = 1f;
 			}
+
 			//Debug.LogFormat("{0} : {1}", HEU_SessionManager.GetString(volumeInfo.nameSH, session), heightRange);
 
 			const int UNITY_MAX_HEIGHT_RANGE = 65536;
