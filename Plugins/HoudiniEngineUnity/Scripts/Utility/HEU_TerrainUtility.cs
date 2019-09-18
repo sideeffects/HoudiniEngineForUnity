@@ -217,7 +217,7 @@ namespace HoudiniEngineUnity
 				if (HEU_GeneralUtility.GetAttributeFloatSingle(session, geoID, partID,
 					HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_YPOS, out userYPos))
 				{
-					ypos = userYPos + minHeight;
+					ypos = userYPos;
 				}
 
 				// TODO: revisit how the position is calculated
@@ -362,7 +362,13 @@ namespace HoudiniEngineUnity
 						int ay = x - paddingLeft;
 						int ax = y - paddingTop;
 
-						float f = heightValues[ay + ax * volumeXLength] - normalizeMinHeight;
+						float f = heightValues[ay + ax * volumeXLength];
+
+						if (!bUseHeightRangeOverride)
+						{
+							f -= normalizeMinHeight;
+						}
+
 						f *= inverseHeightRange;
 
 						// Flip for right-hand to left-handed coordinate system

@@ -193,6 +193,10 @@ namespace HoudiniEngineUnity
 					Terrain terrain = HEU_GeneralUtility.GetOrCreateComponent<Terrain>(newGameObject);
 					TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(newGameObject);
 
+					// TODO: Instead of writing the terrain data into the working folder, user might
+					// want to specify a path explictly. To support that, get terrain data path export 
+					// file via attribute. Then use CreateAsset to write to it.
+
 					if (!string.IsNullOrEmpty(terrainBuffers[t]._terrainDataPath))
 					{
 						// Load the source TerrainData, then make a unique copy of it in the cache folder
@@ -214,6 +218,10 @@ namespace HoudiniEngineUnity
 					if (terrain.terrainData == null)
 					{
 						terrain.terrainData = new TerrainData();
+
+						string assetPathName = "TerrainData" + HEU_Defines.HEU_EXT_ASSET;
+						HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrain.terrainData, outputTerrainpath, null, assetPathName, typeof(TerrainData));
+
 					}
 					TerrainData terrainData = terrain.terrainData;
 					collider.terrainData = terrainData;
