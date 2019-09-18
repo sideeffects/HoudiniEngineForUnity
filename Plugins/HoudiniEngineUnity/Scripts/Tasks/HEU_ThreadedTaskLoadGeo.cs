@@ -327,27 +327,34 @@ namespace HoudiniEngineUnity
 					// Preliminary check for attribute instancing (mesh type with no verts but has points with instances)
 					if (HEU_HAPIUtility.IsSupportedPolygonType(partInfo.type) && partInfo.vertexCount == 0 && partInfo.pointCount > 0)
 					{
+						// Allowing both types of instancing
+
 						if (HEU_GeneralUtility.HasValidInstanceAttribute(_session, nodeID, partInfo.id, HEU_PluginSettings.UnityInstanceAttr))
 						{
 							isAttribInstancer = true;
 						}
-						else if (HEU_GeneralUtility.HasValidInstanceAttribute(_session, nodeID, partInfo.id, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX))
+
+						if (HEU_GeneralUtility.HasValidInstanceAttribute(_session, nodeID, partInfo.id, HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX))
 						{
 							isScatterInstancer = true;
 						}
 					}
 
-					if (isScatterInstancer)
+					if (isScatterInstancer || isAttribInstancer || partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER)
 					{
-						scatterInstancerParts.Add(partInfo);
+						if (isScatterInstancer)
+						{
+							scatterInstancerParts.Add(partInfo);
+						}
+
+						if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER || isAttribInstancer)
+						{
+							instancerParts.Add(partInfo);
+						}
 					}
 					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_VOLUME)
 					{
 						volumeParts.Add(partInfo);
-					}
-					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER || isAttribInstancer)
-					{
-						instancerParts.Add(partInfo);
 					}
 					else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_CURVE)
 					{
@@ -519,7 +526,7 @@ namespace HoudiniEngineUnity
 						if (HEU_GeneralUtility.GetAttributeFloatSingle(session, nodeID, volumeParts[i].id,
 							HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_YPOS, out userYPos))
 						{
-							layer._position.y = userYPos + layer._minHeight;
+							layer._position.y = userYPos;
 						}
 
 						// Look up TerrainData file path via attribute if user has set it
