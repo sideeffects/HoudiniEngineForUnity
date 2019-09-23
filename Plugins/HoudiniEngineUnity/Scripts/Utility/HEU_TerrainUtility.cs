@@ -304,12 +304,14 @@ namespace HoudiniEngineUnity
 			heightRange = (maxHeight - minHeight);
 
 			// Use the override height range if user has set via attribute
+			bool bHeightRangeOverriden = false;
 			if (bUseHeightRangeOverride)
 			{
 				float userHeightRange = GetHeightRangeFromHeightfield(session, geoID, partID);
 				if (userHeightRange > 0)
 				{
 					heightRange = userHeightRange;
+					bHeightRangeOverriden = true;
 				}
 			}
 
@@ -364,7 +366,7 @@ namespace HoudiniEngineUnity
 
 						float f = heightValues[ay + ax * volumeXLength];
 
-						if (!bUseHeightRangeOverride)
+						if (!bHeightRangeOverriden)
 						{
 							f -= normalizeMinHeight;
 						}
