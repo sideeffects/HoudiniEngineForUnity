@@ -149,6 +149,9 @@ namespace HoudiniEngineUnity
 
 		// Instancing with asset path as source (single or multi)
 		public string[] _assetPaths;
+
+		// Override collision asset paths
+		public string[] _collisionAssetPaths;
 	}
 
 }   // HoudiniEngineUnity

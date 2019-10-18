@@ -627,7 +627,7 @@ namespace HoudiniEngineUnity
 						int randomIndex = UnityEngine.Random.Range(0, instancedObjCount);
 						CreateNewInstanceFromObject(validInstancedGameObjects[randomIndex]._instancedGameObject, (j + 1), partTransform, 
 							ref instanceTransforms[j], objectNodeID, null, 
-							validInstancedGameObjects[randomIndex]._rotationOffset, validInstancedGameObjects[randomIndex]._scaleOffset, instancePrefixes);
+							validInstancedGameObjects[randomIndex]._rotationOffset, validInstancedGameObjects[randomIndex]._scaleOffset, instancePrefixes, null);
 					}
 				}
 			}
@@ -679,7 +679,7 @@ namespace HoudiniEngineUnity
 					for (int c = 0; c < numClones; ++c)
 					{
 						CreateNewInstanceFromObject(clonableParts[c].OutputGameObject, (numInstancesCreated + 1), partTransform, ref instanceTransforms[j], 
-							sourceObject.ObjectID, null, Vector3.zero, Vector3.one, instancePrefixes);
+							sourceObject.ObjectID, null, Vector3.zero, Vector3.one, instancePrefixes, null);
 						numInstancesCreated++;
 					}
 				}
@@ -732,7 +732,7 @@ namespace HoudiniEngineUnity
 
 					CreateNewInstanceFromObject(validInstancedGameObjects[randomIndex]._instancedGameObject, (numInstancesCreated + 1), partTransform, ref instanceTransforms[i],
 						instanceInfo._instancedObjectNodeID, null, 
-						validInstancedGameObjects[randomIndex]._rotationOffset, validInstancedGameObjects[randomIndex]._scaleOffset, instancePrefixes);
+						validInstancedGameObjects[randomIndex]._rotationOffset, validInstancedGameObjects[randomIndex]._scaleOffset, instancePrefixes, null);
 					numInstancesCreated++;
 				}
 				else
@@ -751,7 +751,7 @@ namespace HoudiniEngineUnity
 					for (int c = 0; c < numClones; ++c)
 					{
 						CreateNewInstanceFromObject(cloneParts[c].OutputGameObject, (numInstancesCreated + 1), partTransform, ref instanceTransforms[i],
-							instancedObjNode.ObjectID, null, Vector3.zero, Vector3.one, instancePrefixes);
+							instancedObjNode.ObjectID, null, Vector3.zero, Vector3.one, instancePrefixes, null);
 						numInstancesCreated++;
 					}
 				}
@@ -796,13 +796,39 @@ namespace HoudiniEngineUnity
 				instancePrefixes = HEU_GeneralUtility.GetAttributeStringData(session, _geoID, _partID, HEU_Defines.DEFAULT_INSTANCE_PREFIX_ATTR, ref instancePrefixAttrInfo);
 			}
 
-			SetObjectInstancer(true);
+			string[] collisionAssetPaths = null;
+			HAPI_AttributeInfo collisionGeoAttrInfo = new HAPI_AttributeInfo();
+			HEU_GeneralUtility.GetAttributeInfo(session, _geoID, _partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+			if (collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT
+				|| collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
+			{
+				collisionAssetPaths = HEU_GeneralUtility.GetAttributeStringData(session, _geoID, _partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+			}
+
+			GameObject singleCollisionGO = null;
+			if (collisionAssetPaths != null && collisionAssetPaths.Length == 1 && !string.IsNullOrEmpty(collisionAssetPaths[0]))
+			{
+				// Single collision override
+				HEU_AssetDatabase.ImportAsset(collisionAssetPaths[0], HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
+				singleCollisionGO = HEU_AssetDatabase.LoadAssetAtPath(collisionAssetPaths[0], typeof(GameObject)) as GameObject;
+
+				if (singleCollisionGO == null)
+				{
+					// Continue on but log error
+					Debug.LogErrorFormat("Collision asset at path {0} not found for instance.", collisionAssetPaths[0]);
+				}
+			}
+
+				SetObjectInstancer(true);
 			ObjectInstancesBeenGenerated = true;
 
 			Transform partTransform = OutputGameObject.transform;
 
 			// Keep track of loaded objects so we only need to load once for each object
 			Dictionary<string, GameObject> loadedUnityObjectMap = new Dictionary<string, GameObject>();
+
+			// Keep track of loaded collision assets
+			Dictionary<string, GameObject> loadedCollisionObjectMap = new Dictionary<string, GameObject>();
 
 			// Temporary empty gameobject in case where specified Unity object is not found
 			GameObject tempGO = null;
@@ -857,8 +883,34 @@ namespace HoudiniEngineUnity
 					}
 				}
 
+				GameObject collisionSrcGO = null;
+				if (singleCollisionGO != null)
+				{
+					// Single collision geo
+					collisionSrcGO = singleCollisionGO;
+				}
+				else if (collisionAssetPaths != null
+					&& (i < collisionAssetPaths.Length)
+					&& !string.IsNullOrEmpty(collisionAssetPaths[i]))
+				{
+					// Mutliple collision geo (one per instance).
+					if (!loadedCollisionObjectMap.TryGetValue(collisionAssetPaths[i], out collisionSrcGO))
+					{
+						collisionSrcGO = HEU_AssetDatabase.LoadAssetAtPath(collisionAssetPaths[i], typeof(GameObject)) as GameObject;
+						if (collisionSrcGO == null)
+						{
+							Debug.LogErrorFormat("Unable to load collision asset at {0} for instancing!", collisionAssetPaths[i]);
+						}
+						else
+						{
+							loadedCollisionObjectMap.Add(collisionAssetPaths[i], collisionSrcGO);
+						}
+					}
+				}
+
 				CreateNewInstanceFromObject(unitySrcGO, (numInstancesCreated + 1), partTransform, ref instanceTransforms[i], 
-					HEU_Defines.HEU_INVALID_NODE_ID, instancePathAttrValues[i], rotationOffset, scaleOffset, instancePrefixes);
+					HEU_Defines.HEU_INVALID_NODE_ID, instancePathAttrValues[i], rotationOffset, scaleOffset, instancePrefixes,
+					collisionSrcGO);
 				numInstancesCreated++;
 			}
 
@@ -932,7 +984,7 @@ namespace HoudiniEngineUnity
 					}
 
 					CreateNewInstanceFromObject(instancedGameObject, (numInstancesCreated + 1), OutputGameObject.transform, ref instanceTransforms[i], 
-						HEU_Defines.HEU_INVALID_NODE_ID, assetPath, rotationOffset, scaleOffset, instancePrefixes);
+						HEU_Defines.HEU_INVALID_NODE_ID, assetPath, rotationOffset, scaleOffset, instancePrefixes, null);
 					numInstancesCreated++;
 				}
 			}
@@ -950,7 +1002,8 @@ namespace HoudiniEngineUnity
 		/// <param name="parentTransform">Parent of the new instance.</param>
 		/// <param name="hapiTransform">HAPI transform to apply to the new instance.</param>
 		private void CreateNewInstanceFromObject(GameObject sourceObject, int instanceIndex, Transform parentTransform, ref HAPI_Transform hapiTransform, 
-			HAPI_NodeId instancedObjectNodeID, string instancedObjectPath, Vector3 rotationOffset, Vector3 scaleOffset, string[] instancePrefixes)
+			HAPI_NodeId instancedObjectNodeID, string instancedObjectPath, Vector3 rotationOffset, Vector3 scaleOffset, string[] instancePrefixes,
+			GameObject collisionSrcGO)
 		{
 			GameObject newInstanceGO = null;
 
@@ -962,6 +1015,11 @@ namespace HoudiniEngineUnity
 			else
 			{
 				newInstanceGO = HEU_EditorUtility.InstantiateGameObject(sourceObject, parentTransform, false, false);	
+			}
+
+			if (collisionSrcGO != null)
+			{
+				HEU_GeneralUtility.ReplaceColliderWMesh(newInstanceGO, collisionSrcGO);
 			}
 
 			// To get the instance output name, we pass in the instance index. The actual name will be +1 from this.

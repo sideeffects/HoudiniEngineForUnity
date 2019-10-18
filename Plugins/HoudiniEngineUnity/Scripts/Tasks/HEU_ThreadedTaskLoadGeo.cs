@@ -901,6 +901,7 @@ namespace HoudiniEngineUnity
 			HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
 			HAPI_AttributeInfo unityInstanceAttrInfo = new HAPI_AttributeInfo();
 			HAPI_AttributeInfo instancePrefixAttrInfo = new HAPI_AttributeInfo();
+			
 
 			HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, instanceAttrName, ref instanceAttrInfo);
 			HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo);
@@ -927,7 +928,6 @@ namespace HoudiniEngineUnity
 				// Attribute owner type determines whether to use single (detail) or multiple (point) asset(s) as source
 				if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT || unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
 				{
-
 					assetPaths = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, unityInstanceAttrName, ref unityInstanceAttrInfo);
 				}
 				else
@@ -950,6 +950,14 @@ namespace HoudiniEngineUnity
 				instancerBuffer._instanceTransforms = instanceTransforms;
 				instancerBuffer._instancePrefixes = instancePrefixes;
 				instancerBuffer._assetPaths = assetPaths;
+
+				HAPI_AttributeInfo collisionGeoAttrInfo = new HAPI_AttributeInfo();
+				HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+				if (collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT
+					|| collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
+				{
+					instancerBuffer._collisionAssetPaths = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+				}
 
 				return instancerBuffer;
 			}
