@@ -1490,6 +1490,7 @@ namespace HoudiniEngineUnity
 				HEU_GeneralUtility.DestroyImmediate(targetTerrain);
 			}
 
+#if !HEU_TERRAIN_COLLIDER_DISABLED
 			// Terrain collider
 			TerrainCollider targetTerrainCollider = targetGO.GetComponent<TerrainCollider>();
 			TerrainCollider sourceTerrainCollider = sourceGO.GetComponent<TerrainCollider>();
@@ -1506,6 +1507,7 @@ namespace HoudiniEngineUnity
 			{
 				HEU_GeneralUtility.DestroyImmediate(targetTerrainCollider);
 			}
+#endif
 		}
 
 		/// <summary>

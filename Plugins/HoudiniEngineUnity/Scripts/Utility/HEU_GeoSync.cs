@@ -191,7 +191,10 @@ namespace HoudiniEngineUnity
 					generatedOutput._outputData._gameObject = newGameObject;
 
 					Terrain terrain = HEU_GeneralUtility.GetOrCreateComponent<Terrain>(newGameObject);
+
+#if !HEU_TERRAIN_COLLIDER_DISABLED
 					TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(newGameObject);
+#endif
 
 					// TODO: Instead of writing the terrain data into the working folder, user might
 					// want to specify a path explictly. To support that, get terrain data path export 
@@ -224,7 +227,10 @@ namespace HoudiniEngineUnity
 
 					}
 					TerrainData terrainData = terrain.terrainData;
+
+#if !HEU_TERRAIN_COLLIDER_DISABLED
 					collider.terrainData = terrainData;
+#endif
 
 					HEU_TerrainUtility.SetTerrainMaterial(terrain, terrainBuffers[t]._specifiedTerrainMaterialName);
 
