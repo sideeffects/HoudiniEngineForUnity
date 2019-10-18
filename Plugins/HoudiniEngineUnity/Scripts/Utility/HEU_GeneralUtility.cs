@@ -748,7 +748,11 @@ namespace HoudiniEngineUnity
 			DestroyComponent<MeshFilter>(gameObject);
 			DestroyComponent<MeshRenderer>(gameObject);
 			DestroyComponent<Collider>(gameObject);
+
+#if !HEU_TERRAIN_COLLIDER_DISABLED
 			DestroyComponent<TerrainCollider>(gameObject);
+#endif
+
 			DestroyComponent<Terrain>(gameObject);
 			DestroyComponent<LODGroup>(gameObject);
 		}
@@ -785,7 +789,9 @@ namespace HoudiniEngineUnity
 				DestroyImmediate(terrain);
 			}
 
+#if !HEU_TERRAIN_COLLIDER_DISABLED
 			DestroyComponent<TerrainCollider>(gameObject);
+#endif
 		}
 
 		/// <summary>
