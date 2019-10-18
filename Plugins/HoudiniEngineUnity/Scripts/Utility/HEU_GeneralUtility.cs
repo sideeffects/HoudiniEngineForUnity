@@ -1681,6 +1681,33 @@ namespace HoudiniEngineUnity
 
 			return materialName;
 		}
+
+		/// <summary>
+		/// Replace the targetGO's Collider component's mesh with mesh from
+		/// sourceColliderGO's mesh.
+		/// If targetGO has a MeshCollider, its mesh will be replaced but the component kept.
+		/// If targetGO has any other collider, it will be destroyed and new MeshCollider added.
+		/// If targetGO has no other collider, a new MeshCollider will be added.
+		/// </summary>
+		/// <param name="targetGO">The gameobject to replace the collider mesh for.</param>
+		/// <param name="sourceColliderGO">The gameobject containing the mesh to replace with.</param>
+		public static void ReplaceColliderWMesh(GameObject targetGO, GameObject sourceColliderGO)
+		{
+			MeshFilter srcMeshFilter = sourceColliderGO.GetComponent<MeshFilter>();
+			if (srcMeshFilter != null)
+			{
+				// Either replace existing MeshCollider's mesh, or remove other colliders, 
+				// and add new MeshCollider with source mesh.
+				MeshCollider meshCollider = targetGO.GetComponent<MeshCollider>();
+				if (meshCollider == null)
+				{
+					HEU_GeneralUtility.DestroyComponent<Collider>(targetGO);
+					meshCollider = targetGO.AddComponent<MeshCollider>();
+				}
+
+				meshCollider.sharedMesh = srcMeshFilter.sharedMesh;
+			}
+		}
 	}
 
 
