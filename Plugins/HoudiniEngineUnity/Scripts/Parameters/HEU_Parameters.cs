@@ -360,6 +360,15 @@ namespace HoudiniEngineUnity
 						{
 							newParameter._stringValues = new string[parmInfo.size];
 							Array.Copy(_paramStrings, parmInfo.stringValuesIndex, newParameter._stringValues, 0, parmInfo.size);
+
+							if (parmInfo.tagCount > 0)
+							{
+								bool bHasPathTag = false;
+								if (session.ParmHasTag(nodeID, parmInfo.id, "heuassetpath", ref bHasPathTag))
+								{
+									newParameter._hasAssetPathTag = bHasPathTag;
+								}
+							}
 							
 							if (parmInfo.choiceCount > 0)
 							{

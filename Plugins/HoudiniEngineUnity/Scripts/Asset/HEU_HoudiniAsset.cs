@@ -2414,8 +2414,9 @@ namespace HoudiniEngineUnity
 
 		/// <summary>
 		/// Creates a prefab of this asset, without Houdini Engine data.
+		/// Returns reference to new prefab.
 		/// </summary>
-		public void BakeToNewPrefab()
+		public GameObject BakeToNewPrefab()
 		{
 			// This creates a temporary clone of the asset without the HDA data
 			// in the scene, then creates a prefab of the cloned object.
@@ -2442,6 +2443,7 @@ namespace HoudiniEngineUnity
 
 						InvokeBakedEvent(true, new List<GameObject>() { prefabGO });
 					}
+					return prefabGO;
 				}
 				finally
 				{
@@ -2449,12 +2451,14 @@ namespace HoudiniEngineUnity
 					HEU_GeneralUtility.DestroyImmediate(newClonedRoot);
 				}
 			}
+			return null;
 		}
 
 		/// <summary>
 		/// Create a copy of this asset, without Houdini Engine data.
+		/// Returns reference to newly created gameobject.
 		/// </summary>
-		public void BakeToNewStandalone()
+		public GameObject BakeToNewStandalone()
 		{
 			string bakedAssetPath = null;
 
@@ -2469,6 +2473,7 @@ namespace HoudiniEngineUnity
 
 				InvokeBakedEvent(true, new List<GameObject>() { newClonedRoot });
 			}
+			return newClonedRoot;
 		}
 
 		/// <summary>

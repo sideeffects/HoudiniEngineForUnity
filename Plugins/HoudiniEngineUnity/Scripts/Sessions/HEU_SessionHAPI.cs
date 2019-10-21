@@ -1794,6 +1794,27 @@ namespace HoudiniEngineUnity
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 
+		public override bool GetParmTagName(HAPI_NodeId nodeID, HAPI_ParmId parmID, int tagIndex, out HAPI_StringHandle tagName)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_GetParmTagName(ref _sessionData._HAPISession, nodeID, parmID, tagIndex, out tagName);
+			HandleStatusResult(result, "Getting Parm Tag Name", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool GetParmTagValue(HAPI_NodeId nodeID, HAPI_ParmId parmID, string tagName, out HAPI_StringHandle tagValue)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_GetParmTagValue(ref _sessionData._HAPISession, nodeID, parmID, tagName, out tagValue);
+			HandleStatusResult(result, "Getting Parm Tag Value", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool ParmHasTag(HAPI_NodeId nodeID, HAPI_ParmId parmID, string tagName, ref bool hasTag)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_ParmHasTag(ref _sessionData._HAPISession, nodeID, parmID, tagName, ref hasTag);
+			HandleStatusResult(result, "Parm Has Tag", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
 		public override bool GetParamIntValues(HAPI_NodeId nodeID, [Out] int[] values, int start, int length)
 		{
 			HAPI_Result result = HEU_HAPIImports.HAPI_GetParmIntValues(ref _sessionData._HAPISession, nodeID, values, start, length);
