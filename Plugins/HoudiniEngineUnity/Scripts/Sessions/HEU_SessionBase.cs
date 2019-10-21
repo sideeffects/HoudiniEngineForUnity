@@ -1122,6 +1122,23 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool GetParmTagName(HAPI_NodeId nodeID, HAPI_ParmId parmID, int tagIndex, out HAPI_StringHandle tagName)
+		{
+			tagName = 0;
+			return false;
+		}
+
+		public virtual bool GetParmTagValue(HAPI_NodeId nodeID, HAPI_ParmId parmID, string tagName, out HAPI_StringHandle tagValue)
+		{
+			tagValue = 0;
+			return false;
+		}
+
+		public virtual bool ParmHasTag(HAPI_NodeId nodeID, HAPI_ParmId parmID, string tagName, ref bool hasTag)
+		{
+			return false;
+		}
+
 		public virtual bool GetParamIntValues(HAPI_NodeId nodeID, [Out] int[] values, int start, int length)
 		{
 			return false;

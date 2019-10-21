@@ -105,6 +105,9 @@ namespace HoudiniEngineUnity
 		// Input node info
 		public HEU_InputNode _paramInputNode;
 
+		// Flags whether this should be treated as an asset path
+		public bool _hasAssetPathTag;
+
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Properties & Functions
@@ -172,6 +175,11 @@ namespace HoudiniEngineUnity
 				return new Vector3(_floatValues[0], _floatValues[1], _floatValues[2]);
 			}
 			return Vector3.zero;
+		}
+
+		public bool IsAssetPath()
+		{
+			return _hasAssetPathTag;
 		}
 	}
 
