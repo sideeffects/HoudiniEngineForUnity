@@ -1019,7 +1019,7 @@ namespace HoudiniEngineUnity
 
 			if (collisionSrcGO != null)
 			{
-				HEU_GeneralUtility.ReplaceColliderWMesh(newInstanceGO, collisionSrcGO);
+				HEU_GeneralUtility.ReplaceColliderMeshFromMeshFilter(newInstanceGO, collisionSrcGO);
 			}
 
 			// To get the instance output name, we pass in the instance index. The actual name will be +1 from this.
@@ -1467,7 +1467,8 @@ namespace HoudiniEngineUnity
 						TerrainLayer[] tergetTerrainLayers = new TerrainLayer[sourceTerrainLayers.Length];
 						for(int m = 0; m < sourceTerrainLayers.Length; ++m)
 						{
-							tergetTerrainLayers[m] = HEU_AssetDatabase.CopyAndLoadAssetFromAssetCachePath(sourceTerrainLayers[m], bakedTerrainPath, typeof(TerrainLayer), true) as TerrainLayer;
+							TerrainLayer copylayer = HEU_AssetDatabase.CopyAndLoadAssetFromAssetCachePath(sourceTerrainLayers[m], bakedTerrainPath, typeof(TerrainLayer), true) as TerrainLayer;
+							tergetTerrainLayers[m] = copylayer != null ? copylayer : sourceTerrainLayers[m];
 						}
 						targetTerrainData.terrainLayers = tergetTerrainLayers;
 					}
@@ -1702,6 +1703,15 @@ namespace HoudiniEngineUnity
 						// Otherwise, copying prefab instances breaks the prefab connection and creates duplicates (e.g. instancing existing prefabs).
 						CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
 							ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
+					}
+					else
+					{
+						// Special case that copies overridden MeshCollider (via collision_geo attribute on instance)
+						MeshCollider sourceMeshCollider = srcChildGO.GetComponent<MeshCollider>();
+						if (sourceMeshCollider != null && UnityEditor.PrefabUtility.IsAddedComponentOverride(sourceMeshCollider))
+						{
+							HEU_GeneralUtility.ReplaceColliderMeshFromMeshCollider(targetChildGO, srcChildGO);
+						}
 					}
 				}
 
