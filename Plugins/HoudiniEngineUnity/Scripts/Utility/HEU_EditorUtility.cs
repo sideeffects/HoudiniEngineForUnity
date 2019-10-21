@@ -129,6 +129,15 @@ namespace HoudiniEngineUnity
 #endif
 		}
 
+		public static bool PrefabIsAddedComponentOverride(Component comp)
+		{
+#if UNITY_EDITOR && UNITY_2018_3_OR_NEWER
+			return UnityEditor.PrefabUtility.IsAddedComponentOverride(comp);
+#else
+			return false;
+#endif
+		}
+
 		public static bool IsEditorPlaying()
 		{
 #if UNITY_EDITOR
