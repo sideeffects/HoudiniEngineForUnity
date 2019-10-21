@@ -1467,7 +1467,8 @@ namespace HoudiniEngineUnity
 						TerrainLayer[] tergetTerrainLayers = new TerrainLayer[sourceTerrainLayers.Length];
 						for(int m = 0; m < sourceTerrainLayers.Length; ++m)
 						{
-							tergetTerrainLayers[m] = HEU_AssetDatabase.CopyAndLoadAssetFromAssetCachePath(sourceTerrainLayers[m], bakedTerrainPath, typeof(TerrainLayer), true) as TerrainLayer;
+							TerrainLayer copylayer = HEU_AssetDatabase.CopyAndLoadAssetFromAssetCachePath(sourceTerrainLayers[m], bakedTerrainPath, typeof(TerrainLayer), true) as TerrainLayer;
+							tergetTerrainLayers[m] = copylayer != null ? copylayer : sourceTerrainLayers[m];
 						}
 						targetTerrainData.terrainLayers = tergetTerrainLayers;
 					}
