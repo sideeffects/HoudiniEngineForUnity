@@ -1708,7 +1708,7 @@ namespace HoudiniEngineUnity
 					{
 						// Special case that copies overridden MeshCollider (via collision_geo attribute on instance)
 						MeshCollider sourceMeshCollider = srcChildGO.GetComponent<MeshCollider>();
-						if (sourceMeshCollider != null && UnityEditor.PrefabUtility.IsAddedComponentOverride(sourceMeshCollider))
+						if (sourceMeshCollider != null && HEU_EditorUtility.PrefabIsAddedComponentOverride(sourceMeshCollider))
 						{
 							HEU_GeneralUtility.ReplaceColliderMeshFromMeshCollider(targetChildGO, srcChildGO);
 						}
