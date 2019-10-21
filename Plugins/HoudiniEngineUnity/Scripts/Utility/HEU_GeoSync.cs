@@ -878,7 +878,7 @@ namespace HoudiniEngineUnity
 
 			if (collisionSourceGO != null)
 			{
-				HEU_GeneralUtility.ReplaceColliderWMesh(newInstanceGO, collisionSourceGO);
+				HEU_GeneralUtility.ReplaceColliderMeshFromMeshFilter(newInstanceGO, collisionSourceGO);
 			}
 
 			// To get the instance output name, we pass in the instance index. The actual name will be +1 from this.
