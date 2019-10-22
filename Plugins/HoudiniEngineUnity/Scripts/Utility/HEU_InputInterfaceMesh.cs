@@ -167,6 +167,15 @@ namespace HoudiniEngineUnity
 				rootInvertTransformMatrix = inputDataMeshes._inputObject.transform.worldToLocalMatrix;
 			}
 
+			// Always using the first submesh topology. This doesn't support mixed topology (triangles and quads).
+			MeshTopology meshTopology = inputDataMeshes._inputMeshes[0]._mesh.GetTopology(0);
+
+			int numVertsPerFace = 3;
+			if (meshTopology == MeshTopology.Quads)
+			{
+				numVertsPerFace = 4;
+			}
+
 			// For all meshes:
 			// Accumulate vertices, normals, uvs, colors, and indices.
 			// Keep track of indices start and count for each mesh for later when uploading material assignments and groups.
@@ -236,8 +245,9 @@ namespace HoudiniEngineUnity
 					int indexStart = pointIndexList.Count;
 					int vertIndexStart = vertIndexList.Count;
 
-					// Indices have to be re-indexed with our own offset
-					int[] meshIndices = inputDataMeshes._inputMeshes[i]._mesh.GetTriangles(j);
+					// Indices have to be re-indexed with our own offset 
+					// (using GetIndices to generalize triangles and quad indices)
+					int[] meshIndices = inputDataMeshes._inputMeshes[i]._mesh.GetIndices(j);
 					int numIndices = meshIndices.Length;
 					for (int k = 0; k < numIndices; ++k)
 					{
@@ -289,14 +299,17 @@ namespace HoudiniEngineUnity
 				colors = null;
 			}
 
+
 			HAPI_PartInfo partInfo = new HAPI_PartInfo();
-			partInfo.faceCount = vertIndexList.Count / 3;
+			partInfo.faceCount = vertIndexList.Count / numVertsPerFace;
 			partInfo.vertexCount = vertIndexList.Count;
 			partInfo.pointCount = vertices.Count;
 			partInfo.pointAttributeCount = 1;
 			partInfo.vertexAttributeCount = 0;
 			partInfo.primitiveAttributeCount = 0;
 			partInfo.detailAttributeCount = 0;
+
+			//Debug.LogFormat("Faces: {0}; Vertices: {1}; Verts/Face: {2}", partInfo.faceCount, partInfo.vertexCount, numVertsPerFace);
 
 			if (normals != null && normals.Count > 0)
 			{
@@ -346,10 +359,10 @@ namespace HoudiniEngineUnity
 			int[] faceCounts = new int[partInfo.faceCount];
 			for (int i = 0; i < partInfo.faceCount; ++i)
 			{
-				faceCounts[i] = 3;
+				faceCounts[i] = numVertsPerFace;
 			}
 
-			int[] triIndices = pointIndexList.ToArray();
+			int[] faceIndices = pointIndexList.ToArray();
 
 			if (!HEU_GeneralUtility.SetArray2Arg(displayNodeID, 0, session.SetFaceCount, faceCounts, 0, partInfo.faceCount))
 			{
@@ -357,7 +370,7 @@ namespace HoudiniEngineUnity
 				return false;
 			}
 
-			if (!HEU_GeneralUtility.SetArray2Arg(displayNodeID, 0, session.SetVertexList, triIndices, 0, partInfo.vertexCount))
+			if (!HEU_GeneralUtility.SetArray2Arg(displayNodeID, 0, session.SetVertexList, faceIndices, 0, partInfo.vertexCount))
 			{
 				Debug.LogError("Failed to set input geometry indices.");
 				return false;
@@ -453,8 +466,8 @@ namespace HoudiniEngineUnity
 
 						bFoundAtleastOneValidMaterial |= !string.IsNullOrEmpty(materialName);
 
-						int faceStart = (int)inputDataMeshes._inputMeshes[g]._indexStart[i] / 3;
-						int faceEnd = faceStart + ((int)inputDataMeshes._inputMeshes[g]._indexCount[i] / 3);
+						int faceStart = (int)inputDataMeshes._inputMeshes[g]._indexStart[i] / numVertsPerFace;
+						int faceEnd = faceStart + ((int)inputDataMeshes._inputMeshes[g]._indexCount[i] / numVertsPerFace);
 						for (int m = faceStart; m < faceEnd; ++m)
 						{
 							materialIDs[m] = materialName;
@@ -503,8 +516,8 @@ namespace HoudiniEngineUnity
 				{
 					for (int i = 0; i < inputDataMeshes._inputMeshes[g]._numSubMeshes; ++i)
 					{
-						int faceStart = (int)inputDataMeshes._inputMeshes[g]._indexStart[i] / 3;
-						int faceEnd = faceStart + ((int)inputDataMeshes._inputMeshes[g]._indexCount[i] / 3);
+						int faceStart = (int)inputDataMeshes._inputMeshes[g]._indexStart[i] / numVertsPerFace;
+						int faceEnd = faceStart + ((int)inputDataMeshes._inputMeshes[g]._indexCount[i] / numVertsPerFace);
 						for (int m = faceStart; m < faceEnd; ++m)
 						{
 							primitiveNameAttr[m] = inputDataMeshes._inputMeshes[g]._meshPath;
@@ -542,8 +555,8 @@ namespace HoudiniEngineUnity
 					// Set 1 for faces belonging to this group
 					for (int s = 0; s < inputDataMeshes._inputMeshes[g]._numSubMeshes; ++s)
 					{
-						int faceStart = (int)inputDataMeshes._inputMeshes[g]._indexStart[s] / 3;
-						int faceEnd = faceStart + ((int)inputDataMeshes._inputMeshes[g]._indexCount[s] / 3);
+						int faceStart = (int)inputDataMeshes._inputMeshes[g]._indexStart[s] / numVertsPerFace;
+						int faceEnd = faceStart + ((int)inputDataMeshes._inputMeshes[g]._indexCount[s] / numVertsPerFace);
 						for (int m = faceStart; m < faceEnd; ++m)
 						{
 							membership[m] = 1;
