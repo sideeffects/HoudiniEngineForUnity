@@ -1031,7 +1031,7 @@ namespace HoudiniEngineUnity
 			HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnityForInstance(ref hapiTransform, instanceTransform);
 
 			// Apply offsets
-			instanceTransform.localRotation = instanceTransform.localRotation * Quaternion.Euler(rotationOffset);
+			instanceTransform.localRotation = Quaternion.Euler(rotationOffset) * instanceTransform.localRotation;
 			instanceTransform.localScale = Vector3.Scale(instanceTransform.localScale, scaleOffset);
 
 			// When cloning, the instanced part might have been made invisible, so re-enable renderer to have the cloned instance display it.
