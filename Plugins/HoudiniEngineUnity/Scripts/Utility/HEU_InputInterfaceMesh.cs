@@ -184,7 +184,7 @@ namespace HoudiniEngineUnity
 			for (int i = 0; i < numMeshes; ++i)
 			{
 				Vector3[] meshVertices = inputDataMeshes._inputMeshes[i]._mesh.vertices;
-				Matrix4x4 localToWorld = inputDataMeshes._inputMeshes[i]._transform.localToWorldMatrix * rootInvertTransformMatrix;
+				Matrix4x4 localToWorld = rootInvertTransformMatrix * inputDataMeshes._inputMeshes[i]._transform.localToWorldMatrix;
 
 				List<Vector3> uniqueVertices = new List<Vector3>();
 
