@@ -869,7 +869,7 @@ namespace HoudiniEngineUnity
 			Vector3 euler = quaternion.eulerAngles;
 			euler.y = -euler.y;
 			euler.z = -euler.z;
-			unityTransform.localRotation = unityTransform.localRotation * Quaternion.Euler(euler);
+			unityTransform.localRotation = Quaternion.Euler(euler) * unityTransform.localRotation;
 
 			// No inversion required for scale
 			// We can't directly set global scale in Unity, but the proper workaround is to unparent, set scale, then reparent
