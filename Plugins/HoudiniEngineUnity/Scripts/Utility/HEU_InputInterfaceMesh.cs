@@ -190,18 +190,14 @@ namespace HoudiniEngineUnity
 
 				// Keep track of old vertex positions (old vertex slot points to new unique vertex slot)
 				int[] reindexVertices = new int[meshVertices.Length];
-
-				for (int j = 0; j < meshVertices.Length; ++j)
-				{
-					reindexVertices[j] = -1;
-				}
+				Dictionary<Vector3, int> reindexMap = new Dictionary<Vector3, int>();
 
 				// For each vertex, check against subsequent vertices for shared positions.
 				for (int a = 0; a < meshVertices.Length; ++a)
 				{
 					Vector3 va = meshVertices[a];
 
-					if (reindexVertices[a] == -1)
+					if (!reindexMap.ContainsKey(va))
 					{
 						if (numMeshes > 1 && !inputDataMeshes._hasLOD)
 						{
@@ -215,15 +211,11 @@ namespace HoudiniEngineUnity
 
 						// Reindex to point to unique vertex slot
 						reindexVertices[a] = uniqueVertices.Count - 1;
+						reindexMap[va] = uniqueVertices.Count - 1;
 					}
-
-					for (int b = a + 1; b < meshVertices.Length; ++b)
+					else
 					{
-						if (va == meshVertices[b])
-						{
-							// Shared vertex -> reindex to point to unique vertex slot
-							reindexVertices[b] = reindexVertices[a];
-						}
+						reindexVertices[a] = reindexMap[va];
 					}
 				}
 
