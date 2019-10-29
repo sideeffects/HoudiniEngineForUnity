@@ -52,10 +52,10 @@ namespace HoudiniEngineUnity
 
 		// SESSION ----------------------------------------------------------------------------------------------------
 
-		public static bool GetPDGGraphContexts(this HEU_SessionBase session, out int num_contexts, [Out] HAPI_StringHandle[] context_names_array, [Out] HAPI_PDG_GraphContextId[] context_id_array, int count)
+		public static bool GetPDGGraphContexts(this HEU_SessionBase session, out int num_contexts, [Out] HAPI_StringHandle[] context_names_array, [Out] HAPI_PDG_GraphContextId[] context_id_array, int count, bool bLogError)
 		{
 			HAPI_Result result = HEU_HAPIImportsPDG.HAPI_GetPDGGraphContexts(ref session.GetSessionData()._HAPISession, out num_contexts, context_names_array, context_id_array, count);
-			session.HandleStatusResult(result, "Getting PDG Graph Contexts", false, true);
+			session.HandleStatusResult(result, "Getting PDG Graph Contexts", false, bLogError);
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 
