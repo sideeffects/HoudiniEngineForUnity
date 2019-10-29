@@ -676,7 +676,7 @@ namespace HoudiniEngineUnity
 					int numObjects = gameObjects.Length;
 					for(int j = 0; j < numObjects; ++j)
 					{
-						Transform[] childTransforms = gameObjects[j].GetComponentsInChildren<Transform>();
+						Transform[] childTransforms = gameObjects[j].GetComponentsInChildren<Transform>(true);
 						foreach(Transform t in childTransforms)
 						{
 							if (t.gameObject.name.Equals(name))
