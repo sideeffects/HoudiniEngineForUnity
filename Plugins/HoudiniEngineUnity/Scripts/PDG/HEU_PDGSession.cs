@@ -123,7 +123,7 @@ namespace HoudiniEngineUnity
 		private void UpdatePDGContext()
 		{
 #if HOUDINIENGINEUNITY_ENABLED
-			HEU_SessionBase session = GetHAPIPDGSession();
+			HEU_SessionBase session = GetHAPIPDGSession(false);
 			if (session == null || !session.IsSessionValid())
 			{
 				return;
@@ -182,7 +182,7 @@ namespace HoudiniEngineUnity
 		public void ReinitializePDGContext()
 		{
 #if HOUDINIENGINEUNITY_ENABLED
-			HEU_SessionBase session = GetHAPIPDGSession();
+			HEU_SessionBase session = GetHAPIPDGSession(false);
 			if (session == null || !session.IsSessionValid())
 			{
 				_pdgContextIDs = null;
@@ -192,7 +192,7 @@ namespace HoudiniEngineUnity
 			int numContexts = 0;
 			HAPI_StringHandle[] contextNames = new HAPI_StringHandle[_pdgContextSize];
 			HAPI_PDG_GraphContextId[] contextIDs = new HAPI_PDG_GraphContextId[_pdgContextSize];
-			if (!session.GetPDGGraphContexts(out numContexts, contextNames, contextIDs, _pdgContextSize) || numContexts <= 0)
+			if (!session.GetPDGGraphContexts(out numContexts, contextNames, contextIDs, _pdgContextSize, false) || numContexts <= 0)
 			{
 				_pdgContextIDs = null;
 				return;
@@ -207,7 +207,8 @@ namespace HoudiniEngineUnity
 			for (int i = 0; i < numContexts; ++i)
 			{
 				_pdgContextIDs[i] = contextIDs[i];
-				//Debug.LogFormat("PDG Context: {0} - {1}", HEU_SessionManager.GetString(contextNames[i], session), contextIDs[i]);
+				//string cname = HEU_SessionManager.GetString(contextNames[i], session);
+				//Debug.LogFormat("PDG Context: {0} - {1}", HEU_SessionManager.GetString(cname, session), contextIDs[i]);
 			}
 #endif
 		}
@@ -508,9 +509,16 @@ namespace HoudiniEngineUnity
 		/// Return the current Houdini Engine session
 		/// </summary>
 		/// <returns></returns>
-		public HEU_SessionBase GetHAPIPDGSession()
+		public HEU_SessionBase GetHAPIPDGSession(bool bCreate = true)
 		{
-			return HEU_SessionManager.GetOrCreateDefaultSession();
+			if (bCreate)
+			{
+				return HEU_SessionManager.GetOrCreateDefaultSession();
+			}
+			else
+			{
+				return HEU_SessionManager.GetDefaultSession();
+			}
 		}
 
 		/// <summary>

@@ -527,13 +527,13 @@ namespace HoudiniEngineUnity
 					}
 					else
 					{
-						// Set return state to false if no mesh and not a collider type
-						bResult = (meshBuffers[m]._geoCache._colliderType != HEU_GenerateGeoCache.ColliderType.NONE);
+						// Set return state to false if no mesh and no colliders (i.e. nothing is generated)
+						bResult = (meshBuffers[m]._geoCache._colliderInfos.Count > 0);
 					}
 
 					if (bResult)
 					{
-						HEU_GenerateGeoCache.UpdateCollider(meshBuffers[m]._geoCache, generatedOutput._outputData._gameObject);
+						HEU_GenerateGeoCache.UpdateColliders(meshBuffers[m]._geoCache, generatedOutput._outputData);
 
 						meshBuffers[m]._generatedOutput = generatedOutput;
 						_generatedOutputs.Add(generatedOutput);
