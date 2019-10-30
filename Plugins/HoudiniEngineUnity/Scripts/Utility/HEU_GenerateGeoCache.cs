@@ -105,23 +105,31 @@ namespace HoudiniEngineUnity
 		public bool _hasLODGroups;
 		public float[] _LODTransitionValues;
 
-		// Collider
-		public enum ColliderType
+		// Colliders
+		public class HEU_ColliderInfo
 		{
-			NONE,
-			BOX,
-			SPHERE,
-			MESH
-		}
-		public ColliderType _colliderType;
-		public Vector3 _colliderCenter;
-		public Vector3 _colliderSize;
-		public float _colliderRadius;
-		public bool _convexCollider;
+			public enum ColliderType
+			{
+				NONE,
+				BOX,
+				SPHERE,
+				MESH,
+				SIMPLE_BOX,
+				SIMPLE_SPHERE,
+				SIMPLE_CAPSULE
+			}
 
-		public string _collisionGroupName;
-		public Vector3[] _collisionVertices;
-		public int[] _collisionIndices;
+			public ColliderType _colliderType;
+			public Vector3 _colliderCenter;
+			public Vector3 _colliderSize;
+			public float _colliderRadius;
+			public bool _convexCollider;
+
+			public string _collisionGroupName;
+			public Vector3[] _collisionVertices;
+			public int[] _collisionIndices;
+		}
+		public List<HEU_ColliderInfo> _colliderInfos = new List<HEU_ColliderInfo>();
 
 		public List<HEU_MaterialData> _materialCache;
 		public Dictionary<int, HEU_MaterialData> _materialIDToDataMap;
@@ -131,7 +139,7 @@ namespace HoudiniEngineUnity
 #if UNITY_2017_3_OR_NEWER
 		// Store the type of the index buffer size. By default use 16-bit, but will change to 32-bit if 
 		// for large vertex count.
-		public UnityEngine.Rendering.IndexFormat _inderFormat = UnityEngine.Rendering.IndexFormat.UInt16;
+		public UnityEngine.Rendering.IndexFormat _indexFormat = UnityEngine.Rendering.IndexFormat.UInt16;
 #endif
 
 
@@ -176,7 +184,7 @@ namespace HoudiniEngineUnity
 			{
 #if UNITY_2017_3_OR_NEWER
 				// For vertex count larger than 16-bit, use 32-bit buffer
-				geoCache._inderFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+				geoCache._indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 #else
 				Debug.LogErrorFormat("Part {0} has vertex count of {1} which is above Unity maximum of {2}.\nUse Unity 2017.3+ or reduce this in Houdini.",
 				geoCache._partName, vertexCount, maxVertexCount);
@@ -573,42 +581,110 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		public static void UpdateCollider(HEU_GenerateGeoCache geoCache, GameObject outputGameObject)
+		public static void UpdateColliders(HEU_GenerateGeoCache geoCache, HEU_GeneratedOutputData outputData)
 		{
-			if(geoCache._colliderType == ColliderType.NONE)
+			// Remove previously generated colliders
+			HEU_GeneratedOutput.DestroyAllGeneratedColliders(outputData);
+
+			foreach (HEU_ColliderInfo colliderInfo in geoCache._colliderInfos)
 			{
-				HEU_GeneralUtility.DestroyMeshCollider(outputGameObject, true);
+				UpdateCollider(geoCache, outputData, colliderInfo);
 			}
-			else
+		}
+
+		public static void UpdateCollider(HEU_GenerateGeoCache geoCache, HEU_GeneratedOutputData outputData, HEU_ColliderInfo colliderInfo)
+		{
+			GameObject outputGameObject = outputData._gameObject;
+
+			if (colliderInfo._colliderType == HEU_ColliderInfo.ColliderType.BOX)
 			{
-				if(geoCache._colliderType == ColliderType.BOX)
-				{
-					BoxCollider collider = HEU_GeneralUtility.GetOrCreateComponent<BoxCollider>(outputGameObject);
-					collider.center = geoCache._colliderCenter;
-					collider.size = geoCache._colliderSize;
-				}
-				else if(geoCache._colliderType == ColliderType.SPHERE)
-				{
-					SphereCollider collider = HEU_GeneralUtility.GetOrCreateComponent<SphereCollider>(outputGameObject);
-					collider.center = geoCache._colliderCenter;
-					collider.radius = geoCache._colliderRadius;
-				}
-				else if(geoCache._colliderType == ColliderType.MESH)
-				{
-					MeshCollider meshCollider = HEU_GeneralUtility.GetOrCreateComponent<MeshCollider>(outputGameObject);
+				BoxCollider collider = HEU_GeneralUtility.GetOrCreateComponent<BoxCollider>(outputGameObject);
+				collider.center = colliderInfo._colliderCenter;
+				collider.size = colliderInfo._colliderSize;
 
-					Mesh collisionMesh = new Mesh();
+				outputData._colliders.Add(collider);
+			}
+			else if(colliderInfo._colliderType == HEU_ColliderInfo.ColliderType.SPHERE)
+			{
+				SphereCollider collider = HEU_GeneralUtility.GetOrCreateComponent<SphereCollider>(outputGameObject);
+				collider.center = colliderInfo._colliderCenter;
+				collider.radius = colliderInfo._colliderRadius;
+
+				outputData._colliders.Add(collider);
+			}
+			else if (colliderInfo._colliderType == HEU_ColliderInfo.ColliderType.SIMPLE_BOX)
+			{
+				BoxCollider collider = HEU_GeneralUtility.GetOrCreateComponent<BoxCollider>(outputGameObject);
+
+				Vector3 firstPt = colliderInfo._collisionVertices[0];
+				Bounds bounds = new Bounds(firstPt, Vector3.zero);
+
+				for (int i = 1; i < colliderInfo._collisionVertices.Length; ++i)
+				{
+					bounds.Encapsulate(colliderInfo._collisionVertices[i]);
+				}
+
+				collider.center = bounds.center;
+				collider.size = bounds.size;
+
+				outputData._colliders.Add(collider);
+			}
+			else if (colliderInfo._colliderType == HEU_ColliderInfo.ColliderType.SIMPLE_SPHERE)
+			{
+				SphereCollider collider = HEU_GeneralUtility.GetOrCreateComponent<SphereCollider>(outputGameObject);
+
+				Vector3 firstPt = colliderInfo._collisionVertices[0];
+				Bounds bounds = new Bounds(firstPt, Vector3.zero);
+
+				for (int i = 1; i < colliderInfo._collisionVertices.Length; ++i)
+				{
+					bounds.Encapsulate(colliderInfo._collisionVertices[i]);
+				}
+
+				Vector3 extents = bounds.extents;
+				float max_extent = Mathf.Max(new float[] { extents.x, extents.y, extents.z });
+
+				collider.center = bounds.center;
+				collider.radius = max_extent;
+
+				outputData._colliders.Add(collider);
+			}
+			else if (colliderInfo._colliderType == HEU_ColliderInfo.ColliderType.SIMPLE_CAPSULE)
+			{
+				CapsuleCollider collider = HEU_GeneralUtility.GetOrCreateComponent<CapsuleCollider>(outputGameObject);
+
+				Vector3 firstPt = colliderInfo._collisionVertices[0];
+				Bounds bounds = new Bounds(firstPt, Vector3.zero);
+
+				for (int i = 1; i < colliderInfo._collisionVertices.Length; ++i)
+				{
+					bounds.Encapsulate(colliderInfo._collisionVertices[i]);
+				}
+
+				collider.center = bounds.center;
+				collider.direction = 1;
+				collider.height = bounds.size.y;
+				collider.radius = bounds.extents.x;
+
+				outputData._colliders.Add(collider);
+			}
+			else if(colliderInfo._colliderType == HEU_ColliderInfo.ColliderType.MESH)
+			{
+				MeshCollider meshCollider = HEU_GeneralUtility.GetOrCreateComponent<MeshCollider>(outputGameObject);
+
+				Mesh collisionMesh = new Mesh();
 #if UNITY_2017_3_OR_NEWER
-					collisionMesh.indexFormat = geoCache._inderFormat;
+				collisionMesh.indexFormat = geoCache._indexFormat;
 #endif
-					collisionMesh.name = geoCache._collisionGroupName;
-					collisionMesh.vertices = geoCache._collisionVertices;
-					collisionMesh.triangles = geoCache._collisionIndices;
-					collisionMesh.RecalculateBounds();
+				collisionMesh.name = colliderInfo._collisionGroupName;
+				collisionMesh.vertices = colliderInfo._collisionVertices;
+				collisionMesh.triangles = colliderInfo._collisionIndices;
+				collisionMesh.RecalculateBounds();
 
-					meshCollider.sharedMesh = collisionMesh;
-					meshCollider.convex = geoCache._convexCollider;
-				}
+				meshCollider.sharedMesh = collisionMesh;
+				meshCollider.convex = colliderInfo._convexCollider;
+
+				outputData._colliders.Add(meshCollider);
 			}
 		}
 
@@ -846,6 +922,7 @@ namespace HoudiniEngineUnity
 				// The assumption here is that this might have been previously a normal mesh output, not an LOD Group
 				// so we need to remove the extra components.
 				HEU_GeneratedOutput.ClearGeneratedMaterialReferences(generatedOutput._outputData);
+				HEU_GeneratedOutput.DestroyAllGeneratedColliders(generatedOutput._outputData);
 				HEU_GeneralUtility.DestroyGeneratedMeshMaterialsLODGroups(generatedOutput._outputData._gameObject, true);
 				HEU_GeneralUtility.DestroyGeneratedComponents(generatedOutput._outputData._gameObject);
 
@@ -988,7 +1065,7 @@ namespace HoudiniEngineUnity
 					CombineInstance combine = new CombineInstance();
 					combine.mesh = new Mesh();
 #if UNITY_2017_3_OR_NEWER
-					combine.mesh.indexFormat = geoCache._inderFormat;
+					combine.mesh.indexFormat = geoCache._indexFormat;
 #endif
 
 					combine.mesh.SetVertices(submesh._vertices);
@@ -1048,7 +1125,7 @@ namespace HoudiniEngineUnity
 
 				newMesh = new Mesh();
 #if UNITY_2017_3_OR_NEWER
-				newMesh.indexFormat = geoCache._inderFormat;
+				newMesh.indexFormat = geoCache._indexFormat;
 #endif
 				newMesh.name = geoCache._partName + "_mesh";
 				newMesh.CombineMeshes(meshCombiner, false, false);
@@ -1187,6 +1264,8 @@ namespace HoudiniEngineUnity
 						Debug.LogWarningFormat("More than 1 collision mesh detected for part {0}.\nOnly a single collision mesh is supported per part.", geoCache._partName);
 					}
 
+					HEU_ColliderInfo colliderInfo = new HEU_ColliderInfo();
+
 					if (geoCache._partInfo.type == HAPI_PartType.HAPI_PARTTYPE_BOX)
 					{
 						// Box collider
@@ -1194,9 +1273,9 @@ namespace HoudiniEngineUnity
 						HAPI_BoxInfo boxInfo = new HAPI_BoxInfo();
 						if (session.GetBoxInfo(geoCache.GeoID, geoCache.PartID, ref boxInfo))
 						{
-							geoCache._colliderType = ColliderType.BOX;
-							geoCache._colliderCenter = new Vector3(-boxInfo.center[0], boxInfo.center[1], boxInfo.center[2]);
-							geoCache._colliderSize = new Vector3(boxInfo.size[0] * 2f, boxInfo.size[1] * 2f, boxInfo.size[2] * 2f);
+							colliderInfo._colliderType = HEU_ColliderInfo.ColliderType.BOX;
+							colliderInfo._colliderCenter = new Vector3(-boxInfo.center[0], boxInfo.center[1], boxInfo.center[2]);
+							colliderInfo._colliderSize = new Vector3(boxInfo.size[0] * 2f, boxInfo.size[1] * 2f, boxInfo.size[2] * 2f);
 							// TODO: Should we apply the box info rotation here to the box collider?
 							//		 If so, it should be in its own gameobject?
 						}
@@ -1208,9 +1287,9 @@ namespace HoudiniEngineUnity
 						HAPI_SphereInfo sphereInfo = new HAPI_SphereInfo();
 						if (session.GetSphereInfo(geoCache.GeoID, geoCache.PartID, ref sphereInfo))
 						{
-							geoCache._colliderType = ColliderType.SPHERE;
-							geoCache._colliderCenter = new Vector3(-sphereInfo.center[0], sphereInfo.center[1], sphereInfo.center[2]);
-							geoCache._colliderRadius = sphereInfo.radius;
+							colliderInfo._colliderType = HEU_ColliderInfo.ColliderType.SPHERE;
+							colliderInfo._colliderCenter = new Vector3(-sphereInfo.center[0], sphereInfo.center[1], sphereInfo.center[2]);
+							colliderInfo._colliderRadius = sphereInfo.radius;
 						}
 					}
 					else
@@ -1224,6 +1303,7 @@ namespace HoudiniEngineUnity
 							if (index >= 0 && index < geoCache._posAttr.Length)
 							{
 								collisionVertices.Add(new Vector3(-geoCache._posAttr[index * 3], geoCache._posAttr[index * 3 + 1], geoCache._posAttr[index * 3 + 2]));
+								// TODO: also add bounds entry here
 							}
 						}
 
@@ -1234,12 +1314,34 @@ namespace HoudiniEngineUnity
 						}
 
 						// Defer the mesh creation as this function can be invoked from non-main thread (e.g. HEU_GeoSync)
-						geoCache._collisionGroupName = groupName;
-						geoCache._collisionVertices = collisionVertices.ToArray();
-						geoCache._collisionIndices = collisionIndices;
-						geoCache._colliderType = ColliderType.MESH;
-						geoCache._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
+						colliderInfo._collisionGroupName = groupName;
+						colliderInfo._collisionVertices = collisionVertices.ToArray();
+						colliderInfo._collisionIndices = collisionIndices;
+						colliderInfo._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
+
+						HEU_ColliderInfo.ColliderType colliderType = HEU_ColliderInfo.ColliderType.MESH;
+
+						if (groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_COLLISION_GEO) 
+							|| groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_COLLISION_GEO))
+						{
+							if (groupName.EndsWith("box"))
+							{
+								colliderType = HEU_ColliderInfo.ColliderType.SIMPLE_BOX;
+							}
+							else if (groupName.EndsWith("sphere"))
+							{
+								colliderType = HEU_ColliderInfo.ColliderType.SIMPLE_SPHERE;
+							}
+							else if (groupName.EndsWith("capsule"))
+							{
+								colliderType = HEU_ColliderInfo.ColliderType.SIMPLE_CAPSULE;
+							}
+						}
+
+						colliderInfo._colliderType = colliderType;
 					}
+
+					geoCache._colliderInfos.Add(colliderInfo);
 
 					numCollisionMeshes++;
 				}
@@ -1587,6 +1689,8 @@ namespace HoudiniEngineUnity
 						Debug.LogWarningFormat("More than 1 collision mesh detected for part {0}.\nOnly a single collision mesh is supported per part.", geoCache._partName);
 					}
 
+					HEU_ColliderInfo colliderInfo = new HEU_ColliderInfo();
+
 					if (geoCache._partInfo.type == HAPI_PartType.HAPI_PARTTYPE_BOX)
 					{
 						// Box collider
@@ -1594,9 +1698,9 @@ namespace HoudiniEngineUnity
 						HAPI_BoxInfo boxInfo = new HAPI_BoxInfo();
 						if (session.GetBoxInfo(geoCache.GeoID, geoCache.PartID, ref boxInfo))
 						{
-							geoCache._colliderType = HEU_GenerateGeoCache.ColliderType.BOX;
-							geoCache._colliderCenter = new Vector3(-boxInfo.center[0], boxInfo.center[1], boxInfo.center[2]);
-							geoCache._colliderSize = new Vector3(boxInfo.size[0] * 2f, boxInfo.size[1] * 2f, boxInfo.size[2] * 2f);
+							colliderInfo._colliderType = HEU_ColliderInfo.ColliderType.BOX;
+							colliderInfo._colliderCenter = new Vector3(-boxInfo.center[0], boxInfo.center[1], boxInfo.center[2]);
+							colliderInfo._colliderSize = new Vector3(boxInfo.size[0] * 2f, boxInfo.size[1] * 2f, boxInfo.size[2] * 2f);
 							// TODO: Should we apply the box info rotation here to the box collider?
 							//		 If so, it should be in its own gameobject?
 						}
@@ -1608,9 +1712,9 @@ namespace HoudiniEngineUnity
 						HAPI_SphereInfo sphereInfo = new HAPI_SphereInfo();
 						if (session.GetSphereInfo(geoCache.GeoID, geoCache.PartID, ref sphereInfo))
 						{
-							geoCache._colliderType = HEU_GenerateGeoCache.ColliderType.SPHERE;
-							geoCache._colliderCenter = new Vector3(-sphereInfo.center[0], sphereInfo.center[1], sphereInfo.center[2]);
-							geoCache._colliderRadius = sphereInfo.radius;
+							colliderInfo._colliderType = HEU_ColliderInfo.ColliderType.SPHERE;
+							colliderInfo._colliderCenter = new Vector3(-sphereInfo.center[0], sphereInfo.center[1], sphereInfo.center[2]);
+							colliderInfo._colliderRadius = sphereInfo.radius;
 						}
 					}
 					else
@@ -1641,12 +1745,14 @@ namespace HoudiniEngineUnity
 						}
 
 						// Defer the mesh creation as this function can be invoked from non-main thread (e.g. HEU_GeoSync)
-						geoCache._collisionGroupName = groupName;
-						geoCache._collisionVertices = collisionVertices.ToArray();
-						geoCache._collisionIndices = collisionIndices.ToArray();
-						geoCache._colliderType = ColliderType.MESH;
-						geoCache._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
+						colliderInfo._collisionGroupName = groupName;
+						colliderInfo._collisionVertices = collisionVertices.ToArray();
+						colliderInfo._collisionIndices = collisionIndices.ToArray();
+						colliderInfo._colliderType = HEU_ColliderInfo.ColliderType.MESH;
+						colliderInfo._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
 					}
+
+					geoCache._colliderInfos.Add(colliderInfo);
 
 					numCollisionMeshes++;
 				}
