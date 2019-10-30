@@ -889,9 +889,7 @@ namespace HoudiniEngineUnity
 				return;
 			}
 
-			// Delete the target mesh collider's mesh
-			// Do this before deleting the mesh below since its stored under the mesh's asset on file
-			DestroyMeshCollider(targetGO, bDontDeletePersistantResources);
+			// Removed the MeshCollider deletion here in favour of moving it into HEU_GeneratedOutputData.DestroyAllGeneratedColliders
 
 			// Delete the target mesh filter's mesh
 			MeshFilter targetMeshFilter = targetGO.GetComponent<MeshFilter>();
@@ -964,23 +962,19 @@ namespace HoudiniEngineUnity
 			HEU_AssetDatabase.DeleteAssetIfInBakedFolder(material);
 		}
 
-		public static void DestroyMeshCollider(GameObject gameObject, bool bDontDeletePersistantResources)
+		public static void DestroyMeshCollider(MeshCollider meshCollider, bool bDontDeletePersistantResources)
 		{
-			MeshCollider targetMeshCollider = gameObject != null ? gameObject.GetComponent<MeshCollider>() : null;
-			if (targetMeshCollider != null)
+			Mesh targetColliderMesh = meshCollider != null ? meshCollider.sharedMesh : null;
+			if (targetColliderMesh != null)
 			{
-				Mesh targetColliderMesh = targetMeshCollider != null ? targetMeshCollider.sharedMesh : null;
-				if (targetColliderMesh != null)
+				if (!bDontDeletePersistantResources || !HEU_EditorUtility.IsPersistant(targetColliderMesh))
 				{
-					if (!bDontDeletePersistantResources || !HEU_EditorUtility.IsPersistant(targetColliderMesh))
-					{
-						// Need to call DestroyImmediate with bAllowDestroyingAssets to force deleting the asset file
-						DestroyImmediate(targetColliderMesh, bAllowDestroyingAssets: true);
-					}
-
-					targetColliderMesh = null;
-					targetMeshCollider.sharedMesh = null;
+					// Need to call DestroyImmediate with bAllowDestroyingAssets to force deleting the asset file
+					DestroyImmediate(targetColliderMesh, bAllowDestroyingAssets: true);
 				}
+
+				targetColliderMesh = null;
+				meshCollider.sharedMesh = null;
 			}
 		}
 

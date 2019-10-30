@@ -474,6 +474,7 @@ namespace HoudiniEngineUnity
 		{
 			if (_generatedOutput != null)
 			{
+				HEU_GeneratedOutput.DestroyAllGeneratedColliders(_generatedOutput._outputData);
 				HEU_GeneralUtility.DestroyGeneratedMeshMaterialsLODGroups(_generatedOutput._outputData._gameObject, true);
 				HEU_GeneratedOutput.DestroyGeneratedOutputChildren(_generatedOutput);
 				HEU_GeneratedOutput.ClearGeneratedMaterialReferences(_generatedOutput._outputData);
@@ -1816,11 +1817,11 @@ namespace HoudiniEngineUnity
 						}
 						else
 						{
-							// Set return state to false if no mesh and not a collider type
-							bResult = (geoCache._colliderType != HEU_GenerateGeoCache.ColliderType.NONE);
+							// Set return state to false if no mesh and no colliders (i.e. nothing is generated)
+							bResult = (geoCache._colliderInfos.Count > 0);
 						}
 
-						HEU_GenerateGeoCache.UpdateCollider(geoCache, _generatedOutput._outputData._gameObject);
+						HEU_GenerateGeoCache.UpdateColliders(geoCache, _generatedOutput._outputData);
 					}
 				}
 				else if(IsPartInstancer() || IsObjectInstancer() || IsAttribInstancer())
