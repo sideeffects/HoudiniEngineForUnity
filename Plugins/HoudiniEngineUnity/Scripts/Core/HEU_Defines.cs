@@ -83,7 +83,6 @@ namespace HoudiniEngineUnity
 
 		public const int HAPI_MAX_PAGE_SIZE					= 20000;
 		public const int HAPI_SEC_BEFORE_PROGRESS_BAR_SHOW	= 3;
-		public const int HAPI_MIN_VERTICES_PER_FACE			= 3;
 		public const int HAPI_MAX_VERTICES_PER_FACE			= 3;
 
 		public const bool HAPI_CURVE_REFINE_TO_LINEAR		= true;

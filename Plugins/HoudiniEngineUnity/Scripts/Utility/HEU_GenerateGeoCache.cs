@@ -28,7 +28,7 @@
 //#define HEU_PROFILER_ON
 
 using UnityEngine;
-using System;
+using System.Text;
 using System.Collections.Generic;
 
 
@@ -57,6 +57,8 @@ namespace HoudiniEngineUnity
 		public string _partName;
 
 		public int[] _vertexList;
+
+		public int[] _faceCounts;
 
 		public HAPI_NodeId[] _houdiniMaterialIDs;
 
@@ -96,6 +98,7 @@ namespace HoudiniEngineUnity
 
 		public Dictionary<string, int[]> _groupSplitVertexIndices = new Dictionary<string, int[]>();
 		public Dictionary<string, List<int>> _groupSplitFaceIndices = new Dictionary<string, List<int>>();
+		public Dictionary<string, List<int>> _groupVertexOffsets = new Dictionary<string, List<int>>();
 
 		public int[] _allCollisionVertexList;
 		public int[] _allCollisionFaceIndices;
@@ -128,6 +131,8 @@ namespace HoudiniEngineUnity
 			public string _collisionGroupName;
 			public Vector3[] _collisionVertices;
 			public int[] _collisionIndices;
+
+			public MeshTopology _meshTopology = MeshTopology.Triangles;
 		}
 		public List<HEU_ColliderInfo> _colliderInfos = new List<HEU_ColliderInfo>();
 
@@ -136,11 +141,8 @@ namespace HoudiniEngineUnity
 
 		public string _assetCacheFolderPath;
 
-#if UNITY_2017_3_OR_NEWER
-		// Store the type of the index buffer size. By default use 16-bit, but will change to 32-bit if 
-		// for large vertex count.
-		public UnityEngine.Rendering.IndexFormat _indexFormat = UnityEngine.Rendering.IndexFormat.UInt16;
-#endif
+		[SerializeField]
+		public HEU_MeshIndexFormat _meshIndexFormat = new HEU_MeshIndexFormat();
 
 
 		//	LOGIC -----------------------------------------------------------------------------------------------------
@@ -176,21 +178,15 @@ namespace HoudiniEngineUnity
 				return null;
 			}
 
+			geoCache._faceCounts = new int[geoCache._partInfo.faceCount];
+			if (!session.GetFaceCounts(geoID, partID, geoCache._faceCounts, 0, geoCache._partInfo.faceCount))
+			{
+				return null;
+			}
+
 			geoCache._partName = HEU_SessionManager.GetString(geoCache._partInfo.nameSH, session);
 
-			uint maxVertexCount = ushort.MaxValue;
-			uint vertexCount = Convert.ToUInt32(geoCache._partInfo.vertexCount);
-			if (vertexCount > maxVertexCount)
-			{
-#if UNITY_2017_3_OR_NEWER
-				// For vertex count larger than 16-bit, use 32-bit buffer
-				geoCache._indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-#else
-				Debug.LogErrorFormat("Part {0} has vertex count of {1} which is above Unity maximum of {2}.\nUse Unity 2017.3+ or reduce this in Houdini.",
-				geoCache._partName, vertexCount, maxVertexCount);
-				return null;
-#endif
-			}
+			geoCache._meshIndexFormat.CalculateIndexFormat(geoCache._partInfo.vertexCount);
 
 			geoCache._vertexList = new int[geoCache._partInfo.vertexCount];
 			if (!HEU_GeneralUtility.GetArray2Arg(geoID, partID, session.GetVertexList, geoCache._vertexList, 0, geoCache._partInfo.vertexCount))
@@ -422,7 +418,7 @@ namespace HoudiniEngineUnity
 
 			if (_groups != null)
 			{
-				// We go through each group, building up a triangle list of indices that belong to it
+				// We go through each group, building up a list of vertices and indices that belong to it
 				// For strictly colliders (ie. non-rendering), we only create geometry colliders 
 				for (int g = 0; g < _groups.Length; ++g)
 				{
@@ -447,35 +443,42 @@ namespace HoudiniEngineUnity
 
 						int groupVertexListCount = 0;
 
-						List<int> allFaceList = new List<int>();
-						for (int f = 0; f < membership.Length; ++f)
+						List<int> groupFaceList = new List<int>();
+						List<int> groupVertexOffsetList = new List<int>();
+						int numFaces = _faceCounts.Length;
+						int vertIndex = 0;
+						for( int f = 0; f < numFaces; ++f)
 						{
+							int numVerts = _faceCounts[f];
 							if (membership[f] > 0)
 							{
 								// This face is a member of the specified group
 
-								allFaceList.Add(f);
+								groupFaceList.Add(f);
+								groupVertexOffsetList.Add(vertIndex);
 
-								groupVertexList[f * 3 + 0] = _vertexList[f * 3 + 0];
-								groupVertexList[f * 3 + 1] = _vertexList[f * 3 + 1];
-								groupVertexList[f * 3 + 2] = _vertexList[f * 3 + 2];
+								for (int v = 0; v < numVerts; v++)
+								{
+									groupVertexList[vertIndex + v] = _vertexList[vertIndex + v];
 
-								// Mark vertices as used
-								_allCollisionVertexList[f * 3 + 0] = 1;
-								_allCollisionVertexList[f * 3 + 1] = 1;
-								_allCollisionVertexList[f * 3 + 2] = 1;
+									// Mark vertices as used
+									_allCollisionVertexList[vertIndex + v] = 1;
+								}
 
 								// Mark face as used
 								_allCollisionFaceIndices[f] = 1;
 
-								groupVertexListCount += 3;
+								groupVertexListCount += numVerts;
 							}
+
+							vertIndex += numVerts;
 						}
 
 						if (groupVertexListCount > 0)
 						{
 							_groupSplitVertexIndices.Add(groupName, groupVertexList);
-							_groupSplitFaceIndices.Add(groupName, allFaceList);
+							_groupSplitFaceIndices.Add(groupName, groupFaceList);
+							_groupVertexOffsets.Add(groupName, groupVertexOffsetList);
 
 							_hasGroupGeometry = true;
 
@@ -493,6 +496,7 @@ namespace HoudiniEngineUnity
 				bool bMainSplitGroup = false;
 
 				List<int> remainingGroupSplitFaceIndices = new List<int>();
+				List<int> remainingGroupVertexOffsets = new List<int>();
 
 				for (int cv = 0; cv < _allCollisionVertexList.Length; ++cv)
 				{
@@ -504,18 +508,23 @@ namespace HoudiniEngineUnity
 					}
 				}
 
+				int vertIndex = 0;
 				for (int cf = 0; cf < _allCollisionFaceIndices.Length; ++cf)
 				{
 					if (_allCollisionFaceIndices[cf] == 0)
 					{
 						remainingGroupSplitFaceIndices.Add(cf);
+						remainingGroupVertexOffsets.Add(vertIndex);
 					}
+
+					vertIndex += _faceCounts[cf];
 				}
 
 				if (bMainSplitGroup)
 				{
 					_groupSplitVertexIndices.Add(HEU_Defines.HEU_DEFAULT_GEO_GROUP_NAME, remainingGroupSplitFaces);
 					_groupSplitFaceIndices.Add(HEU_Defines.HEU_DEFAULT_GEO_GROUP_NAME, remainingGroupSplitFaceIndices);
+					_groupVertexOffsets.Add(HEU_Defines.HEU_DEFAULT_GEO_GROUP_NAME, remainingGroupVertexOffsets);
 
 					//Debug.Log("Adding remaining group with index count: " + remainingGroupSplitFaces.Length);
 				}
@@ -524,12 +533,17 @@ namespace HoudiniEngineUnity
 			{
 				_groupSplitVertexIndices.Add(HEU_Defines.HEU_DEFAULT_GEO_GROUP_NAME, _vertexList);
 
+				int vertIndex = 0;
 				List<int> allFaces = new List<int>();
+				List<int> groupVertexOffsets = new List<int>();
 				for (int f = 0; f < _partInfo.faceCount; ++f)
 				{
 					allFaces.Add(f);
+					groupVertexOffsets.Add(vertIndex);
+					vertIndex += _faceCounts[f];
 				}
 				_groupSplitFaceIndices.Add(HEU_Defines.HEU_DEFAULT_GEO_GROUP_NAME, allFaces);
+				_groupVertexOffsets.Add(HEU_Defines.HEU_DEFAULT_GEO_GROUP_NAME, groupVertexOffsets);
 
 				//Debug.Log("Adding single non-group with index count: " + _vertexList.Length);
 			}
@@ -673,12 +687,12 @@ namespace HoudiniEngineUnity
 				MeshCollider meshCollider = HEU_GeneralUtility.GetOrCreateComponent<MeshCollider>(outputGameObject);
 
 				Mesh collisionMesh = new Mesh();
-#if UNITY_2017_3_OR_NEWER
-				collisionMesh.indexFormat = geoCache._indexFormat;
-#endif
+
+				geoCache._meshIndexFormat.SetFormatForMesh(collisionMesh);
+
 				collisionMesh.name = colliderInfo._collisionGroupName;
 				collisionMesh.vertices = colliderInfo._collisionVertices;
-				collisionMesh.triangles = colliderInfo._collisionIndices;
+				collisionMesh.SetIndices(colliderInfo._collisionIndices, colliderInfo._meshTopology, 0);
 				collisionMesh.RecalculateBounds();
 
 				meshCollider.sharedMesh = collisionMesh;
@@ -1057,78 +1071,41 @@ namespace HoudiniEngineUnity
 				}
 
 				int validNumSubmeshes = validSubmeshes.Count;
-				CombineInstance[] meshCombiner = new CombineInstance[validNumSubmeshes];
-				for (int submeshIndex = 0; submeshIndex < validNumSubmeshes; ++submeshIndex)
+				if (validNumSubmeshes == 1)
 				{
-					HEU_MeshData submesh = GeoGroup._subMeshesMap[validSubmeshes[submeshIndex]];
+					// Single mesh creation. Not using combiner path below due to
+					// it always creating triangles (i.e. quads are never created).
+					newMesh = CreateMeshFromMeshData(GeoGroup._subMeshesMap[validSubmeshes[0]],
+						bGenerateUVs, bGenerateNormals, geoCache._meshIndexFormat);
+				}
+				else if (validNumSubmeshes > 1)
+				{
+					// Use CombineInstance for multiple submeshes.
 
-					CombineInstance combine = new CombineInstance();
-					combine.mesh = new Mesh();
-#if UNITY_2017_3_OR_NEWER
-					combine.mesh.indexFormat = geoCache._indexFormat;
-#endif
-
-					combine.mesh.SetVertices(submesh._vertices);
-
-					combine.mesh.SetIndices(submesh._indices.ToArray(), MeshTopology.Triangles, 0);
-
-					if (submesh._colors.Count > 0)
+					bool bHasQuads = false;
+					for (int submeshIndex = 0; submeshIndex < validNumSubmeshes; ++submeshIndex)
 					{
-						combine.mesh.SetColors(submesh._colors);
-					}
-
-					if (submesh._normals.Count > 0)
-					{
-						combine.mesh.SetNormals(submesh._normals);
-					}
-
-					if (submesh._tangents.Count > 0)
-					{
-						combine.mesh.SetTangents(submesh._tangents);
-					}
-
-					if (bGenerateUVs)
-					{
-						// TODO: revisit to test this out
-						Vector2[] generatedUVs = HEU_GeometryUtility.GeneratePerTriangle(combine.mesh);
-						if (generatedUVs != null)
+						if (GeoGroup._subMeshesMap[validSubmeshes[submeshIndex]]._meshTopology == MeshTopology.Quads)
 						{
-							combine.mesh.uv = generatedUVs;
-						}
-					}
-					else if (submesh._uvs[0].Count > 0)
-					{
-						combine.mesh.SetUVs(0, submesh._uvs[0]);
-					}
-					
-					for (int u = 1; u < HEU_Defines.HAPI_MAX_UVS; ++u)
-					{
-						if (submesh._uvs[u].Count > 0)
-						{
-							combine.mesh.SetUVs(u, submesh._uvs[u]);
+							bHasQuads = true;
+							break;
 						}
 					}
 
-					if (bGenerateNormals && submesh._normals.Count == 0)
+					if (bHasQuads)
 					{
-						// Calculate normals since they weren't provided Houdini
-						combine.mesh.RecalculateNormals();
+						// Quads need to be handled specially due to crash in Unity when using CombineInstace with
+						// quad topology submeshes.
+						newMesh = CombineQuadMeshes(GeoGroup._subMeshesMap, validSubmeshes, bGenerateNormals);
 					}
-
-					combine.transform = Matrix4x4.identity;
-					combine.mesh.RecalculateBounds();
-
-					//Debug.LogFormat("Number of submeshes {0}", combine.mesh.subMeshCount);
-
-					meshCombiner[submeshIndex] = combine;
+					else
+					{
+						// Otherwise regular CombineInstance path for triangles
+						newMesh = CombineMeshes(GeoGroup._subMeshesMap, validSubmeshes, bGenerateUVs, bGenerateNormals, geoCache._meshIndexFormat);
+					}
 				}
 
-				newMesh = new Mesh();
-#if UNITY_2017_3_OR_NEWER
-				newMesh.indexFormat = geoCache._indexFormat;
-#endif
 				newMesh.name = geoCache._partName + "_mesh";
-				newMesh.CombineMeshes(meshCombiner, false, false);
 
 				if (!geoCache._tangentAttrInfo.exists && bGenerateTangents)
 				{
@@ -1141,6 +1118,232 @@ namespace HoudiniEngineUnity
 			}
 
 			return bGenerated;
+		}
+
+		/// <summary>
+		/// Returns a new mesh that is created from combining the meshes given in the subMeshesMap
+		/// specified by submeshIndices, specifically for quad topology meshes.
+		/// Unity crashes when using CombineInstance with quad topology submeshes,
+		/// so this works around the issue, though slower.
+		/// Note that this does not generate UVs.
+		/// </summary>
+		/// <param name="subMeshesMap">Map of submeshes to indices</param>
+		/// <param name="subMeshIndices">List of indices of submeshes to combine</param>
+		/// <param name="bGenerateNormals">True if want to manually generate normals</param>
+		/// <returns>New combined mesh with submeshes</returns>
+		public static Mesh CombineQuadMeshes(Dictionary<int, HEU_MeshData> subMeshesMap, List<int> subMeshIndices,
+			bool bGenerateNormals)
+		{
+			int numSubmeshes = subMeshIndices.Count;
+
+			Mesh mesh = new Mesh();
+			mesh.subMeshCount = numSubmeshes;
+
+			List<Vector3> vertices = new List<Vector3>();
+			List<Color32> colors = new List<Color32>();
+			List<Vector3> normals = new List<Vector3>();
+			List<Vector4> tangents = new List<Vector4>();
+
+			List<Vector4>[] uvs = new List<Vector4>[HEU_Defines.HAPI_MAX_UVS];
+			for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+			{
+				uvs[u] = new List<Vector4>();
+			}
+
+			int offset = 0;
+
+			// Go through all submeshes, and combine all vertex attributes 
+			// (position, colors, normals, and tangents).
+			// Reindex the indices with offsets.
+			for (int submeshIndex = 0; submeshIndex < numSubmeshes; ++submeshIndex)
+			{
+				HEU_MeshData meshData = subMeshesMap[subMeshIndices[submeshIndex]];
+
+				vertices.AddRange(meshData._vertices);
+				colors.AddRange(meshData._colors);
+				normals.AddRange(meshData._normals);
+				tangents.AddRange(meshData._tangents);
+
+				for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+				{
+					if (submeshIndex == 0)
+					{
+						uvs[u] = new List<Vector4>();
+					}
+
+					if (meshData._uvs[u].Count > 0)
+					{
+						uvs[u].AddRange(meshData._uvs[u]);
+					}
+				}
+
+				// Reindex indices with offset
+				if (offset > 0)
+				{
+					int numIndices = meshData._indices.Count;
+					for (int i = 0; i < numIndices; i++)
+					{
+						meshData._indices[i] += offset;
+					}
+				}
+
+				// Reindex indices offset
+				offset = vertices.Count;
+				//Debug.LogFormat("Adding vertices: {0}. Total: {1}", vertices.Count, offset);
+			}
+
+			mesh.SetVertices(vertices);
+			mesh.SetColors(colors);
+			mesh.SetNormals(normals);
+			mesh.SetNormals(normals);
+
+			for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+			{
+				if (uvs[u].Count > 0)
+				{
+					mesh.SetUVs(u, uvs[u]);
+				}
+			}
+
+			for (int submeshIndex = 0; submeshIndex < numSubmeshes; ++submeshIndex)
+			{
+				HEU_MeshData meshData = subMeshesMap[subMeshIndices[submeshIndex]];
+				mesh.SetIndices(meshData._indices.ToArray(), meshData._meshTopology, submeshIndex);
+			}
+
+			if (bGenerateNormals && normals.Count == 0)
+			{
+				// Calculate normals since they weren't provided Houdini
+				mesh.RecalculateNormals();
+			}
+
+			mesh.RecalculateBounds();
+
+			return mesh;
+		}
+
+		/// <summary>
+		/// Returns a new mesh that is created from combining the meshes given in the subMeshesMap
+		/// specified by submeshIndices. Uses Unity's CombineInstance.
+		/// Quad topology meshes should not be called here due to Unity crash,
+		/// rather should use CombineQuadMeshes.
+		/// </summary>
+		/// <param name="subMeshesMap">Map of submeshes to indices</param>
+		/// <param name="submeshIndices">Indices of submeshes to combine</param>
+		/// <param name="bGenerateUVs">True to generate UVs manually</param>
+		/// <param name="bGenerateNormals">True to generate normals manually</param>
+		/// <param name="meshIndexFormat">The mesh IndexFormat to set</param>
+		/// <returns>New mesh with combined submeshes</returns>
+		public static Mesh CombineMeshes(Dictionary<int, HEU_MeshData> subMeshesMap, 
+			List<int> submeshIndices,
+			bool bGenerateUVs, bool bGenerateNormals, 
+			HEU_MeshIndexFormat meshIndexFormat)
+		{
+			int numSubmeshes = submeshIndices.Count;
+
+			CombineInstance[] meshCombiner = new CombineInstance[numSubmeshes];
+			for (int submeshIndex = 0; submeshIndex < numSubmeshes; ++submeshIndex)
+			{
+				CombineInstance combine = new CombineInstance();
+
+				HEU_MeshData meshData = subMeshesMap[submeshIndices[submeshIndex]];
+				if (meshData._meshTopology == MeshTopology.Quads)
+				{
+					Debug.LogErrorFormat("Quad topology meshes should use CombineQuadMeshes!");
+				}
+
+				combine.mesh = CreateMeshFromMeshData(meshData, bGenerateUVs, bGenerateNormals, meshIndexFormat);
+
+				combine.transform = Matrix4x4.identity;
+				combine.mesh.RecalculateBounds();
+				combine.subMeshIndex = 0;
+
+				//Debug.LogFormat("Number of submeshes {0}", combine.mesh.subMeshCount);
+
+				meshCombiner[submeshIndex] = combine;
+			}
+
+			Mesh newMesh = new Mesh();
+			meshIndexFormat.SetFormatForMesh(newMesh);
+			newMesh.CombineMeshes(meshCombiner, false, false);
+
+			return newMesh;
+		}
+
+		/// <summary>
+		/// Returns a new Mesh created by data from submesh.
+		/// </summary>
+		/// <param name="submesh">Contains geometry data for mesh</param>
+		/// <param name="bGenerateUVs">True to generate UVs manually</param>
+		/// <param name="bGenerateNormals">True to generate normals manually</param>
+		/// <param name="meshIndexFormat">The mesh IndexFormat to set</param>
+		/// <returns>New mesh</returns>
+		public static Mesh CreateMeshFromMeshData(HEU_MeshData submesh,
+			bool bGenerateUVs, bool bGenerateNormals, 
+			HEU_MeshIndexFormat meshIndexFormat)
+		{
+			Mesh mesh = new Mesh();
+
+			meshIndexFormat.SetFormatForMesh(mesh);
+
+			mesh.SetVertices(submesh._vertices);
+
+			mesh.SetIndices(submesh._indices.ToArray(), submesh._meshTopology, 0);
+
+			if (submesh._colors.Count > 0)
+			{
+				mesh.SetColors(submesh._colors);
+			}
+
+			if (submesh._normals.Count > 0)
+			{
+				mesh.SetNormals(submesh._normals);
+			}
+
+			if (submesh._tangents.Count > 0)
+			{
+				mesh.SetTangents(submesh._tangents);
+			}
+
+			if (bGenerateUVs)
+			{
+				// TODO: revisit to test this out
+
+				if (submesh._meshTopology == MeshTopology.Triangles)
+				{
+					Vector2[] generatedUVs = HEU_GeometryUtility.GeneratePerTriangle(mesh);
+					if (generatedUVs != null)
+					{
+						mesh.uv = generatedUVs;
+					}
+				}
+				else
+				{
+					Debug.LogWarningFormat("Generating UVs for Quad topology mesh is not supported!");
+				}
+			}
+			else if (submesh._uvs[0].Count > 0)
+			{
+				mesh.SetUVs(0, submesh._uvs[0]);
+			}
+
+			for (int u = 1; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+			{
+				if (submesh._uvs[u].Count > 0)
+				{
+					mesh.SetUVs(u, submesh._uvs[u]);
+				}
+			}
+
+			if (bGenerateNormals && submesh._normals.Count == 0)
+			{
+				// Calculate normals since they weren't provided Houdini
+				mesh.RecalculateNormals();
+			}
+
+			mesh.RecalculateBounds();
+
+			return mesh;
 		}
 
 		/// <summary>
@@ -1255,6 +1458,9 @@ namespace HoudiniEngineUnity
 				string groupName = groupSplitFacesPair.Key;
 				int[] groupVertexList = groupSplitFacesPair.Value;
 
+				List<int> groupFaces = geoCache._groupSplitFaceIndices[groupName];
+				List<int> groupVertexOffset = geoCache._groupVertexOffsets[groupName];
+
 				bool bIsCollidable = groupName.Contains(collisionGroupName);
 				bool bIsRenderCollidable = groupName.Contains(renderCollisionGroupName);
 				if (bIsCollidable || bIsRenderCollidable)
@@ -1318,6 +1524,7 @@ namespace HoudiniEngineUnity
 						colliderInfo._collisionVertices = collisionVertices.ToArray();
 						colliderInfo._collisionIndices = collisionIndices;
 						colliderInfo._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
+						colliderInfo._meshTopology = CalculateGroupMeshTopology(groupFaces, geoCache._faceCounts);
 
 						HEU_ColliderInfo.ColliderType colliderType = HEU_ColliderInfo.ColliderType.MESH;
 
@@ -1385,7 +1592,6 @@ namespace HoudiniEngineUnity
 					currentLODGroup = defaultMainLODGroup;
 				}
 
-
 				// Transfer indices for each attribute from the single large list into group lists
 
 				float[] groupColorAttr = new float[0];
@@ -1419,107 +1625,146 @@ namespace HoudiniEngineUnity
 				// Then we set the index of where we added those attributes as the new index.
 
 				int numIndices = groupVertexList.Length;
-				for (int vertexIndex = 0; vertexIndex < numIndices; vertexIndex += 3)
+				int numFaces = groupFaces.Count;
+				int faceCount = 0;
+				int groupFace = 0;
+				int faceMaterialID = 0;
+				int submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
+				HEU_MeshData subMeshData = null;
+
+				bool bMixedTopolgoyError = false;
+
+				for (int faceIndex = 0; faceIndex < numFaces; faceIndex++)
 				{
-					// groupVertexList contains -1 for unused indices, and > 0 for used
-					if (groupVertexList[vertexIndex] == -1)
+					groupFace = groupFaces[faceIndex];
+					faceCount = geoCache._faceCounts[groupFace];
+
+					faceMaterialID = geoCache._houdiniMaterialIDs[groupFace];
+
+					for (int v = 0; v < faceCount; v++)
 					{
-						continue;
-					}
+						// Use the group's vertex offset for this face
+						int vertexFaceIndex = groupVertexOffset[faceIndex] + v;
 
-					int faceIndex = vertexIndex / 3;
-					int faceMaterialID = geoCache._houdiniMaterialIDs[faceIndex];
-
-					// Get the submesh ID for this face. Depends on whether it is a Houdini or Unity material.
-					// Using default material as failsafe
-					int submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
-
-					if (geoCache._unityMaterialAttrInfo.exists)
-					{
-						// This face might have a Unity or Substance material attribute. 
-						// Formulate the submesh ID by combining the material attributes.
-
-						if (geoCache._singleFaceUnityMaterial)
+						// groupVertexList contains -1 for unused indices, and > 0 for used
+						if (groupVertexList[vertexFaceIndex] == -1)
 						{
-							if (singleFaceUnityMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL && geoCache._unityMaterialInfos.Count > 0)
-							{
-								// Use first material
-								var unityMaterialMapEnumerator = geoCache._unityMaterialInfos.GetEnumerator();
-								if (unityMaterialMapEnumerator.MoveNext())
-								{
-									singleFaceUnityMaterialKey = unityMaterialMapEnumerator.Current.Key;
-								}
-							}
-							submeshID = singleFaceUnityMaterialKey;
+							continue;
 						}
-						else
-						{
-							int attrIndex = faceIndex;
-							if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM || geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-							{
-								if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-								{
-									attrIndex = groupVertexList[vertexIndex];
-								}
 
-								string unityMaterialName = "";
-								string substanceName = "";
-								int substanceIndex = -1;
-								submeshID = HEU_GenerateGeoCache.GetMaterialKeyFromAttributeIndex(geoCache, attrIndex, out unityMaterialName, out substanceName, out substanceIndex);
+						// Get the submesh ID for this face. Depends on whether it is a Houdini or Unity material.
+						// Using default material as failsafe
+						submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
+
+						if (geoCache._unityMaterialAttrInfo.exists)
+						{
+							// This face might have a Unity or Substance material attribute. 
+							// Formulate the submesh ID by combining the material attributes.
+
+							if (geoCache._singleFaceUnityMaterial)
+							{
+								if (singleFaceUnityMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL && geoCache._unityMaterialInfos.Count > 0)
+								{
+									// Use first material
+									var unityMaterialMapEnumerator = geoCache._unityMaterialInfos.GetEnumerator();
+									if (unityMaterialMapEnumerator.MoveNext())
+									{
+										singleFaceUnityMaterialKey = unityMaterialMapEnumerator.Current.Key;
+									}
+								}
+								submeshID = singleFaceUnityMaterialKey;
 							}
 							else
 							{
-								// (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL) should have been handled as geoCache._singleFaceMaterial above
-
-								Debug.LogErrorFormat("Unity material attribute not supported for attribute type {0}!", geoCache._unityMaterialAttrInfo.owner);
-							}
-						}
-					}
-
-					if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
-					{
-						// Check if has Houdini material assignment
-
-						if (geoCache._houdiniMaterialIDs.Length > 0)
-						{
-							if (geoCache._singleFaceHoudiniMaterial)
-							{
-								if (singleFaceHoudiniMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL)
+								int attrIndex = groupFace;
+								if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM || geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
 								{
-									singleFaceHoudiniMaterialKey = geoCache._houdiniMaterialIDs[0];
+									if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
+									{
+										attrIndex = groupVertexList[vertexFaceIndex];
+									}
+
+									string unityMaterialName = "";
+									string substanceName = "";
+									int substanceIndex = -1;
+									submeshID = HEU_GenerateGeoCache.GetMaterialKeyFromAttributeIndex(geoCache, attrIndex, out unityMaterialName, out substanceName, out substanceIndex);
 								}
-								submeshID = singleFaceHoudiniMaterialKey;
-							}
-							else if (faceMaterialID > 0)
-							{
-								submeshID = faceMaterialID;
+								else
+								{
+									// (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL) should have been handled as geoCache._singleFaceMaterial above
+
+									Debug.LogErrorFormat("Unity material attribute not supported for attribute type {0}!", geoCache._unityMaterialAttrInfo.owner);
+								}
 							}
 						}
 
 						if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
 						{
-							// Use default material
-							submeshID = defaultMaterialKey;
+							// Check if has Houdini material assignment
+
+							if (geoCache._houdiniMaterialIDs.Length > 0)
+							{
+								if (geoCache._singleFaceHoudiniMaterial)
+								{
+									if (singleFaceHoudiniMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL)
+									{
+										singleFaceHoudiniMaterialKey = geoCache._houdiniMaterialIDs[0];
+									}
+									submeshID = singleFaceHoudiniMaterialKey;
+								}
+								else if (faceMaterialID > 0)
+								{
+									submeshID = faceMaterialID;
+								}
+							}
+
+							if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
+							{
+								// Use default material
+								submeshID = defaultMaterialKey;
+							}
 						}
-					}
 
-					// Find existing submesh for this vertex index or create new
-					HEU_MeshData subMeshData = null;
-					if (!currentLODGroup._subMeshesMap.TryGetValue(submeshID, out subMeshData))
-					{
-						subMeshData = new HEU_MeshData();
-						currentLODGroup._subMeshesMap.Add(submeshID, subMeshData);
-
-						for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+						// Find existing submesh for this vertex index or create new
+						subMeshData = null;
+						if (!currentLODGroup._subMeshesMap.TryGetValue(submeshID, out subMeshData))
 						{
-							subMeshData._uvs[u] = new List<Vector4>();
-						}
-					}
+							subMeshData = new HEU_MeshData();
 
-					for (int triIndex = 0; triIndex < 3; ++triIndex)
-					{
-						int vertexTriIndex = vertexIndex + triIndex;
-						int positionIndex = groupVertexList[vertexTriIndex];
+							if (faceCount == 3)
+							{
+								subMeshData._meshTopology = MeshTopology.Triangles;
+							}
+							else if (faceCount == 4)
+							{
+								subMeshData._meshTopology = MeshTopology.Quads;
+							}
+							else
+							{
+								Debug.LogErrorFormat("Unsupported number of vertices per face: {0}. Unable to set MeshTopology.", faceCount);
+							}
+
+							currentLODGroup._subMeshesMap.Add(submeshID, subMeshData);
+
+							for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+							{
+								subMeshData._uvs[u] = new List<Vector4>();
+							}
+						}
+
+						if (!bMixedTopolgoyError)
+						{
+							if (subMeshData._meshTopology == MeshTopology.Triangles && faceCount != 3)
+							{
+								bMixedTopolgoyError = true;
+							}
+							else if (subMeshData._meshTopology == MeshTopology.Quads && faceCount != 4)
+							{
+								bMixedTopolgoyError = true;
+							}
+						}
+
+						int positionIndex = groupVertexList[vertexFaceIndex];
 
 						// Position
 						Vector3 position = new Vector3(-geoCache._posAttr[positionIndex * 3 + 0], geoCache._posAttr[positionIndex * 3 + 1], geoCache._posAttr[positionIndex * 3 + 2]);
@@ -1529,17 +1774,17 @@ namespace HoudiniEngineUnity
 						if (geoCache._colorAttrInfo.exists)
 						{
 							Color tempColor = new Color();
-							tempColor.r = Mathf.Clamp01(groupColorAttr[vertexTriIndex * geoCache._colorAttrInfo.tupleSize + 0]);
-							tempColor.g = Mathf.Clamp01(groupColorAttr[vertexTriIndex * geoCache._colorAttrInfo.tupleSize + 1]);
-							tempColor.b = Mathf.Clamp01(groupColorAttr[vertexTriIndex * geoCache._colorAttrInfo.tupleSize + 2]);
+							tempColor.r = Mathf.Clamp01(groupColorAttr[vertexFaceIndex * geoCache._colorAttrInfo.tupleSize + 0]);
+							tempColor.g = Mathf.Clamp01(groupColorAttr[vertexFaceIndex * geoCache._colorAttrInfo.tupleSize + 1]);
+							tempColor.b = Mathf.Clamp01(groupColorAttr[vertexFaceIndex * geoCache._colorAttrInfo.tupleSize + 2]);
 
 							if (geoCache._alphaAttrInfo.exists)
 							{
-								tempColor.a = Mathf.Clamp01(groupAlphaAttr[vertexTriIndex]);
+								tempColor.a = Mathf.Clamp01(groupAlphaAttr[vertexFaceIndex]);
 							}
 							else if (geoCache._colorAttrInfo.tupleSize == 4)
 							{
-								tempColor.a = Mathf.Clamp01(groupColorAttr[vertexTriIndex * geoCache._colorAttrInfo.tupleSize + 3]);
+								tempColor.a = Mathf.Clamp01(groupColorAttr[vertexFaceIndex * geoCache._colorAttrInfo.tupleSize + 3]);
 							}
 							else
 							{
@@ -1553,10 +1798,10 @@ namespace HoudiniEngineUnity
 						}
 
 						// Normal
-						if (vertexTriIndex < groupNormalAttr.Length)
+						if (vertexFaceIndex < groupNormalAttr.Length)
 						{
 							// Flip the x
-							Vector3 normal = new Vector3(-groupNormalAttr[vertexTriIndex * 3 + 0], groupNormalAttr[vertexTriIndex * 3 + 1], groupNormalAttr[vertexTriIndex * 3 + 2]);
+							Vector3 normal = new Vector3(-groupNormalAttr[vertexFaceIndex * 3 + 0], groupNormalAttr[vertexFaceIndex * 3 + 1], groupNormalAttr[vertexFaceIndex * 3 + 2]);
 							subMeshData._normals.Add(normal);
 						}
 						else if (bGenerateNormals)
@@ -1568,29 +1813,29 @@ namespace HoudiniEngineUnity
 						// Convert all UVs to vector format then add to submesh UVs array
 						for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
 						{
-							if (geoCache._uvsAttrInfo[u].exists && (vertexTriIndex < groupUVsAttr[u].Length))
+							if (geoCache._uvsAttrInfo[u].exists && (vertexFaceIndex < groupUVsAttr[u].Length))
 							{
 								int uvSize = geoCache._uvsAttrInfo[u].tupleSize;
 								switch (uvSize)
 								{
-									case 2: { subMeshData._uvs[u].Add(new Vector2(groupUVsAttr[u][vertexTriIndex * 2 + 0], groupUVsAttr[u][vertexTriIndex * 2 + 1])); break; }
-									case 3: { subMeshData._uvs[u].Add(new Vector3(groupUVsAttr[u][vertexTriIndex * 3 + 0], groupUVsAttr[u][vertexTriIndex * 3 + 1], groupUVsAttr[u][vertexTriIndex * 3 + 2])); break; }
-									case 4: { subMeshData._uvs[u].Add(new Vector4(groupUVsAttr[u][vertexTriIndex * 4 + 0], groupUVsAttr[u][vertexTriIndex * 4 + 1], groupUVsAttr[u][vertexTriIndex * 4 + 2], groupUVsAttr[u][vertexTriIndex * 4 + 3])); break; }
+									case 2: { subMeshData._uvs[u].Add(new Vector2(groupUVsAttr[u][vertexFaceIndex * 2 + 0], groupUVsAttr[u][vertexFaceIndex * 2 + 1])); break; }
+									case 3: { subMeshData._uvs[u].Add(new Vector3(groupUVsAttr[u][vertexFaceIndex * 3 + 0], groupUVsAttr[u][vertexFaceIndex * 3 + 1], groupUVsAttr[u][vertexFaceIndex * 3 + 2])); break; }
+									case 4: { subMeshData._uvs[u].Add(new Vector4(groupUVsAttr[u][vertexFaceIndex * 4 + 0], groupUVsAttr[u][vertexFaceIndex * 4 + 1], groupUVsAttr[u][vertexFaceIndex * 4 + 2], groupUVsAttr[u][vertexFaceIndex * 4 + 3])); break; }
 								}
-							} 
+							}
 						}
-						
+
 						// Tangents
-						if (bGenerateTangents && vertexTriIndex < groupTangentsAttr.Length)
+						if (bGenerateTangents && vertexFaceIndex < groupTangentsAttr.Length)
 						{
 							Vector4 tangent = Vector4.zero;
 							if (geoCache._tangentAttrInfo.tupleSize == 4)
 							{
-								tangent = new Vector4(-groupTangentsAttr[vertexTriIndex * 4 + 0], groupTangentsAttr[vertexTriIndex * 4 + 1], groupTangentsAttr[vertexTriIndex * 4 + 2], groupTangentsAttr[vertexTriIndex * 4 + 3]);
+								tangent = new Vector4(-groupTangentsAttr[vertexFaceIndex * 4 + 0], groupTangentsAttr[vertexFaceIndex * 4 + 1], groupTangentsAttr[vertexFaceIndex * 4 + 2], groupTangentsAttr[vertexFaceIndex * 4 + 3]);
 							}
 							else if (geoCache._tangentAttrInfo.tupleSize == 3)
 							{
-								tangent = new Vector4(-groupTangentsAttr[vertexTriIndex * 3 + 0], groupTangentsAttr[vertexTriIndex * 3 + 1], groupTangentsAttr[vertexTriIndex * 3 + 2], 1);
+								tangent = new Vector4(-groupTangentsAttr[vertexFaceIndex * 3 + 0], groupTangentsAttr[vertexFaceIndex * 3 + 1], groupTangentsAttr[vertexFaceIndex * 3 + 2], 1);
 							}
 
 							subMeshData._tangents.Add(tangent);
@@ -1600,29 +1845,52 @@ namespace HoudiniEngineUnity
 						//Debug.LogFormat("Submesh index mat {0} count {1}", faceMaterialID, subMeshData._indices.Count);
 					}
 
-					if (!geoCache._normalAttrInfo.exists && bGenerateNormals)
+					if (!geoCache._normalAttrInfo.exists && bGenerateNormals 
+						&& subMeshData != null && subMeshData._indices.Count >= 3)
 					{
 						// To generate normals after all the submeshes have been defined, we
 						// calculate and store each triangle normal, along with the list
 						// of connected vertices for each vertex
 
-						int triIndex = subMeshData._indices.Count - 3;
-						int i1 = subMeshData._indices[triIndex + 0];
-						int i2 = subMeshData._indices[triIndex + 1];
-						int i3 = subMeshData._indices[triIndex + 2];
+						int vertexFaceIndex = groupVertexOffset[faceIndex];
 
-						// Triangle normal
-						Vector3 p1 = subMeshData._vertices[i2] - subMeshData._vertices[i1];
-						Vector3 p2 = subMeshData._vertices[i3] - subMeshData._vertices[i1];
-						Vector3 normal = Vector3.Cross(p1, p2).normalized;
-						subMeshData._triangleNormals.Add(normal);
-						int normalIndex = subMeshData._triangleNormals.Count - 1;
+						int v0 = groupVertexList[vertexFaceIndex + 0];
+						int v1 = groupVertexList[vertexFaceIndex + 1];
+						int v2 = groupVertexList[vertexFaceIndex + 2];
+						if (v0 >= 0 && v1 >= 0 && v2 >= 0)
+						{
+							int triIndex = subMeshData._indices.Count - faceCount;
+							int i1 = subMeshData._indices[triIndex + 0];
+							int i2 = subMeshData._indices[triIndex + 1];
+							int i3 = subMeshData._indices[triIndex + 2];
 
-						// Connected vertices
-						currentLODGroup._sharedNormalIndices[groupVertexList[vertexIndex + 0]].Add(new HEU_VertexEntry(submeshID, i1, normalIndex));
-						currentLODGroup._sharedNormalIndices[groupVertexList[vertexIndex + 1]].Add(new HEU_VertexEntry(submeshID, i2, normalIndex));
-						currentLODGroup._sharedNormalIndices[groupVertexList[vertexIndex + 2]].Add(new HEU_VertexEntry(submeshID, i3, normalIndex));
+							// Triangle normal
+							Vector3 p1 = subMeshData._vertices[i2] - subMeshData._vertices[i1];
+							Vector3 p2 = subMeshData._vertices[i3] - subMeshData._vertices[i1];
+							Vector3 normal = Vector3.Cross(p1, p2).normalized;
+							subMeshData._triangleNormals.Add(normal);
+							int normalIndex = subMeshData._triangleNormals.Count - 1;
+
+							// Connected vertices
+							currentLODGroup._sharedNormalIndices[v0].Add(new HEU_VertexEntry(submeshID, i1, normalIndex));
+							currentLODGroup._sharedNormalIndices[v1].Add(new HEU_VertexEntry(submeshID, i2, normalIndex));
+							currentLODGroup._sharedNormalIndices[v2].Add(new HEU_VertexEntry(submeshID, i3, normalIndex));
+
+							if (faceCount == 4 && groupVertexList[vertexFaceIndex + 3] >= 0)
+							{
+								// Add 4th vertex for quad
+								int i4 = subMeshData._indices[triIndex + 3];
+								currentLODGroup._sharedNormalIndices[groupVertexList[vertexFaceIndex + 3]].Add(new HEU_VertexEntry(submeshID, i4, normalIndex));
+							}
+						}
 					}
+				}
+
+				if (bMixedTopolgoyError)
+				{
+					Debug.LogErrorFormat("Single mesh with group name {0} has mixed topology (triangles and quads) which is not supported. " +
+						"Recommending splitting up the mesh or change Plugin Settings' Max Vertices Per Face to 3 to force triangles.",
+						groupName);
 				}
 			}
 
@@ -1679,6 +1947,9 @@ namespace HoudiniEngineUnity
 			{
 				string groupName = groupSplitFacesPair.Key;
 				int[] groupVertexList = groupSplitFacesPair.Value;
+
+				List<int> groupFaces = geoCache._groupSplitFaceIndices[groupName];
+				List<int> groupVertexOffset = geoCache._groupVertexOffsets[groupName];
 
 				bool bIsCollidable = groupName.Contains(collisionGroupName);
 				bool bIsRenderCollidable = groupName.Contains(renderCollisionGroupName);
@@ -1750,6 +2021,7 @@ namespace HoudiniEngineUnity
 						colliderInfo._collisionIndices = collisionIndices.ToArray();
 						colliderInfo._colliderType = HEU_ColliderInfo.ColliderType.MESH;
 						colliderInfo._convexCollider = groupName.Contains(HEU_Defines.DEFAULT_CONVEX_COLLISION_GEO);
+						colliderInfo._meshTopology = CalculateGroupMeshTopology(groupFaces, geoCache._faceCounts);
 					}
 
 					geoCache._colliderInfos.Add(colliderInfo);
@@ -1804,110 +2076,149 @@ namespace HoudiniEngineUnity
 				// Then we set the index of where we added those attributes as the new index.
 
 				int numIndices = groupVertexList.Length;
-				for (int vertexIndex = 0; vertexIndex < numIndices; vertexIndex += 3)
+				int numFaces = groupFaces.Count;
+				int faceCount = 0;
+				int groupFace = 0;
+				int faceMaterialID = 0;
+				int submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
+				HEU_MeshData subMeshData = null;
+
+				bool bMixedTopolgoyError = false;
+
+				for (int faceIndex = 0; faceIndex < numFaces; faceIndex++)
 				{
-					// groupVertexList contains -1 for unused indices, and > 0 for used
-					if (groupVertexList[vertexIndex] == -1)
+					groupFace = groupFaces[faceIndex];
+					faceCount = geoCache._faceCounts[groupFace];
+
+					faceMaterialID = geoCache._houdiniMaterialIDs[faceIndex];
+
+					for (int v = 0; v < faceCount; v++)
 					{
-						continue;
-					}
+						// Use the group's vertex offset for this face
+						int vertexFaceIndex = groupVertexOffset[faceIndex] + v;
 
-					int faceIndex = vertexIndex / 3;
-					int faceMaterialID = geoCache._houdiniMaterialIDs[faceIndex];
-
-					// Get the submesh ID for this face. Depends on whether it is a Houdini or Unity material.
-					// Using default material as failsafe
-					int submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
-
-					if (geoCache._unityMaterialAttrInfo.exists)
-					{
-						// This face might have a Unity or Substance material attribute. 
-						// Formulate the submesh ID by combining the material attributes.
-
-						if (geoCache._singleFaceUnityMaterial)
+						// groupVertexList contains -1 for unused indices, and > 0 for used
+						if (groupVertexList[vertexFaceIndex] == -1)
 						{
-							if (singleFaceUnityMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL && geoCache._unityMaterialInfos.Count > 0)
-							{
-								// Use first material
-								var unityMaterialMapEnumerator = geoCache._unityMaterialInfos.GetEnumerator();
-								if (unityMaterialMapEnumerator.MoveNext())
-								{
-									singleFaceUnityMaterialKey = unityMaterialMapEnumerator.Current.Key;
-								}
-							}
-							submeshID = singleFaceUnityMaterialKey;
+							continue;
 						}
-						else
-						{
-							int attrIndex = faceIndex;
-							if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM || geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-							{
-								if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-								{
-									attrIndex = groupVertexList[vertexIndex];
-								}
 
-								string unityMaterialName = "";
-								string substanceName = "";
-								int substanceIndex = -1;
-								submeshID = HEU_GenerateGeoCache.GetMaterialKeyFromAttributeIndex(geoCache, attrIndex, out unityMaterialName, out substanceName, out substanceIndex);
+						// Get the submesh ID for this face. Depends on whether it is a Houdini or Unity material.
+						// Using default material as failsafe
+						submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
+
+						if (geoCache._unityMaterialAttrInfo.exists)
+						{
+							// This face might have a Unity or Substance material attribute. 
+							// Formulate the submesh ID by combining the material attributes.
+
+							if (geoCache._singleFaceUnityMaterial)
+							{
+								if (singleFaceUnityMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL && geoCache._unityMaterialInfos.Count > 0)
+								{
+									// Use first material
+									var unityMaterialMapEnumerator = geoCache._unityMaterialInfos.GetEnumerator();
+									if (unityMaterialMapEnumerator.MoveNext())
+									{
+										singleFaceUnityMaterialKey = unityMaterialMapEnumerator.Current.Key;
+									}
+								}
+								submeshID = singleFaceUnityMaterialKey;
 							}
 							else
 							{
-								// (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL) should have been handled as geoCache._singleFaceMaterial above
-
-								Debug.LogErrorFormat("Unity material attribute not supported for attribute type {0}!", geoCache._unityMaterialAttrInfo.owner);
-							}
-						}
-					}
-
-					if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
-					{
-						// Check if has Houdini material assignment
-
-						if (geoCache._houdiniMaterialIDs.Length > 0)
-						{
-							if (geoCache._singleFaceHoudiniMaterial)
-							{
-								if (singleFaceHoudiniMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL)
+								int attrIndex = faceIndex;
+								if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM || geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
 								{
-									singleFaceHoudiniMaterialKey = geoCache._houdiniMaterialIDs[0];
+									if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
+									{
+										attrIndex = groupVertexList[vertexFaceIndex];
+									}
+
+									string unityMaterialName = "";
+									string substanceName = "";
+									int substanceIndex = -1;
+									submeshID = HEU_GenerateGeoCache.GetMaterialKeyFromAttributeIndex(geoCache, attrIndex, out unityMaterialName, out substanceName, out substanceIndex);
 								}
-								submeshID = singleFaceHoudiniMaterialKey;
-							}
-							else if (faceMaterialID > 0)
-							{
-								submeshID = faceMaterialID;
+								else
+								{
+									// (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL) should have been handled as geoCache._singleFaceMaterial above
+
+									Debug.LogErrorFormat("Unity material attribute not supported for attribute type {0}!", geoCache._unityMaterialAttrInfo.owner);
+								}
 							}
 						}
 
 						if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
 						{
-							// Use default material
-							submeshID = defaultMaterialKey;
+							// Check if has Houdini material assignment
+
+							if (geoCache._houdiniMaterialIDs.Length > 0)
+							{
+								if (geoCache._singleFaceHoudiniMaterial)
+								{
+									if (singleFaceHoudiniMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL)
+									{
+										singleFaceHoudiniMaterialKey = geoCache._houdiniMaterialIDs[0];
+									}
+									submeshID = singleFaceHoudiniMaterialKey;
+								}
+								else if (faceMaterialID > 0)
+								{
+									submeshID = faceMaterialID;
+								}
+							}
+
+							if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
+							{
+								// Use default material
+								submeshID = defaultMaterialKey;
+							}
 						}
-					}
 
-					// Find existing submesh for this vertex index or create new
-					HEU_MeshData subMeshData = null;
-					if (!currentLODGroup._subMeshesMap.TryGetValue(submeshID, out subMeshData))
-					{
-						subMeshData = new HEU_MeshData();
-						currentLODGroup._subMeshesMap.Add(submeshID, subMeshData);
-
-						for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+						// Find existing submesh for this vertex index or create new
+						subMeshData = null;
+						if (!currentLODGroup._subMeshesMap.TryGetValue(submeshID, out subMeshData))
 						{
-							subMeshData._uvs[u] = new List<Vector4>();
-						}
-					}
+							subMeshData = new HEU_MeshData();
 
-					for (int triIndex = 0; triIndex < 3; ++triIndex)
-					{
-						int vertexTriIndex = vertexIndex + triIndex;
-						int positionIndex = groupVertexList[vertexTriIndex];
+							if (faceCount == 3)
+							{
+								subMeshData._meshTopology = MeshTopology.Triangles;
+							}
+							else if (faceCount == 4)
+							{
+								subMeshData._meshTopology = MeshTopology.Quads;
+							}
+							else
+							{
+								Debug.LogErrorFormat("Unsupported number of vertices per face: {0}. Unable to set MeshTopology.", faceCount);
+							}
+
+							currentLODGroup._subMeshesMap.Add(submeshID, subMeshData);
+
+							for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
+							{
+								subMeshData._uvs[u] = new List<Vector4>();
+							}
+						}
+
+						if (!bMixedTopolgoyError)
+						{
+							if (subMeshData._meshTopology == MeshTopology.Triangles && faceCount != 3)
+							{
+								bMixedTopolgoyError = true;
+							}
+							else if (subMeshData._meshTopology == MeshTopology.Quads && faceCount != 4)
+							{
+								bMixedTopolgoyError = true;
+							}
+						}
+
+						int positionIndex = groupVertexList[vertexFaceIndex];
 
 						int meshIndex = -1;
-						if(!subMeshData._pointIndexToMeshIndexMap.TryGetValue(positionIndex, out meshIndex))
+						if (!subMeshData._pointIndexToMeshIndexMap.TryGetValue(positionIndex, out meshIndex))
 						{
 							// Position
 							Vector3 position = new Vector3(-geoCache._posAttr[positionIndex * 3 + 0], geoCache._posAttr[positionIndex * 3 + 1], geoCache._posAttr[positionIndex * 3 + 2]);
@@ -1953,7 +2264,7 @@ namespace HoudiniEngineUnity
 							}
 
 							// Convert all UVs to vector format
-							
+
 							for (int u = 0; u < HEU_Defines.HAPI_MAX_UVS; ++u)
 							{
 								if (geoCache._uvsAttrInfo[u].exists && geoCache._uvsAttrInfo[u].owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
@@ -1989,6 +2300,13 @@ namespace HoudiniEngineUnity
 						//Debug.LogFormat("Submesh index mat {0} count {1}", faceMaterialID, subMeshData._indices.Count);
 					}
 				}
+
+				if (bMixedTopolgoyError)
+				{
+					Debug.LogErrorFormat("Single mesh with group name {0} has mixed topology (triangles and quads) which is not supported. " +
+						"Recommending splitting up the mesh or change Plugin Settings' Max Vertices Per Face to 3 to force triangles.",
+						groupName);
+				}
 			}
 
 #if HEU_PROFILER_ON
@@ -1996,6 +2314,45 @@ namespace HoudiniEngineUnity
 #endif
 
 			return true;
+		}
+
+		public static MeshTopology CalculateGroupMeshTopology(List<int> groupFaces, int[] allFaceCounts)
+		{
+			// Set collider mesh topology based on face counts in the group
+			int faceIndex = 0;
+			int groupFaceCount = 0;
+			bool bMixedTopologyError = false;
+			for (int i = 0; i < groupFaces.Count; ++i)
+			{
+				faceIndex = groupFaces[i];
+				if (groupFaceCount == 0)
+				{
+					// First count
+					groupFaceCount = allFaceCounts[faceIndex];
+				}
+				else if (groupFaceCount != allFaceCounts[faceIndex])
+				{
+					bMixedTopologyError = true;
+					break;
+				}
+			}
+
+			if (bMixedTopologyError)
+			{
+				Debug.LogErrorFormat("Group mesh has mixed mesh topology (triangles and quads) which is not supported.");
+			}
+
+			MeshTopology meshTopology = MeshTopology.Triangles;
+			if (groupFaceCount == 4)
+			{
+				meshTopology = MeshTopology.Quads;
+			}
+			else if (groupFaceCount != 3)
+			{
+				Debug.LogErrorFormat("Unsupported mesh topology for collider mesh.");
+			}
+
+			return meshTopology;
 		}
 	}
 
