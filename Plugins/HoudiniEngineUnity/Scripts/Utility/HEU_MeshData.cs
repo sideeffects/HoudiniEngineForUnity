@@ -45,6 +45,8 @@ namespace HoudiniEngineUnity
 		public List<Vector3> _triangleNormals = new List<Vector3>();
 
 		public Dictionary<int, int> _pointIndexToMeshIndexMap = new Dictionary<int, int>();
+
+		public UnityEngine.MeshTopology _meshTopology = MeshTopology.Triangles;
 	}
 
 }   // HoudiniEngineUnity
