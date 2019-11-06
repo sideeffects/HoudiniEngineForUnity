@@ -820,6 +820,20 @@ namespace HoudiniEngineUnity
 				HEU_PluginStorage.Instance.Set("HAPI_CookOptionSplitGeosByGroup", value);
 			}
 		}
+
+		public static int MaxVerticesPerPrimitive
+		{
+			get
+			{
+				int maxValue = HEU_Defines.HAPI_MAX_VERTICES_PER_FACE;
+				HEU_PluginStorage.Instance.Get("HAPI_MaxVerticesPerPrimitive", out maxValue, maxValue);
+				return maxValue;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_MaxVerticesPerPrimitive", value);
+			}
+		}
 	}
 
 }   // HoudiniEngineUnity

@@ -339,6 +339,14 @@ namespace HoudiniEngineUnity
 		{
 			HEU_EditorUtility.ExportAllAssetsToGeoFiles();
 		}
+
+		// UTILITY ----------------------------------------------------------------------------------------------
+
+		[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Utility/Query Mesh Topology", false, 100)]
+		public static void QueryMeshTopology()
+		{
+			HEU_EditorUtility.QuerySelectedMeshTopology();
+		}
 	}
 
 

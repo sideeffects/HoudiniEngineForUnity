@@ -453,6 +453,23 @@ namespace HoudiniEngineUnity
 			}
 			HEU_EditorUI.DrawSeparator();
 			{
+				int oldValue = HEU_PluginSettings.MaxVerticesPerPrimitive;
+				int newValue = EditorGUILayout.DelayedIntField("Max Vertices Per Primitive", oldValue);
+				if (newValue != oldValue)
+				{
+					if (newValue == 3 || newValue == 4)
+					{
+						HEU_PluginSettings.MaxVerticesPerPrimitive = newValue;
+						bChanged = true;
+					}
+					else
+					{
+						Debug.LogWarningFormat("Plugin only supports 3 (triangles) or 4 (quads) max vertices values.");
+					}
+				}
+			}
+			HEU_EditorUI.DrawSeparator();
+			{
 				float oldValue = HEU_PluginSettings.NormalGenerationThresholdAngle;
 				float newValue = EditorGUILayout.DelayedFloatField("Normal Generation Threshold Angle", oldValue);
 				if (newValue != oldValue)

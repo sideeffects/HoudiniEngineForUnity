@@ -669,7 +669,7 @@ namespace HoudiniEngineUnity
 			cookOptions.splitPointsByVertexAttributes = false;
 
 			cookOptions.cookTemplatedGeos = HEU_PluginSettings.CookTemplatedGeos;
-			cookOptions.maxVerticesPerPrimitive = HEU_Defines.HAPI_MAX_VERTICES_PER_FACE;
+			cookOptions.maxVerticesPerPrimitive = HEU_PluginSettings.MaxVerticesPerPrimitive;
 			cookOptions.refineCurveToLinear = HEU_Defines.HAPI_CURVE_REFINE_TO_LINEAR;
 			cookOptions.curveRefineLOD = HEU_Defines.HAPI_CURVE_LOD;
 			cookOptions.packedPrimInstancingMode = HAPI_PackedPrimInstancingMode.HAPI_PACKEDPRIM_INSTANCING_MODE_FLAT;

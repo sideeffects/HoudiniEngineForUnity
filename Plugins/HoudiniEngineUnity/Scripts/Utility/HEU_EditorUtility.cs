@@ -1124,6 +1124,34 @@ namespace HoudiniEngineUnity
 			return null;
 #endif
 		}
+
+		public static void QuerySelectedMeshTopology()
+		{
+			GameObject[] gos = Selection.gameObjects;
+			if (gos == null || gos.Length == 0)
+			{
+				Debug.Log("No gameobject selected!");
+				return;
+			}
+
+			int num = gos.Length;
+			for (int g = 0; g < num; g++)
+			{
+				MeshFilter[] meshFilters = gos[g].GetComponentsInChildren<MeshFilter>();
+				if (meshFilters != null)
+				{
+					int numMeshFilters = meshFilters.Length;
+					for (int m = 0; m < numMeshFilters; m++)
+					{
+						Mesh mesh = meshFilters[m].sharedMesh;
+						for (int i = 0; i < mesh.subMeshCount; i++)
+						{
+							Debug.LogFormat("{0}'s submesh {1} has topology: {2}", meshFilters[m].gameObject.name, i, mesh.GetTopology(i));
+						}
+					}
+				}
+			}
+		}
 	}
 
 }   // HoudiniEngineUnity
