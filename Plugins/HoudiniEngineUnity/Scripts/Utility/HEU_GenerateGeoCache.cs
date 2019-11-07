@@ -1347,65 +1347,85 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
-		/// Transfer given attribute values, regardless of owner type, into vertex attribute values.
+		/// Transfer given attribute values, based on owner type, into vertex attribute values
+		/// for the given group of vertices.
 		/// </summary>
-		/// <param name="vertexList">Vertex indices</param>
+		/// <param name="groupVertexList">Vertex indices in group to transfer attributes for</param>
+		/// <param name="allFaceCounts">Face counts of faces in entire mesh</param>
+		/// <param name="groupFaces">Face indices in the group</param>
+		/// <param name="groupVertexOffset">Offsets of the vertex indices in the group</param>
 		/// <param name="attribInfo">Attribute to parse</param>
 		/// <param name="inData">Given attribute's values</param>
 		/// <param name="outData">Converted vertex attribute values</param>
-		public static void TransferRegularAttributesToVertices(int[] vertexList, ref HAPI_AttributeInfo attribInfo, float[] inData, ref float[] outData)
+		public static void TransferRegularAttributesToVertices(int[] groupVertexList, int[] allFaceCounts, 
+			List<int> groupFaces, List<int> groupVertexOffset,
+			ref HAPI_AttributeInfo attribInfo, float[] inData, ref float[] outData)
 		{
 			if (attribInfo.exists && attribInfo.tupleSize > 0)
 			{
-				int wedgeCount = vertexList.Length;
+				int wedgeCount = groupVertexList.Length;
 
 				// Re-indexed wedges
 				outData = new float[wedgeCount * attribInfo.tupleSize];
 
-				for (int wedgeIndex = 0; wedgeIndex < wedgeCount; ++wedgeIndex)
+				int numFaces = groupFaces.Count;
+				int groupFace = 0;
+				int faceCount = 0;
+				int primIndex = 0;
+				int positionIndex = 0;
+				for (int faceIndex = 0; faceIndex < numFaces; faceIndex++)
 				{
-					int vertexIndex = vertexList[wedgeIndex];
-					if (vertexIndex == -1)
-					{
-						continue;
-					}
+					groupFace = groupFaces[faceIndex];
+					faceCount = allFaceCounts[groupFace];
 
-					int primIndex = wedgeIndex / 3;
-					float value = 0;
-
-					for (int attribIndex = 0; attribIndex < attribInfo.tupleSize; ++attribIndex)
+					for (int v = 0; v < faceCount; v++)
 					{
-						switch (attribInfo.owner)
+						// Use the group's vertex offset for this face
+						int vertexFaceIndex = groupVertexOffset[faceIndex] + v;
+
+						// groupVertexList contains -1 for unused indices, and > 0 for used
+						if (groupVertexList[vertexFaceIndex] == -1)
 						{
-							case HAPI_AttributeOwner.HAPI_ATTROWNER_POINT:
-							{
-								value = inData[vertexIndex * attribInfo.tupleSize + attribIndex];
-								break;
-							}
-							case HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM:
-							{
-								value = inData[primIndex * attribInfo.tupleSize + attribIndex];
-								break;
-							}
-							case HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL:
-							{
-								value = inData[attribIndex];
-								break;
-							}
-							case HAPI_AttributeOwner.HAPI_ATTROWNER_VERTEX:
-							{
-								value = inData[wedgeIndex * attribInfo.tupleSize + attribIndex];
-								break;
-							}
-							default:
-							{
-								Debug.LogAssertion("Unsupported attribute owner " + attribInfo.owner);
-								continue;
-							}
+							continue;
 						}
 
-						int outIndex = wedgeIndex * attribInfo.tupleSize + attribIndex;
-						outData[outIndex] = value;
+						float value = 0;
+						for (int attribIndex = 0; attribIndex < attribInfo.tupleSize; ++attribIndex)
+						{
+							switch (attribInfo.owner)
+							{
+								case HAPI_AttributeOwner.HAPI_ATTROWNER_POINT:
+								{
+									positionIndex = groupVertexList[vertexFaceIndex];
+									value = inData[positionIndex * attribInfo.tupleSize + attribIndex];
+									break;
+								}
+								case HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM:
+								{
+									primIndex = vertexFaceIndex / faceCount;
+									value = inData[primIndex * attribInfo.tupleSize + attribIndex];
+									break;
+								}
+								case HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL:
+								{
+									value = inData[attribIndex];
+									break;
+								}
+								case HAPI_AttributeOwner.HAPI_ATTROWNER_VERTEX:
+								{
+									value = inData[vertexFaceIndex * attribInfo.tupleSize + attribIndex];
+									break;
+								}
+								default:
+								{
+									Debug.LogAssertion("Unsupported attribute owner " + attribInfo.owner);
+									continue;
+								}
+							}
+
+							int outIndex = vertexFaceIndex * attribInfo.tupleSize + attribIndex;
+							outData[outIndex] = value;
+						}
 					}
 				}
 			}
@@ -1595,16 +1615,24 @@ namespace HoudiniEngineUnity
 				// Transfer indices for each attribute from the single large list into group lists
 
 				float[] groupColorAttr = new float[0];
-				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._colorAttrInfo, geoCache._colorAttr, ref groupColorAttr);
+				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, 
+					geoCache._faceCounts, groupFaces, groupVertexOffset, 
+					ref geoCache._colorAttrInfo, geoCache._colorAttr, ref groupColorAttr);
 
 				float[] groupAlphaAttr = new float[0];
-				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._alphaAttrInfo, geoCache._alphaAttr, ref groupAlphaAttr);
+				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, 
+					geoCache._faceCounts, groupFaces, groupVertexOffset,
+					ref geoCache._alphaAttrInfo, geoCache._alphaAttr, ref groupAlphaAttr);
 
 				float[] groupNormalAttr = new float[0];
-				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._normalAttrInfo, geoCache._normalAttr, ref groupNormalAttr);
+				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, 
+					geoCache._faceCounts, groupFaces, groupVertexOffset, 
+					ref geoCache._normalAttrInfo, geoCache._normalAttr, ref groupNormalAttr);
 
 				float[] groupTangentsAttr = new float[0];
-				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._tangentAttrInfo, geoCache._tangentAttr, ref groupTangentsAttr);
+				HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, 
+					geoCache._faceCounts, groupFaces, groupVertexOffset, 
+					ref geoCache._tangentAttrInfo, geoCache._tangentAttr, ref groupTangentsAttr);
 
 				// Get maximum of 8 UV sets that Unity supports
 				float[][] groupUVsAttr = new float[HEU_Defines.HAPI_MAX_UVS][];
@@ -1613,7 +1641,9 @@ namespace HoudiniEngineUnity
 					if (geoCache._uvsAttrInfo[u].exists)
 					{
 						groupUVsAttr[u] = new float[0];
-						HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, ref geoCache._uvsAttrInfo[u], geoCache._uvsAttr[u], ref groupUVsAttr[u]);
+						HEU_GenerateGeoCache.TransferRegularAttributesToVertices(groupVertexList, 
+							geoCache._faceCounts, groupFaces, groupVertexOffset, 
+							ref geoCache._uvsAttrInfo[u], geoCache._uvsAttr[u], ref groupUVsAttr[u]);
 					}
 				}
 
