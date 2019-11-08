@@ -64,10 +64,13 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 			StringBuilder sb = new StringBuilder();
 
-			sb.AppendFormat("Required Houdini Version: {0}.{1}.{2}\nRequired Houdini Engine Version: {3}.{4}.{5}\n\n",
+			sb.AppendLine("Plugin was built with:");
+			sb.AppendFormat("  Houdini: {0}.{1}.{2}\n",
 									HEU_HoudiniVersion.HOUDINI_MAJOR,
 									HEU_HoudiniVersion.HOUDINI_MINOR,
-									HEU_HoudiniVersion.HOUDINI_BUILD,
+									HEU_HoudiniVersion.HOUDINI_BUILD);
+
+			sb.AppendFormat("  Houdini Engine: {0}.{1}.{2}\n\n",
 									HEU_HoudiniVersion.HOUDINI_ENGINE_MAJOR,
 									HEU_HoudiniVersion.HOUDINI_ENGINE_MINOR,
 									HEU_HoudiniVersion.HOUDINI_ENGINE_API);
@@ -76,6 +79,8 @@ namespace HoudiniEngineUnity
 			HEU_SessionBase session = HEU_SessionManager.GetDefaultSession();
 			if (session != null && session.IsSessionValid())
 			{
+				sb.AppendLine("Current  session is using:");
+
 				int hMajor = session.GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_MAJOR);
 				int hMinor = session.GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_MINOR);
 				int hBuild = session.GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_BUILD);
@@ -86,28 +91,13 @@ namespace HoudiniEngineUnity
 				int heuMinor = session.GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_ENGINE_MINOR);
 				int heuAPI = session.GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_ENGINE_API);
 
-				sb.AppendFormat("Installed Houdini Version: {0}.{1}.{2}{3}\n", hMajor, hMinor, hBuild, (heuPatch > 0) ? "." + heuPatch.ToString() : "");
-				sb.AppendFormat("Installed Houdini Engine Version: {0}.{1}.{2}\n\n", heuMajor, heuMinor, heuAPI);
+				sb.AppendFormat("  Houdini: {0}.{1}.{2}{3}\n", hMajor, hMinor, hBuild, (heuPatch > 0) ? "." + heuPatch.ToString() : "");
+				sb.AppendFormat("  Houdini Engine: {0}.{1}.{2}\n\n", heuMajor, heuMinor, heuAPI);
 
-				sb.AppendFormat("Houdini Binaries Path: {0}\n", HEU_Platform.GetHoudiniEnginePath() + HEU_HoudiniVersion.HAPI_BIN_PATH);
-				sb.AppendFormat("Unity Plugin Version: {0}\n\n", HEU_HoudiniVersion.UNITY_PLUGIN_VERSION);
+				sb.AppendFormat("  Houdini binaries: {0}\n", HEU_Platform.GetHoudiniEnginePath() + HEU_HoudiniVersion.HAPI_BIN_PATH);
+				sb.AppendFormat("  HEU: {0}\n\n", HEU_HoudiniVersion.UNITY_PLUGIN_VERSION);
 
-				HEU_SessionData sessionData = session.GetSessionData();
-				if (sessionData != null)
-				{
-					sb.AppendFormat("Session ID: {0}\n", sessionData.SessionID);
-					sb.AppendFormat("Session Type: {0}\n", sessionData.SessionType);
-					sb.AppendFormat("Process ID: {0}\n", sessionData.ProcessID);
-
-					if (sessionData.SessionType == HAPI_SessionType.HAPI_SESSION_THRIFT)
-					{
-						sb.AppendFormat("Pipe name: {0}\n", sessionData.PipeName);
-					}
-
-					sb.AppendLine();
-				}
-
-				sb.Append("License Type Acquired: ");
+				sb.Append("  License acquired: ");
 				HAPI_License license = HEU_SessionManager.GetCurrentLicense(false);
 				switch (license)
 				{
@@ -118,6 +108,21 @@ namespace HoudiniEngineUnity
 					case HAPI_License.HAPI_LICENSE_HOUDINI_ENGINE_INDIE: sb.Append("Houdini Engine Indie"); break;
 					case HAPI_License.HAPI_LICENSE_HOUDINI_INDIE: sb.Append("Houdini Indie\n"); break;
 					default: sb.Append("Unknown\n"); break;
+				}
+
+				HEU_SessionData sessionData = session.GetSessionData();
+				if (sessionData != null)
+				{
+					sb.AppendFormat("  Session ID: {0}\n", sessionData.SessionID);
+					sb.AppendFormat("  Session Type: {0}\n", sessionData.SessionType);
+					sb.AppendFormat("  Process ID: {0}\n", sessionData.ProcessID);
+
+					if (sessionData.SessionType == HAPI_SessionType.HAPI_SESSION_THRIFT)
+					{
+						sb.AppendFormat("  Pipe name: {0}\n", sessionData.PipeName);
+					}
+
+					sb.AppendLine();
 				}
 			}
 			else // Unable to establish a session
@@ -131,7 +136,7 @@ namespace HoudiniEngineUnity
 			}
 
 			sb.AppendLine();
-			sb.Append("PATH: \n" + GetEnvironmentPath());
+			sb.Append("System PATH: \n" + GetEnvironmentPath());
 
 			Debug.Log(sb.ToString());
 
