@@ -840,6 +840,7 @@ namespace HoudiniEngineUnity
 		public HAPI_StringHandle versionSH; // User-defined asset version.
 		public HAPI_StringHandle fullOpNameSH; // Full asset name and namespace.
 		public HAPI_StringHandle helpTextSH; // Asset help marked-up text.
+		public HAPI_StringHandle helpURLSH; // Added help URL.
 
 		public int objectCount;
 		public int handleCount;
