@@ -573,11 +573,15 @@ namespace HoudiniEngineUnity
 			int heuMajor = GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_ENGINE_MAJOR);
 			int heuMinor = GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_ENGINE_MINOR);
 			int heuAPI = GetEnvInt(HAPI_EnvIntType.HAPI_ENVINT_VERSION_HOUDINI_ENGINE_API);
-			//Debug.LogFormat("Houdini Engine version:: Plugin: {0}.{1}.{2}. HAPI: {3}.{4}.{5}", HEU_HoudiniVersion.HOUDINI_ENGINE_MAJOR, HEU_HoudiniVersion.HOUDINI_ENGINE_MINOR, HEU_HoudiniVersion.HOUDINI_ENGINE_API, heuMajor, heuMinor, heuAPI);
-
+			
 			if (heuMajor != HEU_HoudiniVersion.HOUDINI_ENGINE_MAJOR || heuMinor != HEU_HoudiniVersion.HOUDINI_ENGINE_MINOR || heuAPI != HEU_HoudiniVersion.HOUDINI_ENGINE_API)
 			{
-				SetSessionErrorMsg(string.Format("Houdini Engine version mis-match. Expected {0}.{1}.{2}. Got {3}.{4}.{5}",
+				SetSessionErrorMsg(string.Format("This plugin's Houdini Engine API version does not match the found API version:" +
+					"\n  Built: {0}.{1}.{2}." +
+					"\n  Found: {3}.{4}.{5}." +
+					"\n\nThe API version must match in order to use the plugin." +
+					"\nEither update the plugin package, or change Houdini install version in Plugin Settings.\n" +
+					"\nRestarting Unity is required if you have already done the above.",
 									HEU_HoudiniVersion.HOUDINI_ENGINE_MAJOR,
 									HEU_HoudiniVersion.HOUDINI_ENGINE_MINOR,
 									HEU_HoudiniVersion.HOUDINI_ENGINE_API,
@@ -618,6 +622,8 @@ namespace HoudiniEngineUnity
 			ConnectedState = SessionConnectionState.CONNECTED;
 
 			HEU_SessionManager.RegisterSession(_sessionData.SessionID, this);
+
+			HEU_PluginSettings.LastHoudiniVersion = HEU_HoudiniVersion.HOUDINI_VERSION_STRING;
 
 			return true;
 		}

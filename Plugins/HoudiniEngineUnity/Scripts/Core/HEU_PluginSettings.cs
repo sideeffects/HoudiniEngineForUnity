@@ -346,36 +346,6 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		public static float PinSize
-		{
-			get
-			{
-				float size = 1f;
-				HEU_PluginStorage.Instance.Get("HAPI_PinSize", out size, size);
-				return size;
-			}
-			set
-			{
-				HEU_PluginStorage.Instance.Set("HAPI_PinSize", value);
-			}
-		}
-
-		public static Color PinColor
-		{
-			get
-			{
-				Color storedColor = new Color(0.7f, 0.0f, 0.0f, 1.0f);
-				string storedColorStr = HEU_GeneralUtility.ColorToString(storedColor);
-				HEU_PluginStorage.Instance.Get("HAPI_PinColor", out storedColorStr, storedColorStr);
-				return HEU_GeneralUtility.StringToColor(storedColorStr);
-			}
-			set
-			{
-				string storeColorStr = HEU_GeneralUtility.ColorToString(value);
-				HEU_PluginStorage.Instance.Set("HAPI_PinColor", storeColorStr);
-			}
-		}
-
 		public static Color LineColor
 		{
 			get
@@ -832,6 +802,34 @@ namespace HoudiniEngineUnity
 			set
 			{
 				HEU_PluginStorage.Instance.Set("HAPI_MaxVerticesPerPrimitive", value);
+			}
+		}
+
+		public static string HoudiniInstallPath
+		{
+			get
+			{
+				string path = "";
+				HEU_PluginStorage.Instance.Get("HAPI_HoudiniInstallPath", out path, path);
+				return path;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_HoudiniInstallPath", value);
+			}
+		}
+
+		public static string LastHoudiniVersion
+		{
+			get
+			{
+				string version = "";
+				HEU_PluginStorage.Instance.Get("HAPI_LastHoudiniVersion", out version, version);
+				return version;
+			}
+			set
+			{
+				HEU_PluginStorage.Instance.Set("HAPI_LastHoudiniVersion", value);
 			}
 		}
 	}

@@ -67,7 +67,6 @@ namespace HoudiniEngineUnity
 		}
 
 
-
 		static HEU_Platform()
 		{
 			// This gets set whenever Unity initializes or there is a code refresh.
@@ -80,13 +79,28 @@ namespace HoudiniEngineUnity
 		/// <returns>Path to the Houdini Engine plugin installation.</returns>
 		public static string GetHoudiniEnginePath()
 		{
+			// Use plugin setting path unless its not set
+			string HAPIPath = GetSavedHoudiniPath();
+			if (!string.IsNullOrEmpty(HAPIPath))
+			{
+				return HAPIPath;
+			}
+
+			return GetHoudiniEngineDefaultPath();
+		}
+
+		/// <summary>
+		/// Returns the default installation path of Houdini that this plugin was built to use.
+		/// </summary>
+		public static string GetHoudiniEngineDefaultPath()
+		{
 			string HAPIPath = null;
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
 
 			// Look up in environment variable
 			HAPIPath = System.Environment.GetEnvironmentVariable(HEU_Defines.HAPI_PATH, System.EnvironmentVariableTarget.Machine);
-			if(HAPIPath == null || HAPIPath.Length == 0)
+			if (HAPIPath == null || HAPIPath.Length == 0)
 			{
 				HAPIPath = System.Environment.GetEnvironmentVariable(HEU_Defines.HAPI_PATH, System.EnvironmentVariableTarget.User);
 			}
@@ -95,7 +109,7 @@ namespace HoudiniEngineUnity
 				HAPIPath = System.Environment.GetEnvironmentVariable(HEU_Defines.HAPI_PATH, System.EnvironmentVariableTarget.Process);
 			}
 
-			if(HAPIPath == null || HAPIPath.Length == 0)
+			if (HAPIPath == null || HAPIPath.Length == 0)
 			{
 				// HAPI_PATH not set. Look in registry.
 
@@ -115,7 +129,6 @@ namespace HoudiniEngineUnity
 				}
 
 				//Debug.Log("HAPI Path: " + HAPIPath);
-
 			}
 
 #elif (UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX)
@@ -124,6 +137,43 @@ namespace HoudiniEngineUnity
 			_lastErrorMsg = "Unable to find Houdini installation because this is an unsupported platform!";
 #endif
 
+			return HAPIPath;
+		}
+
+		/// <summary>
+		/// Return the saved Houdini install path.
+		/// Checks if the plugin has been updated, and if so, asks
+		/// user whether they want to switch to new version.
+		/// If user switches, then this returns null to allow installed version
+		/// to be used.
+		/// </summary>
+		/// <returns>The saved Houdini install path or null if it doesn't 
+		/// exist or user wants to use installed version</returns>
+		public static string GetSavedHoudiniPath()
+		{
+			string HAPIPath = HEU_PluginSettings.HoudiniInstallPath;
+			if (!string.IsNullOrEmpty(HAPIPath))
+			{
+				// First check if the last stored installed Houdini version matches current installed version
+				string lastHoudiniVersion = HEU_PluginSettings.LastHoudiniVersion;
+				if (!string.IsNullOrEmpty(lastHoudiniVersion))
+				{
+					if (!lastHoudiniVersion.Equals(HEU_HoudiniVersion.HOUDINI_VERSION_STRING))
+					{
+						// Mismatch means different version of the plugin has been installed.
+						// Ask user if they want to update their HAPIPath.
+						// Confirmation means to clear out the saved HAPI path and use
+						// the default one spcecified by the plugin.
+						string title = "New Houdini Installation Detected";
+						string msg = string.Format("You have manually specified Houdini version {0} at {1} to be used. But the plugin has been updated to a newer version {2). Do you want to use the new version?",
+							lastHoudiniVersion, HAPIPath, HEU_HoudiniVersion.HOUDINI_VERSION_STRING);
+						if (HEU_EditorUtility.DisplayDialog(title, msg, "Yes", "No"))
+						{
+							HAPIPath = null;
+						}
+					}
+				}
+			}
 			return HAPIPath;
 		}
 
