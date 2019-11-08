@@ -195,10 +195,16 @@ namespace HoudiniEngineUnity
 #if !HEU_TERRAIN_COLLIDER_DISABLED
 					TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(newGameObject);
 #endif
+					// The TerrainData and TerrainLayer files needs to be saved out if we create them.
+					// Try user specified path, otherwise use the cache folder
+					string exportTerrainDataPath = terrainBuffers[t]._terrainDataExportPath;
+					if (string.IsNullOrEmpty(exportTerrainDataPath))
+					{
+						// This creates the relative folder path from the Asset's cache folder: {assetCache}/{geo name}/Terrain/Tile{tileIndex}/...
+						exportTerrainDataPath = HEU_Platform.BuildPath(outputTerrainpath, HEU_Defines.HEU_FOLDER_TERRAIN, HEU_Defines.HEU_FOLDER_TILE + terrainBuffers[t]._tileIndex);
+					}
 
-					// TODO: Instead of writing the terrain data into the working folder, user might
-					// want to specify a path explictly. To support that, get terrain data path export 
-					// file via attribute. Then use CreateAsset to write to it.
+					bool bFullExportTerrainDataPath = HEU_Platform.DoesFileExist(exportTerrainDataPath);
 
 					if (!string.IsNullOrEmpty(terrainBuffers[t]._terrainDataPath))
 					{
@@ -210,7 +216,15 @@ namespace HoudiniEngineUnity
 							Debug.LogWarningFormat("TerrainData, set via attribute, not found at: {0}", terrainBuffers[t]._terrainDataPath);
 						}
 
-						terrain.terrainData = HEU_AssetDatabase.CopyUniqueAndLoadAssetAtAnyPath(sourceTerrainData, outputTerrainpath, typeof(TerrainData)) as TerrainData;
+						if (bFullExportTerrainDataPath)
+						{
+							terrain.terrainData = HEU_AssetDatabase.CopyAndLoadAssetAtGivenPath(sourceTerrainData, exportTerrainDataPath, typeof(TerrainData)) as TerrainData;
+						}
+						else
+						{
+							terrain.terrainData = HEU_AssetDatabase.CopyUniqueAndLoadAssetAtAnyPath(sourceTerrainData, exportTerrainDataPath, typeof(TerrainData)) as TerrainData;
+						}
+
 						if (terrain.terrainData != null)
 						{
 							// Store path so that it can be deleted on clean up
@@ -222,8 +236,17 @@ namespace HoudiniEngineUnity
 					{
 						terrain.terrainData = new TerrainData();
 
-						string assetPathName = "TerrainData" + HEU_Defines.HEU_EXT_ASSET;
-						HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrain.terrainData, outputTerrainpath, null, assetPathName, typeof(TerrainData));
+						if (bFullExportTerrainDataPath)
+						{
+							string folderPath = HEU_Platform.GetFolderPath(exportTerrainDataPath, true);
+							HEU_AssetDatabase.CreatePathWithFolders(folderPath);
+							HEU_AssetDatabase.CreateAsset(terrain.terrainData, exportTerrainDataPath);
+						}
+						else
+						{
+							string assetPathName = "TerrainData" + HEU_Defines.HEU_EXT_ASSET;
+							HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrain.terrainData, exportTerrainDataPath, null, assetPathName, typeof(TerrainData));
+						}
 
 					}
 					TerrainData terrainData = terrain.terrainData;

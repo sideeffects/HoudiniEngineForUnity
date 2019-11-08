@@ -113,11 +113,7 @@ namespace HoudiniEngineUnity
 				TerrainCollider collider = HEU_GeneralUtility.GetOrCreateComponent<TerrainCollider>(gameObject);
 #endif
 
-				// Look up terrain material, if specified, on the height layer
-				string specifiedTerrainMaterialName = HEU_GeneralUtility.GetMaterialAttributeValueFromPart(session,
-					geoID, partID);
-
-				// This ensures to reuse existing terraindata, and only creates new if none exist or none provided
+				// This ensures to reuse existing terraindata, and only creates new if none exist
 				if (terrain.terrainData == null)
 				{
 					if (terrainData == null)
@@ -125,12 +121,21 @@ namespace HoudiniEngineUnity
 						terrainData = new TerrainData();
 						bNewTerrainData = true;
 					}
-
+				}
+				
+				if (terrainData != null)
+				{
 					terrain.terrainData = terrainData;
-					SetTerrainMaterial(terrain, specifiedTerrainMaterialName);
+				}
+				else
+				{
+					return false;
 				}
 
-				terrainData = terrain.terrainData;
+				// Look up terrain material, if specified, on the height layer
+				string specifiedTerrainMaterialName = HEU_GeneralUtility.GetMaterialAttributeValueFromPart(session,
+					geoID, partID);
+				SetTerrainMaterial(terrain, specifiedTerrainMaterialName);
 
 #if !HEU_TERRAIN_COLLIDER_DISABLED
 				collider.terrainData = terrainData;
