@@ -303,13 +303,11 @@ namespace HoudiniEngineUnity
 		public static string GetFolderPath(string path, bool bRemoveDirectorySeparatorAtEnd = false)
 		{
 			string resultPath = path;
-			if(DoesFileExist(path))
+
+			string fileName = Path.GetFileName(path);
+			if (!string.IsNullOrEmpty(fileName))
 			{
-				string fileName = Path.GetFileName(path);
-				if (!string.IsNullOrEmpty(fileName))
-				{
-					resultPath = path.Replace(fileName, "");
-				}
+				resultPath = path.Replace(fileName, "");
 			}
 
 			if (bRemoveDirectorySeparatorAtEnd)

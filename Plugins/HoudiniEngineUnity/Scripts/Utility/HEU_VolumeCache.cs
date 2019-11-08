@@ -606,6 +606,10 @@ namespace HoudiniEngineUnity
 			TerrainData terrainData = _terrainData;
 			Vector3 terrainOffsetPosition = Vector3.zero;
 
+			// Look up TerrainData export file path via attribute if user has set it
+			string userTerrainDataExportPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, _ownerNode.GeoID, heightLayer._part.PartID,
+				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_EXPORT_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
+
 			// Look up TerrainData file via attribute if user has set it
 			string terrainDataFile = HEU_GeneralUtility.GetAttributeStringValueSingle(session, _ownerNode.GeoID, heightLayer._part.PartID,
 				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
@@ -618,15 +622,23 @@ namespace HoudiniEngineUnity
 				}
 				else
 				{
-					// In the case that the specified TerrainData belongs to another Terrain (i.e. input Terrain), 
-					// make a copy of it and store it in our cache. Note that this overwrites existing TerrainData in our cache
-					// because the workflow is such that attributes will always override local setting.
-					string bakedTerrainPath = houdiniAsset.GetValidAssetCacheFolderPath();
-					bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, relativeFolderPath);
-					terrainData = HEU_AssetDatabase.CopyAndLoadAssetAtAnyPath(loadedTerrainData, bakedTerrainPath, typeof(TerrainData), true) as TerrainData;
-					if (terrainData == null)
+					// In the case that the specified TerrainData belongs to another Terrain (i.e. input Terrain), make a copy of it.
+					if (!string.IsNullOrEmpty(userTerrainDataExportPath))
 					{
-						Debug.LogErrorFormat("Unable to copy TerrainData from {0} for generating Terrain.", terrainDataFile);
+						// Save it to explicit path specified by user
+						terrainData = HEU_AssetDatabase.CopyAndLoadAssetAtGivenPath(loadedTerrainData, userTerrainDataExportPath, typeof(TerrainData)) as TerrainData;
+					}
+					else 
+					{
+						// Save it into cache
+						// Note that this overwrites existing TerrainData in our cache because the workflow is 
+						// such that attributes will always override local setting.
+						string bakedTerrainPath = HEU_Platform.BuildPath(houdiniAsset.GetValidAssetCacheFolderPath(), relativeFolderPath);
+						terrainData = HEU_AssetDatabase.CopyAndLoadAssetAtAnyPath(loadedTerrainData, bakedTerrainPath, typeof(TerrainData), true) as TerrainData;
+						if (terrainData == null)
+						{
+							Debug.LogErrorFormat("Unable to copy TerrainData from {0} for generating Terrain.", terrainDataFile);
+						}
 					}
 				}
 			}
@@ -645,7 +657,7 @@ namespace HoudiniEngineUnity
 			if (_terrainData != terrainData)
 			{
 				_terrainData = terrainData;
-				heightLayer._part.SetTerrainData(terrainData, relativeFolderPath);
+				heightLayer._part.SetTerrainData(terrainData, relativeFolderPath, userTerrainDataExportPath);
 			}
 
 			heightLayer._part.SetTerrainOffsetPosition(terrainOffsetPosition);

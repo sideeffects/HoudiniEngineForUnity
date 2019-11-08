@@ -2012,7 +2012,7 @@ namespace HoudiniEngineUnity
 		/// Adds to existing saved asset file or creates this as the root asset.
 		/// </summary>
 		/// <param name="terrainData">The TerrainData object to save</param>
-		public void SetTerrainData(TerrainData terrainData, string relativeFolderPath)
+		public void SetTerrainData(TerrainData terrainData, string exportPathRelative, string exportPathUser)
 		{
 			// Remove the old asset from the AssetDB if its different
 			if (_assetDBTerrainData != null && terrainData != _assetDBTerrainData && HEU_AssetDatabase.ContainsAsset(_assetDBTerrainData))
@@ -2024,9 +2024,19 @@ namespace HoudiniEngineUnity
 			// Add new asset if it doesn't exist in AssetDB
 			if (!HEU_AssetDatabase.ContainsAsset(terrainData))
 			{
-				string assetPathName = "TerrainData" + HEU_Defines.HEU_EXT_ASSET;
-				Debug.Log("Saving terrain data: " + assetPathName);
-				ParentAsset.AddToAssetDBCache(assetPathName, terrainData, relativeFolderPath, ref _assetDBTerrainData);
+				if (string.IsNullOrEmpty(exportPathUser))
+				{
+					// Save to Working folder
+					string assetPathName = "TerrainData" + HEU_Defines.HEU_EXT_ASSET;
+					ParentAsset.AddToAssetDBCache(assetPathName, terrainData, exportPathRelative, ref _assetDBTerrainData);
+				}
+				else
+				{
+					// Save to user specified path
+					string folderPath = HEU_Platform.GetFolderPath(exportPathUser, true);
+					HEU_AssetDatabase.CreatePathWithFolders(folderPath);
+					HEU_AssetDatabase.CreateAsset(terrainData, exportPathUser);
+				}
 			}
 			else
 			{

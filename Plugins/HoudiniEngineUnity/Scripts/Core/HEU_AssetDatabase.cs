@@ -611,6 +611,50 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Copy the file of the given srcAsset into the given targetPath, which must be absolute.
+		/// If targetPath doesn't have a file name, the srcAsset's file name will be used.
+		/// </summary>
+		/// <param name="srcAsset">Source asset to copy</param>
+		/// <param name="targetPath">Absolute path of destination</param>
+		/// <param name="type">Type of the asset</param>
+		/// <returns></returns>
+		public static Object CopyAndLoadAssetAtGivenPath(Object srcAsset, string targetPath, System.Type type)
+		{
+#if UNITY_EDITOR
+			string srcAssetPath = GetAssetPath(srcAsset);
+			if (!string.IsNullOrEmpty(srcAssetPath))
+			{
+				string targetFolderPath = HEU_Platform.GetFolderPath(targetPath);
+				CreatePathWithFolders(targetFolderPath);
+
+				string targetFileName = HEU_Platform.GetFileName(targetPath);
+				if (string.IsNullOrEmpty(targetFileName))
+				{
+					Debug.LogErrorFormat("Copying asset failed. Destination path must end with a file name: {0}!", targetPath);
+					return null;
+				}
+
+				if (CopyAsset(srcAssetPath, targetPath))
+				{
+					// Refresh database as otherwise we won't be able to load it in the next line.
+					SaveAndRefreshDatabase();
+
+					return LoadAssetAtPath(targetPath, type);
+				}
+				else
+				{
+					Debug.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, targetPath);
+				}
+			}
+			return null;
+#else
+			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
+			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			return null;
+#endif
+		}
+
+		/// <summary>
 		/// Creates a unique copy of the srcAsset at copyPath, and loads it.
 		/// If another asset is at copyPath, it creates another (unique) file name.
 		/// </summary>
@@ -728,17 +772,17 @@ namespace HoudiniEngineUnity
 #endif
 		}
 
-		public static void CreateAddObjectInAssetCacheFolder(string assetName, string assetObjectFileName, UnityEngine.Object objectToAdd, string relativeFolderPath, ref string bakedAssetPath, ref UnityEngine.Object assetDBObject)
+		public static void CreateAddObjectInAssetCacheFolder(string assetName, string assetObjectFileName, UnityEngine.Object objectToAdd, string relativeFolderPath, ref string exportRootPath, ref UnityEngine.Object assetDBObject)
 		{
 #if UNITY_EDITOR
-			if (string.IsNullOrEmpty(bakedAssetPath))
+			if (string.IsNullOrEmpty(exportRootPath))
 			{
-				bakedAssetPath = HEU_AssetDatabase.CreateUniqueBakePath(assetName);
+				exportRootPath = HEU_AssetDatabase.CreateUniqueBakePath(assetName);
 			}
 
 			if (assetDBObject == null)
 			{
-				HEU_AssetDatabase.CreateObjectInAssetCacheFolder(objectToAdd, bakedAssetPath, relativeFolderPath, assetObjectFileName, objectToAdd.GetType());
+				HEU_AssetDatabase.CreateObjectInAssetCacheFolder(objectToAdd, exportRootPath, relativeFolderPath, assetObjectFileName, objectToAdd.GetType());
 				assetDBObject = objectToAdd;
 			}
 			else

@@ -86,6 +86,7 @@ namespace HoudiniEngineUnity
 		public Vector3 _position;
 
 		public string _terrainDataPath;
+		public string _terrainDataExportPath;
 
 		public HEU_VolumeScatterTrees _scatterTrees;
 
