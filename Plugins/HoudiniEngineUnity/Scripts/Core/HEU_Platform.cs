@@ -163,14 +163,18 @@ namespace HoudiniEngineUnity
 						// Mismatch means different version of the plugin has been installed.
 						// Ask user if they want to update their HAPIPath.
 						// Confirmation means to clear out the saved HAPI path and use
-						// the default one spcecified by the plugin.
-						string title = "New Houdini Installation Detected";
-						string msg = string.Format("You have manually specified Houdini version {0} at {1} to be used. But the plugin has been updated to a newer version {2}. Do you want to use the new version?",
-							lastHoudiniVersion, HAPIPath, HEU_HoudiniVersion.HOUDINI_VERSION_STRING);
+						// the default one specified by the plugin.
+						string title = "Updated Houdini Engine Plugin Detected";
+						string msg = string.Format("You have overriden the plugin's default Houdini version with your own, but the plugin has been updated.\n" +
+							"Would you like to use the updated plugin's default Houdini version?.");
 						if (HEU_EditorUtility.DisplayDialog(title, msg, "Yes", "No"))
 						{
+							HEU_PluginSettings.HoudiniInstallPath = "";
 							HAPIPath = null;
 						}
+
+						// Always update LastHoudiniVersion so this doesn't keep asking
+						HEU_PluginSettings.LastHoudiniVersion = HEU_HoudiniVersion.HOUDINI_VERSION_STRING;
 					}
 				}
 			}
