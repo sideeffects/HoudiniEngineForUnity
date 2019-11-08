@@ -165,7 +165,7 @@ namespace HoudiniEngineUnity
 						// Confirmation means to clear out the saved HAPI path and use
 						// the default one spcecified by the plugin.
 						string title = "New Houdini Installation Detected";
-						string msg = string.Format("You have manually specified Houdini version {0} at {1} to be used. But the plugin has been updated to a newer version {2). Do you want to use the new version?",
+						string msg = string.Format("You have manually specified Houdini version {0} at {1} to be used. But the plugin has been updated to a newer version {2}. Do you want to use the new version?",
 							lastHoudiniVersion, HAPIPath, HEU_HoudiniVersion.HOUDINI_VERSION_STRING);
 						if (HEU_EditorUtility.DisplayDialog(title, msg, "Yes", "No"))
 						{
