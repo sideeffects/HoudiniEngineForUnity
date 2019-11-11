@@ -189,6 +189,7 @@ namespace HoudiniEngineUnity
 		public const string DEFAULT_CONVEX_COLLISION_GEO = "convex";
 		public const string DEFAULT_SIMPLE_COLLISION_GEO = "collision_geo_simple";
 		public const string DEFAULT_SIMPLE_RENDERED_COLLISION_GEO = "rendered_collision_geo_simple";
+		public const string DEFAULT_COLLISION_TRIGGER = "trigger";
 
 		// Materials
 		public const string DEFAULT_UNITY_MATERIAL_ATTR = "unity_material";
@@ -265,6 +266,7 @@ namespace HoudiniEngineUnity
 		public const string DEFAULT_UNITY_INPUT_MESH_ATTR = "unity_input_mesh_name";
 		public const string DEFAULT_UNITY_STATIC_ATTR = "unity_static";
 		public const string DEFAULT_UNITY_LAYER_ATTR = "unity_layer";
+		public const string DEFAULT_UNITY_MESH_READABLE = "unity_mesh_readable";
 
 		public const string DEFAULT_INSTANCE_PREFIX_ATTR = "instance_prefix";
 

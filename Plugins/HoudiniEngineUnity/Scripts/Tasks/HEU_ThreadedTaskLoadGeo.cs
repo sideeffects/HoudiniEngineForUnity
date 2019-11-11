@@ -956,11 +956,11 @@ namespace HoudiniEngineUnity
 				instancerBuffer._assetPaths = assetPaths;
 
 				HAPI_AttributeInfo collisionGeoAttrInfo = new HAPI_AttributeInfo();
-				HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+				HEU_GeneralUtility.GetAttributeInfo(session, geoID, partID, HEU_PluginSettings.CollisionGroupName, ref collisionGeoAttrInfo);
 				if (collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT
 					|| collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
 				{
-					instancerBuffer._collisionAssetPaths = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+					instancerBuffer._collisionAssetPaths = HEU_GeneralUtility.GetAttributeStringData(session, geoID, partID, HEU_PluginSettings.CollisionGroupName, ref collisionGeoAttrInfo);
 				}
 
 				return instancerBuffer;
