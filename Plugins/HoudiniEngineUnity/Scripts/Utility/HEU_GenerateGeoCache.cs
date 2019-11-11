@@ -108,6 +108,8 @@ namespace HoudiniEngineUnity
 		public bool _hasLODGroups;
 		public float[] _LODTransitionValues;
 
+		public bool _isMeshReadWrite = false;
+
 		// Colliders
 		public class HEU_ColliderInfo
 		{
@@ -133,6 +135,8 @@ namespace HoudiniEngineUnity
 			public int[] _collisionIndices;
 
 			public MeshTopology _meshTopology = MeshTopology.Triangles;
+
+			public bool _isTrigger = false;
 		}
 		public List<HEU_ColliderInfo> _colliderInfos = new List<HEU_ColliderInfo>();
 
@@ -205,6 +209,12 @@ namespace HoudiniEngineUnity
 			geoCache._materialCache = materialCache;
 			geoCache._materialIDToDataMap = HEU_MaterialFactory.GetMaterialDataMapFromCache(materialCache);
 			geoCache._assetCacheFolderPath = assetCacheFolderPath;
+
+			int meshReadWrite = 0;
+			if (HEU_GeneralUtility.GetAttributeIntSingle(session, geoID, partID, HEU_Defines.DEFAULT_UNITY_MESH_READABLE, out meshReadWrite))
+			{
+				geoCache._isMeshReadWrite = meshReadWrite != 0;
+			}
 
 			if (!geoCache.PopulateGeometryData(session, bUseLODGroups))
 			{
@@ -615,6 +625,7 @@ namespace HoudiniEngineUnity
 				BoxCollider collider = HEU_GeneralUtility.GetOrCreateComponent<BoxCollider>(outputGameObject);
 				collider.center = colliderInfo._colliderCenter;
 				collider.size = colliderInfo._colliderSize;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -623,6 +634,7 @@ namespace HoudiniEngineUnity
 				SphereCollider collider = HEU_GeneralUtility.GetOrCreateComponent<SphereCollider>(outputGameObject);
 				collider.center = colliderInfo._colliderCenter;
 				collider.radius = colliderInfo._colliderRadius;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -640,6 +652,7 @@ namespace HoudiniEngineUnity
 
 				collider.center = bounds.center;
 				collider.size = bounds.size;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -660,6 +673,7 @@ namespace HoudiniEngineUnity
 
 				collider.center = bounds.center;
 				collider.radius = max_extent;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -679,6 +693,7 @@ namespace HoudiniEngineUnity
 				collider.direction = 1;
 				collider.height = bounds.size.y;
 				collider.radius = bounds.extents.x;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -697,6 +712,7 @@ namespace HoudiniEngineUnity
 
 				meshCollider.sharedMesh = collisionMesh;
 				meshCollider.convex = colliderInfo._convexCollider;
+				meshCollider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(meshCollider);
 			}
@@ -788,7 +804,7 @@ namespace HoudiniEngineUnity
 				MeshFilter meshFilter = HEU_GeneralUtility.GetOrCreateComponent<MeshFilter>(generatedOutput._outputData._gameObject);
 				meshFilter.sharedMesh = newMesh;
 				meshFilter.sharedMesh.RecalculateBounds();
-				meshFilter.sharedMesh.UploadMeshData(true);
+				meshFilter.sharedMesh.UploadMeshData(!geoCache._isMeshReadWrite);
 
 				MeshRenderer meshRenderer = HEU_GeneralUtility.GetOrCreateComponent<MeshRenderer>(generatedOutput._outputData._gameObject);
 				meshRenderer.sharedMaterials = finalMaterials;
@@ -898,7 +914,7 @@ namespace HoudiniEngineUnity
 						HEU_GeometryUtility.CalculateMeshTangents(meshFilter.sharedMesh);
 					}
 
-					meshFilter.sharedMesh.UploadMeshData(true);
+					meshFilter.sharedMesh.UploadMeshData(!geoCache._isMeshReadWrite);
 
 					MeshRenderer meshRenderer = HEU_GeneralUtility.GetOrCreateComponent<MeshRenderer>(childOutput._gameObject);
 					meshRenderer.sharedMaterials = finalMaterials;
@@ -1492,6 +1508,8 @@ namespace HoudiniEngineUnity
 
 					HEU_ColliderInfo colliderInfo = new HEU_ColliderInfo();
 
+					colliderInfo._isTrigger = groupName.Contains(HEU_Defines.DEFAULT_COLLISION_TRIGGER);
+
 					if (geoCache._partInfo.type == HAPI_PartType.HAPI_PARTTYPE_BOX)
 					{
 						// Box collider
@@ -1991,6 +2009,8 @@ namespace HoudiniEngineUnity
 					}
 
 					HEU_ColliderInfo colliderInfo = new HEU_ColliderInfo();
+
+					colliderInfo._isTrigger = groupName.Contains(HEU_Defines.DEFAULT_COLLISION_TRIGGER);
 
 					if (geoCache._partInfo.type == HAPI_PartType.HAPI_PARTTYPE_BOX)
 					{

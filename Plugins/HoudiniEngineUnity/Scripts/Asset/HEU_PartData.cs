@@ -799,11 +799,11 @@ namespace HoudiniEngineUnity
 
 			string[] collisionAssetPaths = null;
 			HAPI_AttributeInfo collisionGeoAttrInfo = new HAPI_AttributeInfo();
-			HEU_GeneralUtility.GetAttributeInfo(session, _geoID, _partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+			HEU_GeneralUtility.GetAttributeInfo(session, _geoID, _partID, HEU_PluginSettings.CollisionGroupName, ref collisionGeoAttrInfo);
 			if (collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT
 				|| collisionGeoAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
 			{
-				collisionAssetPaths = HEU_GeneralUtility.GetAttributeStringData(session, _geoID, _partID, HEU_Defines.DEFAULT_COLLISION_GEO, ref collisionGeoAttrInfo);
+				collisionAssetPaths = HEU_GeneralUtility.GetAttributeStringData(session, _geoID, _partID, HEU_PluginSettings.CollisionGroupName, ref collisionGeoAttrInfo);
 			}
 
 			GameObject singleCollisionGO = null;
