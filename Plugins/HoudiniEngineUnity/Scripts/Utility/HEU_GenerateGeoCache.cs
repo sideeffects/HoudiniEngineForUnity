@@ -133,6 +133,8 @@ namespace HoudiniEngineUnity
 			public int[] _collisionIndices;
 
 			public MeshTopology _meshTopology = MeshTopology.Triangles;
+
+			public bool _isTrigger = false;
 		}
 		public List<HEU_ColliderInfo> _colliderInfos = new List<HEU_ColliderInfo>();
 
@@ -615,6 +617,7 @@ namespace HoudiniEngineUnity
 				BoxCollider collider = HEU_GeneralUtility.GetOrCreateComponent<BoxCollider>(outputGameObject);
 				collider.center = colliderInfo._colliderCenter;
 				collider.size = colliderInfo._colliderSize;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -623,6 +626,7 @@ namespace HoudiniEngineUnity
 				SphereCollider collider = HEU_GeneralUtility.GetOrCreateComponent<SphereCollider>(outputGameObject);
 				collider.center = colliderInfo._colliderCenter;
 				collider.radius = colliderInfo._colliderRadius;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -640,6 +644,7 @@ namespace HoudiniEngineUnity
 
 				collider.center = bounds.center;
 				collider.size = bounds.size;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -660,6 +665,7 @@ namespace HoudiniEngineUnity
 
 				collider.center = bounds.center;
 				collider.radius = max_extent;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -679,6 +685,7 @@ namespace HoudiniEngineUnity
 				collider.direction = 1;
 				collider.height = bounds.size.y;
 				collider.radius = bounds.extents.x;
+				collider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(collider);
 			}
@@ -697,6 +704,7 @@ namespace HoudiniEngineUnity
 
 				meshCollider.sharedMesh = collisionMesh;
 				meshCollider.convex = colliderInfo._convexCollider;
+				meshCollider.isTrigger = colliderInfo._isTrigger;
 
 				outputData._colliders.Add(meshCollider);
 			}
@@ -1492,6 +1500,8 @@ namespace HoudiniEngineUnity
 
 					HEU_ColliderInfo colliderInfo = new HEU_ColliderInfo();
 
+					colliderInfo._isTrigger = groupName.Contains(HEU_Defines.DEFAULT_COLLISION_TRIGGER);
+
 					if (geoCache._partInfo.type == HAPI_PartType.HAPI_PARTTYPE_BOX)
 					{
 						// Box collider
@@ -1991,6 +2001,8 @@ namespace HoudiniEngineUnity
 					}
 
 					HEU_ColliderInfo colliderInfo = new HEU_ColliderInfo();
+
+					colliderInfo._isTrigger = groupName.Contains(HEU_Defines.DEFAULT_COLLISION_TRIGGER);
 
 					if (geoCache._partInfo.type == HAPI_PartType.HAPI_PARTTYPE_BOX)
 					{
