@@ -772,6 +772,7 @@ namespace HoudiniEngineUnity
 					scatterTrees._lightmapColors = new Color32[pointCount];
 				}
 
+				float a = 1.0f;
 				for (int i = 0; i < pointCount; ++i)
 				{
 					scatterTrees._positions[i] = new Vector3(1.0f - uvs[i * uvAttrInfo.tupleSize + 1],
@@ -780,20 +781,24 @@ namespace HoudiniEngineUnity
 
 					if (scatterTrees._colors != null)
 					{
+						a = colorAttrInfo.tupleSize == 4 ? colors[i * colorAttrInfo.tupleSize + 3] : 1.0f;
+
 						scatterTrees._colors[i] =
 							new Color32((byte)(colors[i * colorAttrInfo.tupleSize + 0] * 255),
 										(byte)(colors[i * colorAttrInfo.tupleSize + 1] * 255),
 										(byte)(colors[i * colorAttrInfo.tupleSize + 2] * 255),
-										(byte)(colors[i * colorAttrInfo.tupleSize + 3] * 255));
+										(byte)(a * 255));
 					}
 
 					if (scatterTrees._lightmapColors != null)
 					{
+						a = lightmapColorAttrInfo.tupleSize == 4 ? lightmapColors[i * lightmapColorAttrInfo.tupleSize + 3] : 1.0f;
+
 						scatterTrees._lightmapColors[i] =
 							new Color32((byte)(lightmapColors[i * lightmapColorAttrInfo.tupleSize + 0] * 255),
 										(byte)(lightmapColors[i * lightmapColorAttrInfo.tupleSize + 1] * 255),
 										(byte)(lightmapColors[i * lightmapColorAttrInfo.tupleSize + 2] * 255),
-										(byte)(lightmapColors[i * lightmapColorAttrInfo.tupleSize + 3] * 255));
+										(byte)(a * 255));
 					}
 
 					if (scatterTrees._rotations != null)
