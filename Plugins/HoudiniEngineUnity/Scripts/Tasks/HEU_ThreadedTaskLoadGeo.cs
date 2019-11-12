@@ -322,6 +322,8 @@ namespace HoudiniEngineUnity
 						return false;
 					}
 
+					//Debug.LogFormat("Part {0} with name {1} and type {2}", i, HEU_SessionManager.GetString(partInfo.nameSH), partInfo.type);
+
 					bool isAttribInstancer = false;
 					bool isScatterInstancer = false;
 					// Preliminary check for attribute instancing (mesh type with no verts but has points with instances)
@@ -412,7 +414,7 @@ namespace HoudiniEngineUnity
 
 				HFLayerType layerType = HEU_TerrainUtility.GetHeightfieldLayerType(session, nodeID, volumeParts[i].id, volumeName);
 
-				//Debug.LogFormat("Part name: {0}, GeoName: {1}, Volume Name: {2}, Display: {3}", part.PartName, geoNode.GeoName, volumeName, geoNode.Displayable);
+				//Debug.LogFormat("Index: {0}, Part id: {1}, Part Name: {2}, Volume Name: {3}", i, volumeParts[i].id, HEU_SessionManager.GetString(volumeParts[i].nameSH), volumeName);
 
 				// Ignoring mask layer because it is Houdini-specific (same behaviour as regular HDA terrain generation)
 				if (layerType == HFLayerType.MASK)
@@ -641,10 +643,14 @@ namespace HoudiniEngineUnity
 				int[] tileAttrData = new int[0];
 				if (HEU_GeneralUtility.GetAttribute(session, nodeID, scatterInstancerParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
 				{
-					if (tileAttrData != null && tileAttrData.Length > 0)
-					{
-						terrainTile = tileAttrData[0];
-					}
+					// Try part 0 (the height layer) to get the tile index.
+					// For scatter points merged with HF, in some cases the part ID doesn't have the tile attribute.
+					HEU_GeneralUtility.GetAttribute(session, nodeID, 0, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
+				}
+
+				if (tileAttrData != null && tileAttrData.Length > 0)
+				{
+					terrainTile = tileAttrData[0];
 				}
 
 				// Find the volume layer associated with this part using the terrain tile index
