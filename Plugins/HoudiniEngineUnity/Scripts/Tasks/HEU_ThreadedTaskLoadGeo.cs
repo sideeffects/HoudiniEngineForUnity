@@ -641,7 +641,7 @@ namespace HoudiniEngineUnity
 				int terrainTile = 0;
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
 				int[] tileAttrData = new int[0];
-				if (HEU_GeneralUtility.GetAttribute(session, nodeID, scatterInstancerParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
+				if (!HEU_GeneralUtility.GetAttribute(session, nodeID, scatterInstancerParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
 				{
 					// Try part 0 (the height layer) to get the tile index.
 					// For scatter points merged with HF, in some cases the part ID doesn't have the tile attribute.

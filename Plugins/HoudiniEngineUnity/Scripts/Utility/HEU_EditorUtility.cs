@@ -1127,6 +1127,7 @@ namespace HoudiniEngineUnity
 
 		public static void QuerySelectedMeshTopology()
 		{
+#if UNITY_EDITOR
 			GameObject[] gos = Selection.gameObjects;
 			if (gos == null || gos.Length == 0)
 			{
@@ -1151,6 +1152,7 @@ namespace HoudiniEngineUnity
 					}
 				}
 			}
+#endif
 		}
 	}
 
