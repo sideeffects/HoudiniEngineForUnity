@@ -240,6 +240,11 @@ namespace HoudiniEngineUnity
 				HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
 				int[] tileAttrData = new int[0];
 				HEU_GeneralUtility.GetAttribute(session, ownerNode.GeoID, volumeParts[i].PartID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
+				if (tileAttrData == null || !tileAttrInfo.exists)
+				{
+					HEU_GeneralUtility.GetAttribute(session, ownerNode.GeoID, 0, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
+				}
+
 				if (tileAttrData != null && tileAttrData.Length > 0)
 				{
 					//Debug.LogFormat("Tile: {0}", tileAttrData[0]);
