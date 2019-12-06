@@ -259,6 +259,8 @@ namespace HoudiniEngineUnity
 		// Parameters
 		public const string CURVE_COORDS_PARAM = "coords";
 
+		public const string HENGINE_STORE_ATTR = "hengine_attr_store";
+
 		// Unity Attributes
 		public const string DEFAULT_UNITY_TAG_ATTR = "unity_tag";
 		public const string DEFAULT_UNITY_SCRIPT_ATTR = "unity_script";
