@@ -578,6 +578,15 @@ namespace HoudiniEngineUnity
 			}
 		}
 
+		public void GenerateAttributesStore(HEU_SessionBase session)
+		{
+			int numParts = _parts.Count;
+			for (int i = 0; i < numParts; ++i)
+			{
+				_parts[i].GenerateAttributesStore(session);
+			}
+		}
+
 		private void ProcessGeoCurve(HEU_SessionBase session)
 		{
 			HEU_HoudiniAsset parentAsset = ParentAsset;

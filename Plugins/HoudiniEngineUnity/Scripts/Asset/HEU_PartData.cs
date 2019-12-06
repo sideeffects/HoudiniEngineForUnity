@@ -820,7 +820,7 @@ namespace HoudiniEngineUnity
 				}
 			}
 
-				SetObjectInstancer(true);
+			SetObjectInstancer(true);
 			ObjectInstancesBeenGenerated = true;
 
 			Transform partTransform = OutputGameObject.transform;
@@ -1058,6 +1058,14 @@ namespace HoudiniEngineUnity
 			}
 
 			instanceInfo._instances.Add(newInstanceGO);
+		}
+
+		public void GenerateAttributesStore(HEU_SessionBase session)
+		{
+			if (OutputGameObject != null)
+			{
+				HEU_GeneralUtility.UpdateGeneratedAttributeStore(session, _geoID, PartID, OutputGameObject);
+			}
 		}
 
 		public HEU_Curve GetCurve(bool bEditableOnly)

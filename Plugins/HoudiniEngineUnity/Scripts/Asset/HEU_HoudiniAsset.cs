@@ -928,6 +928,8 @@ namespace HoudiniEngineUnity
 
 			GenerateInstances(session);
 
+			GenerateAttributesStore(session);
+
 			GenerateHandles(session);
 
 			// Upload transform. This should happen after generating outputs above.
@@ -1335,6 +1337,8 @@ namespace HoudiniEngineUnity
 			GenerateObjectsGeometry(session, bRebuild: false);
 
 			GenerateInstances(session);
+
+			GenerateAttributesStore(session);
 
 			GenerateHandles(session);
 
@@ -2166,6 +2170,14 @@ namespace HoudiniEngineUnity
 			foreach (HEU_ObjectNode objNode in _objectNodes)
 			{
 				objNode.GenerateGeometry(session, bRebuild);
+			}
+		}
+
+		private void GenerateAttributesStore(HEU_SessionBase session)
+		{
+			foreach (HEU_ObjectNode objNode in _objectNodes)
+			{
+				objNode.GenerateAttributesStore(session);
 			}
 		}
 
