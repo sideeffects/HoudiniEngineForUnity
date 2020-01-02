@@ -458,7 +458,7 @@ namespace HoudiniEngineUnity
 				{
 					bool bMouseInDrawArea = HEU_GeneralUtility.IsMouseWithinSceneView(_currentCamera, mousePosition) 
 						&& !HEU_GeneralUtility.IsMouseOverRect(_currentCamera, mousePosition, ref _curveEditorUIRect)
-						&& !HEU_GeneralUtility.IsMouseOverRect(_currentCamera, mousePosition, ref _infoRect);
+						&& (!_showInfoRepaint || !HEU_GeneralUtility.IsMouseOverRect(_currentCamera, mousePosition, ref _infoRect));
 
 					// Plane for default collider
 					Plane collisionPlane = new Plane(Vector3.up, Vector3.zero);
