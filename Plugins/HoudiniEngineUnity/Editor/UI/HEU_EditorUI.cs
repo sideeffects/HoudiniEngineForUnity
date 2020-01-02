@@ -121,8 +121,10 @@ namespace HoudiniEngineUnity
 			// In future, there will be new APIs to handle this.
 
 			float sx = EditorPrefs.GetFloat("MoveSnapX");
+			float sy = EditorPrefs.GetFloat("MoveSnapY");
 			float sz = EditorPrefs.GetFloat("MoveSnapZ");
 			inPos.x = Handles.SnapValue(inPos.x, sx);
+			inPos.y = Handles.SnapValue(inPos.y, sy);
 			inPos.z = Handles.SnapValue(inPos.z, sz);
 			return inPos;
 		}
