@@ -1582,7 +1582,7 @@ namespace HoudiniEngineUnity
 		{
 			List<HEU_Handle> newHandles = new List<HEU_Handle>();
 
-			if (assetInfo.handleCount == 0)
+			if (assetInfo.handleCount <= 0)
 			{
 				return newHandles;
 			}
