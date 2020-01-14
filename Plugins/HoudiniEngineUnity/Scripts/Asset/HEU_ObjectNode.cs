@@ -683,7 +683,7 @@ namespace HoudiniEngineUnity
 						int numParts = parts.Count;
 						for (int j = 0; j < numParts; ++j)
 						{
-							parts[i].PopulateObjectInstanceInfos(objInstanceInfos);
+							parts[j].PopulateObjectInstanceInfos(objInstanceInfos);
 						}
 					}
 				}
