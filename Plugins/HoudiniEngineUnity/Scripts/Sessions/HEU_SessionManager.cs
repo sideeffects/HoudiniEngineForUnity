@@ -580,17 +580,20 @@ namespace HoudiniEngineUnity
 				fileExt = "hiplc";
 			}
 
-			bool bResult = false;
 			string filePath = UnityEditor.EditorUtility.SaveFilePanel("Save HIP File", "", "hscene", fileExt);
 			if(!string.IsNullOrEmpty(filePath))
 			{
-				bResult = session.SaveHIPFile(filePath, bLockNodes);
+				bool bResult = session.SaveHIPFile(filePath, bLockNodes);
 				if(bResult)
 				{
 					HEU_EditorUtility.RevealInFinder(filePath);
 				}
+				return bResult;
 			}
-			return bResult;
+			else
+			{
+				return true;
+			}
 #else
 			session.SetSessionErrorMsg("Save session only supported in Unity Editor!", true);
 			return false;

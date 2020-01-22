@@ -607,6 +607,28 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Reset the parameters and reload and rebuild the asset.
+		/// </summary>
+		/// <param name="bAsync">Reload asynchronously if true, or block until completed.</param>
+		/// </summary>
+		public void RequestResetParameters(bool bAsync)
+		{
+#if HOUDINIENGINEUNITY_ENABLED
+			if (bAsync)
+			{
+				_requestBuildAction = AssetBuildAction.RESET_PARAMS;
+			}
+			else
+			{
+				ClearBuildRequest();
+				SetCookStatus(AssetCookStatus.PRELOAD, AssetCookResult.NONE);
+				ResetParametersToDefault();
+				ProcessRebuild(true, -1);
+			}
+#endif
+		}
+
+		/// <summary>
 		/// Public interface to request a full reload / build of the asset.
 		/// Will reset to same state as if it was just instantiated, but keep
 		/// existing transform information and place in Hierarchy.

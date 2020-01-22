@@ -316,7 +316,7 @@ namespace HoudiniEngineUnity
 			{
 				_shelfName = EditorGUILayout.TextField("New Shelf Name", _shelfName);
 
-				using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(_shelfName)))
+				using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(_shelfName)))
 				{
 					if (GUILayout.Button("Create"))
 					{
