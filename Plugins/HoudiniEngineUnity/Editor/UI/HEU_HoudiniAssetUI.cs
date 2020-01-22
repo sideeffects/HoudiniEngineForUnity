@@ -148,7 +148,13 @@ namespace HoudiniEngineUnity
 			// Needed after a cook.
 			_instanceInputUI = null;
 
-			Repaint();
+			HEU_UIRepaint();
+		}
+
+		public void HEU_UIRepaint()
+		{
+			//Repaint();
+			SceneView.RepaintAll();
 		}
 
 		public override void OnInspectorGUI()
@@ -262,7 +268,7 @@ namespace HoudiniEngineUnity
 
 				// Force a repaint here to update the UI when Undo is invoked. Handles case where the Inspector window is
 				// no longer the focus. Without this the Inspector window still shows old value until user selects it.
-				Repaint();
+				HEU_UIRepaint();
 			}
 
 			// Draw custom scene elements. Should be called for any event, not just repaint.

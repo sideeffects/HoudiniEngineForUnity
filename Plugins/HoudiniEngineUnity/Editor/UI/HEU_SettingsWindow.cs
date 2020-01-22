@@ -59,7 +59,7 @@ namespace HoudiniEngineUnity
 		{
 			bool bUtility = false;
 			bool bFocus = true;
-			string title = HEU_Defines.HEU_PRODUCT_NAME + " Plugin Settings";
+			string title = HEU_Defines.HEU_PRODUCT_NAME + " Settings";
 
 			Rect rect = new Rect(Screen.width * 0.5f, Screen.height * 0.5f, 610, 650);
 			EditorWindow window = EditorWindow.GetWindowWithRect<HEU_SettingsWindow>(rect, bUtility, title, bFocus);
