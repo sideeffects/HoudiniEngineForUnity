@@ -69,7 +69,7 @@ namespace HoudiniEngineUnity
 		{
 			bool bUtility = false;
 			bool bFocus = true;
-			string title = "Houdini Engine Tools";
+			string title = "Houdini Tools";
 
 			HEU_ShelfToolsWindow window = EditorWindow.GetWindow<HEU_ShelfToolsWindow>(bUtility, title, bFocus);
 			window.autoRepaintOnSceneChange = true;
