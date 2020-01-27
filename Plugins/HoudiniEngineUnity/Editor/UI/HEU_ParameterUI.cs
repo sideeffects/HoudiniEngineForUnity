@@ -732,7 +732,7 @@ namespace HoudiniEngineUnity
 							value = EditorGUILayout.DelayedIntField(new GUIContent(parameterData._labelName), value, GUILayout.ExpandWidth(!bHasUIMinMax));
 							if (bHasUIMinMax)
 							{
-								value = Mathf.RoundToInt(GUILayout.HorizontalSlider(value, parameterData.IntUIMin, parameterData.IntUIMax, _sliderStyle, _sliderThumbStyle));
+								value = Mathf.RoundToInt(GUILayout.HorizontalSlider(value, (int)Mathf.Min(value, parameterData.IntUIMin), (int)Mathf.Max(value, parameterData.IntUIMax), _sliderStyle, _sliderThumbStyle));
 							}
 						}
 						EditorGUILayout.EndHorizontal();
@@ -772,7 +772,7 @@ namespace HoudiniEngineUnity
 						value = EditorGUILayout.DelayedFloatField(new GUIContent(parameterData._labelName), value, GUILayout.ExpandWidth(!bHasUIMinMax));
 						if (bHasUIMinMax)
 						{
-							value = GUILayout.HorizontalSlider(value, parameterData.FloatUIMin, parameterData.FloatUIMax, _sliderStyle, _sliderThumbStyle);
+							value = GUILayout.HorizontalSlider(value, Mathf.Min(value, parameterData.FloatUIMin), Mathf.Max(value, parameterData.FloatUIMax), _sliderStyle, _sliderThumbStyle);
 						}
 					}
 					EditorGUILayout.EndHorizontal();

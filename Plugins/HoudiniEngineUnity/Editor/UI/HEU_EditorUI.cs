@@ -50,11 +50,16 @@ namespace HoudiniEngineUnity
 			EditorGUILayout.Separator();
 		}
 
-		public static void DrawHorizontalLine()
+		public static void DrawHorizontalLine(int thickness = 2, int padding = 10)
 		{
-			EditorGUILayout.Separator();
-			EditorGUILayout.TextArea("", GUI.skin.horizontalSlider);
-			EditorGUILayout.Separator();
+			Color color = Color.gray;
+
+			Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
+			r.height = thickness;
+			r.y += padding / 2;
+			r.x -= 2;
+			r.width += 6;
+			EditorGUI.DrawRect(r, color);
 		}
 
 		public static bool IsEditorDarkSkin()
