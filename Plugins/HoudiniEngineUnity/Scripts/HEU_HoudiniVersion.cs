@@ -1,5 +1,5 @@
 /*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -62,6 +62,8 @@ namespace HoudiniEngineUnity
 		#else
 			public const string HAPI_LIBRARY	= "libHARC32";
 		#endif // UNITY_EDITOR_64
+
+        public const string SIDEFX_SOFTWARE_REGISTRY = "SOFTWARE\\Side Effects Software\\";
 
 #elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
 
