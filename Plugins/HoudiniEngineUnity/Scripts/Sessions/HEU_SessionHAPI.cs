@@ -193,7 +193,7 @@ namespace HoudiniEngineUnity
 			{
 				if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
 				{
-					SetSessionErrorMsg(string.Format("Unable to create session due to Houdini Engine libraries not found!"), true);
+					SetSessionErrorMsg(string.Format("Unable to create session due to Houdini Engine libraries not found! " + ex), true);
 				}
 				else
 				{
@@ -291,7 +291,7 @@ namespace HoudiniEngineUnity
 			{
 				if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
 				{
-					SetSessionErrorMsg(string.Format("Unable to create session due to Houdini Engine libraries not found!"), bLogError);
+					SetSessionErrorMsg(string.Format("Unable to create session due to Houdini Engine libraries not found! " + ex), bLogError);
 				}
 				else
 				{
