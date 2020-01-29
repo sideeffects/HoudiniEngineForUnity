@@ -1186,7 +1186,7 @@ namespace HoudiniEngineUnity
 				CopyChildGameObjects(sourceGO, targetGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
 						ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
 
-				LOD[] sourceLODs = targetLODGroup.GetLODs();
+				LOD[] sourceLODs = sourceLODGroup.GetLODs();
 				if(sourceLODs != null)
 				{
 					List<GameObject> targetChilden = HEU_GeneralUtility.GetChildGameObjects(targetGO);
@@ -1375,15 +1375,18 @@ namespace HoudiniEngineUnity
 							}
 
 							// Normal map
-							Texture srcNormalMap = materials[m].GetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP);
-							if (srcNormalMap != null)
+							if (materials[m].HasProperty(HEU_Defines.UNITY_SHADER_BUMP_MAP))
 							{
-								Texture newNormalMap = HEU_AssetDatabase.CopyAndLoadAssetWithRelativePath(srcNormalMap, bakedAssetPath, "", typeof(Texture), false) as Texture;
-								if (newNormalMap == null)
+								Texture srcNormalMap = materials[m].GetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP);
+								if (srcNormalMap != null)
 								{
-									throw new HEU_HoudiniEngineError(string.Format("Unable to copy texture. Stopping bake!"));
+									Texture newNormalMap = HEU_AssetDatabase.CopyAndLoadAssetWithRelativePath(srcNormalMap, bakedAssetPath, "", typeof(Texture), false) as Texture;
+									if (newNormalMap == null)
+									{
+										throw new HEU_HoudiniEngineError(string.Format("Unable to copy texture. Stopping bake!"));
+									}
+									newMaterial.SetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP, newNormalMap);
 								}
-								newMaterial.SetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP, newNormalMap);
 							}
 
 							materials[m] = newMaterial;
