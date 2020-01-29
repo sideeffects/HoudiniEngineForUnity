@@ -41,10 +41,10 @@ namespace HoudiniEngineUnity
 	{
 		public const int HOUDINI_MAJOR			= 18;
 		public const int HOUDINI_MINOR			= 5;
-		public const int HOUDINI_BUILD			= 104;
+		public const int HOUDINI_BUILD			= 105;
 		public const int HOUDINI_PATCH			= 0;
 
-		public const string HOUDINI_VERSION_STRING = "18.5.104";
+		public const string HOUDINI_VERSION_STRING = "18.5.105";
 
 		public const int HOUDINI_ENGINE_MAJOR	= 3;
 		public const int HOUDINI_ENGINE_MINOR	= 3;
@@ -65,10 +65,11 @@ namespace HoudiniEngineUnity
 
 #elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
 
-		public const string HOUDINI_INSTALL_PATH = "/Applications/Houdini/Houdini" + HOUDINI_VERSION_STRING + "/Frameworks/Houdini.framework/Versions/Current";
+		public const string HOUDINI_INSTALL_PATH = "/Applications/Houdini/Houdini" + HOUDINI_VERSION_STRING;
+		public const string HOUDINI_FRAMEWORKS_PATH = "/Frameworks/Houdini.framework/Versions/Current";
 
-		public const string HAPI_BIN_PATH		= "/Resources/bin";
-		public const string HAPI_LIBRARY_PATH	= "/Libraries";
+		public const string HAPI_BIN_PATH		= HOUDINI_FRAMEWORKS_PATH + "/Resources/bin";
+		public const string HAPI_LIBRARY_PATH		= HOUDINI_FRAMEWORKS_PATH + "/Libraries";
 
 		#if UNITY_EDITOR_64 || UNITY_64
 			public const string HAPI_LIBRARY	= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.dylib";
