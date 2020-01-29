@@ -68,8 +68,6 @@ namespace HoudiniEngineUnity
 		public const string HEU_ENVPATH_PREFIX = "HEU_ENVPATH_";
 		public const string HEU_ENVPATH_KEY = "$";
 
-		public const string SIDEFX_SOFTWARE_REGISTRY = "SOFTWARE\\Side Effects Software\\";
-
 		public const HAPI_NodeId HEU_INVALID_NODE_ID = -1;
 
 		public const string HEU_DEFAULT_ASSET_NAME = "HoudiniAssetRoot";
