@@ -2680,7 +2680,6 @@ namespace HoudiniEngineUnity
 			// Map of materials copied for corresponding source materials (for reuse)
 			Dictionary<Material, Material> sourceToCopiedMaterials = new Dictionary<Material, Material>();
 
-			List<GameObject> unprocessedTargetChildren = HEU_GeneralUtility.GetNonInstanceChildObjects(bakeTargetGO);
 			string targetAssetPath = null;
 
 			List<GameObject> outputObjects = new List<GameObject>();
@@ -2699,6 +2698,8 @@ namespace HoudiniEngineUnity
 			{
 				// Multi objects
 				// Leave root as is. Update each child object by matching via "name + HEU_Defines.HEU_BAKED_CLONE"
+
+				List<GameObject>  unprocessedTargetChildren = HEU_GeneralUtility.GetNonInstanceChildObjects(bakeTargetGO);
 
 				Transform targetParentTransform = bakeTargetGO.transform;
 
@@ -2726,15 +2727,15 @@ namespace HoudiniEngineUnity
 					outputObjects.Add(targetObject);
 					bBakedSuccessful = true;
 				}
-			}
-
-			// Clean up any children that we haven't processed
-			if(unprocessedTargetChildren.Count > 0)
-			{
-				Debug.LogWarningFormat("Bake target has more children than bake output. GameObjects with names ending in {0} will be destroyed!", HEU_Defines.HEU_BAKED_CLONE);
 
 				// Clean up any children that we haven't processed
-				HEU_GeneralUtility.DestroyBakedGameObjectsWithEndName(unprocessedTargetChildren, HEU_Defines.HEU_BAKED_CLONE);
+				if (unprocessedTargetChildren.Count > 0)
+				{
+					Debug.LogWarningFormat("Bake target has more children than bake output. GameObjects with names ending in {0} will be destroyed!", HEU_Defines.HEU_BAKED_CLONE);
+
+					// Clean up any children that we haven't processed
+					HEU_GeneralUtility.DestroyBakedGameObjectsWithEndName(unprocessedTargetChildren, HEU_Defines.HEU_BAKED_CLONE);
+				}
 			}
 
 			InvokeBakedEvent(bBakedSuccessful, outputObjects);
