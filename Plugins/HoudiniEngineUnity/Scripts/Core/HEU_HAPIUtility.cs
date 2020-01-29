@@ -350,7 +350,7 @@ namespace HoudiniEngineUnity
 			// Apply Unity transform and possibly upload to Houdini Engine
 			rootGO.transform.position = initialPosition;
 
-			Debug.LogFormat("{0}: Created new HDA asset from {1} of type {2}.", HEU_Defines.HEU_NAME, filePath, asset.AssetType);
+			//Debug.LogFormat("{0}: Created new HDA asset from {1} of type {2}.", HEU_Defines.HEU_NAME, filePath, asset.AssetType);
 
 			return rootGO;
 		}
