@@ -1402,23 +1402,9 @@ namespace HoudiniEngineUnity
 			// This should be done before update the objects as below.
 			UpdateHoudiniMaterials(session);
 
-			// Note that on HDA reload, we need to check all the objects to make sure
-			// they have updated ObjectInfos.
-			// _assetInfo.haveObjectsChanged is false on HDA reload so we check _bForceUpdate as well
-			if (_assetInfo.haveObjectsChanged || _isCookingAssetReloaded || _bForceUpdate)
-			{
-				// Number of objects might have changed.
-				// This gets latest object infos, adds and removes objects, then refreshes them
-				UpdateAllObjectNodes(session);
-			}
-			else
-			{
-				// Go through each object and refresh its state in order to handle changes
-				foreach (HEU_ObjectNode objNode in _objectNodes)
-				{
-					objNode.UpdateObject(session, _bForceUpdate);
-				}
-			}
+			// Number of objects might have changed.
+			// This gets latest object infos, adds and removes objects, then refreshes them
+			UpdateAllObjectNodes(session);
 
 			GenerateObjectsGeometry(session, bRebuild: false);
 
