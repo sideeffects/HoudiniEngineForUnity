@@ -223,6 +223,8 @@ namespace HoudiniEngineUnity
 
 		public long SessionID { get { return _sessionID; } }
 
+		public bool WarnedPrefabNotSupported { get; set; }
+
 		// UI TOGGLES -------------------------------------------------------------------------------------------------
 
 		// Disable the warning for unused variables. We're accessing these as SerializedProperty.
@@ -442,6 +444,18 @@ namespace HoudiniEngineUnity
 		}
 
 		/// <summary>
+		/// Clean up generated data and disable this asset.
+		/// </summary>
+		public void CleanUpAndDisable()
+		{
+			InvalidateAsset();
+			DeleteAllGeneratedData();
+
+			// Setup again to avoid null references
+			SetupAsset(_assetType, _assetPath, _rootGameObject, GetAssetSession(true));
+		}
+
+		/// <summary>
 		/// Returns true if this asset has been saved in a scene.
 		/// </summary>
 		/// <returns>True if asset has been saved in a scene.</returns>
@@ -488,13 +502,20 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 			// Adding in OnEnable as its called after a code recompile (Awake is not).
 			HEU_AssetUpdater.AddAssetForUpdate(this);
-#endif
+
+			// Not supporting prefab so disable and clean up if inside prefab stage
+			if (HEU_EditorUtility.IsEditingInPrefabMode(gameObject))
+			{
+				CleanUpAndDisable();
+			}
 
 			// This is required when coming back from play mode, after code compilation,
 			// or scene load to re-add the upstream notifications for input assets.
 			// Note that this done in OnEnable instead of Awake since OnEnable seems to
 			// cover all cases including code compilation refresh.
 			ReconnectInputsUpstreamNotifications();
+
+#endif
 		}
 
 		private void OnDestroy()
@@ -913,12 +934,12 @@ namespace HoudiniEngineUnity
 			_assetOpName = HEU_SessionManager.GetString(_assetInfo.fullOpNameSH, session);
 			_assetHelp = HEU_SessionManager.GetString(_assetInfo.helpTextSH, session);
 
-			Debug.Log(HEU_Defines.HEU_NAME + ": Asset Loaded - ID: " + _assetInfo.nodeId + "\n" +
-								"    Full Name: " + _assetOpName + "\n" +
-								"    Version: " + HEU_SessionManager.GetString(_assetInfo.versionSH, session) + "\n" +
-								"    Unique Node Id: " + _nodeInfo.uniqueHoudiniNodeId + "\n" +
-								"    Internal Node Path: " + HEU_SessionManager.GetString(_nodeInfo.internalNodePathSH, session) + "\n" +
-								"    Asset Library File: " + HEU_SessionManager.GetString(_assetInfo.filePathSH, session) + "\n");
+			//Debug.Log(HEU_Defines.HEU_NAME + ": Asset Loaded - ID: " + _assetInfo.nodeId + "\n" +
+			//					"    Full Name: " + _assetOpName + "\n" +
+			//					"    Version: " + HEU_SessionManager.GetString(_assetInfo.versionSH, session) + "\n" +
+			//					"    Unique Node Id: " + _nodeInfo.uniqueHoudiniNodeId + "\n" +
+			//					"    Internal Node Path: " + HEU_SessionManager.GetString(_nodeInfo.internalNodePathSH, session) + "\n" +
+			//					"    Asset Library File: " + HEU_SessionManager.GetString(_assetInfo.filePathSH, session) + "\n");
 
 			if (RootGameObject.name.Equals(HEU_Defines.HEU_DEFAULT_ASSET_NAME))
 			{
@@ -1067,6 +1088,49 @@ namespace HoudiniEngineUnity
 			if (_refreshUIDelegate != null)
 			{
 				_refreshUIDelegate();
+			}
+		}
+
+		/// <summary>
+		/// Returns true if this asset is in a valid state for interactive
+		/// parameter changes, cooking, and generating results.
+		/// </summary>
+		/// <param name="errorMessage">Fills with error message if not valid</param>
+		/// <returns>True if valid</returns>
+		public bool IsValidForInteraction(ref string errorMessage)
+		{
+			bool valid = true;
+			if (HEU_EditorUtility.IsPrefabAsset(gameObject))
+			{
+				// Disable UI when HDA is prefab
+				errorMessage = "Houdini Engine Asset Error\n" +
+					"HDA as prefab not supported!";
+				valid = false;
+			}
+			else
+			{
+#if UNITY_EDITOR && UNITY_2018_3_OR_NEWER
+				var stage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+				if (stage != null)
+				{
+					// Disable UI when HDA is in prefab stage
+					errorMessage = "Houdini Engine Asset Error\n" +
+						"HDA as prefab not supported!";
+					valid = false;
+				}
+#endif
+			}
+			return valid;
+		}
+
+		private void OnValidate()
+		{
+			// This gets called when copying component or applying prefab
+
+			// Not supporting HDA as prefab, so disable the asset
+			if (HEU_EditorUtility.IsPrefabAsset(gameObject))
+			{
+				CleanUpAndDisable();
 			}
 		}
 
@@ -1971,7 +2035,7 @@ namespace HoudiniEngineUnity
 			// upstream inputs before doing so.
 
 			bool bForceUpload = false;
-			if (_toolsInfo._alwaysCookUpstream)
+			if (_toolsInfo != null && _toolsInfo._alwaysCookUpstream)
 			{
 				foreach (HEU_AttributesStore attributeStore in _attributeStores)
 				{
@@ -1987,7 +2051,7 @@ namespace HoudiniEngineUnity
 			{
 				if(bForceUpload || attributeStore.HasDirtyAttributes())
 				{
-					if(_toolsInfo._alwaysCookUpstream)
+					if (_toolsInfo != null && _toolsInfo._alwaysCookUpstream)
 					{
 						attributeStore.RefreshUpstreamInputs(session);
 					}
@@ -2894,7 +2958,7 @@ namespace HoudiniEngineUnity
 			foreach(HEU_MaterialData materialData in _materialCache)
 			{
 				// Non-Houdini material so no need to update it.
-				if(materialData._materialSource != HEU_MaterialData.Source.HOUDINI || materialData._materialKey == HEU_Defines.HEU_INVALID_MATERIAL
+				if(materialData == null || materialData._materialSource != HEU_MaterialData.Source.HOUDINI || materialData._materialKey == HEU_Defines.HEU_INVALID_MATERIAL
 					|| materialData._materialKey == HEU_Defines.EDITABLE_MATERIAL_KEY)
 				{
 					continue;
@@ -3385,7 +3449,10 @@ namespace HoudiniEngineUnity
 		{
 			foreach (HEU_ObjectNode objNode in _objectNodes)
 			{
-				objNode.PopulateObjectInstanceInfos(objInstanceInfos);
+				if (objNode != null)
+				{
+					objNode.PopulateObjectInstanceInfos(objInstanceInfos);
+				}
 			}
 		}
 

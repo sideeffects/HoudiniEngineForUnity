@@ -163,9 +163,11 @@ namespace HoudiniEngineUnity
 			// Eg. After a delete, Undo requires us to re-acquire references.
 			TryAcquiringAsset();
 
-			if (_houdiniAsset == null)
+			string msg = "Houdini Engine Asset Error\n" +
+				"No HEU_HoudiniAsset found!";
+			if (_houdiniAsset == null || !_houdiniAsset.IsValidForInteraction(ref msg))
 			{
-				DrawNoHDAInfo();
+				DrawHDAUIMessage(msg);
 				return;
 			}
 
@@ -294,14 +296,16 @@ namespace HoudiniEngineUnity
 			}
 		}
 
-		private void DrawNoHDAInfo()
+		private void DrawHDAUIMessage(string msg)
 		{
 			HEU_EditorUI.DrawSeparator();
 
 			GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
 			labelStyle.fontStyle = FontStyle.Bold;
 			labelStyle.normal.textColor = HEU_EditorUI.IsEditorDarkSkin() ? Color.yellow : Color.red;
-			EditorGUILayout.LabelField("Houdini Engine Asset - no HEU_HoudiniAsset found!", labelStyle);
+			labelStyle.alignment = TextAnchor.MiddleCenter;
+			labelStyle.wordWrap = true;
+			EditorGUILayout.LabelField(msg, labelStyle);
 
 			HEU_EditorUI.DrawSeparator();
 		}
