@@ -1384,6 +1384,13 @@ namespace HoudiniEngineUnity
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 
+		public override bool GetAttributeFloat64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] double[] data, int start, int length)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeFloat64Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+			HandleStatusResult(result, "Getting Attribute Float64 Data", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
 		/// <summary>
 		/// Get the attribute int data.
 		/// </summary>
@@ -1399,6 +1406,13 @@ namespace HoudiniEngineUnity
 		{
 			HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeIntData(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
 			HandleStatusResult(result, "Getting Attribute Int Data", false, true);
+			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+		}
+
+		public override bool GetAttributeInt64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int64[] data, int start, int length)
+		{
+			HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInt64Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+			HandleStatusResult(result, "Getting Attribute Int64 Data", false, true);
 			return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 

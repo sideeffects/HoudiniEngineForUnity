@@ -820,6 +820,11 @@ namespace HoudiniEngineUnity
 			return false;
 		}
 
+		public virtual bool GetAttributeFloat64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] double[] data, int start, int length)
+		{
+			return false;
+		}
+
 		/// <summary>
 		/// Get the attribute int data.
 		/// </summary>
@@ -832,6 +837,11 @@ namespace HoudiniEngineUnity
 		/// <param name="length">Must be at least 0 and at most HAPI_AttributeInfo::count - start.</param>
 		/// <returns>True if successfully queried the atttribute int data</returns>
 		public virtual bool GetAttributeIntData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] int[] data, int start, int length)
+		{
+			return false;
+		}
+
+		public virtual bool GetAttributeInt64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int64[] data, int start, int length)
 		{
 			return false;
 		}
