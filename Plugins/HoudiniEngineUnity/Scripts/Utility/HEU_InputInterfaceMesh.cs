@@ -160,7 +160,11 @@ namespace HoudiniEngineUnity
 	    List<Vector3> normals = new List<Vector3>();
 	    List<Color> colors = new List<Color>();
 
+#if UNITY_2018_2_OR_NEWER
 	    const int NumUVSets = 8;
+#else
+	    const int NumUVSets = 4;
+#endif
 	    List<Vector3>[] uvs = new List<Vector3>[NumUVSets];
 	    for(int u = 0; u < NumUVSets; ++u)
 	    {
@@ -256,10 +260,12 @@ namespace HoudiniEngineUnity
 		GetUVsFromMesh(inputDataMeshes._inputMeshes[i]._mesh, inputDataMeshes._inputMeshes[i]._mesh.uv2, tempUVs[1], uindex++);
 		GetUVsFromMesh(inputDataMeshes._inputMeshes[i]._mesh, inputDataMeshes._inputMeshes[i]._mesh.uv3, tempUVs[2], uindex++);
 		GetUVsFromMesh(inputDataMeshes._inputMeshes[i]._mesh, inputDataMeshes._inputMeshes[i]._mesh.uv4, tempUVs[3], uindex++);
+#if UNITY_2018_2_OR_NEWER
 		GetUVsFromMesh(inputDataMeshes._inputMeshes[i]._mesh, inputDataMeshes._inputMeshes[i]._mesh.uv5, tempUVs[4], uindex++);
 		GetUVsFromMesh(inputDataMeshes._inputMeshes[i]._mesh, inputDataMeshes._inputMeshes[i]._mesh.uv6, tempUVs[5], uindex++);
 		GetUVsFromMesh(inputDataMeshes._inputMeshes[i]._mesh, inputDataMeshes._inputMeshes[i]._mesh.uv7, tempUVs[6], uindex++);
 		GetUVsFromMesh(inputDataMeshes._inputMeshes[i]._mesh, inputDataMeshes._inputMeshes[i]._mesh.uv8, tempUVs[7], uindex++);
+#endif
 
 		inputDataMeshes._inputMeshes[i]._indexStart = new uint[inputDataMeshes._inputMeshes[i]._numSubMeshes];
 		inputDataMeshes._inputMeshes[i]._indexCount = new uint[inputDataMeshes._inputMeshes[i]._numSubMeshes];
