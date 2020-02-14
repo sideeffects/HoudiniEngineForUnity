@@ -1882,7 +1882,8 @@ namespace HoudiniEngineUnity
 						}
 						else
 						{
-							subMeshData._colors.Add(Color.white);
+							// Don't add colour if not found
+							//subMeshData._colors.Add(Color.white);
 						}
 
 						// Normal
@@ -2342,7 +2343,8 @@ namespace HoudiniEngineUnity
 							}
 							else
 							{
-								subMeshData._colors.Add(Color.white);
+								// Don't add colour if not found
+								//subMeshData._colors.Add(Color.white);
 							}
 
 							// Normal
