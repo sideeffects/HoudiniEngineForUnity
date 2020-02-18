@@ -916,8 +916,10 @@ namespace HoudiniEngineUnity
 			}
 			else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_LABEL)
 			{
-				SerializedProperty stringsProperty = paramUICache._primaryValue;
-				HEU_EditorUI.DrawHeadingLabel(stringsProperty.GetArrayElementAtIndex(0).stringValue);
+				//SerializedProperty stringsProperty = paramUICache._primaryValue;
+				//HEU_EditorUI.DrawHeadingLabel(stringsProperty.GetArrayElementAtIndex(0).stringValue);
+				// Replaced above with this as it seems to be the correct label value
+				HEU_EditorUI.DrawHeadingLabel(parameterData._labelName);
 			}
 			else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_NODE)
 			{
