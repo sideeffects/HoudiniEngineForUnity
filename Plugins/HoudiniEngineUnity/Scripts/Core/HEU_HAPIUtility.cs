@@ -1081,18 +1081,28 @@ namespace HoudiniEngineUnity
 		public static void SetAnimationCurveTangentModes(AnimationCurve animCurve, List<int> tangentValues)
 		{
 #if UNITY_EDITOR
-			AnimationUtility.TangentMode leftTangent = AnimationUtility.TangentMode.Free;
-			AnimationUtility.TangentMode rightTangent = AnimationUtility.TangentMode.Free;
-			for(int i = 0; i < tangentValues.Count; ++i)
+			try
 			{
-				if (i > 0)
+				AnimationUtility.TangentMode leftTangent = AnimationUtility.TangentMode.Free;
+				AnimationUtility.TangentMode rightTangent = AnimationUtility.TangentMode.Free;
+				for (int i = 0; i < tangentValues.Count; ++i)
 				{
-					leftTangent = rightTangent;
-				}
-				rightTangent = HEU_HAPIUtility.HoudiniRampInterpolationToTangentMode(tangentValues[i]);
+					if (i > 0)
+					{
+						leftTangent = rightTangent;
+					}
 
-				AnimationUtility.SetKeyLeftTangentMode(animCurve, i, leftTangent);
-				AnimationUtility.SetKeyRightTangentMode(animCurve, i, rightTangent);
+					rightTangent = HEU_HAPIUtility.HoudiniRampInterpolationToTangentMode(tangentValues[i]);
+
+					AnimationUtility.SetKeyLeftTangentMode(animCurve, i, leftTangent);
+					AnimationUtility.SetKeyRightTangentMode(animCurve, i, rightTangent);
+				}
+			}
+			catch(System.Exception ex)
+			{
+				// Setting above key tangent modes can throw error which aborts the entire UI
+				// drawing. Instead just print the error and let UI drawing continue.
+				Debug.LogError(ex);
 			}
 #endif
 		}
