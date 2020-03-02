@@ -379,10 +379,10 @@ namespace HoudiniEngineUnity
 		/// Get the string value for the associated string handle.
 		/// </summary>
 		/// <param name="stringHandle">Handle to look up.</param>
-		/// <param name="stringBuilder">Container for return value.</param>
+		/// <param name="resultString">Container for return value.</param>
 		/// <param name="bufferLength">Length of return value</param>
 		/// <returns>True if it has successfully populated the string value.</returns>
-		public virtual bool GetString(HAPI_StringHandle stringHandle, StringBuilder stringBuilder, int bufferLength)
+		public virtual bool GetString(HAPI_StringHandle stringHandle, ref string resultString, int bufferLength)
 		{
 			return false;
 		}
