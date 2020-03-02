@@ -740,15 +740,16 @@ namespace HoudiniEngineUnity
             }
 
             int length = session.GetStringBufferLength(stringHandle);
-            if (length <= 0)
+			if (length <= 0)
             {
                 return "";
             }
 
-            StringBuilder stringBuilder = new StringBuilder(length);
-            session.GetString(stringHandle, stringBuilder, length);
-            return stringBuilder.ToString();
-        }
+			string str = "";
+            session.GetString(stringHandle, ref str, length);
+			return str;
+
+		}
 
         public static string[] GetStringValuesFromStringIndices(int[] strIndices)
         {
@@ -763,7 +764,6 @@ namespace HoudiniEngineUnity
                 return null;
             }
 
-            StringBuilder stringBuilder = new StringBuilder();
 
             int numLength = strIndices.Length;
             string[] strValues = new string[numLength];
@@ -771,20 +771,10 @@ namespace HoudiniEngineUnity
             {
                 int strIndex = strIndices[i];
                 int length = strIndex >= 0 ? sessionBase.GetStringBufferLength(strIndex) : 0;
-                if (length > 0)
+				strValues[i] = "";
+				if (length > 0)
                 {
-                    // Set stringbuild capacity
-                    stringBuilder.EnsureCapacity(length);
-
-                    sessionBase.GetString(strIndex, stringBuilder, length);
-                    strValues[i] = stringBuilder.ToString();
-
-                    // Clear the stringbuilder for reuse
-                    stringBuilder.Length = 0;
-                }
-                else
-                {
-                    strValues[i] = "";
+					sessionBase.GetString(strIndex, ref strValues[i], length);
                 }
             }
             return strValues;
