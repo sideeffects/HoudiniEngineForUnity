@@ -189,30 +189,29 @@ namespace HoudiniEngineUnity
             {
                 if (sessionData != null)
                 {
-                    // Create session based on type
-                    HEU_SessionBase sessionBase = CreateSessionFromType(sessionData.SessionClassType);
-                    if (sessionBase != null)
-                    {
-                        sessionBase.SetSessionData(sessionData);
-
-						try
+					try
+					{
+						// Create session based on type
+						HEU_SessionBase sessionBase = CreateSessionFromType(sessionData.SessionClassType);
+						if (sessionBase != null)
 						{
+							sessionBase.SetSessionData(sessionData);
 							_sessionMap.Add(sessionData.SessionID, sessionBase);
+
+
+							if (sessionData.IsDefaultSession)
+							{
+								_defaultSession = sessionBase;
+							}
+
+							// Find assets in scene with session ID. Check if valid and reset those that aren't.
 						}
-						catch (System.Exception ex)
-						{
-							Debug.LogWarningFormat("Loading session with ID {0} failed with {1}. Ignoring it.", sessionData.SessionID, ex.ToString());
-						}
-
-                        if (sessionData.IsDefaultSession)
-                        {
-                            _defaultSession = sessionBase;
-                        }
-
-                        // Find assets in scene with session ID. Check if valid and reset those that aren't.
-
-                    }
-                }
+					}
+					catch (System.Exception ex)
+					{
+						Debug.LogWarningFormat("Loading session with ID {0} failed with {1}. Ignoring the session.", sessionData.SessionID, ex.ToString());
+					}
+				}
             }
 
             InternalValidateSceneAssets();
