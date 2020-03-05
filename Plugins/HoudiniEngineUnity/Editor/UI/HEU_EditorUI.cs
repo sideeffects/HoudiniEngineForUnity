@@ -121,16 +121,19 @@ namespace HoudiniEngineUnity
 
 		public static Vector3 GetSnapPosition(Vector3 inPos)
 		{
-			// For earlier versions than Unity 2019.3, need to get the
-			// snap values from EditorProfes, then use Handles.SnapValue.
-			// In future, there will be new APIs to handle this.
+#if UNITY_2019_3_OR_NEWER
+			Vector3 move = EditorSnapSettings.move;
+#else
+			Vector3 move = new Vector3(
+				EditorPrefs.GetFloat("MoveSnapX"),
+				EditorPrefs.GetFloat("MoveSnapY"),
+				EditorPrefs.GetFloat("MoveSnapZ"));
+#endif
 
-			float sx = EditorPrefs.GetFloat("MoveSnapX");
-			float sy = EditorPrefs.GetFloat("MoveSnapY");
-			float sz = EditorPrefs.GetFloat("MoveSnapZ");
-			inPos.x = Handles.SnapValue(inPos.x, sx);
-			inPos.y = Handles.SnapValue(inPos.y, sy);
-			inPos.z = Handles.SnapValue(inPos.z, sz);
+			inPos.x = Handles.SnapValue(inPos.x, move.x);
+			inPos.y = Handles.SnapValue(inPos.y, move.y);
+			inPos.z = Handles.SnapValue(inPos.z, move.z);
+
 			return inPos;
 		}
 
