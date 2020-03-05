@@ -194,7 +194,15 @@ namespace HoudiniEngineUnity
                     if (sessionBase != null)
                     {
                         sessionBase.SetSessionData(sessionData);
-                        _sessionMap.Add(sessionData.SessionID, sessionBase);
+
+						try
+						{
+							_sessionMap.Add(sessionData.SessionID, sessionBase);
+						}
+						catch (System.Exception ex)
+						{
+							Debug.LogWarningFormat("Loading session with ID {0} failed with {1}. Ignoring it.", sessionData.SessionID, ex.ToString());
+						}
 
                         if (sessionData.IsDefaultSession)
                         {
