@@ -2006,10 +2006,10 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public override bool CreateHeightfieldInput(HAPI_NodeId parentNodeID, string name, int xSize, int ySize, float voxelSize, HAPI_HeightfieldSampling sampling,
+	public override bool CreateHeightFieldInput(HAPI_NodeId parentNodeID, string name, int xSize, int ySize, float voxelSize, HAPI_HeightFieldSampling sampling,
 		out HAPI_NodeId heightfieldNodeID, out HAPI_NodeId heightNodeID, out HAPI_NodeId maskNodeID, out HAPI_NodeId mergeNodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CreateHeightfieldInput(ref _sessionData._HAPISession, parentNodeID, name, xSize, ySize, voxelSize, sampling,
+	    HAPI_Result result = HEU_HAPIImports.HAPI_CreateHeightFieldInput(ref _sessionData._HAPISession, parentNodeID, name, xSize, ySize, voxelSize, sampling,
 		    out heightfieldNodeID, out heightNodeID, out maskNodeID, out mergeNodeID);
 	    HandleStatusResult(result, "Creating Heightfield Input Node", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);

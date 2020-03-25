@@ -407,14 +407,14 @@ namespace HoudiniEngineUnity
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
-	HAPI_CreateHeightfieldInput(
+	HAPI_CreateHeightFieldInput(
 		ref HAPI_Session session,
 		HAPI_NodeId parent_node_id,
 		string name,
 		int xsize,
 		int ysize,
 		float voxelsize,
-		HAPI_HeightfieldSampling sampling,
+		HAPI_HeightFieldSampling sampling,
 		out HAPI_NodeId heightfield_node_id,
 		out HAPI_NodeId height_node_id,
 		out HAPI_NodeId mask_node_id,

@@ -181,8 +181,8 @@ namespace HoudiniEngineUnity
 	    idt._mergeNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 
 	    // Create the HeightField node network
-	    bool bResult = session.CreateHeightfieldInput(idt._parentNodeID, idt._heightFieldName, idt._numPointsX, idt._numPointsY, idt._voxelSize,
-		    HAPI_HeightfieldSampling.HAPI_HEIGHTFIELD_SAMPLING_CORNER,
+	    bool bResult = session.CreateHeightFieldInput(idt._parentNodeID, idt._heightFieldName, idt._numPointsX, idt._numPointsY, idt._voxelSize,
+		    HAPI_HeightFieldSampling.HAPI_HEIGHTFIELD_SAMPLING_CORNER,
 		    out idt._heightfieldNodeID, out idt._heightNodeID, out idt._maskNodeID, out idt._mergeNodeID);
 	    if (!bResult
 		    || idt._heightfieldNodeID == HEU_Defines.HEU_INVALID_NODE_ID

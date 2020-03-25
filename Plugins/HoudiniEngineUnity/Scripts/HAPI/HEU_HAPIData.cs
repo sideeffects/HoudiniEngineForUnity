@@ -575,7 +575,7 @@ namespace HoudiniEngineUnity
 	HAPI_CACHEPROP_CULL_LEVEL,
     };
 
-    public enum HAPI_HeightfieldSampling
+    public enum HAPI_HeightFieldSampling
     {
 	HAPI_HEIGHTFIELD_SAMPLING_CENTER,
 	HAPI_HEIGHTFIELD_SAMPLING_CORNER

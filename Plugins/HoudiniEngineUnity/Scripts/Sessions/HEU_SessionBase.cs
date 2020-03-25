@@ -1273,7 +1273,7 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	public virtual bool CreateHeightfieldInput(HAPI_NodeId parentNodeID, string name, int xSize, int ySize, float voxelSize, HAPI_HeightfieldSampling sampling,
+	public virtual bool CreateHeightFieldInput(HAPI_NodeId parentNodeID, string name, int xSize, int ySize, float voxelSize, HAPI_HeightFieldSampling sampling,
 		out HAPI_NodeId heightfieldNodeID, out HAPI_NodeId heightNodeID, out HAPI_NodeId maskNodeID, out HAPI_NodeId mergeNodeID)
 	{
 	    heightfieldNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
