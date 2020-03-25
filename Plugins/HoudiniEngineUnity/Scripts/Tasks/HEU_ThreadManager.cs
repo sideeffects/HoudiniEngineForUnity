@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2019> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -38,124 +38,124 @@ using UnityEditor;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// General manager for threads created via the plugin for asynchronous work.
-	/// Works with HEU_ThreadTasks.
-	/// </summary>
-	public class HEU_ThreadManager
-	{
+    /// <summary>
+    /// General manager for threads created via the plugin for asynchronous work.
+    /// Works with HEU_ThreadTasks.
+    /// </summary>
+    public class HEU_ThreadManager
+    {
 #pragma warning disable 0649
-		private static HEU_ThreadManager _instance;
+	private static HEU_ThreadManager _instance;
 #pragma warning restore 0649
 
-		public static HEU_ThreadManager Instance
+	public static HEU_ThreadManager Instance
+	{
+	    get
+	    {
+		if (_instance == null)
 		{
-			get
-			{
-				if (_instance == null)
-				{
-					CreateInstance();
-				}
-				return _instance;
-			}
-		} 
-
-		/* TODO: save to remove, unless issues when reloading scene or code compile
-		[InitializeOnLoadMethod]
-		[UnityEditor.Callbacks.DidReloadScripts]
-		private static void OnScriptsReloaded()
-		{
-			CreateInstance();
+		    CreateInstance();
 		}
-		*/
-
-		private static void CreateInstance()
-		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			if (_instance == null)
-			{
-				_instance = new HEU_ThreadManager();
-				_instance.Register();
-			}
-#endif
-		}
-
-		~HEU_ThreadManager()
-		{
-			Unregister();
-		}
-
-		public void Register()
-		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			EditorApplication.update += Update;
-#endif
-		}
-
-		public void Unregister()
-		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			EditorApplication.update -= Update;
-#endif
-		}
-
-		public void Update()
-		{
-			foreach(HEU_ThreadedTask task in _pendingAdd)
-			{
-				_tasks.Add(task);
-				//Debug.Log("Adding task: " + task.TaskName);
-			}
-			_pendingAdd.Clear();
-
-			foreach (HEU_ThreadedTask task in _tasks)
-			{
-				// Checks for complete, then does OnComplete
-				task.Update();
-
-				if (!task.IsActive)
-				{
-					// Removes from this list
-					task.Reset();
-				}
-			}
-
-			foreach (HEU_ThreadedTask task in _pendingRemove)
-			{
-				_tasks.Remove(task);
-				//Debug.Log("Removing task: " + task.TaskName);
-			}
-			_pendingRemove.Clear();
-		}
-
-		public void AddTask(HEU_ThreadedTask task)
-		{
-			if (!_tasks.Contains(task) && !_pendingAdd.Contains(task))
-			{
-				_pendingAdd.Add(task);
-			}
-		}
-
-		public void RemoveTask(HEU_ThreadedTask task)
-		{
-			if (_tasks.Contains(task) && !_pendingRemove.Contains(task))
-			{
-				//Debug.Log("Remove task requested: " + task.TaskName);
-				_pendingRemove.Add(task);
-			}
-		}
-		
-
-
-		// List of current tasks (pool)
-		private List<HEU_ThreadedTask> _tasks = new List<HEU_ThreadedTask>();
-
-		// List of tasks to add
-		private List<HEU_ThreadedTask> _pendingAdd = new List<HEU_ThreadedTask>();
-
-		// List of tasks to remove
-		private List<HEU_ThreadedTask> _pendingRemove = new List<HEU_ThreadedTask>();
+		return _instance;
+	    }
 	}
+
+	/* TODO: save to remove, unless issues when reloading scene or code compile
+	[InitializeOnLoadMethod]
+	[UnityEditor.Callbacks.DidReloadScripts]
+	private static void OnScriptsReloaded()
+	{
+		CreateInstance();
+	}
+	*/
+
+	private static void CreateInstance()
+	{
+#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+	    if (_instance == null)
+	    {
+		_instance = new HEU_ThreadManager();
+		_instance.Register();
+	    }
+#endif
+	}
+
+	~HEU_ThreadManager()
+	{
+	    Unregister();
+	}
+
+	public void Register()
+	{
+#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+	    EditorApplication.update += Update;
+#endif
+	}
+
+	public void Unregister()
+	{
+#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+	    EditorApplication.update -= Update;
+#endif
+	}
+
+	public void Update()
+	{
+	    foreach (HEU_ThreadedTask task in _pendingAdd)
+	    {
+		_tasks.Add(task);
+		//Debug.Log("Adding task: " + task.TaskName);
+	    }
+	    _pendingAdd.Clear();
+
+	    foreach (HEU_ThreadedTask task in _tasks)
+	    {
+		// Checks for complete, then does OnComplete
+		task.Update();
+
+		if (!task.IsActive)
+		{
+		    // Removes from this list
+		    task.Reset();
+		}
+	    }
+
+	    foreach (HEU_ThreadedTask task in _pendingRemove)
+	    {
+		_tasks.Remove(task);
+		//Debug.Log("Removing task: " + task.TaskName);
+	    }
+	    _pendingRemove.Clear();
+	}
+
+	public void AddTask(HEU_ThreadedTask task)
+	{
+	    if (!_tasks.Contains(task) && !_pendingAdd.Contains(task))
+	    {
+		_pendingAdd.Add(task);
+	    }
+	}
+
+	public void RemoveTask(HEU_ThreadedTask task)
+	{
+	    if (_tasks.Contains(task) && !_pendingRemove.Contains(task))
+	    {
+		//Debug.Log("Remove task requested: " + task.TaskName);
+		_pendingRemove.Add(task);
+	    }
+	}
+
+
+
+	// List of current tasks (pool)
+	private List<HEU_ThreadedTask> _tasks = new List<HEU_ThreadedTask>();
+
+	// List of tasks to add
+	private List<HEU_ThreadedTask> _pendingAdd = new List<HEU_ThreadedTask>();
+
+	// List of tasks to remove
+	private List<HEU_ThreadedTask> _pendingRemove = new List<HEU_ThreadedTask>();
+    }
 
 
 }   // HoudiniEngineUnity

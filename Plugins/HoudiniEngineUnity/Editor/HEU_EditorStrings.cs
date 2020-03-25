@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -30,34 +30,34 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// Commonly-used strings all in one place.
-	/// </summary>
-	public static class HEU_EditorStrings
-	{
+    /// <summary>
+    /// Commonly-used strings all in one place.
+    /// </summary>
+    public static class HEU_EditorStrings
+    {
 
-		// Menus
-		public const string INPROCESS_SESSION = "In-Process Session";
-		public const string RPC_PIPE_SESSION = "Pipe Session";
-		public const string RPC_SOCKET_SESSION = "Socket Session";
-		public const string GET_SESSION_INFO = "Session Info";
-		public const string CLOSE_DEFAULT_SESSION = "Close Default Session";
-		public const string CLOSE_ALL_SESSIONS = "Close All Sessions";
-		public const string RESTART_SESSION = "Restart Session";
-		public const string RECONNECT_TO_SESSION = "Reconnect To Session";
+	// Menus
+	public const string INPROCESS_SESSION = "In-Process Session";
+	public const string RPC_PIPE_SESSION = "Pipe Session";
+	public const string RPC_SOCKET_SESSION = "Socket Session";
+	public const string GET_SESSION_INFO = "Session Info";
+	public const string CLOSE_DEFAULT_SESSION = "Close Default Session";
+	public const string CLOSE_ALL_SESSIONS = "Close All Sessions";
+	public const string RESTART_SESSION = "Restart Session";
+	public const string RECONNECT_TO_SESSION = "Reconnect To Session";
 
-		public const string LOAD_SESSION_FROM_HIP = "Load Session From HIP";
-		public const string SAVE_SESSION_TO_HIP = "Save Houdini Scene (.hip)";
+	public const string LOAD_SESSION_FROM_HIP = "Load Session From HIP";
+	public const string SAVE_SESSION_TO_HIP = "Save Houdini Scene (.hip)";
 
-		public const string OPEN_SCENE_IN_HOUDINI = "Open Scene In Houdini";
+	public const string OPEN_SCENE_IN_HOUDINI = "Open Scene In Houdini";
 
-		public const string REVERT_SETTINGS = "Revert To Default";
-		public const string RELOAD_SETTINGS = "Reload From Saved File";
+	public const string REVERT_SETTINGS = "Revert To Default";
+	public const string RELOAD_SETTINGS = "Reload From Saved File";
 
-		public const string HELP_DOCUMENTATION = "Online Documentation";
-		public const string HELP_DOCUMENTATION_URL = "http://www.sidefx.com/docs/unity/";
-		public const string HELP_FORUM = "Online Forum";
-		public const string HELP_FORUM_URL = "http://www.sidefx.com/forum/50/";
-	}
+	public const string HELP_DOCUMENTATION = "Online Documentation";
+	public const string HELP_DOCUMENTATION_URL = "http://www.sidefx.com/docs/unity/";
+	public const string HELP_FORUM = "Online Forum";
+	public const string HELP_FORUM_URL = "http://www.sidefx.com/forum/50/";
+    }
 
 }   // HoudiniEngineUnity

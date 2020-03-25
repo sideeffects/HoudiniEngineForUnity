@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -32,43 +32,43 @@ using UnityEngine.Events;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// Asset Event Classes since UnityEvent doesn't directly support generics.
-	/// </summary>
+    /// <summary>
+    /// Asset Event Classes since UnityEvent doesn't directly support generics.
+    /// </summary>
 
-	/// <summary>
-	/// Callback when asset is reloaded.
-	/// <param name="HEU_HoudiniAsset">The asset that was reloaded.</param>
-	/// <param name="bool">Whether it was successful.</param>
-	/// <param name="GameObject">List of output gameobjects</param>
-	/// </summary>
-	[Serializable]
-	public class ReloadEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
-	{
+    /// <summary>
+    /// Callback when asset is reloaded.
+    /// <param name="HEU_HoudiniAsset">The asset that was reloaded.</param>
+    /// <param name="bool">Whether it was successful.</param>
+    /// <param name="GameObject">List of output gameobjects</param>
+    /// </summary>
+    [Serializable]
+    public class ReloadEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
+    {
 
-	}
+    }
 
-	/// <summary>
-	/// Callback when asset is cooked.
-	/// <param name="HEU_HoudiniAsset">The asset that was cooked.</param>
-	/// <param name="bool">Whether it was successful.</param>
-	/// <param name="GameObject">List of output gameobjects</param>
-	/// </summary>
-	[Serializable]
-	public class CookedEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
-	{
+    /// <summary>
+    /// Callback when asset is cooked.
+    /// <param name="HEU_HoudiniAsset">The asset that was cooked.</param>
+    /// <param name="bool">Whether it was successful.</param>
+    /// <param name="GameObject">List of output gameobjects</param>
+    /// </summary>
+    [Serializable]
+    public class CookedEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
+    {
 
-	}
+    }
 
-	/// <summary>
-	/// Callback when asset is baked.
-	/// <param name="HEU_HoudiniAsset">The asset that was baked.</param>
-	/// <param name="bool">Whether it was successful.</param>
-	/// <param name="GameObject">List of output gameobjects</param>
-	/// </summary>
-	[Serializable]
-	public class BakedEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
-	{
+    /// <summary>
+    /// Callback when asset is baked.
+    /// <param name="HEU_HoudiniAsset">The asset that was baked.</param>
+    /// <param name="bool">Whether it was successful.</param>
+    /// <param name="GameObject">List of output gameobjects</param>
+    /// </summary>
+    [Serializable]
+    public class BakedEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
+    {
 
-	}
+    }
 }   // HoudiniEngineUnity

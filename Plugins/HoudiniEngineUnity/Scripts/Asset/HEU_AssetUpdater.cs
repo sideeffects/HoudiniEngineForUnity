@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -38,116 +38,116 @@ using UnityEditor;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// This updates HEU_HoudiniAsset nodes that are added to its internal list.
-	/// This is to workaround Unity's editor update limitations.
-	/// </summary>
+    /// <summary>
+    /// This updates HEU_HoudiniAsset nodes that are added to its internal list.
+    /// This is to workaround Unity's editor update limitations.
+    /// </summary>
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-	[InitializeOnLoad]
+    [InitializeOnLoad]
 #endif
-	public class HEU_AssetUpdater
+    public class HEU_AssetUpdater
+    {
+#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+	private static List<HEU_HoudiniAsset> _allHoudiniAssets = new List<HEU_HoudiniAsset>();
+#endif
+
+	static HEU_AssetUpdater()
 	{
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-		private static List<HEU_HoudiniAsset> _allHoudiniAssets = new List<HEU_HoudiniAsset>();
-#endif
-
-		static HEU_AssetUpdater()
-		{
-#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			EditorApplication.update += Update;
+	    EditorApplication.update += Update;
 
 #if UNITY_2017_1_OR_NEWER
-			PrefabUtility.prefabInstanceUpdated += OnPrefabInstanceUpdate;
+	    PrefabUtility.prefabInstanceUpdated += OnPrefabInstanceUpdate;
 #endif
 
 #endif
-		}
+	}
 
-		static void Update()
-		{
+	static void Update()
+	{
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			for(int i = 0; i < _allHoudiniAssets.Count; ++i)
-			{
-				if(_allHoudiniAssets[i] != null)
-				{
-					_allHoudiniAssets[i].AssetUpdate();
-				}
-				else
-				{
-					_allHoudiniAssets.RemoveAt(i);
-					i--;
-				}
-			}
-
-			// PostAssetUpdate progresses the asset's state after cooking and building
-			// in order to update the UI.
-			foreach (HEU_HoudiniAsset asset in _allHoudiniAssets)
-			{
-				if (asset != null)
-				{
-					asset.PostAssetUpdate();
-				}
-			}
-#endif
-		}
-
-		public static void AddAssetForUpdate(HEU_HoudiniAsset asset)
+	    for (int i = 0; i < _allHoudiniAssets.Count; ++i)
+	    {
+		if (_allHoudiniAssets[i] != null)
 		{
+		    _allHoudiniAssets[i].AssetUpdate();
+		}
+		else
+		{
+		    _allHoudiniAssets.RemoveAt(i);
+		    i--;
+		}
+	    }
+
+	    // PostAssetUpdate progresses the asset's state after cooking and building
+	    // in order to update the UI.
+	    foreach (HEU_HoudiniAsset asset in _allHoudiniAssets)
+	    {
+		if (asset != null)
+		{
+		    asset.PostAssetUpdate();
+		}
+	    }
+#endif
+	}
+
+	public static void AddAssetForUpdate(HEU_HoudiniAsset asset)
+	{
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			if (!_allHoudiniAssets.Contains(asset))
-			{
-				_allHoudiniAssets.Add(asset);
-			}
+	    if (!_allHoudiniAssets.Contains(asset))
+	    {
+		_allHoudiniAssets.Add(asset);
+	    }
 #endif
-		}
+	}
 
-		public static void RemoveAsset(HEU_HoudiniAsset asset)
-		{
+	public static void RemoveAsset(HEU_HoudiniAsset asset)
+	{
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
-			// Setting the asset reference to null and removing
-			// later in Update in case of removing while iterating the list
-			int index = _allHoudiniAssets.IndexOf(asset);
-			if (index >= 0)
-			{
-				_allHoudiniAssets[index] = null;
-			}
+	    // Setting the asset reference to null and removing
+	    // later in Update in case of removing while iterating the list
+	    int index = _allHoudiniAssets.IndexOf(asset);
+	    if (index >= 0)
+	    {
+		_allHoudiniAssets[index] = null;
+	    }
 #endif
-		}
+	}
 
-		/// <summary>
-		/// Callback when new prefab instances gets created or updated in Unity scene.
-		/// The plugin does not support creating prefab of HDAs directly
-		/// so this notifies user and provides a way to clean up the created prefab.
-		/// </summary>
-		/// <param name="instance">New prefab instance that was created</param>
-		static void OnPrefabInstanceUpdate(GameObject instance)
-		{
+	/// <summary>
+	/// Callback when new prefab instances gets created or updated in Unity scene.
+	/// The plugin does not support creating prefab of HDAs directly
+	/// so this notifies user and provides a way to clean up the created prefab.
+	/// </summary>
+	/// <param name="instance">New prefab instance that was created</param>
+	static void OnPrefabInstanceUpdate(GameObject instance)
+	{
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED && UNITY_2017_1_OR_NEWER
 
-			var heu_root = instance.GetComponent<HEU_HoudiniAssetRoot>();
-			if (heu_root != null && heu_root._houdiniAsset != null && 
-				(HEU_EditorUtility.IsPrefabInstance(instance) || HEU_EditorUtility.IsPrefabAsset(instance)) &&
-				!heu_root._houdiniAsset.WarnedPrefabNotSupported)
-			{
-				string prefabPath = HEU_EditorUtility.GetPrefabAssetPath(instance);
+	    var heu_root = instance.GetComponent<HEU_HoudiniAssetRoot>();
+	    if (heu_root != null && heu_root._houdiniAsset != null &&
+		    (HEU_EditorUtility.IsPrefabInstance(instance) || HEU_EditorUtility.IsPrefabAsset(instance)) &&
+		    !heu_root._houdiniAsset.WarnedPrefabNotSupported)
+	    {
+		string prefabPath = HEU_EditorUtility.GetPrefabAssetPath(instance);
 
-				string title = HEU_Defines.HEU_PRODUCT_NAME + " Prefabs Not Supported";
-				string message =
-						"Creating prefab of an HDA is not supported by HoudniEngine.\n\n" +
-						"It is recommended to select 'Remove Prefab' to destroy new prefab " +
-						"and revert to original asset.\n\n" +
-						"Prefab: " + prefabPath;
+		string title = HEU_Defines.HEU_PRODUCT_NAME + " Prefabs Not Supported";
+		string message =
+				"Creating prefab of an HDA is not supported by HoudniEngine.\n\n" +
+				"It is recommended to select 'Remove Prefab' to destroy new prefab " +
+				"and revert to original asset.\n\n" +
+				"Prefab: " + prefabPath;
 
-				heu_root._houdiniAsset.WarnedPrefabNotSupported = true;
-				if (HEU_EditorUtility.DisplayDialog(title, message, "Remove Prefab & Revert", "Keep Prefab"))
-				{
-					HEU_EditorUtility.DisconnectPrefabInstance(instance);
+		heu_root._houdiniAsset.WarnedPrefabNotSupported = true;
+		if (HEU_EditorUtility.DisplayDialog(title, message, "Remove Prefab & Revert", "Keep Prefab"))
+		{
+		    HEU_EditorUtility.DisconnectPrefabInstance(instance);
 
-					HEU_AssetDatabase.DeleteAssetAtPath(prefabPath);
-				}
-			}
-#endif
+		    HEU_AssetDatabase.DeleteAssetAtPath(prefabPath);
 		}
+	    }
+#endif
 	}
+    }
 
 }   // HoudiniEngineUnity

@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -30,33 +30,33 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Typedefs (copy these from HEU_Common.cs)
-	using HAPI_NodeId = System.Int32;
-	using HAPI_ParmId = System.Int32;
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Typedefs (copy these from HEU_Common.cs)
+    using HAPI_NodeId = System.Int32;
+    using HAPI_ParmId = System.Int32;
 
-	/// <summary>
-	/// Represents a Handle binding to a parameter.
-	/// </summary>
-	[System.Serializable]
-	public class HEU_HandleParamBinding
+    /// <summary>
+    /// Represents a Handle binding to a parameter.
+    /// </summary>
+    [System.Serializable]
+    public class HEU_HandleParamBinding
+    {
+	public enum HEU_HandleParamType
 	{
-		public enum HEU_HandleParamType
-		{
-			TRANSLATE,
-			ROTATE,
-			SCALE
-		}
-
-		public HEU_HandleParamType _paramType;
-
-		public HAPI_ParmId _parmID;
-
-		public string _paramName;
-
-		public bool _bDisabled;
-
-		public bool[] _boundChannels = new bool[3];
+	    TRANSLATE,
+	    ROTATE,
+	    SCALE
 	}
+
+	public HEU_HandleParamType _paramType;
+
+	public HAPI_ParmId _parmID;
+
+	public string _paramName;
+
+	public bool _bDisabled;
+
+	public bool[] _boundChannels = new bool[3];
+    }
 
 }   // HoudiniEngineUnity

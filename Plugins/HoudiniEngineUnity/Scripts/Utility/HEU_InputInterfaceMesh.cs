@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -166,7 +166,7 @@ namespace HoudiniEngineUnity
 	    const int NumUVSets = 4;
 #endif
 	    List<Vector3>[] uvs = new List<Vector3>[NumUVSets];
-	    for(int u = 0; u < NumUVSets; ++u)
+	    for (int u = 0; u < NumUVSets; ++u)
 	    {
 		uvs[u] = new List<Vector3>();
 	    }
@@ -433,7 +433,7 @@ namespace HoudiniEngineUnity
 		if (uvs[u].Count > 0)
 		{
 		    // Skip uv1 as its used internally. So it goes: uv, uv2, ..., uv8
-		    string uvName = u == 0 ? HEU_Defines.HAPI_ATTRIB_UV : string.Format("{0}{1}", HEU_Defines.HAPI_ATTRIB_UV, u+1);
+		    string uvName = u == 0 ? HEU_Defines.HAPI_ATTRIB_UV : string.Format("{0}{1}", HEU_Defines.HAPI_ATTRIB_UV, u + 1);
 		    if (!HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, uvName, 3, uvs[u].ToArray(), vertIndices, ref partInfo, false))
 		    {
 			Debug.LogError("Failed to set input geometry UV" + u);

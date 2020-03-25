@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -34,18 +34,18 @@ using UnityEngine.Events;
 public class HEU_AssetEventReceiverTest : MonoBehaviour
 {
 
-	public void ReloadCallback(HoudiniEngineUnity.HEU_HoudiniAsset asset, bool success, List<GameObject> outputList)
-	{
-		Debug.LogFormat("Reloaded! Asset={0}, Success={1}, Outputs={2}", asset.AssetName, success, outputList.Count);
-	}
+    public void ReloadCallback(HoudiniEngineUnity.HEU_HoudiniAsset asset, bool success, List<GameObject> outputList)
+    {
+	Debug.LogFormat("Reloaded! Asset={0}, Success={1}, Outputs={2}", asset.AssetName, success, outputList.Count);
+    }
 
-	public void CookedCallback(HoudiniEngineUnity.HEU_HoudiniAsset asset, bool success, List<GameObject> outputList)
-	{
-		Debug.LogFormat("Cooked! Asset={0}, Success={1}, Outputs={2}", asset.AssetName, success, outputList.Count);
-	}
+    public void CookedCallback(HoudiniEngineUnity.HEU_HoudiniAsset asset, bool success, List<GameObject> outputList)
+    {
+	Debug.LogFormat("Cooked! Asset={0}, Success={1}, Outputs={2}", asset.AssetName, success, outputList.Count);
+    }
 
-	public void BakedCallback(HoudiniEngineUnity.HEU_HoudiniAsset asset, bool success, List<GameObject> outputList)
-	{
-		Debug.LogFormat("Baked! Asset={0}, Success={1}, Outputs={2}", asset.AssetName, success, outputList.Count);
-	}
+    public void BakedCallback(HoudiniEngineUnity.HEU_HoudiniAsset asset, bool success, List<GameObject> outputList)
+    {
+	Debug.LogFormat("Baked! Asset={0}, Success={1}, Outputs={2}", asset.AssetName, success, outputList.Count);
+    }
 }
