@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -31,95 +31,95 @@ using System.Collections.Generic;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// Manages Editor callbacks and events.
-	/// </summary>
-	[InitializeOnLoad]
-	public static class HEU_EditorApp
-	{
+    /// <summary>
+    /// Manages Editor callbacks and events.
+    /// </summary>
+    [InitializeOnLoad]
+    public static class HEU_EditorApp
+    {
 
-		/// <summary>
-		/// Executed after script (re)load. Sets up plugin callbacks.
-		/// </summary>
-		static HEU_EditorApp()
-		{
-			EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
+	/// <summary>
+	/// Executed after script (re)load. Sets up plugin callbacks.
+	/// </summary>
+	static HEU_EditorApp()
+	{
+	    EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
 
 #if UNITY_2019_1_OR_NEWER
-			SceneView.duringSceneGui += OnSceneGUIDelegate;
+	    SceneView.duringSceneGui += OnSceneGUIDelegate;
 #else
 			SceneView.onSceneGUIDelegate += OnSceneGUIDelegate;
 #endif
-		}
-
-		private static void HierarchyWindowItemOnGUI(int instanceID, Rect selectionRect)
-		{
-			ProcessDragEvent(Event.current, null);
-		}
-
-		private static void OnSceneGUIDelegate(SceneView sceneView)
-		{
-			ProcessDragEvent(Event.current, sceneView);
-		}
-
-		private static void ProcessDragEvent(Event dragEvent, SceneView sceneView)
-		{
-			if(dragEvent != null && (dragEvent.type == EventType.DragUpdated || dragEvent.type == EventType.DragPerform))
-			{
-				bool dragHDAs = false;
-				List<string> hdaList = new List<string>();
-				foreach(string file in DragAndDrop.paths)
-				{
-					if(HEU_HAPIUtility.IsHoudiniAssetFile(file))
-					{
-						dragHDAs = true;
-						DragAndDrop.visualMode = DragAndDropVisualMode.Move;
-						hdaList.Add(file);
-						break;
-					}
-				}
-
-				if(dragHDAs)
-				{
-					if (dragEvent.type == EventType.DragPerform)
-					{
-						if (HEU_SessionManager.ValidatePluginSession())
-						{
-							Vector3 dropPos = Vector3.zero;
-							if (sceneView != null)
-							{
-								Camera camera = sceneView.camera;
-								Vector3 mousePos = HEU_EditorUI.GetMousePosition(ref dragEvent, camera);
-
-								Ray ray = camera.ScreenPointToRay(mousePos);
-								ray.origin = camera.transform.position;
-								Plane plane = new Plane();
-								plane.SetNormalAndPosition(Vector3.up, Vector3.zero);
-								float enter = 0f;
-								plane.Raycast(ray, out enter);
-								enter = Mathf.Clamp(enter, camera.nearClipPlane, camera.farClipPlane);
-								dropPos = ray.origin + ray.direction * enter;
-							}
-
-							List<GameObject> createdGOs = new List<GameObject>();
-							foreach (string file in hdaList)
-							{
-								GameObject go = HEU_HAPIUtility.InstantiateHDA(file, dropPos, HEU_SessionManager.GetOrCreateDefaultSession(), true);
-								if(go != null)
-								{
-									createdGOs.Add(go);
-								}
-							}
-
-							// Select the created assets
-							HEU_EditorUtility.SelectObjects(createdGOs.ToArray());
-						}
-					}
-
-					dragEvent.Use();
-				}
-			}
-		}
 	}
+
+	private static void HierarchyWindowItemOnGUI(int instanceID, Rect selectionRect)
+	{
+	    ProcessDragEvent(Event.current, null);
+	}
+
+	private static void OnSceneGUIDelegate(SceneView sceneView)
+	{
+	    ProcessDragEvent(Event.current, sceneView);
+	}
+
+	private static void ProcessDragEvent(Event dragEvent, SceneView sceneView)
+	{
+	    if (dragEvent != null && (dragEvent.type == EventType.DragUpdated || dragEvent.type == EventType.DragPerform))
+	    {
+		bool dragHDAs = false;
+		List<string> hdaList = new List<string>();
+		foreach (string file in DragAndDrop.paths)
+		{
+		    if (HEU_HAPIUtility.IsHoudiniAssetFile(file))
+		    {
+			dragHDAs = true;
+			DragAndDrop.visualMode = DragAndDropVisualMode.Move;
+			hdaList.Add(file);
+			break;
+		    }
+		}
+
+		if (dragHDAs)
+		{
+		    if (dragEvent.type == EventType.DragPerform)
+		    {
+			if (HEU_SessionManager.ValidatePluginSession())
+			{
+			    Vector3 dropPos = Vector3.zero;
+			    if (sceneView != null)
+			    {
+				Camera camera = sceneView.camera;
+				Vector3 mousePos = HEU_EditorUI.GetMousePosition(ref dragEvent, camera);
+
+				Ray ray = camera.ScreenPointToRay(mousePos);
+				ray.origin = camera.transform.position;
+				Plane plane = new Plane();
+				plane.SetNormalAndPosition(Vector3.up, Vector3.zero);
+				float enter = 0f;
+				plane.Raycast(ray, out enter);
+				enter = Mathf.Clamp(enter, camera.nearClipPlane, camera.farClipPlane);
+				dropPos = ray.origin + ray.direction * enter;
+			    }
+
+			    List<GameObject> createdGOs = new List<GameObject>();
+			    foreach (string file in hdaList)
+			    {
+				GameObject go = HEU_HAPIUtility.InstantiateHDA(file, dropPos, HEU_SessionManager.GetOrCreateDefaultSession(), true);
+				if (go != null)
+				{
+				    createdGOs.Add(go);
+				}
+			    }
+
+			    // Select the created assets
+			    HEU_EditorUtility.SelectObjects(createdGOs.ToArray());
+			}
+		    }
+
+		    dragEvent.Use();
+		}
+	    }
+	}
+    }
 
 }

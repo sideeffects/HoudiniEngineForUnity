@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2019> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -30,29 +30,29 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// Object to store instance input UI state so that we can check if UI changed
-	/// and apply modifications for just this object instead of for the entire asset.
-	/// Used by HEU_InstanceInputUI.
-	/// </summary>
-	[System.Serializable]
-	public class HEU_InstanceInputUIState : ScriptableObject
+    /// <summary>
+    /// Object to store instance input UI state so that we can check if UI changed
+    /// and apply modifications for just this object instead of for the entire asset.
+    /// Used by HEU_InstanceInputUI.
+    /// </summary>
+    [System.Serializable]
+    public class HEU_InstanceInputUIState : ScriptableObject
+    {
+	// Whether to show all instance inputs to expanded form
+	public bool _showInstanceInputs = true;
+
+	// For pagination, the number of inputs to show per page
+	public int _numInputsToShowUI = 5;
+
+	// The current page to show
+	public int _inputsPageIndexUI = 0;
+
+	public void CopyTo(HEU_InstanceInputUIState dest)
 	{
-		// Whether to show all instance inputs to expanded form
-		public bool _showInstanceInputs = true;
-
-		// For pagination, the number of inputs to show per page
-		public int _numInputsToShowUI = 5;
-
-		// The current page to show
-		public int _inputsPageIndexUI = 0;
-
-		public void CopyTo(HEU_InstanceInputUIState dest)
-		{
-			dest._showInstanceInputs = _showInstanceInputs;
-			dest._numInputsToShowUI = _numInputsToShowUI;
-			dest._inputsPageIndexUI = _inputsPageIndexUI;
-		}
+	    dest._showInstanceInputs = _showInstanceInputs;
+	    dest._numInputsToShowUI = _numInputsToShowUI;
+	    dest._inputsPageIndexUI = _inputsPageIndexUI;
 	}
+    }
 
 }   // HoudiniEngineUnity

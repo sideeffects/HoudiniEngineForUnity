@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -28,13 +28,13 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// Base class for input data where temporary 
-	/// data can be stored for uploading into input node.
-	/// </summary>
-	public class HEU_InputData
-	{
-		public GameObject _inputObject;
-	}
+    /// <summary>
+    /// Base class for input data where temporary 
+    /// data can be stored for uploading into input node.
+    /// </summary>
+    public class HEU_InputData
+    {
+	public GameObject _inputObject;
+    }
 
 }   // HoudiniEngineUnity

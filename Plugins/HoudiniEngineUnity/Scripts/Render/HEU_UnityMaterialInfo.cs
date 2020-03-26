@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -26,21 +26,21 @@
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// Container for Unity and Substance material data
-	/// </summary>
-	public class HEU_UnityMaterialInfo
-	{
-		public string _unityMaterialPath;
-		public string _substancePath;
-		public int _substanceIndex;
+    /// <summary>
+    /// Container for Unity and Substance material data
+    /// </summary>
+    public class HEU_UnityMaterialInfo
+    {
+	public string _unityMaterialPath;
+	public string _substancePath;
+	public int _substanceIndex;
 
-		public HEU_UnityMaterialInfo(string unityMaterialPath, string substancePath, int substanceIndex)
-		{
-			_unityMaterialPath = unityMaterialPath;
-			_substancePath = substancePath;
-			_substanceIndex = substanceIndex;
-		}
+	public HEU_UnityMaterialInfo(string unityMaterialPath, string substancePath, int substanceIndex)
+	{
+	    _unityMaterialPath = unityMaterialPath;
+	    _substancePath = substancePath;
+	    _substanceIndex = substanceIndex;
 	}
+    }
 
 }   // HoudiniEngineUnity

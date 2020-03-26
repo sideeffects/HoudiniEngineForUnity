@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -33,18 +33,18 @@ using UnityEngine;
 [ExecuteInEditMode] // This ExecuteInEditMode must be set in order to have function callback in Editor.
 public class HEU_ScriptCallbackExample : MonoBehaviour
 {
-	public string _msg;
+    public string _msg;
 
-	void AssetCallbackWithMsg(string msg)
-	{
-		Debug.Log("AssetCallbackWithMsg:: " + msg);
-		_msg = msg;
-	}
+    void AssetCallbackWithMsg(string msg)
+    {
+	Debug.Log("AssetCallbackWithMsg:: " + msg);
+	_msg = msg;
+    }
 
-	void AssetCallbackNoMsg()
-	{
-		Debug.Log("AssetCallbackNoMsg");
-	}
+    void AssetCallbackNoMsg()
+    {
+	Debug.Log("AssetCallbackNoMsg");
+    }
 
 
 }

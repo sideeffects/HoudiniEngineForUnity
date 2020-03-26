@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) <2018> Side Effects Software Inc.
+* Copyright (c) <2020> Side Effects Software Inc.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -30,56 +30,56 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
-	/// <summary>
-	/// Container for geometry group data.
-	/// </summary>
-	public class HEU_GeoGroup : IComparable<HEU_GeoGroup>
+    /// <summary>
+    /// Container for geometry group data.
+    /// </summary>
+    public class HEU_GeoGroup : IComparable<HEU_GeoGroup>
+    {
+	public string _groupName;
+
+	// The submeshes that are part of this group, with their mesh ID (material)
+	public Dictionary<int, HEU_MeshData> _subMeshesMap = new Dictionary<int, HEU_MeshData>();
+
+	// We'll be generating the normals if they're not provided by Houdini
+	// For every vertex, we'll hold list of other vertices that it shares faces with (ie. connected to)
+	public List<HEU_VertexEntry>[] _sharedNormalIndices;
+
+	public int CompareTo(HEU_GeoGroup other)
 	{
-		public string _groupName;
+	    // Null means this object is greater
+	    if (other == null)
+	    {
+		return 1;
+	    }
 
-		// The submeshes that are part of this group, with their mesh ID (material)
-		public Dictionary<int, HEU_MeshData> _subMeshesMap = new Dictionary<int, HEU_MeshData>();
-
-		// We'll be generating the normals if they're not provided by Houdini
-		// For every vertex, we'll hold list of other vertices that it shares faces with (ie. connected to)
-		public List<HEU_VertexEntry>[] _sharedNormalIndices;
-
-		public int CompareTo(HEU_GeoGroup other)
-		{
-			// Null means this object is greater
-			if (other == null)
-			{
-				return 1;
-			}
-
-			return this._groupName.CompareTo(other._groupName);
-		}
-
-		public void SetupNormalIndices(int indicesCount)
-		{
-			_sharedNormalIndices = new List<HEU_VertexEntry>[indicesCount];
-			for (int i = 0; i < indicesCount; ++i)
-			{
-				_sharedNormalIndices[i] = new List<HEU_VertexEntry>();
-			}
-		}
+	    return this._groupName.CompareTo(other._groupName);
 	}
 
-	/// <summary>
-	/// Helper used for storing vertex connections for normal generation
-	/// </summary>
-	public class HEU_VertexEntry
+	public void SetupNormalIndices(int indicesCount)
 	{
-		public int _meshKey;
-		public int _vertexIndex;
-		public int _normalIndex;
-
-		public HEU_VertexEntry(int meshKey, int vertexIndex, int normalIndex)
-		{
-			_meshKey = meshKey;
-			_vertexIndex = vertexIndex;
-			_normalIndex = normalIndex;
-		}
+	    _sharedNormalIndices = new List<HEU_VertexEntry>[indicesCount];
+	    for (int i = 0; i < indicesCount; ++i)
+	    {
+		_sharedNormalIndices[i] = new List<HEU_VertexEntry>();
+	    }
 	}
+    }
+
+    /// <summary>
+    /// Helper used for storing vertex connections for normal generation
+    /// </summary>
+    public class HEU_VertexEntry
+    {
+	public int _meshKey;
+	public int _vertexIndex;
+	public int _normalIndex;
+
+	public HEU_VertexEntry(int meshKey, int vertexIndex, int normalIndex)
+	{
+	    _meshKey = meshKey;
+	    _vertexIndex = vertexIndex;
+	    _normalIndex = normalIndex;
+	}
+    }
 
 }   // HoudiniEngineUnity
