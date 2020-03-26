@@ -719,8 +719,8 @@ namespace HoudiniEngineUnity
 
 		// Subtract 1 from size otherwise idt._terrainData.GetHeights fails with size out of bounds.
 		// This is the number of heightfield voxels on each dimension.
-		inputData._numPointsX = Mathf.RoundToInt(inputData._terrainData.heightmapResolution * inputData._voxelSize) - 1;
-		inputData._numPointsY = Mathf.RoundToInt(inputData._terrainData.heightmapResolution * inputData._voxelSize) - 1;
+		inputData._numPointsX = Mathf.RoundToInt(inputData._terrainData.heightmapResolution * inputData._voxelSize - inputData._voxelSize);
+		inputData._numPointsY = Mathf.RoundToInt(inputData._terrainData.heightmapResolution * inputData._voxelSize - inputData._voxelSize);
 
 		Matrix4x4 transformMatrix = inputObject.transform.localToWorldMatrix;
 
@@ -730,8 +730,8 @@ namespace HoudiniEngineUnity
 		// Unity terrain pivots are at bottom left, but Houdini uses centered heightfields so
 		// apply local position offset by half sizes and account for coordinate change.
 		// Subtract 1 to offset the overlap
-		inputData._transform.position[0] = (terrainSize.z - 1) * 0.5f;
-		inputData._transform.position[1] = -(terrainSize.x - 1) * 0.5f;
+		inputData._transform.position[0] = (terrainSize.z - inputData._voxelSize) * 0.5f;
+		inputData._transform.position[1] = -(terrainSize.x - inputData._voxelSize) * 0.5f;
 		inputData._transform.position[2] = 0;
 
 		// Volume scale controls final size, but requires to be divided by 2
