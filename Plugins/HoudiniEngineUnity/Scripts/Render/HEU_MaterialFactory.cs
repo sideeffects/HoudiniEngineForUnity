@@ -486,7 +486,7 @@ namespace HoudiniEngineUnity
 	/// <returns>Loaded texture or null if failed.</returns>
 	public static Texture2D LoadTexture(string path)
 	{
-	    if (HEU_AssetDatabase.IsPathRelativeToAssets(path) || System.IO.Path.IsPathRooted(path))
+	    if (HEU_AssetDatabase.IsPathRelativeToAssets(path) || HEU_AssetDatabase.IsPathRelativeToPackages(path) || System.IO.Path.IsPathRooted(path))
 	    {
 		HEU_AssetDatabase.ImportAsset(path, HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
 		return HEU_AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;

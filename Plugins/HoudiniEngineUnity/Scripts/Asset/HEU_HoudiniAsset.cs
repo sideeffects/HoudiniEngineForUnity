@@ -1756,15 +1756,6 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private string GetAssetPath()
-	{
-	    if (_assetFileObject != null)
-	    {
-		return HEU_AssetDatabase.GetAssetPath(_assetFileObject);
-	    }
-	    return null;
-	}
-
 	/// <summary>
 	/// Load the file for this asset, and find the subasset if specified.
 	/// </summary>
@@ -1795,7 +1786,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Set object reference if it hasn't been set. In future, user can re-link this via UI or code if reference is ever lost.
-	    if (_assetFileObject == null && HEU_AssetDatabase.IsPathRelativeToAssets(validAssetPath))
+	    if (_assetFileObject == null && (HEU_AssetDatabase.IsPathRelativeToAssets(validAssetPath) || HEU_AssetDatabase.IsPathRelativeToPackages(validAssetPath)))
 	    {
 		_assetFileObject = HEU_AssetDatabase.LoadAssetAtPath(validAssetPath, typeof(UnityEngine.Object));
 	    }
