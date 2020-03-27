@@ -374,7 +374,7 @@ namespace HoudiniEngineUnity
 			if (GUILayout.Button(_savePresetButton, buttonStyle, GUILayout.MaxWidth(160)))
 			{
 			    string fileName = asset.AssetName;
-			    string filePattern = "preset";
+			    string filePattern = "heupreset";
 			    string newPath = EditorUtility.SaveFilePanel("Save HDA preset", "", fileName + "." + filePattern, filePattern);
 			    if (newPath != null && !string.IsNullOrEmpty(newPath))
 			    {
@@ -385,7 +385,7 @@ namespace HoudiniEngineUnity
 			if (GUILayout.Button(_loadPresetButton, buttonStyle, GUILayout.MaxWidth(160)))
 			{
 			    string fileName = asset.AssetName;
-			    string filePattern = "preset";
+			    string filePattern = "heupreset,preset";
 			    string newPath = EditorUtility.OpenFilePanel("Load HDA preset", "", filePattern);
 			    if (newPath != null && !string.IsNullOrEmpty(newPath))
 			    {
