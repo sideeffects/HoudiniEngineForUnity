@@ -349,32 +349,6 @@ namespace HoudiniEngineUnity
 #endif
 	}
 
-	public static void DrawLine(Vector3 start, Vector3 end)
-	{
-	    Handles.DrawLine(start, end);
-	}
-
-	public static void DrawFilePathWithDialog(string labelName, SerializedProperty filePathProperty)
-	{
-	    EditorGUILayout.BeginHorizontal();
-
-	    GUIContent labelContent = new GUIContent(labelName);
-	    EditorGUILayout.DelayedTextField(filePathProperty, labelContent, GUILayout.ExpandWidth(true));
-
-	    GUIStyle buttonStyle = HEU_EditorUI.GetNewButtonStyle_MarginPadding(0, 0);
-	    if (GUILayout.Button("...", buttonStyle, GUILayout.Width(30), GUILayout.Height(18)))
-	    {
-		string filePattern = "*.*";
-		string newPath = EditorUtility.OpenFilePanel("Select " + labelName, filePathProperty.stringValue, filePattern);
-		if (newPath != null && !string.IsNullOrEmpty(newPath))
-		{
-		    filePathProperty.stringValue = HEU_Platform.GetValidRelativePath(newPath); ;
-		}
-	    }
-
-	    EditorGUILayout.EndHorizontal();
-	}
-
 	public static GUIStyle GetNewButtonStyle(FontStyle fontStyle, int fontSize, TextAnchor textAlignment, float fixedHeight, int paddingLeft, int paddingRight, int paddingTop, int paddingBottom,
 		int marginTop, int marginBottom, int marginLeft, int marginRight)
 	{

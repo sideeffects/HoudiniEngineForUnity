@@ -428,34 +428,6 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
-	/// Returns the valid relative path if the given path is under the project Assets/ directory.
-	/// If not, it returns the given path as is, but warns the user that the path is outside the project
-	/// and therefore not safe to use if the project changes location on another workstation (eg. source control).
-	/// </summary>
-	/// <param name="inPath">Path to validate.</param>
-	/// <returns>Relative path to project Assets/ folder, or just returns the path as is if outside the project.</returns>
-	public static string GetValidRelativePath(string inPath)
-	{
-	    // If the selected path is outside the project directory, warn user
-	    // If inside project, make sure its relative (for version control and multi-user projects)
-	    if (!HEU_AssetDatabase.IsPathRelativeToAssets(inPath))
-	    {
-		string relativePath = HEU_AssetDatabase.GetAssetRelativePath(inPath);
-		if (string.IsNullOrEmpty(relativePath))
-		{
-		    string message = string.Format("Path: {0} is outside the project!\n This is not recommended if using version control or for multi-user projects.",
-			    inPath);
-		    Debug.LogWarning(message);
-		}
-		else
-		{
-		    inPath = relativePath;
-		}
-	    }
-	    return inPath;
-	}
-
-	/// <summary>
 	/// Removes and returns the last directory separator character from given string.
 	/// </summary>
 	/// <param name="inPath">Path to parse</param>

@@ -869,9 +869,9 @@ namespace HoudiniEngineUnity
 	public override bool LoadAssetLibraryFromFile(string assetPath, bool bAllowOverwrite, out HAPI_StringHandle libraryID)
 	{
 	    // Make the asset path a full path as otherwise debug sessions will not load the asset properly in Houdini.
-	    if (HEU_AssetDatabase.IsPathRelativeToAssets(assetPath))
+	    if (!HEU_Platform.IsPathRooted(assetPath))
 	    {
-		assetPath = HEU_AssetDatabase.GetAssetFullPath(assetPath);
+		assetPath = HEU_Platform.GetFullPath(assetPath);
 	    }
 
 	    libraryID = 0;

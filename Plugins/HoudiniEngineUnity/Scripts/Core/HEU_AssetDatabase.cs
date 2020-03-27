@@ -55,9 +55,9 @@ namespace HoudiniEngineUnity
 
 	    return rootPath;
 #else
-			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
-			return ""; 
+	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
+	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    return ""; 
 #endif
 	}
 
@@ -86,8 +86,8 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return AssetDatabase.GetAssetPath(asset);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
-			return null;
+	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    return null;
 #endif
 	}
 
@@ -121,8 +121,8 @@ namespace HoudiniEngineUnity
 
 	    return assetPath;
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
-			return null;
+	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    return null;
 #endif
 	}
 
@@ -157,25 +157,35 @@ namespace HoudiniEngineUnity
 	    return "Assets" + HEU_Platform.DirectorySeparatorStr;
 	}
 
-	/// <summary>
-	/// Given relative path to an asset (with Assets/ in the path), this returns the full path to it.
-	/// </summary>
-	/// <param name="inAssetRelativePath">Relative path to parse</param>
-	/// <returns>Returns full path to asset, or null if invalid input path</returns>
-	public static string GetAssetFullPath(string inAssetRelativePath)
+	private static string GetPackagesRelativePathStart()
 	{
-	    string replaceOld = GetAssetRelativePathStart();
-	    string replaceNew = Application.dataPath + HEU_Platform.DirectorySeparatorStr;
-	    //Debug.LogFormat("Replacing relative {0} with full {1}", inAssetRelativePath, inAssetRelativePath.Replace(replaceOld, replaceNew));
-	    if (IsPathRelativeToAssets(inAssetRelativePath))
+	    return "Packages" + HEU_Platform.DirectorySeparatorStr;
+	}
+
+	/// <summary>
+	/// Given relative path to an asset (with Assets/ or Packages/ in the path), this returns the full path to it.
+	/// </summary>
+	/// <param name="inPath">Relative path to parse</param>
+	/// <returns>Returns full path to asset, or null if invalid input path</returns>
+	public static string GetAssetFullPath(string inPath)
+	{
+	    string replaceOld = null;
+	    if (IsPathRelativeToAssets(inPath))
 	    {
-		return HEU_GeneralUtility.ReplaceFirstOccurrence(inAssetRelativePath, replaceOld, replaceNew);
+		replaceOld = GetAssetRelativePathStart();
+	    }
+	    else if (IsPathRelativeToPackages(inPath))
+	    {
+		replaceOld = GetAssetRelativePathStart();
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("Given relative path {0} does not start with {1}. Unable to create full path!", inAssetRelativePath, replaceOld);
+		Debug.LogWarningFormat("Given path {0} does not start with {1}. Unable to create full path!", inPath);
 		return null;
 	    }
+
+	    string replaceNew = Application.dataPath + HEU_Platform.DirectorySeparatorStr;
+	    return HEU_GeneralUtility.ReplaceFirstOccurrence(inPath, replaceOld, replaceNew);
 	}
 
 	/// <summary>
@@ -185,8 +195,17 @@ namespace HoudiniEngineUnity
 	/// <returns>True if given path starts relative to Assets/</returns>
 	public static bool IsPathRelativeToAssets(string inPath)
 	{
-	    string assetRelativeStart = GetAssetRelativePathStart();
-	    return inPath.StartsWith(assetRelativeStart);
+	    return inPath.StartsWith(GetAssetRelativePathStart());
+	}
+
+	/// <summary>
+	/// Returns true if given path starts relative to Packages/
+	/// </summary>
+	/// <param name="inPath">Path to check</param>
+	/// <returns>True if given path starts relative to Packages/</returns>
+	public static bool IsPathRelativeToPackages(string inPath)
+	{
+	    return inPath.StartsWith(GetPackagesRelativePathStart());
 	}
 
 	public static string GetAssetRootPath(Object asset)
@@ -280,8 +299,8 @@ namespace HoudiniEngineUnity
 	    string bakedPath = GetAssetBakedPath();
 	    return path.StartsWith(bakedPath);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
-			return false;
+	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    return false;
 #endif
 	}
 
@@ -426,8 +445,8 @@ namespace HoudiniEngineUnity
 		AssetDatabase.DeleteAsset(path);
 	    }
 #else
-			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
+	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -440,8 +459,8 @@ namespace HoudiniEngineUnity
 		AssetDatabase.DeleteAsset(assetPath);
 	    }
 #else
-			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
+	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -848,9 +867,9 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return AssetDatabase.LoadAssetAtPath(assetPath, type);
 #else
-			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
-			return null;
+	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
+	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    return null;
 #endif
 	}
 
