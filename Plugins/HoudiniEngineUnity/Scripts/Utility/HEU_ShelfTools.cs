@@ -478,6 +478,13 @@ namespace HoudiniEngineUnity
 
 	    GameObject[] selectedObjects = HEU_EditorUtility.GetSelectedObjects();
 
+	    // Convert asset path to relative if possible
+	    string assetPath = toolData._assetPath;
+	    if (HEU_Platform.IsPathRooted(assetPath))
+	    {
+		assetPath = HEU_AssetDatabase.GetAssetsOrPackagesRelativePath(assetPath);
+	    }
+
 	    if (toolData._toolType == HEU_ShelfToolData.ToolType.GENERATOR)
 	    {
 		Matrix4x4 targetMatrix = HEU_EditorUtility.GetSelectedObjectsMeanTransform();
@@ -486,23 +493,23 @@ namespace HoudiniEngineUnity
 		Vector3 scale = HEU_HAPIUtility.GetScale(ref targetMatrix);
 		scale = Vector3.one;
 
-		ExecuteToolGenerator(toolData._name, toolData._assetPath, position, rotation, scale);
+		ExecuteToolGenerator(toolData._name, assetPath, position, rotation, scale);
 	    }
 	    else if (selectedObjects.Length == 0)
 	    {
-		ExecuteToolNoInput(toolData._name, toolData._assetPath);
+		ExecuteToolNoInput(toolData._name, assetPath);
 	    }
 	    else if (toolData._toolType == HEU_ShelfToolData.ToolType.OPERATOR_SINGLE)
 	    {
-		ExecuteToolOperatorSingle(toolData._name, toolData._assetPath, selectedObjects);
+		ExecuteToolOperatorSingle(toolData._name, assetPath, selectedObjects);
 	    }
 	    else if (toolData._toolType == HEU_ShelfToolData.ToolType.OPERATOR_MULTI)
 	    {
-		ExecuteToolOperatorMultiple(toolData._name, toolData._assetPath, selectedObjects);
+		ExecuteToolOperatorMultiple(toolData._name, assetPath, selectedObjects);
 	    }
 	    else if (toolData._toolType == HEU_ShelfToolData.ToolType.BATCH)
 	    {
-		ExecuteToolBatch(toolData._name, toolData._assetPath, selectedObjects);
+		ExecuteToolBatch(toolData._name, assetPath, selectedObjects);
 	    }
 	}
 
