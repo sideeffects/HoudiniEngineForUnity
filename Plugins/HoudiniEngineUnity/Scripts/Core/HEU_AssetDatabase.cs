@@ -109,22 +109,48 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
-	/// Returns relative path to Assets/ or Packages/, if given full path
+	/// Returns relative path to Assets/ or Packages/ if valid, otherwise returns the given inPath.
+	/// Converts Library/PackageCache/ to Packages/ and strips out the @GUID/ portion so that Unity
+	/// can load this path via AssetDatbase.
+	/// E.g. Library/PackageCache/com.sidefx.hds@123456/... -> Packages/com.sidefx.hda/...
+	/// Also changes path to use forward slash.
 	/// </summary>
-	/// <param name="inPath"></param>
-	/// <returns>Returns relative path to Assets/ or Packages/, if given full path, or returns inPath otherwise</returns>
-	public static string GetAssetsOrPackagesRelativePath(string inPath)
+	/// <param name="inPath">The path to validate for loading via AssetDatabase</param>
+	public static string GetValidAssetPath(string inPath)
 	{
-	    string assetsPath = Application.dataPath + HEU_Platform.DirectorySeparatorStr;
-	    if (inPath.StartsWith(assetsPath))
+	    // The three relative paths to consider are:
+	    // Assets/
+	    // Packages/
+	    // Library/PackageCache/
+
+	    inPath = inPath.Replace('\\', '/');
+
+	    string relPath = inPath;
+
+	    // Strip out project root to get the subfolder
+	    string projectRoot = GetUnityProjectPath() + "/";
+	    if (relPath.StartsWith(projectRoot))
 	    {
-		return GetAssetRelativePath(inPath);
+		relPath = relPath.Remove(0, projectRoot.Length);
 	    }
 
-	    string packagesPath = GetUnityProjectPath() + HEU_Platform.DirectorySeparatorStr;
-	    if (inPath.StartsWith(packagesPath))
+	    string packageCache = "Library/PackageCache/";
+	    if (relPath.StartsWith(packageCache))
 	    {
-		return GetPackagesRelativePath(inPath);
+		relPath = "Packages/" + relPath.Remove(0, packageCache.Length);
+
+		// Strip out the @.../ (excluding the /)
+		int sindex = relPath.IndexOf('@');
+		int lindex = relPath.IndexOf('/', sindex + 1);
+		if (sindex >= 0 && lindex > sindex && lindex < relPath.Length)
+		{
+		    relPath = relPath.Remove(sindex, (lindex - sindex));
+		}
+		return relPath;
+	    }
+	    else if (relPath.StartsWith("Assets/") || relPath.StartsWith("Packages/"))
+	    {
+		return relPath;
 	    }
 
 	    return inPath;
