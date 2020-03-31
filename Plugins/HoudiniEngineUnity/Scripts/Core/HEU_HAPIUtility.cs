@@ -194,7 +194,7 @@ namespace HoudiniEngineUnity
 	public static bool DoesMappedPathExist(string inPath)
 	{
 	    string realPath = HEU_PluginStorage.Instance.ConvertEnvKeyedPathToReal(inPath);
-	    return HEU_Platform.DoesPathExist(realPath);
+	    return HEU_Platform.DoesPathExist(HEU_Platform.GetFullPath(realPath));
 	}
 
 	/// <summary>

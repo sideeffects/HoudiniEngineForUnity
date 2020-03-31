@@ -1771,8 +1771,9 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    // Load the file
-	    // First try using filed object reference if its valid.
+	    // Load the asset file.
+
+	    // First try using object reference if its valid.
 	    string validAssetPath = HEU_HAPIUtility.LocateValidFilePath(_assetFileObject);
 	    if (string.IsNullOrEmpty(validAssetPath))
 	    {
@@ -1785,10 +1786,22 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    // Set object reference if it hasn't been set. In future, user can re-link this via UI or code if reference is ever lost.
-	    if (_assetFileObject == null && (HEU_AssetDatabase.IsPathRelativeToAssets(validAssetPath) || HEU_AssetDatabase.IsPathRelativeToPackages(validAssetPath)))
+	    if (_assetFileObject == null || !HEU_Platform.DoesFileExist(validAssetPath))
 	    {
-		_assetFileObject = HEU_AssetDatabase.LoadAssetAtPath(validAssetPath, typeof(UnityEngine.Object));
+		// This handles 2 cases:
+		// - set the _assetFileObject reference if possible (which allows to get local path easily via Unity AssetDatabase)
+		// - when using assets from Packages/, need to convert to real local path so that Houdini can load it
+		//   but the issue is the current path might not be local, so to convert it, first convert into a format
+		//   that AssetDatabase can load as object, then get the real local path to pass to Houdini
+
+		validAssetPath = HEU_AssetDatabase.GetValidAssetPath(validAssetPath);
+		_assetFileObject = HEU_AssetDatabase.LoadAssetAtPath(validAssetPath, typeof(Object));
+
+		// Update the load path from _assetFileObject to get local path
+		if (_assetFileObject != null)
+		{
+		    validAssetPath = HEU_AssetDatabase.GetAssetPath(_assetFileObject);
+		}
 	    }
 
 	    HAPI_AssetLibraryId libraryID = 0;

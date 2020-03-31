@@ -478,12 +478,7 @@ namespace HoudiniEngineUnity
 
 	    GameObject[] selectedObjects = HEU_EditorUtility.GetSelectedObjects();
 
-	    // Convert asset path to relative if possible
 	    string assetPath = toolData._assetPath;
-	    if (HEU_Platform.IsPathRooted(assetPath))
-	    {
-		assetPath = HEU_AssetDatabase.GetAssetsOrPackagesRelativePath(assetPath);
-	    }
 
 	    if (toolData._toolType == HEU_ShelfToolData.ToolType.GENERATOR)
 	    {
