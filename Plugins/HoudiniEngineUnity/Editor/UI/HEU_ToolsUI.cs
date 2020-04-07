@@ -67,11 +67,20 @@ namespace HoudiniEngineUnity
 
 	private const string _noMeshForPainting = "Selected node does not have a mesh so painting is unavailable.";
 
+	private const string _showPaintMesh = "Paint Mesh";
+
+	private GUIContent[] _paintMeshVisibilityLabels = new GUIContent[]
+	{
+	    new GUIContent(HEU_ToolsInfo.PaintMeshVisibility.AUTO.ToString()),
+	    new GUIContent(HEU_ToolsInfo.PaintMeshVisibility.SHOW.ToString()),
+	    new GUIContent(HEU_ToolsInfo.PaintMeshVisibility.HIDE.ToString())
+	};
+
 	private GUIContent[] _interactionModeLabels = new GUIContent[]
 	{
-			new GUIContent(ToolInteractionMode.VIEW.ToString()),
-			new GUIContent(ToolInteractionMode.PAINT.ToString()),
-			new GUIContent(ToolInteractionMode.EDIT.ToString())
+	    new GUIContent(ToolInteractionMode.VIEW.ToString()),
+	    new GUIContent(ToolInteractionMode.PAINT.ToString()),
+	    new GUIContent(ToolInteractionMode.EDIT.ToString())
 	};
 
 	private const float _mouseWheelBrushSizeMultiplier = 0.05f;
@@ -155,6 +164,9 @@ namespace HoudiniEngineUnity
 
 	private GUIStyle _toolsBGStyle;
 
+	// Paint brush is being applied
+	private bool _isPainting;
+
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
 
@@ -178,6 +190,9 @@ namespace HoudiniEngineUnity
 	{
 	    Selection.selectionChanged -= SelectionChangedCallback;
 
+	    // Switching to View mode so that paint mesh can be hidden
+	    // in ShowAssetGeometry
+	    SwitchToMode(ToolInteractionMode.VIEW);
 	    ShowAssetGeometry();
 
 	    ClearCache();
@@ -231,6 +246,8 @@ namespace HoudiniEngineUnity
 	    _asset = null;
 
 	    _toolsInfo = null;
+
+	    _isPainting = false;
 	}
 
 	private void DestroyEditPointBoxMesh()
@@ -525,6 +542,17 @@ namespace HoudiniEngineUnity
 		DrawAttributeSelection();
 
 		DrawPaintAttributeValues();
+
+		SerializedProperty paintMeshProperty = HEU_EditorUtility.GetSerializedProperty(_toolsInfoSerializedObject, "_paintMeshVisiblity");
+		if (paintMeshProperty != null)
+		{
+		    int currentVisibility = paintMeshProperty.enumValueIndex;
+		    EditorGUILayout.PropertyField(paintMeshProperty, new GUIContent("Paint Mesh Visiblity"));
+		    if (currentVisibility != paintMeshProperty.enumValueIndex)
+		    {
+			ChangePaintMeshVisiblity((HEU_ToolsInfo.PaintMeshVisibility)paintMeshProperty.enumValueIndex);
+		    }
+		}
 	    }
 
 	    using (var verticalSpace = new GUILayout.VerticalScope(EditorStyles.helpBox))
@@ -901,6 +929,8 @@ namespace HoudiniEngineUnity
 		{
 		    _selectedAttributesStore.EnablePaintCollider();
 		}
+
+		UpdatePaintMeshVisibility();
 	    }
 	}
 
@@ -1220,14 +1250,12 @@ namespace HoudiniEngineUnity
 	    {
 		isPaintingProperty.boolValue = true;
 		_GUIChanged = true;
+		_isPainting = true;
 
 		// Hide asset geometry in order to show the paint object
 		_asset.HideAllGeometry();
 
-		if (_selectedAttributesStore != null)
-		{
-		    _selectedAttributesStore.ShowPaintMesh();
-		}
+		UpdatePaintMeshVisibility();
 	    }
 	}
 
@@ -1237,11 +1265,9 @@ namespace HoudiniEngineUnity
 	    {
 		isPaintingProperty.boolValue = false;
 		_GUIChanged = true;
+		_isPainting = false;
 
-		if (_selectedAttributesStore != null)
-		{
-		    _selectedAttributesStore.HidePaintMesh();
-		}
+		UpdatePaintMeshVisibility();
 
 		// Show asset geometry once done painting
 		_asset.CalculateVisibility();
@@ -1527,15 +1553,24 @@ namespace HoudiniEngineUnity
 	// Show all geometry for the asset.
 	private void ShowAssetGeometry()
 	{
-	    if (_selectedAttributesStore != null)
-	    {
-		_selectedAttributesStore.HidePaintMesh();
-		_selectedAttributesStore.DisablePaintCollider();
-	    }
-
+	    // This comes before the individual updates below since its for the whole asset
 	    if (_asset != null)
 	    {
 		_asset.CalculateVisibility();
+	    }
+
+	    if (_selectedAttributesStore != null)
+	    {
+		if (_interactionMode == ToolInteractionMode.PAINT)
+		{
+		    UpdatePaintMeshVisibility();
+		}
+		else
+		{
+		    _selectedAttributesStore.HidePaintMesh();
+		}
+
+		_selectedAttributesStore.DisablePaintCollider();
 	    }
 	}
 
@@ -1562,6 +1597,59 @@ namespace HoudiniEngineUnity
 			_asset.CalculateVisibility();
 			_asset.CalculateColliderState();
 		    }
+		}
+	    }
+	}
+
+	private void ChangePaintMeshVisiblity(HEU_ToolsInfo.PaintMeshVisibility visiblity)
+	{
+	    _toolsInfo._paintMeshVisiblity = visiblity;
+	    UpdatePaintMeshVisibility();
+
+	    _GUIChanged = true;
+	    HEU_AttributesStore.SetAttributeDataDirty(_selectedAttributeData);
+	}
+
+	private void UpdatePaintMeshVisibility()
+	{
+	    switch(_toolsInfo._paintMeshVisiblity)
+	    {
+		case HEU_ToolsInfo.PaintMeshVisibility.AUTO:
+		{
+		    if (_selectedAttributesStore != null)
+		    {
+			if (_isPainting)
+			{
+			    _selectedAttributesStore.ShowPaintMesh();
+			}
+			else
+			{
+			    _selectedAttributesStore.HidePaintMesh();
+			}
+		    }
+		    break;
+		}
+		case HEU_ToolsInfo.PaintMeshVisibility.SHOW:
+		{
+		    if (_selectedAttributesStore != null)
+		    {
+			_selectedAttributesStore.ShowPaintMesh();
+		    }
+
+		    break;
+		}
+		case HEU_ToolsInfo.PaintMeshVisibility.HIDE:
+		{
+		    if (_selectedAttributesStore != null)
+		    {
+			_selectedAttributesStore.HidePaintMesh();
+		    }
+
+		    break;
+		}
+		default:
+		{
+		    break;
 		}
 	    }
 	}

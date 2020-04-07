@@ -231,6 +231,8 @@ namespace HoudiniEngineUnity
 
 	public void SetupMeshAndMaterials(HEU_HoudiniAsset asset, HAPI_PartType partType, GameObject outputGameObject)
 	{
+	    Color[] oldColors = _outputMesh != null ? _outputMesh.colors : null;
+
 	    _outputMesh = null;
 	    _outputGameObject = null;
 
@@ -241,6 +243,20 @@ namespace HoudiniEngineUnity
 		if (meshFilter != null && meshFilter.sharedMesh != null)
 		{
 		    _outputMesh = meshFilter.sharedMesh;
+
+		    // Restore old colors back to newly generated mesh so as to keep color "state"
+		    // for visualization
+		    if (oldColors != null)
+		    {
+			int oldLen = oldColors.Length;
+			Color[] dstColors = _outputMesh.colors;
+			int dstLen = dstColors.Length;
+			for(int i = 0; i < dstColors.Length && i < oldLen; ++i)
+			{
+			    dstColors[i] = oldColors[i];
+			}
+			_outputMesh.colors = dstColors;
+		    }
 		}
 		else
 		{
@@ -250,10 +266,12 @@ namespace HoudiniEngineUnity
 
 		_outputGameObject = outputGameObject;
 
-		if (_localMaterial == null)
+		MeshRenderer meshRenderer = _outputGameObject.GetComponent<MeshRenderer>();
+		if (meshRenderer != null)
 		{
-		    MeshRenderer meshRenderer = _outputGameObject.GetComponent<MeshRenderer>();
-		    if (meshRenderer != null)
+		    _outputMeshRendererInitiallyEnabled = meshRenderer.enabled;
+
+		    if (_localMaterial == null)
 		    {
 			_localMaterial = HEU_MaterialFactory.GetNewMaterialWithShader(null, HEU_PluginSettings.DefaultVertexColorShader, HEU_Defines.EDITABLE_MATERIAL, false);
 		    }
@@ -773,7 +791,6 @@ namespace HoudiniEngineUnity
 
 		    meshRenderer.sharedMaterial = _localMaterial;
 
-		    _outputMeshRendererInitiallyEnabled = meshRenderer.enabled;
 		    meshRenderer.enabled = true;
 		}
 		else
