@@ -1413,7 +1413,7 @@ namespace HoudiniEngineUnity
 	    Handles.color = Color.white;
 	    Vector3[] lines = new Vector3[]
 	    {
-				w00, w01, w11, w10, w00
+		w00, w01, w11, w10, w00
 	    };
 	    Handles.DrawSolidRectangleWithOutline(lines, _selectionBoxFillColor, _selectionBoxOutlineColor);
 	    Handles.color = defaultColor;

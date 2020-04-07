@@ -319,6 +319,9 @@ namespace HoudiniEngineUnity
 	    // Make sure the internal array is correctly sized for syncing.
 	    if (attributeData._attributeType == HEU_AttributeData.AttributeType.INT)
 	    {
+		// Temp storage to use for reassigning old values to new array
+		int[] oldValues = null;
+
 		if (attributeData._intValues == null)
 		{
 		    attributeData._intValues = new int[arraySize];
@@ -326,6 +329,8 @@ namespace HoudiniEngineUnity
 		}
 		else if (attributeData._intValues.Length != arraySize)
 		{
+		    ArrayExtensions.CopyToWithResize(attributeData._intValues, ref oldValues);
+
 		    System.Array.Resize<int>(ref attributeData._intValues, arraySize);
 		    attributeData._attributeState = HEU_AttributeData.AttributeState.INVALID;
 		}
@@ -334,19 +339,31 @@ namespace HoudiniEngineUnity
 
 		if (attributeData._attributeState == HEU_AttributeData.AttributeState.INVALID)
 		{
+		    int index = 0;
 		    int[] data = new int[0];
 		    HEU_GeneralUtility.GetAttribute(session, geoID, partID, attributeData._name, ref attributeInfo, ref data, session.GetAttributeIntData);
 		    for (int i = 0; i < attributeCount; ++i)
 		    {
 			for (int tuple = 0; tuple < tupleSize; ++tuple)
 			{
-			    attributeData._intValues[i * tupleSize + tuple] = data[i * tupleSize + tuple];
+			    index = i * tupleSize + tuple;
+			    if (oldValues != null && index < oldValues.Length)
+			    {
+				attributeData._intValues[index] = oldValues[index];
+			    }
+			    else
+			    {
+				attributeData._intValues[index] = data[index];
+			    }
 			}
 		    }
 		}
 	    }
 	    else if (attributeData._attributeType == HEU_AttributeData.AttributeType.FLOAT)
 	    {
+		// Temp storage to use for reassigning old values to new array
+		float[] oldValues = null;
+
 		if (attributeData._floatValues == null)
 		{
 		    attributeData._floatValues = new float[arraySize];
@@ -354,6 +371,8 @@ namespace HoudiniEngineUnity
 		}
 		else if (attributeData._floatValues.Length != arraySize)
 		{
+		    ArrayExtensions.CopyToWithResize(attributeData._floatValues, ref oldValues);
+
 		    System.Array.Resize<float>(ref attributeData._floatValues, arraySize);
 		    attributeData._attributeState = HEU_AttributeData.AttributeState.INVALID;
 		}
@@ -362,19 +381,31 @@ namespace HoudiniEngineUnity
 
 		if (attributeData._attributeState == HEU_AttributeData.AttributeState.INVALID)
 		{
+		    int index = 0;
 		    float[] data = new float[0];
 		    HEU_GeneralUtility.GetAttribute(session, geoID, partID, attributeData._name, ref attributeInfo, ref data, session.GetAttributeFloatData);
 		    for (int i = 0; i < attributeCount; ++i)
 		    {
 			for (int tuple = 0; tuple < tupleSize; ++tuple)
 			{
-			    attributeData._floatValues[i * tupleSize + tuple] = data[i * tupleSize + tuple];
+			    index = i * tupleSize + tuple;
+			    if (oldValues != null && index < oldValues.Length)
+			    {
+				attributeData._floatValues[index] = oldValues[index];
+			    }
+			    else
+			    {
+				attributeData._floatValues[index] = data[index];
+			    }
 			}
 		    }
 		}
 	    }
 	    else if (attributeData._attributeType == HEU_AttributeData.AttributeType.STRING)
 	    {
+		// Temp storage to use for reassigning old values to new array
+		string[] oldValues = null;
+
 		if (attributeData._stringValues == null)
 		{
 		    attributeData._stringValues = new string[arraySize];
@@ -382,6 +413,8 @@ namespace HoudiniEngineUnity
 		}
 		else if (attributeData._stringValues.Length != arraySize)
 		{
+		    ArrayExtensions.CopyToWithResize(attributeData._stringValues, ref oldValues);
+
 		    System.Array.Resize<string>(ref attributeData._stringValues, arraySize);
 		    attributeData._attributeState = HEU_AttributeData.AttributeState.INVALID;
 		}
@@ -390,14 +423,22 @@ namespace HoudiniEngineUnity
 
 		if (attributeData._attributeState == HEU_AttributeData.AttributeState.INVALID)
 		{
+		    int index = 0;
 		    HAPI_StringHandle[] data = new HAPI_StringHandle[0];
 		    HEU_GeneralUtility.GetAttribute(session, geoID, partID, attributeData._name, ref attributeInfo, ref data, session.GetAttributeStringData);
 		    for (int i = 0; i < attributeCount; ++i)
 		    {
 			for (int tuple = 0; tuple < tupleSize; ++tuple)
 			{
-			    HAPI_StringHandle stringHandle = data[i * tupleSize + tuple];
-			    attributeData._stringValues[i * tupleSize + tuple] = HEU_SessionManager.GetString(stringHandle, session);
+			    index = i * tupleSize + tuple;
+			    if (oldValues != null && index < oldValues.Length)
+			    {
+				attributeData._stringValues[index] = oldValues[index];
+			    }
+			    else
+			    {
+				attributeData._stringValues[index] = HEU_SessionManager.GetString(data[index], session);
+			    }
 			}
 		    }
 		}
