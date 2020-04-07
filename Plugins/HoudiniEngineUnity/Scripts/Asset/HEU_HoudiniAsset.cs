@@ -186,6 +186,9 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private bool _forceUploadInputs;
 
+	[SerializeField]
+	private bool _upstreamCookChanged;
+
 	public enum AssetCookStatus
 	{
 	    NONE,
@@ -1011,7 +1014,7 @@ namespace HoudiniEngineUnity
 	private bool RecookAsync(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 	{
 #if HEU_PROFILER_ON
-			_cookStartTime = Time.realtimeSinceStartup;
+	    _cookStartTime = Time.realtimeSinceStartup;
 #endif
 	    //Debug.Log("RecookAsync");
 
@@ -1048,7 +1051,7 @@ namespace HoudiniEngineUnity
 	private bool RecookBlocking(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
 	{
 #if HEU_PROFILER_ON
-			_cookStartTime = Time.realtimeSinceStartup;
+	    _cookStartTime = Time.realtimeSinceStartup;
 #endif
 
 	    bool bStarted = false;
@@ -1322,7 +1325,7 @@ namespace HoudiniEngineUnity
 	    // changed earlier in the graph, it will most likely be ignored here since the edit node has its own
 	    // version of the geo with custom attributes. The only way to resolve it would be to blow away the custom
 	    // attribute data (reset all edit node changes). Currently not enabled, though could be added as a 
-	    // button that invokes edit node's Reste All Changes.
+	    // button that invokes edit node's Reset All Changes.
 	    UploadAttributeValues(session);
 
 	    // Upload asset inputs. 
@@ -1338,7 +1341,7 @@ namespace HoudiniEngineUnity
 	    }
 
 #if HEU_PROFILER_ON
-			_hapiCookEndTime = Time.realtimeSinceStartup;
+	    _hapiCookEndTime = Time.realtimeSinceStartup;
 #endif
 
 	    return true;
@@ -1376,7 +1379,7 @@ namespace HoudiniEngineUnity
 	private void ProcessPoskCook()
 	{
 #if HEU_PROFILER_ON
-			_postCookStartTime = Time.realtimeSinceStartup;
+	    _postCookStartTime = Time.realtimeSinceStartup;
 #endif
 
 	    HEU_SessionBase session = GetAssetSession(false);
@@ -1413,6 +1416,16 @@ namespace HoudiniEngineUnity
 
 	    GenerateAttributesStore(session);
 
+	    if (_upstreamCookChanged)
+	    {
+		// This sync allows to reupload local attribute values
+		// to Houdini after an upstream input changed and we had
+		// to reset the local changes on the edit node by reverting.
+		SyncDirtyAttributesToHoudini(session);
+
+		_upstreamCookChanged = false;
+	    }
+
 	    GenerateHandles(session);
 
 	    // Now apply saved presets that haven't been applied before
@@ -1446,7 +1459,7 @@ namespace HoudiniEngineUnity
 	    SetCookStatus(AssetCookStatus.NONE, AssetCookResult.SUCCESS);
 
 #if HEU_PROFILER_ON
-			Debug.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
+	    Debug.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
 #endif
 	}
 
@@ -2028,6 +2041,22 @@ namespace HoudiniEngineUnity
 	    bool bForceUpload = false;
 	    if (_toolsInfo != null && _toolsInfo._alwaysCookUpstream)
 	    {
+		if (_upstreamCookChanged)
+		{
+		    // Note that for _upstreamCookChanged, force the refresh of the upstream input
+		    // so that the edit node is unlocked and able to get updated values.
+		    foreach (HEU_AttributesStore attributeStore in _attributeStores)
+		    {
+			attributeStore.RefreshUpstreamInputs(session);
+		    }
+
+		    // Don't want to upload right now because the buffer sizes might
+		    // not be in sync (especially for delete curve points).
+		    // Instead wait until after Houdini cook is completed then upload.
+		    // So early out here.
+		    return;
+		}
+
 		foreach (HEU_AttributesStore attributeStore in _attributeStores)
 		{
 		    if (attributeStore.HasDirtyAttributes())
@@ -2049,6 +2078,14 @@ namespace HoudiniEngineUnity
 
 		    attributeStore.SyncDirtyAttributesToHoudini(session);
 		}
+	    }
+	}
+
+	private void SyncDirtyAttributesToHoudini(HEU_SessionBase session)
+	{
+	    foreach (HEU_AttributesStore attributeStore in _attributeStores)
+	    {
+		attributeStore.SyncDirtyAttributesToHoudini(session);
 	    }
 	}
 
@@ -2757,6 +2794,10 @@ namespace HoudiniEngineUnity
 	    if (bSuccess)
 	    {
 		//Debug.LogFormat("NotifyUpstreamCooked from {0}", AssetName);
+		HEU_SessionBase session = GetAssetSession(true);
+
+		// Required for reverting and uploading local data for edit nodes
+		_upstreamCookChanged = true;
 
 		// Recook after upstream cook
 		// Check parameter changes otherwise can cause input nodes to be disconnected

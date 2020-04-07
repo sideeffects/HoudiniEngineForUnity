@@ -87,6 +87,15 @@ namespace HoudiniEngineUnity
 
 	// Whether to always unlock edit node, and cook its upstream input before applying attribute edits
 	public bool _alwaysCookUpstream = true;
+
+	public enum PaintMeshVisibility
+	{
+	    AUTO,
+	    SHOW,
+	    HIDE
+	}
+
+	public PaintMeshVisibility _paintMeshVisiblity = PaintMeshVisibility.AUTO;
     }
 
 }   // HoudiniEngineUnity
