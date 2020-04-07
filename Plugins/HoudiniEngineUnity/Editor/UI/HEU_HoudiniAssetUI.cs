@@ -115,13 +115,13 @@ namespace HoudiniEngineUnity
 	    _duplicateAssetIcon = Resources.Load("heu_duplicateassetIcon") as Texture2D;
 	    _resetParamIcon = Resources.Load("heu_resetparametersIcon") as Texture2D;
 
-	    _reloadhdaContent = new GUIContent("  Rebuild Asset", _reloadhdaIcon, "Reload the asset in Houdini and cook it. Current parameter values and input objects will be re-applied. Material overrides will be removed.");
-	    _recookhdaContent = new GUIContent("  Recook Asset", _recookhdaIcon, "Force recook of the asset in Houdini with the current parameter values and specified input data. Updates asset if changed in Houdini.");
+	    _reloadhdaContent = new GUIContent("  Rebuild", _reloadhdaIcon, "Reload the asset in Houdini and cook it. Current parameter values and input objects will be re-applied. Material overrides will be removed.");
+	    _recookhdaContent = new GUIContent("  Recook", _recookhdaIcon, "Force recook of the asset in Houdini with the current parameter values and specified input data. Updates asset if changed in Houdini.");
 	    _bakegameobjectContent = new GUIContent("  Bake GameObject", _bakegameobjectIcon, "Bakes the output to a new GameObject. Meshes and Materials are copied.");
 	    _bakeprefabContent = new GUIContent("  Bake Prefab", _bakeprefabIcon, "Bakes the output to a new Prefab. Meshes and Materials are copied.");
 	    _bakeandreplaceContent = new GUIContent("  Bake Update", _bakeandreplaceIcon, "Update existing GameObject(s) and Prefab(s). Generated components, meshes, and materials are updated.");
 	    _removeheContent = new GUIContent("  Keep Only Output", _removeheIcon, "Remove HDA_Data and the Houdini Asset Root object, and leave just the output GameObject.");
-	    _duplicateContent = new GUIContent("  Duplicate Asset", _duplicateAssetIcon, "Safe duplication of this asset to create an exact copy. The asset is duplicated in Houdini. All data is copied over.");
+	    _duplicateContent = new GUIContent("  Duplicate", _duplicateAssetIcon, "Safe duplication of this asset to create an exact copy. The asset is duplicated in Houdini. All data is copied over.");
 	    _resetParamContent = new GUIContent("  Reset Parameters", _resetParamIcon, "Reset all parameters to their HDA default values.");
 
 	    // Get the root gameobject, and the HDA bound to it
@@ -472,7 +472,7 @@ namespace HoudiniEngineUnity
 	    promptButtonStyle.margin.left = 34;
 	    promptButtonStyle.margin.right = 34;
 
-	    _recookhdaContent.text = "  Recook Asset";
+	    _recookhdaContent.text = "  Recook";
 
 	    HEU_HoudiniAsset.AssetBuildAction pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.NONE;
 	    SerializedProperty pendingBuildProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_requestBuildAction");
