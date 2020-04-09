@@ -243,20 +243,42 @@ namespace HoudiniEngineUnity
 		if (meshFilter != null && meshFilter.sharedMesh != null)
 		{
 		    _outputMesh = meshFilter.sharedMesh;
+		    Color[] newColors = _outputMesh.colors;
 
-		    // Restore old colors back to newly generated mesh so as to keep color "state"
-		    // for visualization
 		    if (oldColors != null)
 		    {
+			// Restore old colors back to newly generated mesh so
+			// as to keep color "state" for visualization
+
 			int oldLen = oldColors.Length;
-			Color[] dstColors = _outputMesh.colors;
-			int dstLen = dstColors.Length;
-			for(int i = 0; i < dstColors.Length && i < oldLen; ++i)
+
+			if (newColors == null || newColors.Length == 0)
 			{
-			    dstColors[i] = oldColors[i];
+			    newColors = new Color[_outputMesh.vertices.Length];
 			}
-			_outputMesh.colors = dstColors;
+			int newLen = newColors.Length;
+
+			for (int i = 0; i < newLen && i < oldLen; ++i)
+			{
+			    newColors[i] = oldColors[i];
+			}
+			_outputMesh.colors = newColors;
+			_outputMesh.UploadMeshData(false);
 		    }
+		    else if (newColors == null || newColors.Length == 0)
+		    {
+			// Assign new default colors
+			int count = _outputMesh.vertices.Length;
+			newColors = new Color[count];
+			for (int i = 0; i < count; ++i)
+			{
+			    newColors[i] = new Color(0.3f, 0.06f, 0.62f);
+			}
+			_outputMesh.colors = newColors;
+			_outputMesh.UploadMeshData(false);
+		    }
+
+
 		}
 		else
 		{
