@@ -58,7 +58,7 @@ namespace HoudiniEngineUnity
 	public Color _brushHandleColor = new Color(0f, 0f, 0f);
 
 	// For non-color attributes, use this color to show affected area
-	public Color _affectedAreaPaintColor = new Color(1f, 0f, 0f);
+	public Color _affectedAreaPaintColor = new Color(1f, 1f, 0f);
 
 	public bool _liveUpdate = true;
 
