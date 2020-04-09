@@ -124,10 +124,10 @@ namespace HoudiniEngineUnity
 #if UNITY_2019_3_OR_NEWER
 	    Vector3 move = EditorSnapSettings.move;
 #else
-			Vector3 move = new Vector3(
-				EditorPrefs.GetFloat("MoveSnapX"),
-				EditorPrefs.GetFloat("MoveSnapY"),
-				EditorPrefs.GetFloat("MoveSnapZ"));
+	    Vector3 move = new Vector3(
+		    EditorPrefs.GetFloat("MoveSnapX", 1.0f),
+		    EditorPrefs.GetFloat("MoveSnapY", 1.0f),
+		    EditorPrefs.GetFloat("MoveSnapZ", 1.0f));
 #endif
 
 	    inPos.x = Handles.SnapValue(inPos.x, move.x);

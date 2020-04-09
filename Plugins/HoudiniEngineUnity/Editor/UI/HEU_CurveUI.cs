@@ -77,16 +77,16 @@ namespace HoudiniEngineUnity
 
 	GUIContent[] InteractionModeLabels = new GUIContent[]
 	{
-			new GUIContent(HEU_Curve.Interaction.VIEW.ToString()),
-			new GUIContent(HEU_Curve.Interaction.ADD.ToString()),
-			new GUIContent(HEU_Curve.Interaction.EDIT.ToString())
+	    new GUIContent(HEU_Curve.Interaction.VIEW.ToString()),
+	    new GUIContent(HEU_Curve.Interaction.ADD.ToString()),
+	    new GUIContent(HEU_Curve.Interaction.EDIT.ToString())
 	};
 
 	GUIContent[] NewPointModeLabels = new GUIContent[]
 	{
-			new GUIContent(CurveNewPointMode.START.ToString()),
-			new GUIContent(CurveNewPointMode.INSIDE.ToString()),
-			new GUIContent(CurveNewPointMode.END.ToString()),
+	    new GUIContent(CurveNewPointMode.START.ToString()),
+	    new GUIContent(CurveNewPointMode.INSIDE.ToString()),
+	    new GUIContent(CurveNewPointMode.END.ToString()),
 	};
 
 	// CACHE ------------------------------------------------------------------------------------------------------
