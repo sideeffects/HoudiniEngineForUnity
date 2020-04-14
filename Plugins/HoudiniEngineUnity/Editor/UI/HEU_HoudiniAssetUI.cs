@@ -115,14 +115,14 @@ namespace HoudiniEngineUnity
 	    _duplicateAssetIcon = Resources.Load("heu_duplicateassetIcon") as Texture2D;
 	    _resetParamIcon = Resources.Load("heu_resetparametersIcon") as Texture2D;
 
-	    _reloadhdaContent = new GUIContent("  Rebuild", _reloadhdaIcon, "Reload the asset in Houdini and cook it. Current parameter values and input objects will be re-applied. Material overrides will be removed.");
-	    _recookhdaContent = new GUIContent("  Recook", _recookhdaIcon, "Force recook of the asset in Houdini with the current parameter values and specified input data. Updates asset if changed in Houdini.");
-	    _bakegameobjectContent = new GUIContent("  Bake GameObject", _bakegameobjectIcon, "Bakes the output to a new GameObject. Meshes and Materials are copied.");
-	    _bakeprefabContent = new GUIContent("  Bake Prefab", _bakeprefabIcon, "Bakes the output to a new Prefab. Meshes and Materials are copied.");
-	    _bakeandreplaceContent = new GUIContent("  Bake Update", _bakeandreplaceIcon, "Update existing GameObject(s) and Prefab(s). Generated components, meshes, and materials are updated.");
-	    _removeheContent = new GUIContent("  Keep Only Output", _removeheIcon, "Remove HDA_Data and the Houdini Asset Root object, and leave just the output GameObject.");
+	    _reloadhdaContent = new GUIContent("  Rebuild  ", _reloadhdaIcon, "Reload the asset in Houdini and cook it. Current parameter values and input objects will be re-applied. Material overrides will be removed.");
+	    _recookhdaContent = new GUIContent("  Recook   ", _recookhdaIcon, "Force recook of the asset in Houdini with the current parameter values and specified input data. Updates asset if changed in Houdini.");
+	    _bakegameobjectContent = new GUIContent("  GameObject", _bakegameobjectIcon, "Bakes the output to a new GameObject. Meshes and Materials are copied.");
+	    _bakeprefabContent = new GUIContent("  Prefab", _bakeprefabIcon, "Bakes the output to a new Prefab. Meshes and Materials are copied.");
+	    _bakeandreplaceContent = new GUIContent("  Update", _bakeandreplaceIcon, "Update existing GameObject(s) and Prefab(s). Generated components, meshes, and materials are updated.");
+	    _removeheContent = new GUIContent("  Keep Only Output", _removeheIcon, "Remove Houdini Engine data (HDA_Data, Houdini Asset Root object), and leave just the generated Unity data (meshes, materials, instances, etc.).");
 	    _duplicateContent = new GUIContent("  Duplicate", _duplicateAssetIcon, "Safe duplication of this asset to create an exact copy. The asset is duplicated in Houdini. All data is copied over.");
-	    _resetParamContent = new GUIContent("  Reset Parameters", _resetParamIcon, "Reset all parameters to their HDA default values.");
+	    _resetParamContent = new GUIContent("  Reset All", _resetParamIcon, "Reset all parameters, materials, and inputs to their HDA default values, clear cache, reload HDA, cook, and generate output.");
 
 	    // Get the root gameobject, and the HDA bound to it
 	    _houdiniAssetRoot = target as HEU_HoudiniAssetRoot;
@@ -179,42 +179,28 @@ namespace HoudiniEngineUnity
 
 	    bool guiEnabled = GUI.enabled;
 
-	    GUIStyle backgroundStyle = new GUIStyle(GUI.skin.GetStyle("box"));
-	    RectOffset br = backgroundStyle.margin;
-	    br.top = 10;
-	    br.bottom = 6;
-	    br.left = 4;
-	    br.right = 4;
-	    backgroundStyle.margin = br;
-
-	    br = backgroundStyle.padding;
-	    br.top = 8;
-	    br.bottom = 8;
-	    br.left = 8;
-	    br.right = 8;
-	    backgroundStyle.padding = br;
-
-	    using (var hs = new EditorGUILayout.VerticalScope(backgroundStyle))
+	    using (var hs = new EditorGUILayout.VerticalScope())
 	    {
-		HEU_EditorUI.DrawSeparator();
-
 		DrawHeaderSection();
 
 		DrawLicenseInfo();
 
-		bool bSkipDraw = DrawGenerateSection(_houdiniAssetRoot, serializedObject, _houdiniAsset, _houdiniAssetSerializedObject); ;
-		if (!bSkipDraw)
+		HEU_HoudiniAsset.AssetBuildAction pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.NONE;
+		SerializedProperty pendingBuildProperty = HEU_EditorUtility.GetSerializedProperty(_houdiniAssetSerializedObject, "_requestBuildAction");
+		if (pendingBuildProperty != null)
+		{
+		    pendingBuildAction = (HEU_HoudiniAsset.AssetBuildAction)pendingBuildProperty.enumValueIndex;
+		}
+
+		// Track changes to Houdini Asset gameobject
+		EditorGUI.BeginChangeCheck();
+
+		bool bSkipAutoCook = DrawGenerateSection(_houdiniAssetRoot, serializedObject, _houdiniAsset, _houdiniAssetSerializedObject, ref pendingBuildAction);
+		if (!bSkipAutoCook)
 		{
 		    SerializedProperty assetCookStatusProperty = HEU_EditorUtility.GetSerializedProperty(_houdiniAssetSerializedObject, "_cookStatus");
 		    if (assetCookStatusProperty != null)
 		    {
-			// Track changes to Houdini Asset gameobject
-			EditorGUI.BeginChangeCheck();
-
-			DrawEventsSection(_houdiniAsset, _houdiniAssetSerializedObject);
-
-			DrawAssetOptions(_houdiniAsset, _houdiniAssetSerializedObject);
-
 			DrawCurvesSection(_houdiniAsset, _houdiniAssetSerializedObject);
 
 			DrawInputNodesSection(_houdiniAsset, _houdiniAssetSerializedObject);
@@ -225,21 +211,34 @@ namespace HoudiniEngineUnity
 			if (_houdiniAsset.AssetType != HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE)
 			{
 			    DrawParameters(_houdiniAsset.Parameters, ref _parameterEditor);
+			    HEU_EditorUI.DrawSeparator();
 			}
 
 			DrawInstanceInputs(_houdiniAsset, _houdiniAssetSerializedObject);
 
-			// Check if any changes occurred, and if so, trigger a recook
-			if (EditorGUI.EndChangeCheck())
-			{
-			    _houdiniAssetSerializedObject.ApplyModifiedProperties();
-			    serializedObject.ApplyModifiedProperties();
+			bSkipAutoCook = DrawBakeSection(_houdiniAssetRoot, serializedObject, _houdiniAsset, _houdiniAssetSerializedObject, ref pendingBuildAction);
 
-			    // Do recook if values have changed
-			    if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && _houdiniAsset.DoesAssetRequireRecook())
-			    {
-				_houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
-			    }
+			DrawAssetOptions(_houdiniAsset, _houdiniAssetSerializedObject);
+
+			DrawEventsSection(_houdiniAsset, _houdiniAssetSerializedObject);
+		    }
+		}
+
+		ProcessPendingBuildAction(pendingBuildAction, pendingBuildProperty,
+		    _houdiniAssetRoot, serializedObject, _houdiniAsset, _houdiniAssetSerializedObject);
+
+		// Check if any changes occurred, and if so, trigger a recook
+		if (EditorGUI.EndChangeCheck())
+		{
+		    _houdiniAssetSerializedObject.ApplyModifiedProperties();
+		    serializedObject.ApplyModifiedProperties();
+
+		    if (!bSkipAutoCook)
+		    {
+			// Do automatic cook if values have changed
+			if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && _houdiniAsset.DoesAssetRequireRecook())
+			{
+			    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
 			}
 		    }
 		}
@@ -332,10 +331,9 @@ namespace HoudiniEngineUnity
 	private void DrawAssetOptions(HEU_HoudiniAsset asset, SerializedObject assetObject)
 	{
 	    GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
-	    buttonStyle.fontSize = 11;
+	    buttonStyle.fontSize = 12;
 	    buttonStyle.alignment = TextAnchor.MiddleCenter;
 	    buttonStyle.fixedHeight = 24;
-	    buttonStyle.margin.left = 34;
 
 	    HEU_EditorUI.BeginSection();
 	    {
@@ -345,17 +343,36 @@ namespace HoudiniEngineUnity
 		if (showHDAOptionsProperty.boolValue)
 		{
 		    EditorGUI.indentLevel++;
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_autoCookOnParameterChange", "Auto-Cook On Parameter Change", "Automatically cook when a parameter changes. If off, must use Recook to cook.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_pushTransformToHoudini", "Push Transform To Houdini", "Send the asset's transform to Houdini and apply to object.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_transformChangeTriggersCooks", "Transform Change Triggers Cooks", "Changing the transform (e.g. moving) the asset in Unity will invoke cook in Houdini.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_cookingTriggersDownCooks", "Cooking Triggers Downstream Cooks", "Cooking this asset will trigger dependent assets' to also cook.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_generateUVs", "Generate UVs", "Force Unity to generate UVs for output geometry.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_generateTangents", "Generate Tangents", "Generate tangents in Unity for output geometry.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_generateNormals", "Generate Normals", "Generate normals in Unity for output geometry.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_generateMeshUsingPoints", "Generate Mesh Using Points", "Use point attributes instead of vertex attributes for geometry. Ignores vertex attributes.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_useLODGroups", "Use LOD Groups", "Automatically create Unity LOD group if found.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_ignoreNonDisplayNodes", "Ignore NonDisplay Nodes", "Only display node geometry will be created.");
-		    HEU_EditorUI.DrawPropertyField(assetObject, "_splitGeosByGroup", "Split Geos By Group", "Split geometry into separate gameobjects by group. Deprecated feature and only recommended for simple use cases.");
+
+		    EditorGUILayout.BeginHorizontal();
+
+		    EditorGUILayout.BeginVertical();
+
+		    HEU_EditorUI.BeginSimpleSection("Cook Triggers");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_autoCookOnParameterChange", "Parameter Change", "Automatically cook when a parameter changes. If off, must use Recook to cook.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_transformChangeTriggersCooks", "Transform Change", "Changing the transform (e.g. moving) the asset in Unity will invoke cook in Houdini.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_cookingTriggersDownCooks", "Downstream Cooks", "Cooking this asset will trigger dependent assets' to also cook.");
+		    HEU_EditorUI.EndSimpleSection();
+
+		    HEU_EditorUI.BeginSimpleSection("Miscellaneous");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_pushTransformToHoudini", "Push Transform To Houdini", "Send the asset's transform to Houdini and apply to object.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_ignoreNonDisplayNodes", "Ignore Non-Display Nodes", "Only display node geometry will be created.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_splitGeosByGroup", "Split Geos By Group", "Split geometry into separate gameobjects by group. Deprecated feature and only recommended for simple use cases.");
+		    HEU_EditorUI.EndSimpleSection();
+
+		    EditorGUILayout.EndVertical();
+
+		    EditorGUILayout.BeginVertical();
+		    HEU_EditorUI.BeginSimpleSection("Generate");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_useLODGroups", "LOD Groups", "Automatically create Unity LOD group if found.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_generateNormals", "Normals", "Generate normals in Unity for output geometry.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_generateTangents", "Tangents", "Generate tangents in Unity for output geometry.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_generateUVs", "UVs", "Force Unity to generate UVs for output geometry.");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_generateMeshUsingPoints", "Using Points", "Use point attributes instead of vertex attributes for geometry. Ignores vertex attributes.");
+		    HEU_EditorUI.EndSimpleSection();
+		    EditorGUILayout.EndVertical();
+
+		    EditorGUILayout.EndHorizontal();
 
 		    if (asset.NumAttributeStores() > 0)
 		    {
@@ -371,7 +388,7 @@ namespace HoudiniEngineUnity
 
 		    using (var hs = new EditorGUILayout.HorizontalScope())
 		    {
-			if (GUILayout.Button(_savePresetButton, buttonStyle, GUILayout.MaxWidth(160)))
+			if (GUILayout.Button(_savePresetButton, buttonStyle))
 			{
 			    string fileName = asset.AssetName;
 			    string filePattern = "heupreset";
@@ -382,7 +399,7 @@ namespace HoudiniEngineUnity
 			    }
 			}
 
-			if (GUILayout.Button(_loadPresetButton, buttonStyle, GUILayout.MaxWidth(160)))
+			if (GUILayout.Button(_loadPresetButton, buttonStyle))
 			{
 			    string fileName = asset.AssetName;
 			    string filePattern = "heupreset,preset";
@@ -396,7 +413,7 @@ namespace HoudiniEngineUnity
 
 		    EditorGUILayout.Space();
 
-		    if (GUILayout.Button(_resetMaterialOverridesButton, buttonStyle, GUILayout.MaxWidth(160)))
+		    if (GUILayout.Button(_resetMaterialOverridesButton, buttonStyle))
 		    {
 			asset.ResetMaterialOverrides();
 		    }
@@ -422,67 +439,77 @@ namespace HoudiniEngineUnity
 	    return cookStatus;
 	}
 
+	private static GUIStyle _mainButtonStyle;
+	private static GUIStyle _mainCentredButtonStyle;
+	private static GUIStyle _mainButtonSetStyle;
+	private static GUIStyle _mainBoxStyle;
+	private static GUIStyle _mainPromptStyle;
 
-	/// <summary>
-	/// Draw the Generate section.
-	/// </summary>
-	private static bool DrawGenerateSection(HEU_HoudiniAssetRoot assetRoot, SerializedObject assetRootSerializedObject, HEU_HoudiniAsset asset, SerializedObject assetObject)
+	private const float _mainButtonSeparatorDistance = 5f;
+
+	private static void CreateMainButtonStyle()
 	{
-	    bool bSkipDrawing = false;
-
-	    float separatorDistance = 5f;
+	    if (_mainButtonStyle != null)
+	    {
+		return;
+	    }
 
 	    float screenWidth = EditorGUIUtility.currentViewWidth;
 
 	    float buttonHeight = 30f;
 	    float widthPadding = 55f;
-	    float doubleButtonWidth = Mathf.Round(screenWidth - widthPadding + separatorDistance);
+	    float doubleButtonWidth = Mathf.Round(screenWidth - widthPadding + _mainButtonSeparatorDistance);
 	    float singleButtonWidth = Mathf.Round((screenWidth - widthPadding) * 0.5f);
 
-	    GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
-	    buttonStyle.fontStyle = FontStyle.Bold;
-	    buttonStyle.fontSize = 11;
-	    buttonStyle.alignment = TextAnchor.MiddleLeft;
-	    buttonStyle.fixedHeight = buttonHeight;
-	    buttonStyle.padding.left = 6;
-	    buttonStyle.padding.right = 6;
-	    buttonStyle.margin.left = 0;
-	    buttonStyle.margin.right = 0;
+	    _mainButtonStyle = new GUIStyle(GUI.skin.button);
+	    _mainButtonStyle.fontStyle = FontStyle.Bold;
+	    _mainButtonStyle.fontSize = 12;
+	    _mainButtonStyle.alignment = TextAnchor.MiddleCenter;
+	    _mainButtonStyle.fixedHeight = buttonHeight;
+	    _mainButtonStyle.padding.left = 6;
+	    _mainButtonStyle.padding.right = 6;
+	    _mainButtonStyle.margin.left = 0;
+	    _mainButtonStyle.margin.right = 0;
+	    _mainButtonStyle.clipping = TextClipping.Clip;
+	    _mainButtonStyle.wordWrap = true;
 
-	    GUIStyle centredButtonStyle = new GUIStyle(buttonStyle);
-	    centredButtonStyle.alignment = TextAnchor.MiddleCenter;
+	    _mainCentredButtonStyle = new GUIStyle(_mainButtonStyle);
+	    _mainCentredButtonStyle.alignment = TextAnchor.MiddleCenter;
 
-	    GUIStyle buttonSetStyle = new GUIStyle(GUI.skin.box);
-	    RectOffset br = buttonSetStyle.margin;
+	    _mainButtonSetStyle = new GUIStyle(GUI.skin.box);
+	    RectOffset br = _mainButtonSetStyle.margin;
 	    br.left = 4;
 	    br.right = 4;
-	    buttonSetStyle.margin = br;
+	    _mainButtonSetStyle.margin = br;
 
-	    GUIStyle boxStyle = new GUIStyle(GUI.skin.GetStyle("ColorPickerBackground"));
-	    br = boxStyle.margin;
+	    _mainBoxStyle = new GUIStyle(GUI.skin.GetStyle("ColorPickerBackground"));
+	    br = _mainBoxStyle.margin;
 	    br.left = 4;
 	    br.right = 4;
-	    boxStyle.margin = br;
-	    boxStyle.padding = br;
+	    _mainBoxStyle.margin = br;
+	    _mainBoxStyle.padding = br;
 
-	    GUIStyle promptButtonStyle = new GUIStyle(GUI.skin.button);
-	    promptButtonStyle.fontSize = 11;
-	    promptButtonStyle.alignment = TextAnchor.MiddleCenter;
-	    promptButtonStyle.fixedHeight = 30;
-	    promptButtonStyle.margin.left = 34;
-	    promptButtonStyle.margin.right = 34;
+	    _mainPromptStyle = new GUIStyle(GUI.skin.button);
+	    _mainPromptStyle.fontSize = 11;
+	    _mainPromptStyle.alignment = TextAnchor.MiddleCenter;
+	    _mainPromptStyle.fixedHeight = 30;
+	    _mainPromptStyle.margin.left = 34;
+	    _mainPromptStyle.margin.right = 34;
+	}
+
+	/// <summary>
+	/// Draw the Generate section.
+	/// </summary>
+	private static bool DrawGenerateSection(HEU_HoudiniAssetRoot assetRoot, 
+	    SerializedObject assetRootSerializedObject, 
+	    HEU_HoudiniAsset asset, SerializedObject assetObject,
+	    ref HEU_HoudiniAsset.AssetBuildAction pendingBuildAction)
+	{
+	    bool bSkipAutoCook = false;
+
+	    CreateMainButtonStyle();
 
 	    _recookhdaContent.text = "  Recook";
-
-	    HEU_HoudiniAsset.AssetBuildAction pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.NONE;
-	    SerializedProperty pendingBuildProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_requestBuildAction");
-	    if (pendingBuildProperty != null)
-	    {
-		pendingBuildAction = (HEU_HoudiniAsset.AssetBuildAction)pendingBuildProperty.enumValueIndex;
-	    }
-
-	    // Track changes for the build and bake targets
-	    EditorGUI.BeginChangeCheck();
 
 	    HEU_HoudiniAsset.AssetCookStatus cookStatus = GetCookStatusFromSerializedAsset(assetObject);
 
@@ -502,7 +529,7 @@ namespace HoudiniEngineUnity
 
 		for (int i = 0; i < subassetNames.Length; ++i)
 		{
-		    if (GUILayout.Button(subassetNames[i], promptButtonStyle))
+		    if (GUILayout.Button(subassetNames[i], _mainPromptStyle))
 		    {
 			selectedIndex = i;
 			break;
@@ -520,7 +547,7 @@ namespace HoudiniEngineUnity
 		    }
 		}
 
-		bSkipDrawing = true;
+		bSkipAutoCook = true;
 	    }
 	    else
 	    {
@@ -540,182 +567,182 @@ namespace HoudiniEngineUnity
 		    showGenerateProperty.boolValue = HEU_EditorUI.DrawFoldOut(showGenerateProperty.boolValue, "GENERATE");
 		    if (showGenerateProperty.boolValue)
 		    {
-			//bool bHasPendingAction = (pendingBuildAction != HEU_HoudiniAsset.AssetBuildAction.NONE) || (cookStatus != HEU_HoudiniAsset.AssetCookStatus.NONE);
-
 			HEU_EditorUI.DrawSeparator();
 
-			//EditorGUI.BeginDisabledGroup(bHasPendingAction);
-
-			using (var hs = new EditorGUILayout.HorizontalScope(boxStyle))
+			using (var hs = new EditorGUILayout.HorizontalScope(_mainBoxStyle))
 			{
-			    if (GUILayout.Button(_reloadhdaContent, buttonStyle, GUILayout.Width(singleButtonWidth)))
+			    if (GUILayout.Button(_reloadhdaContent, _mainButtonStyle))
 			    {
 				pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.RELOAD;
-				bSkipDrawing = true;
+				bSkipAutoCook = true;
 			    }
 
-			    GUILayout.Space(separatorDistance);
+			    GUILayout.Space(_mainButtonSeparatorDistance);
 
-			    if (!bSkipDrawing && GUILayout.Button(_recookhdaContent, buttonStyle, GUILayout.Width(singleButtonWidth)))
+			    if (!bSkipAutoCook && GUILayout.Button(_recookhdaContent, _mainButtonStyle))
 			    {
 				pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.COOK;
-				bSkipDrawing = true;
+				bSkipAutoCook = true;
 			    }
 			}
 
-			using (var hs = new EditorGUILayout.HorizontalScope(boxStyle))
+			using (var hs = new EditorGUILayout.HorizontalScope(_mainBoxStyle))
 			{
-			    float tripleButtonWidth = Mathf.Round((screenWidth - widthPadding) * 0.33f);
-
-			    if (GUILayout.Button(_removeheContent, buttonStyle, GUILayout.Width(tripleButtonWidth)))
-			    {
-				pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.STRIP_HEDATA;
-				bSkipDrawing = true;
-			    }
-
-			    GUILayout.Space(separatorDistance);
-
-			    if (GUILayout.Button(_duplicateContent, buttonStyle, GUILayout.Width(tripleButtonWidth)))
+			    if (GUILayout.Button(_duplicateContent, _mainButtonStyle))
 			    {
 				pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.DUPLICATE;
-				bSkipDrawing = true;
+				bSkipAutoCook = true;
 			    }
 
-			    GUILayout.Space(separatorDistance);
+			    GUILayout.Space(_mainButtonSeparatorDistance);
 
-			    if (GUILayout.Button(_resetParamContent, buttonStyle, GUILayout.Width(tripleButtonWidth)))
+			    if (GUILayout.Button(_resetParamContent, _mainButtonStyle))
 			    {
 				pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.RESET_PARAMS;
-				bSkipDrawing = true;
+				bSkipAutoCook = true;
 			    }
 			}
-
-			//EditorGUI.EndDisabledGroup();
-
-			HEU_EditorUI.DrawSeparator();
 		    }
 		}
 
 		HEU_EditorUI.EndSection();
+	    }
 
-		HEU_EditorUI.DrawSeparator();
+	    HEU_EditorUI.DrawSeparator();
 
-		HEU_EditorUI.BeginSection();
+	    return bSkipAutoCook;
+	}
+
+	private static void ProcessPendingBuildAction(
+	    HEU_HoudiniAsset.AssetBuildAction pendingBuildAction,
+	    SerializedProperty pendingBuildProperty,
+	    HEU_HoudiniAssetRoot assetRoot, 
+	    SerializedObject assetRootSerializedObject, 
+	    HEU_HoudiniAsset asset, 
+	    SerializedObject assetObject)
+	{
+	    if (pendingBuildAction != HEU_HoudiniAsset.AssetBuildAction.NONE)
+	    {
+		// Sanity check to make sure the asset is part of the AssetUpater
+		HEU_AssetUpdater.AddAssetForUpdate(asset);
+
+		// Apply pending build action based on user UI interaction above
+		pendingBuildProperty.enumValueIndex = (int)pendingBuildAction;
+
+		if (pendingBuildAction == HEU_HoudiniAsset.AssetBuildAction.COOK)
 		{
-		    SerializedProperty showBakeProperty = assetObject.FindProperty("_showBakeSection");
-
-		    showBakeProperty.boolValue = HEU_EditorUI.DrawFoldOut(showBakeProperty.boolValue, "BAKE");
-		    if (showBakeProperty.boolValue)
+		    // Recook should only update parameters that haven't changed. Otherwise if not checking and updating parameters,
+		    // then buttons will trigger callbacks on Recook which is not desired.
+		    SerializedProperty checkParameterChange = HEU_EditorUtility.GetSerializedProperty(assetObject, "_checkParameterChangeForCook");
+		    if (checkParameterChange != null)
 		    {
-			if (!bSkipDrawing)
+			checkParameterChange.boolValue = true;
+		    }
+
+		    // But we do want to always upload input geometry on user hitting Recook expliclity
+		    SerializedProperty forceUploadInputs = HEU_EditorUtility.GetSerializedProperty(assetObject, "_forceUploadInputs");
+		    if (forceUploadInputs != null)
+		    {
+			forceUploadInputs.boolValue = true;
+		    }
+		}
+	    }
+	}
+
+	private static bool DrawBakeSection(HEU_HoudiniAssetRoot assetRoot, 
+	    SerializedObject assetRootSerializedObject,
+	    HEU_HoudiniAsset asset, SerializedObject assetObject,
+	    ref HEU_HoudiniAsset.AssetBuildAction pendingBuildAction)
+	{
+	    bool bSkipAutoCook = false;
+
+	    HEU_EditorUI.BeginSection();
+	    {
+		SerializedProperty showBakeProperty = assetObject.FindProperty("_showBakeSection");
+
+		showBakeProperty.boolValue = HEU_EditorUI.DrawFoldOut(showBakeProperty.boolValue, "BAKE");
+		if (showBakeProperty.boolValue)
+		{
+		    // Bake -> New Instance, New Prefab, Existing instance or prefab
+
+		    using (var hs = new EditorGUILayout.HorizontalScope(_mainBoxStyle))
+		    {
+			if (GUILayout.Button(_bakegameobjectContent, _mainButtonStyle))
 			{
-			    // Bake -> New Instance, New Prefab, Existing instance or prefab
+			    asset.BakeToNewStandalone();
+			}
 
-			    using (var vs = new EditorGUILayout.HorizontalScope(boxStyle))
+			GUILayout.Space(_mainButtonSeparatorDistance);
+
+			if (GUILayout.Button(_bakeprefabContent, _mainButtonStyle))
+			{
+			    asset.BakeToNewPrefab();
+			}
+		    }
+
+		    using (var vs = new EditorGUILayout.VerticalScope(_mainBoxStyle))
+		    {
+			if (GUILayout.Button(_removeheContent, _mainButtonStyle))
+			{
+			    pendingBuildAction = HEU_HoudiniAsset.AssetBuildAction.STRIP_HEDATA;
+			    bSkipAutoCook = true;
+			}
+		    }
+
+		    using (var hs2 = new EditorGUILayout.VerticalScope(_mainBoxStyle))
+		    {
+			if (GUILayout.Button(_bakeandreplaceContent, _mainCentredButtonStyle))
+			{
+			    if (assetRoot._bakeTargets == null || assetRoot._bakeTargets.Count == 0)
 			    {
-				if (GUILayout.Button(_bakegameobjectContent, buttonStyle, GUILayout.Width(singleButtonWidth)))
-				{
-				    asset.BakeToNewStandalone();
-				}
-
-				GUILayout.Space(separatorDistance);
-
-				if (GUILayout.Button(_bakeprefabContent, buttonStyle, GUILayout.Width(singleButtonWidth)))
-				{
-				    asset.BakeToNewPrefab();
-				}
+				// No bake target means user probably forgot to set one. So complain!
+				HEU_EditorUtility.DisplayDialog("No Bake Targets", "Bake Update requires atleast one valid GameObject.\n\nDrag a GameObject or Prefab onto the Drag and drop GameObjects / Prefabs field!", "OK");
 			    }
-
-			    HEU_EditorUI.DrawSeparator();
-
-			    using (var hs2 = new EditorGUILayout.VerticalScope(boxStyle))
+			    else
 			    {
-				if (GUILayout.Button(_bakeandreplaceContent, centredButtonStyle, GUILayout.Width(doubleButtonWidth)))
+				int numTargets = assetRoot._bakeTargets.Count;
+				for (int i = 0; i < numTargets; ++i)
 				{
-				    if (assetRoot._bakeTargets == null || assetRoot._bakeTargets.Count == 0)
+				    GameObject bakeGO = assetRoot._bakeTargets[i];
+				    if (bakeGO != null)
 				    {
-					// No bake target means user probably forgot to set one. So complain!
-					HEU_EditorUtility.DisplayDialog("No Bake Targets", "Bake Update requires atleast one valid GameObject.\n\nDrag a GameObject or Prefab onto the Drag and drop GameObjects / Prefabs field!", "OK");
+					if (HEU_EditorUtility.IsPrefabAsset(bakeGO))
+					{
+					    // Prefab asset means its the source prefab, and not an instance of it
+					    asset.BakeToExistingPrefab(bakeGO);
+					}
+					else
+					{
+					    // This is for all standalone (including prefab instances)
+					    asset.BakeToExistingStandalone(bakeGO);
+					}
 				    }
 				    else
 				    {
-					int numTargets = assetRoot._bakeTargets.Count;
-					for (int i = 0; i < numTargets; ++i)
-					{
-					    GameObject bakeGO = assetRoot._bakeTargets[i];
-					    if (bakeGO != null)
-					    {
-						if (HEU_EditorUtility.IsPrefabAsset(bakeGO))
-						{
-						    // Prefab asset means its the source prefab, and not an instance of it
-						    asset.BakeToExistingPrefab(bakeGO);
-						}
-						else
-						{
-						    // This is for all standalone (including prefab instances)
-						    asset.BakeToExistingStandalone(bakeGO);
-						}
-					    }
-					    else
-					    {
-						Debug.LogWarning("Unable to bake to null target at index " + i);
-					    }
-					}
-				    }
-				}
-
-				using (var hs = new EditorGUILayout.VerticalScope(buttonSetStyle))
-				{
-				    SerializedProperty bakeTargetsProp = assetRootSerializedObject.FindProperty("_bakeTargets");
-				    if (bakeTargetsProp != null)
-				    {
-					EditorGUILayout.PropertyField(bakeTargetsProp, _dragAndDropField, true, GUILayout.Width(doubleButtonWidth - 9f));
+					Debug.LogWarning("Unable to bake to null target at index " + i);
 				    }
 				}
 			    }
 			}
-		    }
-		}
-		HEU_EditorUI.EndSection();
 
-		HEU_EditorUI.DrawSeparator();
-
-		if (pendingBuildAction != HEU_HoudiniAsset.AssetBuildAction.NONE)
-		{
-		    // Sanity check to make sure the asset is part of the AssetUpater
-		    HEU_AssetUpdater.AddAssetForUpdate(asset);
-
-		    // Apply pending build action based on user UI interaction above
-		    pendingBuildProperty.enumValueIndex = (int)pendingBuildAction;
-
-		    if (pendingBuildAction == HEU_HoudiniAsset.AssetBuildAction.COOK)
-		    {
-			// Recook should only update parameters that haven't changed. Otherwise if not checking and updating parameters,
-			// then buttons will trigger callbacks on Recook which is not desired.
-			SerializedProperty checkParameterChange = HEU_EditorUtility.GetSerializedProperty(assetObject, "_checkParameterChangeForCook");
-			if (checkParameterChange != null)
+			using (var hs = new EditorGUILayout.VerticalScope(_mainButtonSetStyle))
 			{
-			    checkParameterChange.boolValue = true;
-			}
-
-			// But we do want to always upload input geometry on user hitting Recook expliclity
-			SerializedProperty forceUploadInputs = HEU_EditorUtility.GetSerializedProperty(assetObject, "_forceUploadInputs");
-			if (forceUploadInputs != null)
-			{
-			    forceUploadInputs.boolValue = true;
+			    SerializedProperty bakeTargetsProp = assetRootSerializedObject.FindProperty("_bakeTargets");
+			    if (bakeTargetsProp != null)
+			    {
+				EditorGUILayout.PropertyField(bakeTargetsProp, _dragAndDropField, true);
+			    }
 			}
 		    }
 		}
 	    }
+	    HEU_EditorUI.EndSection();
 
-	    if (EditorGUI.EndChangeCheck())
-	    {
-		assetRootSerializedObject.ApplyModifiedProperties();
-		assetObject.ApplyModifiedProperties();
-	    }
+	    HEU_EditorUI.DrawSeparator();
 
-	    return bSkipDrawing;
+	    return bSkipAutoCook;
 	}
+	
 
 	/// <summary>
 	/// Draw the Houdini Engine header image
@@ -723,15 +750,15 @@ namespace HoudiniEngineUnity
 	void DrawHeaderSection()
 	{
 	    GUI.backgroundColor = new Color(0.2f, 0.2f, 0.2f);
-	    Texture2D headerImage = Resources.Load("heu_hengine") as Texture2D;
-
-	    HEU_EditorUI.BeginSection();
-	    GUILayout.Label(headerImage, GUILayout.MinWidth(100));
-	    HEU_EditorUI.EndSection();
-
-	    GUI.backgroundColor = Color.white;
+	    string fileName = HEU_EditorUI.IsEditorDarkSkin() ? "heu_hengine_d" : "heu_hengine";
+	    Texture2D headerImage = Resources.Load(fileName) as Texture2D;
 
 	    HEU_EditorUI.DrawSeparator();
+	    //HEU_EditorUI.BeginSection();
+	    GUILayout.Label(headerImage);
+	    //HEU_EditorUI.EndSection();
+
+	    GUI.backgroundColor = Color.white;
 	}
 
 	/// <summary>

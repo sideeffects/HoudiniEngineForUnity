@@ -274,9 +274,9 @@ namespace HoudiniEngineUnity
 		    }
 		}
 #if UNITY_EDITOR_OSX
-				GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
-				labelStyle.wordWrap = true;
-				EditorGUILayout.LabelField("  On macOS, you'll need to select the path to the .app folder.\n  E.g. /Applications/Houdini/Houdini18.0.100/Houdini Core 18.0.100.app", labelStyle);
+		GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+		labelStyle.wordWrap = true;
+		EditorGUILayout.LabelField("  On macOS, you'll need to select the path to the .app folder.\n  E.g. /Applications/Houdini/Houdini18.0.100/Houdini Core 18.0.100.app", labelStyle);
 #endif
 	    }
 	    HEU_EditorUI.DrawSeparator();
