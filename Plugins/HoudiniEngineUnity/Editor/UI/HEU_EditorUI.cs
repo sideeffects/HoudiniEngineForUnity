@@ -173,7 +173,7 @@ namespace HoudiniEngineUnity
 #if UNITY_5_5_OR_NEWER
 	    return EditorGUILayout.Foldout(foldoutState, labelName, true, foldStyle);
 #else
-			return EditorGUILayout.Foldout(foldoutState, labelName, foldStyle);
+	    return EditorGUILayout.Foldout(foldoutState, labelName, foldStyle);
 #endif
 	}
 
@@ -252,7 +252,7 @@ namespace HoudiniEngineUnity
 		_sectionStyle.contentOffset = new Vector2(0f, 3f);
 		_sectionStyle.imagePosition = ImagePosition.ImageLeft;
 
-		string textureName = string.Format("heu_ui_section_box{0}", HEU_EditorUI.IsEditorDarkSkin() ? "_d" : "");
+		string textureName = string.Format("heu_ui_window{0}", HEU_EditorUI.IsEditorDarkSkin() ? "_d" : "");
 		Texture2D normalTexture = Resources.Load<Texture2D>(textureName);
 
 		GUIStyleState normalState = new GUIStyleState();
@@ -273,8 +273,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public static void BeginSection()
 	{
-	    EditorGUILayout.BeginVertical(GetSectionStyle());
-	    EditorGUILayout.Space();
+	    EditorGUILayout.BeginVertical();
 	    EditorGUI.indentLevel++;
 	}
 
@@ -284,15 +283,39 @@ namespace HoudiniEngineUnity
 	public static void EndSection()
 	{
 	    EditorGUI.indentLevel--;
+	    EditorGUILayout.EndVertical();
+
+	    EditorGUILayout.Space();
+	}
+
+	public static void BeginSimpleSection(string title)
+	{
+	    EditorGUILayout.BeginVertical();
+	    EditorGUILayout.PrefixLabel(title);
+	}
+
+	public static void EndSimpleSection()
+	{
 	    EditorGUILayout.Space();
 	    EditorGUILayout.EndVertical();
+	}
+
+	public static void DrawHorizonalLineSeparator(int thickness = 1, int padding = 4, int xStart = 16, int xWidth = 32)
+	{
+	    Color color = Color.gray;
+
+	    Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
+	    r.height = thickness;
+	    r.y += padding / 2;
+	    r.x += xStart;
+	    r.width -= xWidth;
+	    EditorGUI.DrawRect(r, color);
 	}
 
 	public static void DrawHeadingLabel(string labelText)
 	{
 	    GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
 	    labelStyle.fontStyle = FontStyle.Bold;
-	    //labelStyle.normal.textColor = HEU_EditorUI.IsEditorDarkSkin() ? Color.white : Color.black;
 	    EditorGUILayout.LabelField(labelText, labelStyle);
 	}
 
