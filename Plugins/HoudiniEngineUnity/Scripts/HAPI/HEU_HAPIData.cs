@@ -876,7 +876,7 @@ namespace HoudiniEngineUnity
 	/// This toggle lets you disable the splitting by group and just have
 	/// the geo be split by primitive type alone. By default, this is true
 	/// and therefore geos will be split by group and primitive type. If
-	/// set to false, geos will only be split by primtive type.
+	/// set to false, geos will only be split by primitive type.
 	[MarshalAs(UnmanagedType.U1)]
 	public bool splitGeosByGroup;
 

@@ -1284,7 +1284,7 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
-	/// Get the geoemtry info on a SOP node.
+	/// Get the geometry info on a SOP node.
 	/// </summary>
 	/// <param name="nodeID">The SOP node ID</param>
 	/// <param name="geoInfo">Geo info to populate</param>

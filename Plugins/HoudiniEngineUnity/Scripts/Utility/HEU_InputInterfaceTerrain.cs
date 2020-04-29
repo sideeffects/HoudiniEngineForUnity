@@ -590,7 +590,7 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    // For each prototype, fill up a string attribute owned by primtive.
+	    // For each prototype, fill up a string attribute owned by primitive.
 	    // The string format is: tree_prefab_path,bend_factor
 	    string prefabPath;
 	    float bendFactor;
