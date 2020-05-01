@@ -549,6 +549,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if this session is valid.</returns>
 	public override bool IsSessionValid()
 	{
+	    // TODO: change to SessionConnectionState.CONNECTED
 	    if (_sessionData != null && ConnectedState != SessionConnectionState.FAILED_TO_CONNECT)
 	    {
 		try

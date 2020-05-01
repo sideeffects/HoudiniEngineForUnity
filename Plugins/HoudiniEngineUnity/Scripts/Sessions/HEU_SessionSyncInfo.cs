@@ -126,8 +126,12 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    // Get latest use time from HAPI
-	    _useHoudiniTime = session.GetUseHoudiniTime();
+	    // TODO: integrate this check into session.IsSessionValid() above?
+	    if (session.ConnectedState == HEU_SessionBase.SessionConnectionState.CONNECTED)
+	    {
+		// Get latest use time from HAPI
+		_useHoudiniTime = session.GetUseHoudiniTime();
+	    }
 	}
 
 	public void SetHuseHoudiniTime(bool enable)
