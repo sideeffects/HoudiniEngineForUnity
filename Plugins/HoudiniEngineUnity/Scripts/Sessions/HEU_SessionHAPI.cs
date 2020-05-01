@@ -683,7 +683,15 @@ namespace HoudiniEngineUnity
 		string errorMsg = string.Format("{0} : {1}\nIf session is invalid, try restarting Unity.", prependMsg, statusMessage);
 		SetSessionErrorMsg(errorMsg, bLogError);
 
-		if (ThrowErrorOverride && bThrowError)
+		bThrowError &= ThrowErrorOverride;
+		if (result == HAPI_Result.HAPI_RESULT_INVALID_SESSION)
+		{
+		    // Turn off errors when invalid session after first error
+		    ThrowErrorOverride = false;
+		    LogErrorOverride = false;
+		}
+
+		if (bThrowError)
 		{
 		    throw new HEU_HoudiniEngineError(errorMsg);
 		}
