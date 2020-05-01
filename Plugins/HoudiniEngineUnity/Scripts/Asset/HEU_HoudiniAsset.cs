@@ -157,6 +157,10 @@ namespace HoudiniEngineUnity
 	// Pending presets to apply after a Recook, which is invoked after a Rebuild
 	private HEU_RecookPreset _recookPreset;
 
+	// Keeps track of total cooks for this asset in order to check if need to update from Houdini
+	[SerializeField]
+	private int _totalCookCount;
+
 	// BUILD & COOK -----------------------------------------------------------------------------------------------
 
 	public enum AssetBuildAction
@@ -246,7 +250,7 @@ namespace HoudiniEngineUnity
 	private bool _showGenerateSection = true;
 
 	[SerializeField]
-	private bool _showBakeSection = true;
+	private bool _showBakeSection = false;
 
 	[SerializeField]
 	private bool _showEventsSection = false;
@@ -335,6 +339,11 @@ namespace HoudiniEngineUnity
 
 	public bool SplitGeosByGroup { get { return _splitGeosByGroup; } set { _splitGeosByGroup = value; } }
 
+	[SerializeField]
+	private bool _sessionSyncAutoCook = true;
+
+	public bool SessionSyncAutoCook { get { return _sessionSyncAutoCook; } set { _sessionSyncAutoCook = value; } }
+
 	// CURVES -----------------------------------------------------------------------------------------------------
 
 	// Toggle curve editing tool in Scene view
@@ -409,9 +418,9 @@ namespace HoudiniEngineUnity
 	// PROFILE ----------------------------------------------------------------------------------------------------
 
 #if HEU_PROFILER_ON
-		private float _cookStartTime;
-		private float _hapiCookEndTime;
-		private float _postCookStartTime;
+	private float _cookStartTime;
+	private float _hapiCookEndTime;
+	private float _postCookStartTime;
 #endif
 
 	//  LOGIC -----------------------------------------------------------------------------------------------------
@@ -445,6 +454,8 @@ namespace HoudiniEngineUnity
 
 	    Debug.AssertFormat(session != null && session.IsSessionValid(), "Must have valid session for new asset");
 	    _sessionID = session.GetSessionData().SessionID;
+
+	    _totalCookCount = 0;
 	}
 
 	/// <summary>
@@ -577,12 +588,12 @@ namespace HoudiniEngineUnity
 		else if (_requestBuildAction == AssetBuildAction.COOK)
 		{
 		    bool thisCheckParameterChangeForCook = _checkParameterChangeForCook;
-		    bool thisCkipCookCheck = _skipCookCheck;
+		    bool thisSkipCookCheck = _skipCookCheck;
 		    bool thisUploadParameters = _uploadParameters;
 		    bool thisUploadParameterPreset = false;
 		    bool thisForceUploadInputs = _forceUploadInputs;
 		    ClearBuildRequest();
-		    RecookAsync(thisCheckParameterChangeForCook, thisCkipCookCheck, thisUploadParameters, thisUploadParameterPreset, thisForceUploadInputs);
+		    RecookAsync(thisCheckParameterChangeForCook, thisSkipCookCheck, thisUploadParameters, thisUploadParameterPreset, thisForceUploadInputs);
 		}
 		else if (_requestBuildAction == AssetBuildAction.STRIP_HEDATA)
 		{
@@ -610,6 +621,11 @@ namespace HoudiniEngineUnity
 		    // Doing a Reload here to clear everything out after resetting the parameters.
 		    // Originally was doing a Recook but because it will keep stuff around (e.g. terrain), a full reset seems better.
 		    RequestReload(bAsync: true);
+		}
+		else
+		{
+		    // For Houdini Engine Session Sync, update any originating changes from Houdini side
+		    UpdateSessionSync();
 		}
 	    }
 #endif
@@ -932,6 +948,8 @@ namespace HoudiniEngineUnity
 
 	    session.GetNodeInfo(_assetID, ref _nodeInfo);
 	    session.GetAssetInfo(_assetID, ref _assetInfo);
+	    
+	    UpdateTotalCookCount();
 
 	    // Cache asset info
 	    _assetName = HEU_SessionManager.GetString(_assetInfo.nameSH, session);
@@ -1526,6 +1544,8 @@ namespace HoudiniEngineUnity
 
 		    SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.SUCCESS);
 
+		    UpdateTotalCookCount();
+
 		    try
 		    {
 			ProcessPoskCook();
@@ -1692,7 +1712,7 @@ namespace HoudiniEngineUnity
 	    //Debug.Log(HEU_Defines.HEU_NAME + ": Generating parameters!");
 
 #if HEU_PROFILER_ON
-			float parameterGenStartTime = Time.realtimeSinceStartup;
+	    float parameterGenStartTime = Time.realtimeSinceStartup;
 #endif
 
 	    // Store the previous folder and input node parameters so we can transfer them over to new parameters
@@ -1719,7 +1739,7 @@ namespace HoudiniEngineUnity
 	    }
 
 #if HEU_PROFILER_ON
-			Debug.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
+	    Debug.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
 #endif
 	}
 
@@ -4189,6 +4209,63 @@ namespace HoudiniEngineUnity
 		    curve.Parameters.SyncInternalParametersForUndoCompare(session);
 		}
 	    }
+	}
+
+	/// <summary>
+	/// Returns true if this has kicked off a local cook because of changes 
+	/// on the Houdini side (e.g. Houdini Engine Session Sync).
+	/// Otherwise returns false if it does nothing.
+	/// </summary>
+	public bool UpdateSessionSync()
+	{
+	    if (_requestBuildAction != AssetBuildAction.NONE || !HEU_PluginSettings.SessionSyncAutoCook || !SessionSyncAutoCook)
+	    {
+		return false;
+	    }
+
+	    HEU_SessionBase session = GetAssetSession(false);
+	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync())
+	    {
+		return false;
+	    }
+
+	    int oldCount = _totalCookCount;
+	    UpdateTotalCookCount();
+	    bool bRequiresCook = oldCount != _totalCookCount;
+
+	    if (bRequiresCook)
+	    {
+		Debug.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
+
+		// Disable parm and input uploading for the recook process
+		bool thisCheckParameterChangeForCook = false;
+		bool thiSkipCookCheck = false;
+		bool thisUploadParameters = false;
+		bool thisUploadParameterPreset = false;
+		bool thisForceUploadInputs = false;
+		ClearBuildRequest();
+		return RecookAsync(thisCheckParameterChangeForCook, thiSkipCookCheck, thisUploadParameters, thisUploadParameterPreset, thisForceUploadInputs);
+	    }
+
+	    return false;
+	}
+
+	public void UpdateTotalCookCount()
+	{
+	    HEU_SessionBase session = GetAssetSession(true);
+	    if (session == null || !session.IsSessionValid())
+	    {
+		return;
+	    }
+
+	    // The reason to query recursively for all assets (SOP and OBJ) is to handle cases
+	    // where nodes are added dynamically within geometry node network. If we only look
+	    // at the SOP node's count, it won't update until the user comes out the network
+	    session.GetTotalCookCount(
+		    _assetID,
+		    (int)(HAPI_NodeType.HAPI_NODETYPE_OBJ | HAPI_NodeType.HAPI_NODETYPE_SOP),
+		    (int)(HAPI_NodeFlags.HAPI_NODEFLAGS_OBJ_GEOMETRY | HAPI_NodeFlags.HAPI_NODEFLAGS_DISPLAY),
+		    true, out _totalCookCount);
 	}
     }
 

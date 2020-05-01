@@ -1213,6 +1213,22 @@ namespace HoudiniEngineUnity
 
 	    return true;
 	}
+
+	public static GameObject CreateEmptyGeoNode(HEU_SessionBase session, string nodeLabel, out HAPI_NodeId nodeID)
+	{
+	    nodeID = -1;
+
+	    // Create the merge SOP node that the input nodes are going to connect to.
+	    if (!session.CreateNode(-1, "SOP/output", nodeLabel, true, out nodeID))
+	    {
+		Debug.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
+		return null;
+	    }
+
+
+
+	    return null;
+	}
     }
 
 }   // HoudiniEngineUnity

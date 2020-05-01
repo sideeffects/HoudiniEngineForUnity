@@ -836,6 +836,20 @@ namespace HoudiniEngineUnity
 		HEU_PluginStorage.Instance.Set("HAPI_LastHoudiniVersion", value);
 	    }
 	}
+
+	public static bool SessionSyncAutoCook
+	{
+	    get
+	    {
+		bool enabled = true;
+		HEU_PluginStorage.Instance.Get("HAPI_SessionSyncAutoCook", out enabled, enabled);
+		return enabled;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_SessionSyncAutoCook", value);
+	    }
+	}
     }
 
 }   // HoudiniEngineUnity

@@ -78,6 +78,8 @@ namespace HoudiniEngineUnity
 	// Override for throwing session errors
 	public bool ThrowErrorOverride { get; set; }
 
+	public bool IsSessionSync() { return (_sessionData != null) ? _sessionData.IsSessionSync : false; }
+
 	// ASSET REGISTRATION -----------------------------------------------------------------------------------------------
 
 	// The following asset registration mechanism keeps track of HEU_HoudiniAsset 
@@ -188,12 +190,21 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	public virtual bool CreateThriftSocketSession(bool bIsDefaultSession, string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, int serverPort = HEU_Defines.HEU_SESSION_PORT, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, bool bLogError = true)
+	public virtual bool CreateThriftSocketSession(bool bIsDefaultSession, 
+	    string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, 
+	    int serverPort = HEU_Defines.HEU_SESSION_PORT, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, 
+	    bool bLogError = true)
 	{
 	    return false;
 	}
 
-	public virtual bool CreateThriftPipeSession(bool bIsDefaultSession, string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, bool bLogError = true)
+	public virtual bool CreateThriftPipeSession(bool bIsDefaultSession, 
+	    string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, 
+	    bool bLogError = true)
 	{
 	    return false;
 	}
@@ -203,12 +214,23 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	public virtual bool ConnectThriftSocketSession(bool bIsDefaultSession, string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, int serverPort = HEU_Defines.HEU_SESSION_PORT, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT)
+	public virtual bool ConnectThriftSocketSession(bool bIsDefaultSession, 
+	    string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, 
+	    int serverPort = HEU_Defines.HEU_SESSION_PORT, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
+	    HEU_SessionSyncInfo sessionSync = null,
+	    bool autoInitialize = true)
 	{
 	    return false;
 	}
 
-	public virtual bool ConnectThriftPipeSession(bool bIsDefaultSession, string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT)
+	public virtual bool ConnectThriftPipeSession(bool bIsDefaultSession, 
+	    string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
+	    HEU_SessionSyncInfo sessionSync = null,
+	    bool autoInitialize = true)
 	{
 	    return false;
 	}
@@ -299,6 +321,11 @@ namespace HoudiniEngineUnity
 	}
 
 	public virtual bool CheckVersionMatch()
+	{
+	    return false;
+	}
+
+	public virtual bool InitializeSession(HEU_SessionData sessionData)
 	{
 	    return false;
 	}
@@ -406,6 +433,28 @@ namespace HoudiniEngineUnity
 	public virtual HAPI_ErrorCodeBits CheckForSpecificErrors(HAPI_NodeId nodeID, HAPI_ErrorCodeBits errorsToCheck)
 	{
 	    return 0;
+	}
+
+	// TIME -----------------------------------------------------------------------------------------------------
+
+	public virtual float GetTime()
+	{
+	    return 0;
+	}
+
+	public virtual bool SetTime(float time)
+	{
+	    return false;
+	}
+
+	public virtual bool GetUseHoudiniTime()
+	{
+	    return false;
+	}
+
+	public virtual bool SetUseHoudiniTime(bool enable)
+	{
+	    return false;
 	}
 
 	// ASSETS -----------------------------------------------------------------------------------------------------
@@ -1405,6 +1454,12 @@ namespace HoudiniEngineUnity
 	public virtual bool ConvertTransform(ref HAPI_TransformEuler inTransform, HAPI_RSTOrder RSTOrder, HAPI_XYZOrder ROTOrder, out HAPI_TransformEuler outTransform)
 	{
 	    outTransform = new HAPI_TransformEuler();
+	    return false;
+	}
+
+	public virtual bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
+	{
+	    count = 0;
 	    return false;
 	}
     }

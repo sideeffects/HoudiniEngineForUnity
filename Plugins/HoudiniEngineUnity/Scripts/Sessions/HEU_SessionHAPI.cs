@@ -183,11 +183,16 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns>True if successfully created session.</returns>
-	public override bool CreateThriftSocketSession(bool bIsDefaultSession, string hostName, int serverPort, bool autoClose, float timeout, bool bLogError)
+	public override bool CreateThriftSocketSession(
+	    bool bIsDefaultSession, string hostName, int serverPort, 
+	    bool autoClose, float timeout, bool bLogError)
 	{
 	    try
 	    {
-		return InternalConnectThriftSocketSession(true, hostName, serverPort, autoClose, timeout, bIsDefaultSession);
+		return InternalConnectThriftSocketSession(
+		    true, hostName, serverPort, autoClose, timeout, 
+		    bIsDefaultSession, 
+		    sessionSync: null, autoInitialize: true);
 	    }
 	    catch (System.Exception ex)
 	    {
@@ -213,13 +218,19 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns>True if successfully connected session.</returns>
-	private bool InternalConnectThriftSocketSession(bool bCreateSession, string hostName, int serverPort, bool autoClose, float timeout, bool bIsDefaultSession)
+	private bool InternalConnectThriftSocketSession(bool bCreateSession, 
+	    string hostName, int serverPort, bool autoClose, float timeout, 
+	    bool bIsDefaultSession,
+	    HEU_SessionSyncInfo sessionSync,
+	    bool autoInitialize)
 	{
 	    CheckAndCloseExistingSession();
 	    if (!CreateSessionData(true, bIsDefaultSession))
 	    {
 		return false;
 	    }
+
+	    _sessionData.SetSessionSync(sessionSync);
 
 	    int processID = 0;
 	    HAPI_Result result;
@@ -259,7 +270,8 @@ namespace HoudiniEngineUnity
 		    debugMsg = "\n\nMake sure you started Houdini Engine Debugger in Houdini (Windows -> Houdini Engine Debugger)";
 		}
 
-		SetSessionErrorMsg(string.Format("Unable to create socket session.\nError Code: {0}\n{1}{2}", result, sessionConnectionErrorMsg, debugMsg), true);
+		bool bLogError = !_sessionData.IsSessionSync;
+		SetSessionErrorMsg(string.Format("Unable to create socket session.\nError Code: {0}\n{1}{2}", result, sessionConnectionErrorMsg, debugMsg), bLogError);
 		return false;
 	    }
 
@@ -271,7 +283,11 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    return InitializeSession(_sessionData);
+	    if (autoInitialize)
+	    {
+		return InitializeSession(_sessionData);
+	    }
+	    return true;
 	}
 
 	/// <summary>
@@ -281,11 +297,15 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns>True if successfully created session.</returns>
-	public override bool CreateThriftPipeSession(bool bIsDefaultSession, string pipeName, bool autoClose, float timeout, bool bLogError)
+	public override bool CreateThriftPipeSession(
+	    bool bIsDefaultSession, string pipeName, bool autoClose, 
+	    float timeout, bool bLogError)
 	{
 	    try
 	    {
-		return InternalCreateThriftPipeSession(true, pipeName, autoClose, timeout, bIsDefaultSession);
+		return InternalCreateThriftPipeSession(
+		    true, pipeName, autoClose, timeout, bIsDefaultSession, 
+		    null, autoInitialize: true);
 	    }
 	    catch (System.Exception ex)
 	    {
@@ -310,7 +330,11 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns>True if successfully created session.</returns>
-	private bool InternalCreateThriftPipeSession(bool bCreateSession, string pipeName, bool autoClose, float timeout, bool bIsDefaultSession)
+	private bool InternalCreateThriftPipeSession(bool bCreateSession, 
+	    string pipeName, bool autoClose, float timeout, 
+	    bool bIsDefaultSession,
+	    HEU_SessionSyncInfo sessionSync,
+	    bool autoInitialize)
 	{
 	    CheckAndCloseExistingSession();
 	    if (!CreateSessionData(true, bIsDefaultSession))
@@ -322,6 +346,7 @@ namespace HoudiniEngineUnity
 	    HAPI_Result result;
 
 	    _sessionData.PipeName = pipeName;
+	    _sessionData.SetSessionSync(sessionSync);
 
 	    // Start at failed since this is several steps. Once connected, we can set it as such.
 	    ConnectedState = SessionConnectionState.FAILED_TO_CONNECT;
@@ -359,7 +384,8 @@ namespace HoudiniEngineUnity
 		    debugMsg = "\n\nMake sure you started Houdini Engine Debugger in Houdini (Windows -> Houdini Engine Debugger)";
 		}
 
-		SetSessionErrorMsg(string.Format("Unable to create RPC pipe session.\nError Code: {0}\n{1}{2}", result, sessionConnectionErrorMsg, debugMsg));
+		bool bLogError = !_sessionData.IsSessionSync;
+		SetSessionErrorMsg(string.Format("Unable to create RPC pipe session.\nError Code: {0}\n{1}{2}", result, sessionConnectionErrorMsg, debugMsg), bLogError);
 		return false;
 	    }
 
@@ -371,7 +397,11 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    return InitializeSession(_sessionData);
+	    if (autoInitialize)
+	    {
+		return InitializeSession(_sessionData);
+	    }
+	    return true;
 	}
 
 	public override bool CreateCustomSession(bool bIsDefaultSession)
@@ -387,9 +417,11 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns></returns>
-	public override bool ConnectThriftSocketSession(bool bIsDefaultSession, string hostName, int serverPort, bool autoClose, float timeout)
+	public override bool ConnectThriftSocketSession(bool bIsDefaultSession, 
+	    string hostName, int serverPort, bool autoClose, float timeout, 
+	    HEU_SessionSyncInfo sessionSync, bool autoInitialize)
 	{
-	    return InternalConnectThriftSocketSession(false, hostName, serverPort, autoClose, timeout, bIsDefaultSession);
+	    return InternalConnectThriftSocketSession(false, hostName, serverPort, autoClose, timeout, bIsDefaultSession, sessionSync, autoInitialize);
 	}
 
 	/// <summary>
@@ -399,9 +431,11 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns></returns>
-	public override bool ConnectThriftPipeSession(bool bIsDefaultSession, string pipeName, bool autoClose, float timeout)
+	public override bool ConnectThriftPipeSession(bool bIsDefaultSession, 
+	    string pipeName, bool autoClose, float timeout,
+	    HEU_SessionSyncInfo sessionSync, bool autoInitialize)
 	{
-	    return InternalCreateThriftPipeSession(false, pipeName, autoClose, timeout, bIsDefaultSession);
+	    return InternalCreateThriftPipeSession(false, pipeName, autoClose, timeout, bIsDefaultSession, sessionSync, autoInitialize);
 	}
 
 	/// <summary>
@@ -599,7 +633,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="sessionData">The Houdini Engine session to initliaze</param>
 	/// <returns>True if session was successfully initialized.</returns>
-	private bool InitializeSession(HEU_SessionData sessionData)
+	public override bool InitializeSession(HEU_SessionData sessionData)
 	{
 	    HAPI_CookOptions cookOptions = new HAPI_CookOptions();
 	    GetCookOptions(ref cookOptions);
@@ -854,6 +888,38 @@ namespace HoudiniEngineUnity
 	    HAPI_Result result = HEU_HAPIImports.HAPI_CheckForSpecificErrors(ref _sessionData._HAPISession, nodeID, errorsToCheck, out errorsFound);
 	    HandleStatusResult(result, "Check For Specific Errors", false, true);
 	    return errorsFound;
+	}
+
+	// TIME -----------------------------------------------------------------------------------------------------
+
+	public override float GetTime()
+	{
+	    float time = 0;
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetTime(ref _sessionData._HAPISession, out time);
+	    HandleStatusResult(result, "Getting Time", false, true);
+	    return time;
+	}
+
+	public override bool SetTime(float time)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetTime(ref _sessionData._HAPISession, time);
+	    HandleStatusResult(result, "Setting Time", false, true);
+	    return result == HAPI_Result.HAPI_RESULT_SUCCESS; ;
+	}
+
+	public override bool GetUseHoudiniTime()
+	{
+	    bool enabled = false;
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetUseHoudiniTime(ref _sessionData._HAPISession, ref enabled);
+	    HandleStatusResult(result, "Getting Use Houdini Time", false, true);
+	    return enabled;
+	}
+
+	public override bool SetUseHoudiniTime(bool enable)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetUseHoudiniTime(ref _sessionData._HAPISession, enable);
+	    HandleStatusResult(result, "Setting Use Houdini Time", false, true);
+	    return result == HAPI_Result.HAPI_RESULT_SUCCESS; ;
 	}
 
 	// ASSETS -----------------------------------------------------------------------------------------------------
@@ -2178,6 +2244,13 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_ConvertTransform(ref _sessionData._HAPISession, ref inTransform, RSTOrder, ROTOrder, out outTransform);
 	    HandleStatusResult(result, "Converting Transform", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetTotalCookCount(ref _sessionData._HAPISession, nodeID, nodeTypeFilter, nodeFlagFilter, includeChildren, out count);
+	    HandleStatusResult(result, "Getting Total Cook Count", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 

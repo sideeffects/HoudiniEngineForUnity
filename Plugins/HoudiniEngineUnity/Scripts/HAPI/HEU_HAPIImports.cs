@@ -279,6 +279,14 @@ namespace HoudiniEngineUnity
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
+	HAPI_GetUseHoudiniTime(ref HAPI_Session session, [MarshalAs(UnmanagedType.U1)] ref bool enabled);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_SetUseHoudiniTime(ref HAPI_Session session, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
 	HAPI_GetTimelineOptions(ref HAPI_Session session, ref HAPI_TimelineOptions timeline_options);
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -1540,6 +1548,16 @@ namespace HoudiniEngineUnity
 		ref HAPI_Session session,
 		HAPI_NodeId node_id,
 		string format, byte[] buffer, int length);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_GetTotalCookCount(
+		ref HAPI_Session session,
+		HAPI_NodeId node_id,
+		HAPI_NodeTypeBits node_type_filter,
+		HAPI_NodeFlagsBits node_flags_filter,
+		[MarshalAs(UnmanagedType.U1)] bool include_children,
+		out int count);
 
 #endif
     }

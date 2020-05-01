@@ -619,20 +619,20 @@ namespace HoudiniEngineUnity
 		    int numElements = arrayProperty.arraySize;
 		    int maxElementsPerRow = 4;
 
-		    GUILayout.BeginHorizontal();
+		    EditorGUILayout.BeginHorizontal();
 		    {
 			for (int i = 0; i < numElements; ++i)
 			{
 			    if (i > 0 && i % maxElementsPerRow == 0)
 			    {
-				GUILayout.EndHorizontal();
-				GUILayout.BeginHorizontal();
+				EditorGUILayout.EndHorizontal();
+				EditorGUILayout.BeginHorizontal();
 			    }
 
 			    EditorGUILayout.DelayedFloatField(arrayProperty.GetArrayElementAtIndex(i), GUIContent.none);
 			}
 		    }
-		    GUILayout.EndHorizontal();
+		    EditorGUILayout.EndHorizontal();
 		}
 	    }
 	}
@@ -672,7 +672,7 @@ namespace HoudiniEngineUnity
 		    if (bDrawFoldout)
 		    {
 			EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-			paramUICache._secondaryValue.boolValue = EditorGUILayout.Foldout(paramUICache._secondaryValue.boolValue, parameterData._labelName, EditorStyles.foldout);
+			paramUICache._secondaryValue.boolValue = EditorGUILayout.Foldout(paramUICache._secondaryValue.boolValue, parameterData._labelName, true, EditorStyles.foldout);
 		    }
 
 		    if (!bDrawFoldout || paramUICache._secondaryValue.boolValue)

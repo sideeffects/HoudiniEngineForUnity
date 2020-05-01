@@ -56,7 +56,10 @@ namespace HoudiniEngineUnity
 	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Create/" + HEU_EditorStrings.RPC_PIPE_SESSION, false, 0)]
 	public static void CreatePipeSession()
 	{
-	    bool bResult = HEU_SessionManager.CreateThriftPipeSession(HEU_PluginSettings.Session_PipeName, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
+	    bool bResult = HEU_SessionManager.CreateThriftPipeSession(
+		HEU_PluginSettings.Session_PipeName, 
+		HEU_PluginSettings.Session_AutoClose, 
+		HEU_PluginSettings.Session_Timeout, true);
 	    if (!bResult)
 	    {
 		HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
@@ -73,24 +76,10 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect To Debugger/" + HEU_EditorStrings.RPC_PIPE_SESSION, false, 0)]
-	public static void DebugConnectPipeSession()
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/SessionSync", false, 0)]
+	public static void SessionSync()
 	{
-	    bool bResult = HEU_SessionManager.ConnectThriftPipeSession(HEU_PluginSettings.Session_PipeName, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout);
-	    if (!bResult)
-	    {
-		HEU_EditorUtility.DisplayErrorDialog("Debug Session", HEU_SessionManager.GetLastSessionError(), "OK");
-	    }
-	}
-
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect To Debugger/" + HEU_EditorStrings.RPC_SOCKET_SESSION, false, 0)]
-	public static void DebugConnectSocketSession()
-	{
-	    bool bResult = HEU_SessionManager.ConnectThriftSocketSession(HEU_PluginSettings.Session_Localhost, HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Port);
-	    if (!bResult)
-	    {
-		HEU_EditorUtility.DisplayErrorDialog("Debug Session", HEU_SessionManager.GetLastSessionError(), "OK");
-	    }
+	    HEU_SessionSyncWindow.ShowWindow();
 	}
 
 	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/" + HEU_EditorStrings.GET_SESSION_INFO, false, 20)]
