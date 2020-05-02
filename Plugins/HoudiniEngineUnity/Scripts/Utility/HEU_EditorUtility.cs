@@ -1229,6 +1229,17 @@ namespace HoudiniEngineUnity
 	    }
 #endif
 	}
+
+	public static void RepaintScene()
+	{
+#if UNITY_EDITOR
+	    EditorWindow view = EditorWindow.GetWindow<SceneView>();
+	    if (view != null)
+	    {
+		view.Repaint();
+	    }
+#endif
+	}
     }
 
 }   // HoudiniEngineUnity

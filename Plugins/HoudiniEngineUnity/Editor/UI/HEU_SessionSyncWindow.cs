@@ -68,9 +68,9 @@ namespace HoudiniEngineUnity
 
 	    using (new EditorGUI.DisabledScope(_syncInfo.SyncStatus == HEU_SessionSyncInfo.Status.Stopped))
 	    {
-		if (GUILayout.Button("Stop"))
+		if (GUILayout.Button("Disconnect"))
 		{
-		    Stop();
+		    Disconnect();
 		}
 	    }
 
@@ -229,7 +229,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	void Stop()
+	void Disconnect()
 	{
 	    _syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Stopped;
 

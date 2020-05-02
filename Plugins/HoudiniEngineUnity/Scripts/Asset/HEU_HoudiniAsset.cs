@@ -1505,6 +1505,12 @@ namespace HoudiniEngineUnity
 
 	    SetCookStatus(AssetCookStatus.NONE, AssetCookResult.SUCCESS);
 
+	    if (session.IsSessionSync())
+	    {
+		// Force a repaint in SessionSync so the Scene view updates
+		HEU_EditorUtility.RepaintScene();
+	    }
+
 #if HEU_PROFILER_ON
 	    Debug.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
 #endif
@@ -4249,6 +4255,8 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public bool UpdateSessionSync()
 	{
+	    //Debug.Log("Time: " + Time.realtimeSinceStartup);
+
 	    if (_requestBuildAction != AssetBuildAction.NONE || !HEU_PluginSettings.SessionSyncAutoCook || !SessionSyncAutoCook)
 	    {
 		return false;
