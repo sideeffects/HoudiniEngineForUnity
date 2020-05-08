@@ -1433,6 +1433,17 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public virtual bool SaveNodeToFile(HAPI_NodeId nodeID, string fileName)
+	{
+	    return false;
+	}
+
+	public virtual bool LoadNodeFromFile(string file_name, HAPI_NodeId parentNodeID, string nodeLabel, bool cook_on_load, out HAPI_NodeId newNodeID)
+	{
+	    newNodeID = -1;
+	    return false;
+	}
+
 	public virtual bool GetGeoSize(HAPI_NodeId nodeID, string format, out int size)
 	{
 	    size = 0;

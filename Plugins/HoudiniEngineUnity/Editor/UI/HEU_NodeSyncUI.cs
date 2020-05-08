@@ -31,14 +31,93 @@ using UnityEditor;
 
 namespace HoudiniEngineUnity
 {
-    [CustomEditor(typeof(HEU_GeoSync))]
-    public class HEU_GeoSyncUI : Editor
+    [CustomEditor(typeof(HEU_NodeSync))]
+    public class HEU_NodeSyncUI : Editor
     {
-	private HEU_GeoSync _geoSync;
+	#region FUNCTIONS
 
-	private GUIContent _fileLabelContent = new GUIContent("File Path", "File to load.");
+	private void OnEnable()
+	{
+	    AcquireTarget();
+	}
 
-	private GUIContent _syncContent = new GUIContent("Sync", "Load the file.");
+	private void AcquireTarget()
+	{
+	    _nodeSync = target as HEU_NodeSync;
+	}
+
+	public override void OnInspectorGUI()
+	{
+	    if(_nodeSync == null)
+	    {
+		AcquireTarget();
+	    }
+
+	    using (new EditorGUILayout.VerticalScope())
+	    {
+		//EditorGUILayout.TextField("Node name", _nodeSync._nodeName);
+		ReadOnlyTextField("Node name", _nodeSync._nodeName);
+		ReadOnlyTextField("Node ID", _nodeSync._cookNodeID.ToString());
+
+		ReadOnlyTextField("File", _nodeSync._nodeSaveFilePath);
+
+		if (GUILayout.Button("Save Node"))
+		{
+		    //_nodeSync._nodeSaveFilePath = EditorUtility.SaveFilePanel("Save Node", _nodeSync._nodeSaveFilePath, _nodeSync._nodeName, ".hess");
+
+		    string fileName = _nodeSync._nodeName;
+		    string filePattern = "hess";
+		    string newPath = EditorUtility.SaveFilePanel("Save Node", "", fileName + "." + filePattern, filePattern);
+		    if (newPath != null && !string.IsNullOrEmpty(newPath))
+		    {
+			_nodeSync.SaveNodeToFile(newPath);
+		    }
+		}
+
+		if (_nodeSync._syncing)
+		{
+		    EditorGUILayout.LabelField(_statusSyncContent);
+
+		    if (GUILayout.Button(_stopContent))
+		    {
+			_nodeSync.StopSync();
+		    }
+		}
+		else
+		{
+		    EditorGUILayout.LabelField(_statusIdleContent);
+
+		    using (new EditorGUILayout.HorizontalScope())
+		    {
+			bool bLoaded = _nodeSync.IsLoaded();
+
+			if (GUILayout.Button(_syncContent))
+			{
+			    _nodeSync.Resync();
+			}
+		    }
+		}
+	    }
+	}
+
+	public static void ReadOnlyTextField(string label, string text)
+	{
+	    EditorGUILayout.BeginHorizontal();
+	    {
+		EditorGUILayout.LabelField(label, GUILayout.Width(EditorGUIUtility.labelWidth - 4));
+		EditorGUILayout.SelectableLabel(text, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+	    }
+	    EditorGUILayout.EndHorizontal();
+	}
+
+	#endregion
+
+
+	#region DATA
+
+	private HEU_NodeSync _nodeSync;
+
+	private GUIContent _syncContent = new GUIContent("Resync", "Recook and regenerate geometry.");
 
 	private GUIContent _stopContent = new GUIContent("Stop", "Stop the loading.");
 
@@ -48,88 +127,9 @@ namespace HoudiniEngineUnity
 
 	private GUIContent _unloadContent = new GUIContent("Unload", "Delete the file node and clean up all generated content.");
 
+	#endregion
 
-
-	private void OnEnable()
-	{
-	    AcquireTarget();
-	}
-
-	private void AcquireTarget()
-	{
-	    _geoSync = target as HEU_GeoSync;
-	}
-
-	public override void OnInspectorGUI()
-	{
-	    if (_geoSync == null)
-	    {
-		AcquireTarget();
-	    }
-
-	    using (new EditorGUILayout.VerticalScope())
-	    {
-		bool bSyncing = _geoSync._syncing;
-
-		EditorGUILayout.LabelField(_fileLabelContent);
-
-		using (new EditorGUILayout.HorizontalScope())
-		{
-		    _geoSync._filePath = EditorGUILayout.DelayedTextField(_geoSync._filePath);
-
-		    // TODO: add field for output cache directory
-
-		    GUIStyle buttonStyle = HEU_EditorUI.GetNewButtonStyle_MarginPadding(0, 0);
-		    if (GUILayout.Button("...", buttonStyle, GUILayout.Width(30), GUILayout.Height(18)))
-		    {
-			string filePattern = "*.bgeo;*.bgeo.sc";
-			_geoSync._filePath = EditorUtility.OpenFilePanel("Select File", _geoSync._filePath, filePattern);
-		    }
-		}
-
-		HEU_EditorUI.DrawSeparator();
-
-		if (bSyncing)
-		{
-		    EditorGUILayout.LabelField(_statusSyncContent);
-
-		    if (GUILayout.Button(_stopContent))
-		    {
-			_geoSync.StopSync();
-		    }
-		}
-		else
-		{
-		    EditorGUILayout.LabelField(_statusIdleContent);
-
-		    using (new EditorGUILayout.HorizontalScope())
-		    {
-			bool bLoaded = _geoSync.IsLoaded();
-
-			if (GUILayout.Button(_syncContent))
-			{
-			    _geoSync.Resync();
-			}
-
-			//GUILayout.FlexibleSpace();
-
-			using (new EditorGUI.DisabledScope(!bLoaded))
-			{
-			    if (GUILayout.Button(_unloadContent))
-			    {
-				_geoSync.Unload();
-			    }
-			}
-		    }
-		}
-
-		if (_geoSync._log != null)
-		{
-		    EditorGUILayout.LabelField("Log: " + _geoSync._log.ToString());
-		}
-	    }
-	}
 
     }
 
-}   // HoudiniEngineUnity
+}   // namespace HoudiniEngineUnity

@@ -28,28 +28,23 @@
 #define HOUDINIENGINEUNITY_ENABLED
 #endif
 
-using System.Collections;
+using System.Text;
 using System.Collections.Generic;
-using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
-    using HAPI_PartId = System.Int32;
 
-    /// <summary>
-    /// Lightweight Unity geometry generator for Houdini geometry.
-    /// Given already loaded geometry buffers, creates corresponding Unity geometry.
-    /// </summary>
-    public class HEU_GeoSync : MonoBehaviour
+    [ExecuteInEditMode] // Needed to get OnDestroy callback when deleted in Editor
+    public class HEU_BaseSync : MonoBehaviour
     {
-	//	LOGIC -----------------------------------------------------------------------------------------------------
+	#region FUNCTIONS
+
+	#region SETUP
 
 	private void Awake()
 	{
@@ -57,19 +52,48 @@ namespace HoudiniEngineUnity
 	    if (_sessionID != HEU_SessionData.INVALID_SESSION_ID)
 	    {
 		HEU_SessionBase session = HEU_SessionManager.GetSessionWithID(_sessionID);
-		if (session == null || !HEU_HAPIUtility.IsNodeValidInHoudini(session, _fileNodeID))
+		if (session == null || !HEU_HAPIUtility.IsNodeValidInHoudini(session, _cookNodeID))
 		{
-		    // Reset session and file node IDs if these don't exist (could be from scene load).
+		    // Reset session and node IDs if these don't exist (could be from scene load).
 		    _sessionID = HEU_SessionData.INVALID_SESSION_ID;
-		    _fileNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+		    _cookNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 		}
 	    }
 #endif
 	}
 
+	private void OnDestroy()
+	{	    
+	    DeleteSessionData();
+	}
 
+	public virtual void DeleteSessionData()
+	{
+	    if (_cookNodeID != HEU_Defines.HEU_INVALID_NODE_ID)
+	    {
+		HEU_SessionBase session = GetHoudiniSession(false);
+		if (session != null)
+		{
+		    HAPI_NodeId deleteID = _cookNodeID;
 
-	public void Initialize()
+		    if (_deleteParent)
+		    {
+			deleteID = GetParentNodeID(session);
+		    }
+
+		    session.DeleteNode(deleteID);
+		}
+
+		_cookNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    }
+	}
+
+	public virtual void DestroyGeneratedData()
+	{
+	    DestroyOutputs();
+	}
+
+	protected virtual void Initialize()
 	{
 	    _generateOptions._generateNormals = true;
 	    _generateOptions._generateTangents = true;
@@ -80,9 +104,55 @@ namespace HoudiniEngineUnity
 	    _initialized = true;
 	}
 
-	public void StartSync()
+	#endregion
+
+	#region UTILITY
+
+	public virtual HEU_SessionBase GetHoudiniSession(bool bCreateIfNotFound)
 	{
-	    if (_bSyncing)
+	    HEU_SessionBase session = (_sessionID != HEU_SessionData.INVALID_SESSION_ID) ?
+		HEU_SessionManager.GetSessionWithID(_sessionID) : null;
+
+	    if (session == null || !session.IsSessionValid())
+	    {
+		if (bCreateIfNotFound)
+		{
+		    session = HEU_SessionManager.GetOrCreateDefaultSession();
+		    if (session != null && session.IsSessionValid())
+		    {
+			_sessionID = session.GetSessionData().SessionID;
+		    }
+		}
+	    }
+
+	    return session;
+	}
+
+	HAPI_NodeId GetParentNodeID(HEU_SessionBase session)
+	{
+	    HAPI_NodeInfo nodeInfo = new HAPI_NodeInfo();
+	    return (session.GetNodeInfo(_cookNodeID, ref nodeInfo, false)) ? nodeInfo.parentId : -1;
+	}
+
+	public void Log(string msg)
+	{
+	    _log.Append(msg);
+	}
+
+	public void Error(string error)
+	{
+	    _error.Append(error);
+	}
+
+	public bool IsLoaded() { return _cookNodeID != HEU_Defines.HEU_INVALID_NODE_ID && _firstSyncComplete; }
+
+	#endregion
+
+	#region SYNC
+
+	public virtual void StartSync()
+	{
+	    if (_syncing)
 	    {
 		return;
 	    }
@@ -95,106 +165,130 @@ namespace HoudiniEngineUnity
 	    HEU_SessionBase session = GetHoudiniSession(true);
 	    if (session == null)
 	    {
-		_logStr = "ERROR: No session found!";
+		Log("ERROR: No session found!");
 		return;
 	    }
 
-	    if (_loadGeo == null)
-	    {
-		_loadGeo = new HEU_ThreadedTaskLoadGeo();
-	    }
-
-	    _logStr = "Starting";
-	    _bSyncing = true;
+	    Log("Starting sync");
+	    _syncing = true;
 	    _sessionID = session.GetSessionData().SessionID;
 
-	    _loadGeo.Setup(_filePath, this, session, _fileNodeID);
-	    _loadGeo.Start();
+	    SetupLoadTask(session);
 	}
 
-	public void StopSync()
+	protected virtual void SetupLoadTask(HEU_SessionBase session)
 	{
-	    if (!_bSyncing)
+
+	}
+
+	public virtual void StopSync()
+	{
+	    if (!_syncing)
 	    {
 		return;
 	    }
 
-	    if (_loadGeo != null)
-	    {
-		_loadGeo.Stop();
-	    }
+	    Log("Stopped sync");
+	    _syncing = false;
 
-	    _logStr = "Stopped";
-	    _bSyncing = false;
+	    if (_loadTask != null)
+	    {
+		_loadTask.Stop();
+	    }
 	}
 
-	public void Unload()
+	public virtual void Resync()
 	{
-	    if (_bSyncing)
+	    if (_syncing)
+	    {
+		return;
+	    }
+
+	    Unload();
+	    StartSync();
+	}
+
+	public virtual void Unload()
+	{
+	    if (_syncing)
 	    {
 		StopSync();
 
-		if (_loadGeo != null)
+		if (_loadTask != null)
 		{
-		    _loadGeo.Stop();
+		    _loadTask.Stop();
 		}
 	    }
 
 	    DeleteSessionData();
-	    DestroyOutputs();
+	    DestroyGeneratedData();
 
-	    _logStr = "Unloaded!";
+	    Log("Unloaded!");
 	}
+
+	#endregion
+
+	#region CALLBACKS
 
 	public void OnLoadComplete(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
 	{
-	    _bSyncing = false;
-
-	    _logStr = loadData._logStr;
-	    _fileNodeID = loadData._fileNodeID;
+	    Log(loadData._logStr);
+	    _cookNodeID = loadData._cookNodeID;
 
 	    if (loadData._loadStatus == HEU_ThreadedTaskLoadGeo.HEU_LoadData.LoadStatus.SUCCESS)
 	    {
 		DestroyOutputs();
 
-		if (loadData._meshBuffers != null && loadData._meshBuffers.Count > 0)
-		{
-		    GenerateMesh(loadData._meshBuffers);
-		}
+		GenerateObjects(loadData);
+	    }
 
-		if (loadData._terrainBuffers != null && loadData._terrainBuffers.Count > 0)
-		{
-		    GenerateTerrain(loadData._terrainBuffers);
-		}
+	    _firstSyncComplete = true;
+	    _syncing = false;
+	}
 
-		if (loadData._instancerBuffers != null && loadData._instancerBuffers.Count > 0)
+	public virtual void GenerateObjects(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
+	{
+	    if (loadData._loadedObjects != null)
+	    {
+		int numObjects = loadData._loadedObjects.Count;
+		for(int i = 0; i < numObjects; ++i)
 		{
-		    GenerateAllInstancers(loadData._instancerBuffers, loadData);
+		    GenerateGeometry(loadData, i);
 		}
+	    }
+	}
+
+	public virtual void GenerateGeometry(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData, int objIndex)
+	{
+	    HEU_ThreadedTaskLoadGeo.HEU_LoadObject loadObject = loadData._loadedObjects[objIndex];
+
+	    if (loadObject._meshBuffers != null && loadObject._meshBuffers.Count > 0)
+	    {
+		GenerateMesh(loadObject._meshBuffers);
+	    }
+
+	    if (loadObject._terrainBuffers != null && loadObject._terrainBuffers.Count > 0)
+	    {
+		GenerateTerrain(loadObject._terrainBuffers);
+	    }
+
+	    if (loadObject._instancerBuffers != null && loadObject._instancerBuffers.Count > 0)
+	    {
+		GenerateAllInstancers(loadObject._instancerBuffers, loadData);
 	    }
 	}
 
 	public void OnStopped(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
 	{
-	    _bSyncing = false;
+	    _syncing = false;
 
-	    _logStr = loadData._logStr;
-	    _fileNodeID = loadData._fileNodeID;
+	    Log(loadData._logStr);
+	    _cookNodeID = loadData._cookNodeID;
 	}
 
-	private void DeleteSessionData()
-	{
-	    if (_fileNodeID != HEU_Defines.HEU_INVALID_NODE_ID)
-	    {
-		HEU_SessionBase session = GetHoudiniSession(false);
-		if (session != null)
-		{
-		    session.DeleteNode(_fileNodeID);
-		}
+	#endregion
 
-		_fileNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
-	    }
-	}
+	#region GENERATE
 
 	private void GenerateTerrain(List<HEU_LoadBufferVolume> terrainBuffers)
 	{
@@ -597,71 +691,12 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private HEU_LoadBufferBase GetLoadBufferFromID(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData, HAPI_NodeId id)
-	{
-	    // Check each buffer array
-
-	    foreach (HEU_LoadBufferBase buffer in loadData._meshBuffers)
-	    {
-		if (buffer._id == id)
-		{
-		    return buffer;
-		}
-	    }
-
-	    foreach (HEU_LoadBufferBase buffer in loadData._terrainBuffers)
-	    {
-		if (buffer._id == id)
-		{
-		    return buffer;
-		}
-	    }
-
-	    foreach (HEU_LoadBufferBase buffer in loadData._instancerBuffers)
-	    {
-		if (buffer._id == id)
-		{
-		    return buffer;
-		}
-	    }
-
-	    return null;
-	}
-
-
 	private void GenerateAllInstancers(List<HEU_LoadBufferInstancer> instancerBuffers, HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
 	{
-	    // Create a dictionary of load buffers to their IDs. This speeds up the instancer look up.
-	    Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap = new Dictionary<HAPI_NodeId, HEU_LoadBufferBase>();
-
-	    if (loadData._meshBuffers != null)
-	    {
-		foreach (HEU_LoadBufferBase buffer in loadData._meshBuffers)
-		{
-		    idBuffersMap[buffer._id] = buffer;
-		}
-	    }
-
-	    if (loadData._terrainBuffers != null)
-	    {
-		foreach (HEU_LoadBufferBase buffer in loadData._terrainBuffers)
-		{
-		    idBuffersMap[buffer._id] = buffer;
-		}
-	    }
-
-	    if (loadData._instancerBuffers != null)
-	    {
-		foreach (HEU_LoadBufferBase buffer in loadData._instancerBuffers)
-		{
-		    idBuffersMap[buffer._id] = buffer;
-		}
-	    }
-
 	    int numBuffers = instancerBuffers.Count;
 	    for (int m = 0; m < numBuffers; ++m)
 	    {
-		GenerateInstancer(instancerBuffers[m], idBuffersMap);
+		GenerateInstancer(instancerBuffers[m], loadData._idBuffersMap);
 	    }
 	}
 
@@ -778,7 +813,7 @@ namespace HoudiniEngineUnity
 		int numTransforms = instancerBuffer._instanceTransforms.Length;
 		for (int j = 0; j < numTransforms; ++j)
 		{
-		    CreateNewInstanceFromObject(sourceGameObject, (j + 1), instanceRootTransform, ref instancerBuffer._instanceTransforms[i],
+		    CreateNewInstanceFromObject(sourceGameObject, (j + 1), instanceRootTransform, ref instancerBuffer._instanceTransforms[j],
 			    instancerBuffer._instancePrefixes, instancerBuffer._name, collisionSrcGO);
 		}
 	    }
@@ -944,6 +979,10 @@ namespace HoudiniEngineUnity
 	    HEU_GeneralUtility.SetGameObjectChildrenColliderState(newInstanceGO, true);
 	}
 
+	#endregion
+
+	#region OUTPUT
+
 	private void DestroyOutputs()
 	{
 	    if (_generatedOutputs != null)
@@ -985,25 +1024,6 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public HEU_SessionBase GetHoudiniSession(bool bCreateIfNotFound)
-	{
-	    HEU_SessionBase session = (_sessionID != HEU_SessionData.INVALID_SESSION_ID) ? HEU_SessionManager.GetSessionWithID(_sessionID) : null;
-
-	    if (session == null || !session.IsSessionValid())
-	    {
-		if (bCreateIfNotFound)
-		{
-		    session = HEU_SessionManager.GetOrCreateDefaultSession();
-		    if (session != null && session.IsSessionValid())
-		    {
-			_sessionID = session.GetSessionData().SessionID;
-		    }
-		}
-	    }
-
-	    return session;
-	}
-
 	private string GetOutputCacheDirectory()
 	{
 	    if (string.IsNullOrEmpty(_outputCacheDirectory))
@@ -1027,44 +1047,56 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public bool IsLoaded() { return _fileNodeID != HEU_Defines.HEU_INVALID_NODE_ID; }
+	#endregion
 
-	public HEU_GenerateOptions GenerateOptions { get { return _generateOptions; } }
+	#region UPDATE
 
+	public virtual void SyncUpdate()
+	{
+	    
+	}
 
-	//	DATA ------------------------------------------------------------------------------------------------------
+	#endregion
 
-	public string _filePath = "";
+	#endregion
 
-	public string _logStr;
+	#region DATA
 
-	private HEU_ThreadedTaskLoadGeo _loadGeo;
+	public HAPI_NodeId _cookNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 
-	protected bool _bSyncing;
-	public bool IsSyncing { get { return _bSyncing; } }
+	public long _sessionID = HEU_SessionData.INVALID_SESSION_ID;
 
-	private HAPI_NodeId _fileNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	public string _nodeName;
 
-	[SerializeField]
-	private long _sessionID = HEU_SessionData.INVALID_SESSION_ID;
+	public bool _initialized;
 
-	[SerializeField]
-	private List<HEU_GeneratedOutput> _generatedOutputs = new List<HEU_GeneratedOutput>();
+	public bool _syncing;
 
-	// Asset Options
-	[SerializeField]
-	private HEU_GenerateOptions _generateOptions = new HEU_GenerateOptions();
+	public bool _deleteParent;
 
-	[SerializeField]
-	private bool _initialized;
+	public List<HEU_GeneratedOutput> _generatedOutputs = new List<HEU_GeneratedOutput>();
 
 	// Directory to write out generated files
-	[SerializeField]
-	private string _outputCacheDirectory = "";
+	public string _outputCacheDirectory = "";
 
 	// List of generated file paths, so the files can be cleaned up on dirty
-	[SerializeField]
-	private List<string> _outputCacheFilePaths = new List<string>();
+	public List<string> _outputCacheFilePaths = new List<string>();
+
+	public HEU_GenerateOptions _generateOptions = new HEU_GenerateOptions();
+
+	public StringBuilder _log = new StringBuilder();
+
+	public StringBuilder _error = new StringBuilder();
+
+	public bool _sessionSyncAutoCook = true;
+
+	protected HEU_ThreadedTaskLoadGeo _loadTask;
+
+	protected int _totalCookCount = 0;
+
+	protected bool _firstSyncComplete = false;
+
+	#endregion
     }
 
     [System.Serializable]
@@ -1077,4 +1109,4 @@ namespace HoudiniEngineUnity
 	public bool _splitPoints;
     }
 
-}   // HoudiniEngineUnity
+} // HoudiniEngineUnity

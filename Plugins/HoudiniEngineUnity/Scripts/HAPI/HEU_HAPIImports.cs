@@ -1530,6 +1530,24 @@ namespace HoudiniEngineUnity
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
+	HAPI_SaveNodeToFile(
+		ref HAPI_Session session,
+		HAPI_NodeId node_id,
+		string file_name);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_LoadNodeFromFile(
+		ref HAPI_Session session,
+		string file_name,
+		HAPI_NodeId parent_node_id,
+		string node_label,
+		[MarshalAs(UnmanagedType.U1)] bool cook_on_load,
+		out HAPI_NodeId new_node_id
+		);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
 	HAPI_GetGeoSize(
 		ref HAPI_Session session,
 		HAPI_NodeId node_id,

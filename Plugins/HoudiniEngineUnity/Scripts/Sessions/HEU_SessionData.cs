@@ -68,14 +68,13 @@ namespace HoudiniEngineUnity
 	private bool _isDefaultSession;
 
 	[SerializeField]
-	private HEU_SessionSyncInfo _sessionSync;
+	private HEU_SessionSyncInfo _sessionSync = null;
 
 	public HEU_SessionSyncInfo GetOrCreateSessionSync()
 	{
 	    if (_sessionSync == null)
 	    {
 		_sessionSync = new HEU_SessionSyncInfo();
-		_sessionSync.Reset();
 	    }
 	    return _sessionSync;
 	}

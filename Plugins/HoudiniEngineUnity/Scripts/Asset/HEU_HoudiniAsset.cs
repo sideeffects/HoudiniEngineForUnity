@@ -3696,11 +3696,11 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_CURVE)
 	    {
-		newRootGO = HEU_HAPIUtility.CreateNewCurveAsset(thisParentTransform, session, bBuildAsync);
+		newRootGO = HEU_HAPIUtility.CreateNewCurveAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync);
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_INPUT)
 	    {
-		newRootGO = HEU_HAPIUtility.CreateNewInputAsset(thisParentTransform, session, bBuildAsync);
+		newRootGO = HEU_HAPIUtility.CreateNewInputAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync);
 	    }
 	    else
 	    {

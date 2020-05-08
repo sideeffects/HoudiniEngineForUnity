@@ -24,81 +24,51 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-using System.Threading;
+#if (UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_LINUX)
+#define HOUDINIENGINEUNITY_ENABLED
+#endif
 
+using System.Collections;
 using System.Collections.Generic;
-
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace HoudiniEngineUnity
 {
-    [System.Serializable]
-    public class HEU_SessionSyncInfo
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Typedefs (copy these from HEU_Common.cs)
+    using HAPI_NodeId = System.Int32;
+    using HAPI_PartId = System.Int32;
+
+    /// <summary>
+    /// Lightweight Unity geometry generator for Houdini geometry.
+    /// Given already loaded geometry buffers, creates corresponding Unity geometry.
+    /// </summary>
+    public class HEU_GeoSync : HEU_BaseSync
     {
-	public enum Status
+	#region FUNCTIONS
+
+	protected override void SetupLoadTask(HEU_SessionBase session)
 	{
-	    Stopped,
-	    Started,
-	    Connecting,
-	    Initializing,
-	    Connected
+	    if (_loadTask == null)
+	    {
+		_loadTask = new HEU_ThreadedTaskLoadGeo();
+	    }
+
+	    _loadTask.SetupLoadFile(session, this, _cookNodeID, _filePath);
+	    _loadTask.Start();
 	}
 
-	[SerializeField]
-	private int _status = 0;
+	#endregion
 
-	// Thread-safe access
-	public Status SyncStatus
-	{
-	    get
-	    {
-		int istatus = Interlocked.CompareExchange(ref _status, 0, 0);
-		return (Status)istatus;
-	    }
-	    set
-	    {
-		int istatus = (int)value;
-		Interlocked.Exchange(ref _status, istatus);
-	    }
-	}
+	#region DATA
 
-	public bool _useHoudiniTime;
+	public string _filePath = "";
 
-	public string _newNodeName = "geo1";
-	public int _nodeTypeIndex = 0;
-
-	public void Update()
-	{
-	    if (!HEU_PluginSettings.SessionSyncAutoCook)
-	    {
-		return;
-	    }
-
-	    HEU_SessionBase session = HEU_SessionManager.GetDefaultSession();
-
-	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync())
-	    {
-		return;
-	    }
-
-	    // TODO: integrate this check into session.IsSessionValid() above?
-	    if (session.ConnectedState == HEU_SessionBase.SessionConnectionState.CONNECTED)
-	    {
-		// Get latest use time from HAPI
-		_useHoudiniTime = session.GetUseHoudiniTime();
-	    }
-	}
-
-	public void SetHuseHoudiniTime(bool enable)
-	{
-	    _useHoudiniTime = enable;
-
-	    HEU_SessionBase session = HEU_SessionManager.GetDefaultSession();
-	    if (session != null)
-	    {
-		session.SetUseHoudiniTime(enable);
-	    }
-	}
+	#endregion
     }
 
-}
+}   // HoudiniEngineUnity

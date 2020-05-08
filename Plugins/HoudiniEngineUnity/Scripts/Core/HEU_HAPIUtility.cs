@@ -453,7 +453,7 @@ namespace HoudiniEngineUnity
 	public static bool CreateAndCookCurveAsset(HEU_SessionBase session, string assetName, bool bCookTemplatedGeos, out HAPI_NodeId newAssetID)
 	{
 	    newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
-	    if (!session.CreateNode(HEU_Defines.HEU_INVALID_NODE_ID, "SOP/curve", "Curve", true, out newAssetID))
+	    if (!session.CreateNode(HEU_Defines.HEU_INVALID_NODE_ID, "SOP/curve", assetName, true, out newAssetID))
 	    {
 		return false;
 	    }
@@ -480,7 +480,7 @@ namespace HoudiniEngineUnity
 	public static bool CreateAndCookInputAsset(HEU_SessionBase session, string assetName, bool bCookTemplatedGeos, out HAPI_NodeId newAssetID)
 	{
 	    newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
-	    if (!session.CreateInputNode(out newAssetID, null))
+	    if (!session.CreateInputNode(out newAssetID, assetName))
 	    {
 		return false;
 	    }
@@ -639,18 +639,18 @@ namespace HoudiniEngineUnity
 	/// Creates a new Curve asset in scene, as well as in a Houdini session.
 	/// </summary>
 	/// <returns>A valid curve asset gameobject or null if failed.</returns>
-	public static GameObject CreateNewCurveAsset(Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true)
+	public static GameObject CreateNewCurveAsset(string name = "HoudiniCurve", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true)
 	{
-	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE, "HoudiniCurve", parentTransform, session, bBuildAsync);
+	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE, name, parentTransform, session, bBuildAsync);
 	}
 
 	/// <summary>
 	/// Creates a new input asset in scene, as well as in a Houdini session.
 	/// </summary>
 	/// <returns>A valid input asset gameobject or null if failed.</returns>
-	public static GameObject CreateNewInputAsset(Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true)
+	public static GameObject CreateNewInputAsset(string name = "HoudiniInput", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true)
 	{
-	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_INPUT, "HoudiniInput", parentTransform, session, bBuildAsync);
+	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_INPUT, name, parentTransform, session, bBuildAsync);
 	}
 
 	/// <summary>
@@ -1212,22 +1212,6 @@ namespace HoudiniEngineUnity
 	    }
 
 	    return true;
-	}
-
-	public static GameObject CreateEmptyGeoNode(HEU_SessionBase session, string nodeLabel, out HAPI_NodeId nodeID)
-	{
-	    nodeID = -1;
-
-	    // Create the merge SOP node that the input nodes are going to connect to.
-	    if (!session.CreateNode(-1, "SOP/output", nodeLabel, true, out nodeID))
-	    {
-		Debug.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
-		return null;
-	    }
-
-
-
-	    return null;
 	}
     }
 

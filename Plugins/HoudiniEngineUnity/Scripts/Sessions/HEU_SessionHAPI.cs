@@ -561,6 +561,9 @@ namespace HoudiniEngineUnity
 		catch (System.DllNotFoundException ex)
 		{
 		    SetSessionErrorMsg(ex.ToString(), true);
+
+		    ThrowErrorOverride = false;
+		    LogErrorOverride = false;
 		}
 	    }
 	    return false;
@@ -2223,6 +2226,20 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadGeoFromFile(ref _sessionData._HAPISession, nodeID, file_name);
 	    HandleStatusResult(result, "Loading Geo From File", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SaveNodeToFile(HAPI_NodeId nodeID, string fileName)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SaveNodeToFile(ref _sessionData._HAPISession, nodeID, fileName);
+	    HandleStatusResult(result, "Saving Node To File", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool LoadNodeFromFile(string file_name, HAPI_NodeId parentNodeID, string nodeLabel, bool cook_on_load, out HAPI_NodeId newNodeID)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadNodeFromFile(ref _sessionData._HAPISession, file_name, parentNodeID, nodeLabel, cook_on_load, out newNodeID);
+	    HandleStatusResult(result, "Loading Node From File", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
