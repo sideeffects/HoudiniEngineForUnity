@@ -76,7 +76,7 @@ namespace HoudiniEngineUnity
 	public const string HEU_SESSION_PIPENAME = "hapi";
 	public const string HEU_SESSION_LOCALHOST = "localhost";
 	public const int HEU_SESSION_PORT = 9090;
-	public const float HEU_SESSION_TIMEOUT = 2000f;
+	public const float HEU_SESSION_TIMEOUT = 10000f;
 	public const bool HEU_SESSION_AUTOCLOSE = true;
 
 	public const int HAPI_MAX_PAGE_SIZE = 20000;

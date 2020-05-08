@@ -612,6 +612,28 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
+	/// Removes the session data file.
+	/// </summary>
+	public static void DeleteAllSavedSessionData()
+	{
+#if UNITY_EDITOR
+	    string path = SessionFilePath();
+	    try
+	    {
+		if (File.Exists(path))
+		{
+		    File.Delete(SessionFilePath());
+		}
+	    }
+	    catch (System.Exception ex)
+	    {
+		Debug.LogErrorFormat("Unable to deletion session file: {0}. Exception: {1}", path, ex.ToString());
+	    }
+	    
+#endif
+	}
+
+	/// <summary>
 	/// Build up the asset environment paths set in unity_houdini.env.
 	/// The paths must have key prefixes start with HEU_Defines.HEU_ENVPATH_PREFIX.
 	/// When assets are loaded, these mappings are used to find real paths.
