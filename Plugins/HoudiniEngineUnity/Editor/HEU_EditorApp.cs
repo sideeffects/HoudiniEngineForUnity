@@ -45,10 +45,14 @@ namespace HoudiniEngineUnity
 	{
 	    EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
 
+#if UNITY_2018_1_OR_NEWER
+	    EditorApplication.quitting += EditorQuit;
+#endif
+
 #if UNITY_2019_1_OR_NEWER
 	    SceneView.duringSceneGui += OnSceneGUIDelegate;
 #else
-			SceneView.onSceneGUIDelegate += OnSceneGUIDelegate;
+	    SceneView.onSceneGUIDelegate += OnSceneGUIDelegate;
 #endif
 	}
 
@@ -119,6 +123,13 @@ namespace HoudiniEngineUnity
 		    dragEvent.Use();
 		}
 	    }
+	}
+
+	private static void EditorQuit()
+	{
+	    Debug.Log("Houdini Engine: Editor is closing. Closing all sessions and clearing cache.");
+	    HEU_SessionManager.CloseAllSessions();
+	    HEU_PluginStorage.DeleteAllSavedSessionData();
 	}
     }
 
