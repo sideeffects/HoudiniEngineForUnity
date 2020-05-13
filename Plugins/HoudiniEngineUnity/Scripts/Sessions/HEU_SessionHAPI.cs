@@ -148,6 +148,8 @@ namespace HoudiniEngineUnity
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
 		    SetSessionErrorMsg(string.Format("Unable to start in-process session.\n Make sure {0} exists.", HEU_Platform.LibPath), true);
+
+		    HandleSessionConnectionFailure();
 		    return false;
 		}
 
@@ -156,6 +158,7 @@ namespace HoudiniEngineUnity
 		// Make sure API version matches with plugin version
 		if (!CheckVersionMatch())
 		{
+		    HandleSessionConnectionFailure();
 		    return false;
 		}
 
@@ -163,6 +166,8 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
+		HandleSessionConnectionFailure();
+
 		if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
 		{
 		    SetSessionErrorMsg(string.Format("Creating Houdini Engine session resulted in exception: {0}", ex.ToString()), true);
@@ -238,11 +243,7 @@ namespace HoudiniEngineUnity
 	    // Start at failed since this is several steps. Once connected, we can set it as such.
 	    ConnectedState = SessionConnectionState.FAILED_TO_CONNECT;
 
-	    string sessionConnectionErrorMsg = string.Format("\nHost name: {0}"
-		    + "\nPort: {1}"
-		    + "\nCheck Session information in Plugin Settings."
-		    + "\nCheck that {2} exists.",
-		    hostName, serverPort, HEU_Platform.LibPath);
+	    HEU_SessionManager.ClearConnectionError();
 
 	    if (bCreateSession)
 	    {
@@ -254,10 +255,16 @@ namespace HoudiniEngineUnity
 		result = HEU_HAPIImports.HAPI_StartThriftSocketServer(ref serverOptions, serverPort, out processID);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
-		    SetSessionErrorMsg(string.Format("Unable to start socket server.\nError Code: {1}\n{0}", result, sessionConnectionErrorMsg), true);
+		    bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
+		    SetSessionConnectionErrorMsg("Unable to start the Houdini Engine server (socket mode).",
+			result, bIsHARSRunning, true);
+
+		    HandleSessionConnectionFailure();
 		    return false;
 		}
 	    }
+
+	    _sessionData.ProcessID = processID;
 
 	    // Then create the session
 	    _sessionData._HAPISession.type = HAPI_SessionType.HAPI_SESSION_THRIFT;
@@ -270,8 +277,12 @@ namespace HoudiniEngineUnity
 		    debugMsg = "\n\nMake sure you started Houdini Engine Debugger in Houdini (Windows -> Houdini Engine Debugger)";
 		}
 
+		bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
 		bool bLogError = !_sessionData.IsSessionSync;
-		SetSessionErrorMsg(string.Format("Unable to create socket session.\nError Code: {0}\n{1}{2}", result, sessionConnectionErrorMsg, debugMsg), bLogError);
+		SetSessionConnectionErrorMsg("Unable to connect to the Houdini Engine server (socket mode)." + debugMsg,
+			result, bIsHARSRunning, bLogError);
+
+		HandleSessionConnectionFailure();
 		return false;
 	    }
 
@@ -280,6 +291,7 @@ namespace HoudiniEngineUnity
 	    // Make sure API version matches with plugin version
 	    if (!CheckVersionMatch())
 	    {
+		HandleSessionConnectionFailure();
 		return false;
 	    }
 
@@ -288,6 +300,16 @@ namespace HoudiniEngineUnity
 		return InitializeSession(_sessionData);
 	    }
 	    return true;
+	}
+
+	/// <summary>
+	/// Handles the session connection failure.
+	/// For now just closes session, but providing
+	/// an abstraction so as to improve later if needed.
+	/// </summary>
+	private void HandleSessionConnectionFailure()
+	{
+	    CloseSession();
 	}
 
 	/// <summary>
@@ -351,10 +373,7 @@ namespace HoudiniEngineUnity
 	    // Start at failed since this is several steps. Once connected, we can set it as such.
 	    ConnectedState = SessionConnectionState.FAILED_TO_CONNECT;
 
-	    string sessionConnectionErrorMsg = string.Format("\nPipe name: {0}."
-		    + "\nCheck Session information in Plugin Settings."
-		    + "\nCheck that {1} exists.",
-		    pipeName, HEU_Platform.LibPath);
+	    HEU_SessionManager.ClearConnectionError();
 
 	    if (bCreateSession)
 	    {
@@ -366,7 +385,11 @@ namespace HoudiniEngineUnity
 		result = HEU_HAPIImports.HAPI_StartThriftNamedPipeServer(ref serverOptions, pipeName, out processID);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
-		    SetSessionErrorMsg(string.Format("Unable to start RPC server.\nError Code: {0}\n{1}", result, sessionConnectionErrorMsg));
+		    bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
+		    SetSessionConnectionErrorMsg("Unable to start the Houdini Engine server (pipe mode).",
+			result, bIsHARSRunning);
+
+		    HandleSessionConnectionFailure();
 		    return false;
 		}
 	    }
@@ -384,8 +407,12 @@ namespace HoudiniEngineUnity
 		    debugMsg = "\n\nMake sure you started Houdini Engine Debugger in Houdini (Windows -> Houdini Engine Debugger)";
 		}
 
+		bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
 		bool bLogError = !_sessionData.IsSessionSync;
-		SetSessionErrorMsg(string.Format("Unable to create RPC pipe session.\nError Code: {0}\n{1}{2}", result, sessionConnectionErrorMsg, debugMsg), bLogError);
+		SetSessionConnectionErrorMsg("Unable to connect to the Houdini Engine server (pipe mode)." + debugMsg,
+			result, bIsHARSRunning, bLogError);
+
+		HandleSessionConnectionFailure();
 		return false;
 	    }
 
@@ -394,6 +421,7 @@ namespace HoudiniEngineUnity
 	    // Make sure API version matches with plugin version
 	    if (!CheckVersionMatch())
 	    {
+		HandleSessionConnectionFailure();
 		return false;
 	    }
 
@@ -451,9 +479,11 @@ namespace HoudiniEngineUnity
 
 		try
 		{
+		    HAPI_Result result;
+
 		    if (IsSessionValid())
 		    {
-			HAPI_Result result = HEU_HAPIImports.HAPI_Cleanup(ref _sessionData._HAPISession);
+			result = HEU_HAPIImports.HAPI_Cleanup(ref _sessionData._HAPISession);
 			if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 			{
 			    HandleStatusResult(result, "Clean Up Session", false, true);
@@ -462,9 +492,11 @@ namespace HoudiniEngineUnity
 			result = HEU_HAPIImports.HAPI_CloseSession(ref _sessionData._HAPISession);
 			if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 			{
-			    // Probably not possible to query more info about the session error as it might be in an invalid state.
-			    // Just clear our own session, and flag the user that there was an error on closing
-			    SetSessionErrorMsg(string.Format("Closing session resulted in error (result code: {0})", result));
+			    string errorMsg = HEU_SessionManager.GetConnectionError(true);
+			    SetSessionErrorMsg(string.Format("Closing session resulted in error."
+				+ "\nError: {0}"
+				+ "\n{1}"
+				, result, errorMsg));
 			}
 		    }
 		}
@@ -477,6 +509,19 @@ namespace HoudiniEngineUnity
 		    else
 		    {
 			throw;
+		    }
+		}
+		finally
+		{
+		    // Kill HARS if its still running
+		    if (_sessionData.ProcessID > 0)
+		    {
+			System.Diagnostics.Process serverProcess = System.Diagnostics.Process.GetProcessById(_sessionData.ProcessID);
+			if (serverProcess != null && !serverProcess.HasExited && serverProcess.ProcessName.Equals("HARS"))
+			{
+			    serverProcess.Kill();
+			    _sessionData.ProcessID = -1;
+			}
 		    }
 		}
 
@@ -651,6 +696,8 @@ namespace HoudiniEngineUnity
 	    {
 		HandleStatusResult(result, "Session Initialize failed.", true, true);
 		sessionData.IsInitialized = false;
+
+		HandleSessionConnectionFailure();
 		return false;
 	    }
 

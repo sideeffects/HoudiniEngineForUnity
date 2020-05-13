@@ -172,6 +172,37 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
+	/// Special handler for connection error messages.
+	/// </summary>
+	/// <param name="introMsg">The first part of the error message</param>
+	/// <param name="result">HAPI result code</param>
+	/// <param name="bLogError">Whether to also log the error</param>
+	public virtual void SetSessionConnectionErrorMsg(string introMsg, HAPI_Result result, bool bIsHARSRunning, bool bLogError = false)
+	{
+	    string connectionError = HEU_SessionManager.GetConnectionError(true);
+	    string errorMsg = string.Format("{0}"
+		+ "\nHARS was running: {1}"
+		+ "\n\n----------------------------------------"
+		+ "\nCode: {2}"
+		+ "\n{3}"
+		+ "\n------------------------------------------"
+		+ "\n\nPlease try the following:"
+		+ "\n\nCheck connection settings in HoudiniEngine > Plugin Settings > SESSION."
+		+ "\nMake sure pipe name is valid if using pipe mode, or server name and port are valid if using socket mode."
+		+ "\nRevert to default if not sure."
+		+ "\n\nForce close and reset sessions via HoudiniEngine > Session > Close All Sessions (then try again)."
+		+ "\n\nCheck that Houdini is installed here: {4}"
+		+ "\nYou can reinstall Houdini and Unity plugin."
+		+ "\nOr override Houdini install location in HoudiniEngine > Plugin Settings > GENERAL"
+		+ "\n\nRestart Unity and try again."
+		+ "\n\nKill any HARS process on local machine. Or restart machine if not sure."
+		+ "\n\nNote this message will be logged to Console."
+		, introMsg, bIsHARSRunning, result, connectionError, HEU_Platform.GetHoudiniEnginePath());
+
+	    SetSessionErrorMsg(errorMsg, bLogError);
+	}
+
+	/// <summary>
 	/// Create new session data if specified.
 	/// </summary>
 	/// <param name="bOverwriteExisting">True if overwrite existing session data. Note it does not close existing.</param>

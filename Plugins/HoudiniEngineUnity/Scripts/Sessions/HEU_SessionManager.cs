@@ -546,6 +546,46 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public static bool ClearConnectionError()
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_ClearConnectionError();
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public static string GetConnectionError(bool clear)
+	{
+	    int bufferLength = 0;
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetConnectionErrorLength(out bufferLength);
+	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
+	    {
+		if (bufferLength > 0)
+		{
+		    StringBuilder sb = new StringBuilder(bufferLength);
+		    result = HEU_HAPIImports.HAPI_GetConnectionError(sb, bufferLength, clear);
+		    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
+		    {
+			return sb.ToString();
+		    }
+		}
+		else
+		{
+		    // Empty string for no error
+		    return "";
+		}
+	    }
+	    return "Failed to get connection error";
+	}
+
+	public static bool IsHARSProcessRunning(int processID)
+	{
+	    if (processID > 0)
+	    {
+		System.Diagnostics.Process serverProcess = System.Diagnostics.Process.GetProcessById(processID);
+		return serverProcess != null && !serverProcess.HasExited && serverProcess.ProcessName.Equals("HARS");
+	    }
+	    return false;
+	}
+
 	// SESSION DEBUG ----------------------------------------------------------------------------------------------
 
 	/// <summary>
