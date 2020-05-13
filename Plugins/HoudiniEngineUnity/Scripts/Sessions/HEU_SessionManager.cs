@@ -28,6 +28,8 @@
 #define HOUDINIENGINEUNITY_ENABLED
 #endif
 
+#define EXPERIMENTAL
+
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Collections.Generic;
@@ -334,6 +336,26 @@ namespace HoudiniEngineUnity
 	    return _defaultSession.CreateCustomSession(true);
 	}
 
+#if !EXPERIMENTAL
+
+	public static bool ConnectThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout)
+	{
+	    CheckAndCloseExistingSession();
+
+	    _defaultSession = CreateSessionObject();
+	    return _defaultSession.ConnectThriftSocketSession(true, hostName, serverPort, autoClose, timeout);
+	}
+
+	public static bool ConnectThriftPipeSession(string pipeName, bool autoClose, float timeout)
+	{
+	    CheckAndCloseExistingSession();
+
+	    _defaultSession = CreateSessionObject();
+	    return _defaultSession.ConnectThriftPipeSession(true, pipeName, autoClose, timeout);
+	}
+
+#endif
+
 	public static void RecreateDefaultSessionData()
 	{
 	    CheckAndCloseExistingSession();
@@ -548,12 +570,17 @@ namespace HoudiniEngineUnity
 
 	public static bool ClearConnectionError()
 	{
+#if HOUDINIENGINEUNITY_ENABLED
 	    HAPI_Result result = HEU_HAPIImports.HAPI_ClearConnectionError();
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+#else
+	    return true;
+#endif
 	}
 
 	public static string GetConnectionError(bool clear)
 	{
+#if HOUDINIENGINEUNITY_ENABLED
 	    int bufferLength = 0;
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetConnectionErrorLength(out bufferLength);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
@@ -573,6 +600,7 @@ namespace HoudiniEngineUnity
 		    return "";
 		}
 	    }
+#endif
 	    return "Failed to get connection error";
 	}
 

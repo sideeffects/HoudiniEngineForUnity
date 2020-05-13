@@ -24,6 +24,8 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define EXPERIMENTAL
+
 #if (UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_LINUX)
 #define HOUDINIENGINEUNITY_ENABLED
 #endif
@@ -966,6 +968,7 @@ namespace HoudiniEngineUnity
 	    return result == HAPI_Result.HAPI_RESULT_SUCCESS; ;
 	}
 
+#if EXPERIMENTAL
 	public override bool GetUseHoudiniTime()
 	{
 	    bool enabled = false;
@@ -980,6 +983,7 @@ namespace HoudiniEngineUnity
 	    HandleStatusResult(result, "Setting Use Houdini Time", false, true);
 	    return result == HAPI_Result.HAPI_RESULT_SUCCESS; ;
 	}
+#endif
 
 	// ASSETS -----------------------------------------------------------------------------------------------------
 
@@ -2276,6 +2280,7 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+#if EXPERIMENTAL
 	public override bool SaveNodeToFile(HAPI_NodeId nodeID, string fileName)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_SaveNodeToFile(ref _sessionData._HAPISession, nodeID, fileName);
@@ -2289,6 +2294,7 @@ namespace HoudiniEngineUnity
 	    HandleStatusResult(result, "Loading Node From File", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
+#endif
 
 	public override bool GetGeoSize(HAPI_NodeId nodeID, string format, out int size)
 	{
@@ -2320,12 +2326,14 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+#if EXPERIMENTAL
 	public override bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetTotalCookCount(ref _sessionData._HAPISession, nodeID, nodeTypeFilter, nodeFlagFilter, includeChildren, out count);
 	    HandleStatusResult(result, "Getting Total Cook Count", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
+#endif
 
 #endif // HOUDINIENGINEUNITY_ENABLED
 
