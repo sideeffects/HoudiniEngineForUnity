@@ -172,7 +172,7 @@ namespace HoudiniEngineUnity
 
 		if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
 		{
-		    SetSessionErrorMsg(string.Format("Creating Houdini Engine session resulted in exception: {0}", ex.ToString()), true);
+		    SetLibraryErrorMsg(true);
 		}
 		else
 		{
@@ -205,7 +205,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
 		{
-		    SetSessionErrorMsg(string.Format("Unable to create session due to Houdini Engine libraries not found! " + ex), true);
+		    SetLibraryErrorMsg(true);
 		}
 		else
 		{
@@ -335,7 +335,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
 		{
-		    SetSessionErrorMsg(string.Format("Unable to create session due to Houdini Engine libraries not found! " + ex), bLogError);
+		    SetLibraryErrorMsg(bLogError);
 		}
 		else
 		{
@@ -506,7 +506,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
 		    {
-			SetSessionErrorMsg(string.Format("Unable to close session due to Houdini Engine libraries not found!"), true);
+			SetLibraryErrorMsg(true);
 		    }
 		    else
 		    {
@@ -605,9 +605,9 @@ namespace HoudiniEngineUnity
 		    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 		// In most cases, this call fails due to HAPI libraries not found, so catch and handle gracefully
-		catch (System.DllNotFoundException ex)
+		catch (System.DllNotFoundException)
 		{
-		    SetSessionErrorMsg(ex.ToString(), true);
+		    SetLibraryErrorMsg(true);
 
 		    ThrowErrorOverride = false;
 		    LogErrorOverride = false;
