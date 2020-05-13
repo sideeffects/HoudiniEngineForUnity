@@ -78,6 +78,8 @@ namespace HoudiniEngineUnity
 	// Override for throwing session errors
 	public bool ThrowErrorOverride { get; set; }
 
+	public bool IsSessionSync() { return (_sessionData != null) ? _sessionData.IsSessionSync : false; }
+
 	// ASSET REGISTRATION -----------------------------------------------------------------------------------------------
 
 	// The following asset registration mechanism keeps track of HEU_HoudiniAsset 
@@ -170,6 +172,37 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
+	/// Special handler for connection error messages.
+	/// </summary>
+	/// <param name="introMsg">The first part of the error message</param>
+	/// <param name="result">HAPI result code</param>
+	/// <param name="bLogError">Whether to also log the error</param>
+	public virtual void SetSessionConnectionErrorMsg(string introMsg, HAPI_Result result, bool bIsHARSRunning, bool bLogError = false)
+	{
+	    string connectionError = HEU_SessionManager.GetConnectionError(true);
+	    string errorMsg = string.Format("{0}"
+		+ "\nHARS was running: {1}"
+		+ "\n\n----------------------------------------"
+		+ "\nCode: {2}"
+		+ "\n{3}"
+		+ "\n------------------------------------------"
+		+ "\n\nPlease try the following:"
+		+ "\n\nCheck connection settings in HoudiniEngine > Plugin Settings > SESSION."
+		+ "\nMake sure pipe name is valid if using pipe mode, or server name and port are valid if using socket mode."
+		+ "\nRevert to default if not sure."
+		+ "\n\nForce close and reset sessions via HoudiniEngine > Session > Close All Sessions (then try again)."
+		+ "\n\nCheck that Houdini is installed here: {4}"
+		+ "\nYou can reinstall Houdini and Unity plugin."
+		+ "\nOr override Houdini install location in HoudiniEngine > Plugin Settings > GENERAL"
+		+ "\n\nRestart Unity and try again."
+		+ "\n\nKill any HARS process on local machine. Or restart machine if not sure."
+		+ "\n\nNote this message will be logged to Console."
+		, introMsg, bIsHARSRunning, result, connectionError, HEU_Platform.GetHoudiniEnginePath());
+
+	    SetSessionErrorMsg(errorMsg, bLogError);
+	}
+
+	/// <summary>
 	/// Create new session data if specified.
 	/// </summary>
 	/// <param name="bOverwriteExisting">True if overwrite existing session data. Note it does not close existing.</param>
@@ -188,12 +221,21 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	public virtual bool CreateThriftSocketSession(bool bIsDefaultSession, string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, int serverPort = HEU_Defines.HEU_SESSION_PORT, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, bool bLogError = true)
+	public virtual bool CreateThriftSocketSession(bool bIsDefaultSession, 
+	    string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, 
+	    int serverPort = HEU_Defines.HEU_SESSION_PORT, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, 
+	    bool bLogError = true)
 	{
 	    return false;
 	}
 
-	public virtual bool CreateThriftPipeSession(bool bIsDefaultSession, string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, bool bLogError = true)
+	public virtual bool CreateThriftPipeSession(bool bIsDefaultSession, 
+	    string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT, 
+	    bool bLogError = true)
 	{
 	    return false;
 	}
@@ -203,12 +245,23 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	public virtual bool ConnectThriftSocketSession(bool bIsDefaultSession, string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, int serverPort = HEU_Defines.HEU_SESSION_PORT, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT)
+	public virtual bool ConnectThriftSocketSession(bool bIsDefaultSession, 
+	    string hostName = HEU_Defines.HEU_SESSION_LOCALHOST, 
+	    int serverPort = HEU_Defines.HEU_SESSION_PORT, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
+	    HEU_SessionSyncInfo sessionSync = null,
+	    bool autoInitialize = true)
 	{
 	    return false;
 	}
 
-	public virtual bool ConnectThriftPipeSession(bool bIsDefaultSession, string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, float timeout = HEU_Defines.HEU_SESSION_TIMEOUT)
+	public virtual bool ConnectThriftPipeSession(bool bIsDefaultSession, 
+	    string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, 
+	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
+	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
+	    HEU_SessionSyncInfo sessionSync = null,
+	    bool autoInitialize = true)
 	{
 	    return false;
 	}
@@ -299,6 +352,11 @@ namespace HoudiniEngineUnity
 	}
 
 	public virtual bool CheckVersionMatch()
+	{
+	    return false;
+	}
+
+	public virtual bool InitializeSession(HEU_SessionData sessionData)
 	{
 	    return false;
 	}
@@ -406,6 +464,28 @@ namespace HoudiniEngineUnity
 	public virtual HAPI_ErrorCodeBits CheckForSpecificErrors(HAPI_NodeId nodeID, HAPI_ErrorCodeBits errorsToCheck)
 	{
 	    return 0;
+	}
+
+	// TIME -----------------------------------------------------------------------------------------------------
+
+	public virtual float GetTime()
+	{
+	    return 0;
+	}
+
+	public virtual bool SetTime(float time)
+	{
+	    return false;
+	}
+
+	public virtual bool GetUseHoudiniTime()
+	{
+	    return false;
+	}
+
+	public virtual bool SetUseHoudiniTime(bool enable)
+	{
+	    return false;
 	}
 
 	// ASSETS -----------------------------------------------------------------------------------------------------
@@ -1384,6 +1464,17 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public virtual bool SaveNodeToFile(HAPI_NodeId nodeID, string fileName)
+	{
+	    return false;
+	}
+
+	public virtual bool LoadNodeFromFile(string file_name, HAPI_NodeId parentNodeID, string nodeLabel, bool cook_on_load, out HAPI_NodeId newNodeID)
+	{
+	    newNodeID = -1;
+	    return false;
+	}
+
 	public virtual bool GetGeoSize(HAPI_NodeId nodeID, string format, out int size)
 	{
 	    size = 0;
@@ -1405,6 +1496,12 @@ namespace HoudiniEngineUnity
 	public virtual bool ConvertTransform(ref HAPI_TransformEuler inTransform, HAPI_RSTOrder RSTOrder, HAPI_XYZOrder ROTOrder, out HAPI_TransformEuler outTransform)
 	{
 	    outTransform = new HAPI_TransformEuler();
+	    return false;
+	}
+
+	public virtual bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
+	{
+	    count = 0;
 	    return false;
 	}
     }

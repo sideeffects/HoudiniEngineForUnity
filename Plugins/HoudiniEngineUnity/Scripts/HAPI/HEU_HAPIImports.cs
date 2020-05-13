@@ -24,6 +24,8 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//#define EXPERIMENTAL
+
 #if (UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_LINUX)
 #define HOUDINIENGINEUNITY_ENABLED
 #endif
@@ -194,6 +196,18 @@ namespace HoudiniEngineUnity
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
+	HAPI_ClearConnectionError();
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_GetConnectionErrorLength(out int buffer_length);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_GetConnectionError(StringBuilder string_value, int buffer_length, [MarshalAs(UnmanagedType.U1)] bool clear);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
 	HAPI_GetCookingTotalCount(ref HAPI_Session session, out int count);
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -276,6 +290,16 @@ namespace HoudiniEngineUnity
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
 	HAPI_SetTime(ref HAPI_Session session, float time);
+
+#if EXPERIMENTAL
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_GetUseHoudiniTime(ref HAPI_Session session, [MarshalAs(UnmanagedType.U1)] ref bool enabled);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_SetUseHoudiniTime(ref HAPI_Session session, [MarshalAs(UnmanagedType.U1)] bool enabled);
+#endif
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
@@ -1520,6 +1544,26 @@ namespace HoudiniEngineUnity
 		HAPI_NodeId node_id,
 		string file_name);
 
+#if EXPERIMENTAL
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_SaveNodeToFile(
+		ref HAPI_Session session,
+		HAPI_NodeId node_id,
+		string file_name);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_LoadNodeFromFile(
+		ref HAPI_Session session,
+		string file_name,
+		HAPI_NodeId parent_node_id,
+		string node_label,
+		[MarshalAs(UnmanagedType.U1)] bool cook_on_load,
+		out HAPI_NodeId new_node_id
+		);
+#endif
+
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
 	HAPI_GetGeoSize(
@@ -1540,6 +1584,18 @@ namespace HoudiniEngineUnity
 		ref HAPI_Session session,
 		HAPI_NodeId node_id,
 		string format, byte[] buffer, int length);
+
+#if EXPERIMENTAL
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_GetTotalCookCount(
+		ref HAPI_Session session,
+		HAPI_NodeId node_id,
+		HAPI_NodeTypeBits node_type_filter,
+		HAPI_NodeFlagsBits node_flags_filter,
+		[MarshalAs(UnmanagedType.U1)] bool include_children,
+		out int count);
+#endif
 
 #endif
     }

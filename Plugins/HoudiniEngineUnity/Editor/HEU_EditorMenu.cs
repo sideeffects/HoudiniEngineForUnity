@@ -24,6 +24,8 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//#define EXPERIMENTAL
+
 using UnityEngine;
 using UnityEditor;
 
@@ -56,7 +58,10 @@ namespace HoudiniEngineUnity
 	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Create/" + HEU_EditorStrings.RPC_PIPE_SESSION, false, 0)]
 	public static void CreatePipeSession()
 	{
-	    bool bResult = HEU_SessionManager.CreateThriftPipeSession(HEU_PluginSettings.Session_PipeName, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
+	    bool bResult = HEU_SessionManager.CreateThriftPipeSession(
+		HEU_PluginSettings.Session_PipeName, 
+		HEU_PluginSettings.Session_AutoClose, 
+		HEU_PluginSettings.Session_Timeout, true);
 	    if (!bResult)
 	    {
 		HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
@@ -72,6 +77,16 @@ namespace HoudiniEngineUnity
 		HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
 	    }
 	}
+
+#if EXPERIMENTAL
+
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/SessionSync", false, 0)]
+	public static void SessionSync()
+	{
+	    HEU_SessionSyncWindow.ShowWindow();
+	}
+
+#else
 
 	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect To Debugger/" + HEU_EditorStrings.RPC_PIPE_SESSION, false, 0)]
 	public static void DebugConnectPipeSession()
@@ -92,6 +107,8 @@ namespace HoudiniEngineUnity
 		HEU_EditorUtility.DisplayErrorDialog("Debug Session", HEU_SessionManager.GetLastSessionError(), "OK");
 	    }
 	}
+
+#endif
 
 	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/" + HEU_EditorStrings.GET_SESSION_INFO, false, 20)]
 	public static void GetSessionInfo()

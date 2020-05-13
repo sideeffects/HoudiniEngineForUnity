@@ -161,7 +161,7 @@ namespace HoudiniEngineUnity
 		List<HEU_MaterialData> materialCache, string assetCacheFolderPath)
 	{
 #if HEU_PROFILER_ON
-			float generateGeoCacheStartTime = Time.realtimeSinceStartup;
+	    float generateGeoCacheStartTime = Time.realtimeSinceStartup;
 #endif
 
 	    HEU_GenerateGeoCache geoCache = new HEU_GenerateGeoCache();
@@ -223,7 +223,7 @@ namespace HoudiniEngineUnity
 	    }
 
 #if HEU_PROFILER_ON
-			Debug.LogFormat("GENERATE GEO CACHE TIME:: {0}", (Time.realtimeSinceStartup - generateGeoCacheStartTime));
+	    Debug.LogFormat("GENERATE GEO CACHE TIME:: {0}", (Time.realtimeSinceStartup - generateGeoCacheStartTime));
 #endif
 
 	    return geoCache;

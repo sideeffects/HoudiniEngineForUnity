@@ -157,6 +157,10 @@ namespace HoudiniEngineUnity
 	// Pending presets to apply after a Recook, which is invoked after a Rebuild
 	private HEU_RecookPreset _recookPreset;
 
+	// Keeps track of total cooks for this asset in order to check if need to update from Houdini
+	[SerializeField]
+	private int _totalCookCount;
+
 	// BUILD & COOK -----------------------------------------------------------------------------------------------
 
 	public enum AssetBuildAction
@@ -246,7 +250,7 @@ namespace HoudiniEngineUnity
 	private bool _showGenerateSection = true;
 
 	[SerializeField]
-	private bool _showBakeSection = true;
+	private bool _showBakeSection = false;
 
 	[SerializeField]
 	private bool _showEventsSection = false;
@@ -335,6 +339,11 @@ namespace HoudiniEngineUnity
 
 	public bool SplitGeosByGroup { get { return _splitGeosByGroup; } set { _splitGeosByGroup = value; } }
 
+	[SerializeField]
+	private bool _sessionSyncAutoCook = true;
+
+	public bool SessionSyncAutoCook { get { return _sessionSyncAutoCook; } set { _sessionSyncAutoCook = value; } }
+
 	// CURVES -----------------------------------------------------------------------------------------------------
 
 	// Toggle curve editing tool in Scene view
@@ -409,9 +418,9 @@ namespace HoudiniEngineUnity
 	// PROFILE ----------------------------------------------------------------------------------------------------
 
 #if HEU_PROFILER_ON
-		private float _cookStartTime;
-		private float _hapiCookEndTime;
-		private float _postCookStartTime;
+	private float _cookStartTime;
+	private float _hapiCookEndTime;
+	private float _postCookStartTime;
 #endif
 
 	//  LOGIC -----------------------------------------------------------------------------------------------------
@@ -445,6 +454,8 @@ namespace HoudiniEngineUnity
 
 	    Debug.AssertFormat(session != null && session.IsSessionValid(), "Must have valid session for new asset");
 	    _sessionID = session.GetSessionData().SessionID;
+
+	    _totalCookCount = 0;
 	}
 
 	/// <summary>
@@ -577,12 +588,15 @@ namespace HoudiniEngineUnity
 		else if (_requestBuildAction == AssetBuildAction.COOK)
 		{
 		    bool thisCheckParameterChangeForCook = _checkParameterChangeForCook;
-		    bool thisCkipCookCheck = _skipCookCheck;
+		    bool thisSkipCookCheck = _skipCookCheck;
 		    bool thisUploadParameters = _uploadParameters;
 		    bool thisUploadParameterPreset = false;
 		    bool thisForceUploadInputs = _forceUploadInputs;
+		    bool thisSessionSyncCook = false;
 		    ClearBuildRequest();
-		    RecookAsync(thisCheckParameterChangeForCook, thisCkipCookCheck, thisUploadParameters, thisUploadParameterPreset, thisForceUploadInputs);
+		    RecookAsync(thisCheckParameterChangeForCook, thisSkipCookCheck, 
+			thisUploadParameters, thisUploadParameterPreset, 
+			thisForceUploadInputs, thisSessionSyncCook);
 		}
 		else if (_requestBuildAction == AssetBuildAction.STRIP_HEDATA)
 		{
@@ -610,6 +624,11 @@ namespace HoudiniEngineUnity
 		    // Doing a Reload here to clear everything out after resetting the parameters.
 		    // Originally was doing a Recook but because it will keep stuff around (e.g. terrain), a full reset seems better.
 		    RequestReload(bAsync: true);
+		}
+		else
+		{
+		    // For Houdini Engine Session Sync, update any originating changes from Houdini side
+		    UpdateSessionSync();
 		}
 	    }
 #endif
@@ -713,7 +732,9 @@ namespace HoudiniEngineUnity
 	    {
 		if (_cookStatus == AssetCookStatus.NONE)
 		{
-		    RecookBlocking(bCheckParametersChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset: false, bForceUploadInputs: false);
+		    RecookBlocking(bCheckParametersChanged, bSkipCookCheck, 
+			bUploadParameters, bUploadParameterPreset: false, 
+			bForceUploadInputs: false, bCookingSessionSync: false);
 		}
 		else
 		{
@@ -932,6 +953,8 @@ namespace HoudiniEngineUnity
 
 	    session.GetNodeInfo(_assetID, ref _nodeInfo);
 	    session.GetAssetInfo(_assetID, ref _assetInfo);
+	    
+	    UpdateTotalCookCount();
 
 	    // Cache asset info
 	    _assetName = HEU_SessionManager.GetString(_assetInfo.nameSH, session);
@@ -1010,8 +1033,15 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 	/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
+	/// <param name="bUploadParameters"> If true, will upload parameter values before cooking.</param>
+	/// <param name="bUploadParameterPreset">If true, will upload parameter preset into Houdini before cooking.</param>
+	/// <param name="bForceUploadInputs">If true, will upload all input geometry into Houdini before cooking.</param>
+	/// <param name="bCookingSessionSync">If true, this is a SessionSync cook.</param>
 	/// <returns>True if cooking started.</returns>
-	private bool RecookAsync(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
+	private bool RecookAsync(bool bCheckParamsChanged, 
+	    bool bSkipCookCheck, bool bUploadParameters, 
+	    bool bUploadParameterPreset, bool bForceUploadInputs,
+	    bool bCookingSessionSync)
 	{
 #if HEU_PROFILER_ON
 	    _cookStartTime = Time.realtimeSinceStartup;
@@ -1021,7 +1051,10 @@ namespace HoudiniEngineUnity
 	    bool bStarted = false;
 	    try
 	    {
-		bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset, bForceUploadInputs);
+		bStarted = InternalStartRecook(bCheckParamsChanged, 
+		    bSkipCookCheck, bUploadParameters, 
+		    bUploadParameterPreset, bForceUploadInputs, 
+		    bCookingSessionSync);
 	    }
 	    catch (System.Exception ex)
 	    {
@@ -1044,11 +1077,14 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 	/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
-	/// <param name = "bUploadParameters" > If true, will upload parameter values before cooking.</param>
+	/// <param name="bUploadParameters"> If true, will upload parameter values before cooking.</param>
 	/// <param name="bUploadParameterPreset">If true, will upload parameter preset into Houdini before cooking.</param>
 	/// <param name="bForceUploadInputs">If true, will upload all input geometry into Houdini before cooking.</param>
+	/// <param name="bCookingSessionSync">If true, this is a SessionSync cook.</param>
 	/// <returns>True if cooking was done.</returns>
-	private bool RecookBlocking(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
+	private bool RecookBlocking(bool bCheckParamsChanged, bool bSkipCookCheck, 
+	    bool bUploadParameters, bool bUploadParameterPreset, 
+	    bool bForceUploadInputs, bool bCookingSessionSync)
 	{
 #if HEU_PROFILER_ON
 	    _cookStartTime = Time.realtimeSinceStartup;
@@ -1058,7 +1094,9 @@ namespace HoudiniEngineUnity
 
 	    try
 	    {
-		bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, bUploadParameters, bUploadParameterPreset, bForceUploadInputs);
+		bStarted = InternalStartRecook(bCheckParamsChanged, bSkipCookCheck, 
+		    bUploadParameters, bUploadParameterPreset, 
+		    bForceUploadInputs, bCookingSessionSync);
 	    }
 	    catch (System.Exception ex)
 	    {
@@ -1157,11 +1195,15 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="bCheckParamsChanged">If true, then will only cook if parameters have changed.</param>
 	/// <param name="bSkipCookCheck">If true, will check if cooking is enabled.</param>
-	/// <param name="bUploadParameters">If true, will upload parameter values before cooking.</param>
+	/// <param name="bUploadParameters"> If true, will upload parameter values before cooking.</param>
 	/// <param name="bUploadParameterPreset">If true, will upload parameter preset into Houdini before cooking.</param>
 	/// <param name="bForceUploadInputs">If true, will upload all input geometry into Houdini before cooking.</param>
+	/// <param name="bCookingSessionSync">If true, this is a SessionSync cook.</param>
 	/// <returns></returns>
-	private bool InternalStartRecook(bool bCheckParamsChanged, bool bSkipCookCheck, bool bUploadParameters, bool bUploadParameterPreset, bool bForceUploadInputs)
+	private bool InternalStartRecook(bool bCheckParamsChanged, 
+	    bool bSkipCookCheck, bool bUploadParameters, 
+	    bool bUploadParameterPreset, bool bForceUploadInputs,
+	    bool bCookingSessionSync)
 	{
 	    HEU_SessionBase session = GetAssetSession(true);
 	    if (session == null)
@@ -1304,33 +1346,38 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
-
-	    if (!_isCookingAssetReloaded)
+	    if (!bCookingSessionSync)
 	    {
-		// Non-reloaded asset: handle parameter preset
+		// Only upload the following if we are not cooking as a result of SessionSync
+		// i.e. Houdini already cook so no need to upload our own
 
-		if (bUploadParameterPreset)
+		if (!_isCookingAssetReloaded)
 		{
-		    // Parameter preset needs to be uploaded (could be due to parameter reset)
-		    UploadParameterPresetToHoudini(session);
+		    // Non-reloaded asset: handle parameter preset
+
+		    if (bUploadParameterPreset)
+		    {
+			// Parameter preset needs to be uploaded (could be due to parameter reset)
+			UploadParameterPresetToHoudini(session);
+		    }
+		    else
+		    {
+			// Otherwise curves should upload their parameters
+			UploadCurvesParameters(session, bCheckParamsChanged);
+		    }
 		}
-		else
-		{
-		    // Otherwise curves should upload their parameters
-		    UploadCurvesParameters(session, bCheckParamsChanged);
-		}
+
+		// Upload attributes. For edit nodes, this will be a cumulative update. So if the source geo has
+		// changed earlier in the graph, it will most likely be ignored here since the edit node has its own
+		// version of the geo with custom attributes. The only way to resolve it would be to blow away the custom
+		// attribute data (reset all edit node changes). Currently not enabled, though could be added as a 
+		// button that invokes edit node's Reset All Changes.
+		UploadAttributeValues(session);
+
+		// Upload asset inputs. 
+		// bForceUploadInputs allows to upload the input geometry when user hits Recook.
+		UploadInputNodes(session, _bForceUpdate | bForceUploadInputs, !bParamsUpdated);
 	    }
-
-	    // Upload attributes. For edit nodes, this will be a cumulative update. So if the source geo has
-	    // changed earlier in the graph, it will most likely be ignored here since the edit node has its own
-	    // version of the geo with custom attributes. The only way to resolve it would be to blow away the custom
-	    // attribute data (reset all edit node changes). Currently not enabled, though could be added as a 
-	    // button that invokes edit node's Reset All Changes.
-	    UploadAttributeValues(session);
-
-	    // Upload asset inputs. 
-	    // bForceUploadInputs allows to upload the input geometry when user hits Recook.
-	    UploadInputNodes(session, _bForceUpdate | bForceUploadInputs, !bParamsUpdated);
 
 	    bResult = StartHoudiniCookNode(session);
 	    if (!bResult)
@@ -1458,6 +1505,12 @@ namespace HoudiniEngineUnity
 
 	    SetCookStatus(AssetCookStatus.NONE, AssetCookResult.SUCCESS);
 
+	    if (session.IsSessionSync())
+	    {
+		// Force a repaint in SessionSync so the Scene view updates
+		HEU_EditorUtility.RepaintScene();
+	    }
+
 #if HEU_PROFILER_ON
 	    Debug.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
 #endif
@@ -1525,6 +1578,8 @@ namespace HoudiniEngineUnity
 		    }
 
 		    SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.SUCCESS);
+
+		    UpdateTotalCookCount();
 
 		    try
 		    {
@@ -1692,7 +1747,7 @@ namespace HoudiniEngineUnity
 	    //Debug.Log(HEU_Defines.HEU_NAME + ": Generating parameters!");
 
 #if HEU_PROFILER_ON
-			float parameterGenStartTime = Time.realtimeSinceStartup;
+	    float parameterGenStartTime = Time.realtimeSinceStartup;
 #endif
 
 	    // Store the previous folder and input node parameters so we can transfer them over to new parameters
@@ -1719,7 +1774,7 @@ namespace HoudiniEngineUnity
 	    }
 
 #if HEU_PROFILER_ON
-			Debug.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
+	    Debug.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
 #endif
 	}
 
@@ -3641,11 +3696,11 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_CURVE)
 	    {
-		newRootGO = HEU_HAPIUtility.CreateNewCurveAsset(thisParentTransform, session, bBuildAsync);
+		newRootGO = HEU_HAPIUtility.CreateNewCurveAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync);
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_INPUT)
 	    {
-		newRootGO = HEU_HAPIUtility.CreateNewInputAsset(thisParentTransform, session, bBuildAsync);
+		newRootGO = HEU_HAPIUtility.CreateNewInputAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync);
 	    }
 	    else
 	    {
@@ -4042,7 +4097,9 @@ namespace HoudiniEngineUnity
 
 	    Parameters.RecacheUI = true;
 
-	    RecookBlocking(bCheckParamsChanged: false, bSkipCookCheck: true, bUploadParameters: false, bUploadParameterPreset: true, bForceUploadInputs: false);
+	    RecookBlocking(bCheckParamsChanged: false, bSkipCookCheck: true, 
+		bUploadParameters: false, bUploadParameterPreset: true, 
+		bForceUploadInputs: false, bCookingSessionSync: false);
 	}
 
 	/// <summary>
@@ -4189,6 +4246,68 @@ namespace HoudiniEngineUnity
 		    curve.Parameters.SyncInternalParametersForUndoCompare(session);
 		}
 	    }
+	}
+
+	/// <summary>
+	/// Returns true if this has kicked off a local cook because of changes 
+	/// on the Houdini side (e.g. Houdini Engine Session Sync).
+	/// Otherwise returns false if it does nothing.
+	/// </summary>
+	public bool UpdateSessionSync()
+	{
+	    //Debug.Log("Time: " + Time.realtimeSinceStartup);
+
+	    if (_requestBuildAction != AssetBuildAction.NONE || !HEU_PluginSettings.SessionSyncAutoCook || !SessionSyncAutoCook)
+	    {
+		return false;
+	    }
+
+	    HEU_SessionBase session = GetAssetSession(false);
+	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync())
+	    {
+		return false;
+	    }
+
+	    int oldCount = _totalCookCount;
+	    UpdateTotalCookCount();
+	    bool bRequiresCook = oldCount != _totalCookCount;
+
+	    if (bRequiresCook)
+	    {
+		Debug.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
+
+		// Disable parm and input uploading for the recook process
+		bool thisCheckParameterChangeForCook = false;
+		bool thiSkipCookCheck = false;
+		bool thisUploadParameters = false;
+		bool thisUploadParameterPreset = false;
+		bool thisForceUploadInputs = false;
+		bool thisSessionSyncCook = true;
+		ClearBuildRequest();
+		return RecookAsync(thisCheckParameterChangeForCook, thiSkipCookCheck, 
+		    thisUploadParameters, thisUploadParameterPreset, 
+		    thisForceUploadInputs, thisSessionSyncCook);
+	    }
+
+	    return false;
+	}
+
+	public void UpdateTotalCookCount()
+	{
+	    HEU_SessionBase session = GetAssetSession(true);
+	    if (session == null || !session.IsSessionValid())
+	    {
+		return;
+	    }
+
+	    // The reason to query recursively for all assets (SOP and OBJ) is to handle cases
+	    // where nodes are added dynamically within geometry node network. If we only look
+	    // at the SOP node's count, it won't update until the user comes out the network
+	    session.GetTotalCookCount(
+		    _assetID,
+		    (int)(HAPI_NodeType.HAPI_NODETYPE_OBJ | HAPI_NodeType.HAPI_NODETYPE_SOP),
+		    (int)(HAPI_NodeFlags.HAPI_NODEFLAGS_OBJ_GEOMETRY | HAPI_NodeFlags.HAPI_NODEFLAGS_DISPLAY),
+		    true, out _totalCookCount);
 	}
     }
 

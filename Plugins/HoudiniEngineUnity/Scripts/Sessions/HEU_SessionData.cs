@@ -67,6 +67,28 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private bool _isDefaultSession;
 
+	[SerializeField]
+	private HEU_SessionSyncInfo _sessionSync = null;
+
+	public HEU_SessionSyncInfo GetOrCreateSessionSync()
+	{
+	    if (_sessionSync == null)
+	    {
+		_sessionSync = new HEU_SessionSyncInfo();
+	    }
+	    return _sessionSync;
+	}
+
+	public HEU_SessionSyncInfo GetSessionSync()
+	{
+	    return _sessionSync;
+	}
+
+	public void SetSessionSync(HEU_SessionSyncInfo syncInfo)
+	{
+	    _sessionSync = syncInfo;
+	}
+
 
 	public long SessionID
 	{
@@ -75,7 +97,7 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 		return _HAPISession.id;
 #else
-				return INVALID_SESSION_ID;
+		return INVALID_SESSION_ID;
 #endif
 	    }
 
@@ -92,7 +114,7 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 		return _serverProcessID;
 #else
-				return -1;
+		return -1;
 #endif
 	    }
 
@@ -109,7 +131,7 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 		return _HAPISession.type;
 #else
-				return 0;
+		return 0;
 #endif
 	    }
 
@@ -126,7 +148,7 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 		return _initialized;
 #else
-				return false;
+		return false;
 #endif
 	    }
 
@@ -143,7 +165,7 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 		return SessionID > 0;
 #else
-				return false;
+		return false;
 #endif
 	    }
 	}
@@ -155,7 +177,7 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 		return _pipeName;
 #else
-				return "";
+		return "";
 #endif
 	    }
 
@@ -195,6 +217,14 @@ namespace HoudiniEngineUnity
 	    set
 	    {
 		_isDefaultSession = value;
+	    }
+	}
+
+	public bool IsSessionSync
+	{
+	    get
+	    {
+		return _sessionSync != null;
 	    }
 	}
     }

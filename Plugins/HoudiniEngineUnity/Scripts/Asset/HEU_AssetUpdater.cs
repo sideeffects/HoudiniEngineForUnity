@@ -49,6 +49,8 @@ namespace HoudiniEngineUnity
     {
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
 	private static List<HEU_HoudiniAsset> _allHoudiniAssets = new List<HEU_HoudiniAsset>();
+
+	private static List<HEU_BaseSync> _allSyncNodes = new List<HEU_BaseSync>();
 #endif
 
 	static HEU_AssetUpdater()
@@ -88,6 +90,19 @@ namespace HoudiniEngineUnity
 		    asset.PostAssetUpdate();
 		}
 	    }
+
+	    for (int i = 0; i < _allSyncNodes.Count; ++i)
+	    {
+		if (_allSyncNodes[i] != null)
+		{
+		    _allSyncNodes[i].SyncUpdate();
+		}
+		else
+		{
+		    _allSyncNodes.RemoveAt(i);
+		    i--;
+		}
+	    }
 #endif
 	}
 
@@ -110,6 +125,29 @@ namespace HoudiniEngineUnity
 	    if (index >= 0)
 	    {
 		_allHoudiniAssets[index] = null;
+	    }
+#endif
+	}
+
+	public static void AddNodeSyncForUpdate(HEU_BaseSync nodeSync)
+	{
+#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+	    if (!_allSyncNodes.Contains(nodeSync))
+	    {
+		_allSyncNodes.Add(nodeSync);
+	    }
+#endif
+	}
+
+	public static void RemoveNodeSync(HEU_BaseSync nodeSync)
+	{
+#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+	    // Setting the asset reference to null and removing
+	    // later in Update in case of removing while iterating the list
+	    int index = _allSyncNodes.IndexOf(nodeSync);
+	    if (index >= 0)
+	    {
+		_allSyncNodes[index] = null;
 	    }
 #endif
 	}
