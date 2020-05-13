@@ -202,6 +202,20 @@ namespace HoudiniEngineUnity
 	    SetSessionErrorMsg(errorMsg, bLogError);
 	}
 
+	public virtual void SetLibraryErrorMsg(bool bLogError = false)
+	{
+	    string msg = string.Format(
+			"Houdini Engine libraries not found."
+			+ "\n\nMake sure Houdini is installed. Please visit http://www.sidefx.com/download to get the latest Production build."
+			+ "\nThis plugin requires Houdini version {0}. Install it, restart Unity, and try again."
+			+ "\n\nYou can also change to another installed version of Houdini via menu HoudiniEngine > Plugin Settings > GENERAL > Override Houdini Install Path."
+			+ "\n\nExpected library path should be: {1}"
+			+ "\n\nVisit http://www.sidefx.com/unity for documentation."
+			, HEU_HoudiniVersion.HOUDINI_VERSION_STRING, HEU_Platform.GetHoudiniEnginePath()
+			);
+	    SetSessionErrorMsg(msg, bLogError);
+	}
+
 	/// <summary>
 	/// Create new session data if specified.
 	/// </summary>
