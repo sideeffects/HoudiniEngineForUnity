@@ -78,6 +78,28 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect/" + HEU_EditorStrings.RPC_PIPE_SESSION, false, 0)]
+	public static void ConnectPipeSession()
+	{
+	    bool bResult = HEU_SessionManager.ConnectThriftPipeSession(HEU_PluginSettings.Session_PipeName,
+		HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout);
+	    if (!bResult)
+	    {
+		HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");
+	    }
+	}
+
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect/" + HEU_EditorStrings.RPC_SOCKET_SESSION, false, 0)]
+	public static void ConnectSocketSession()
+	{
+	    bool bResult = HEU_SessionManager.ConnectThriftSocketSession(HEU_PluginSettings.Session_Localhost,
+		HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Port);
+	    if (!bResult)
+	    {
+		HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");
+	    }
+	}
+
 #if EXPERIMENTAL
 
 	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/SessionSync", false, 0)]
