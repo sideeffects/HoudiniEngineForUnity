@@ -273,15 +273,15 @@ namespace HoudiniEngineUnity
 	    result = HEU_HAPIImports.HAPI_CreateThriftSocketSession(out _sessionData._HAPISession, hostName, serverPort);
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
-		string debugMsg = "";
+		string harsMsg = "";
 		if (!bCreateSession)
 		{
-		    debugMsg = "\n\nMake sure you started Houdini Engine Debugger in Houdini (Windows -> Houdini Engine Debugger)";
+		    harsMsg = "\n\nMake sure you started the HARS server located in Houdini.";
 		}
 
 		bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
 		bool bLogError = !_sessionData.IsSessionSync;
-		SetSessionConnectionErrorMsg("Unable to connect to the Houdini Engine server (socket mode)." + debugMsg,
+		SetSessionConnectionErrorMsg("Unable to connect to the Houdini Engine server (socket mode)." + harsMsg,
 			result, bIsHARSRunning, bLogError);
 
 		HandleSessionConnectionFailure();
@@ -403,15 +403,15 @@ namespace HoudiniEngineUnity
 	    result = HEU_HAPIImports.HAPI_CreateThriftNamedPipeSession(out _sessionData._HAPISession, pipeName);
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
-		string debugMsg = "";
+		string harsMsg = "";
 		if (!bCreateSession)
 		{
-		    debugMsg = "\n\nMake sure you started Houdini Engine Debugger in Houdini (Windows -> Houdini Engine Debugger)";
+		    harsMsg = "\n\nMake sure you started the HARS server located in Houdini.";
 		}
 
 		bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
 		bool bLogError = !_sessionData.IsSessionSync;
-		SetSessionConnectionErrorMsg("Unable to connect to the Houdini Engine server (pipe mode)." + debugMsg,
+		SetSessionConnectionErrorMsg("Unable to connect to the Houdini Engine server (pipe mode)." + harsMsg,
 			result, bIsHARSRunning, bLogError);
 
 		HandleSessionConnectionFailure();

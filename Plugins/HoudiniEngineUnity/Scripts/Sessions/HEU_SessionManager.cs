@@ -28,8 +28,6 @@
 #define HOUDINIENGINEUNITY_ENABLED
 #endif
 
-#define EXPERIMENTAL
-
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Collections.Generic;
@@ -335,9 +333,6 @@ namespace HoudiniEngineUnity
 	    _defaultSession = CreateSessionObject();
 	    return _defaultSession.CreateCustomSession(true);
 	}
-
-#if !EXPERIMENTAL
-
 	public static bool ConnectThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout)
 	{
 	    CheckAndCloseExistingSession();
@@ -353,8 +348,6 @@ namespace HoudiniEngineUnity
 	    _defaultSession = CreateSessionObject();
 	    return _defaultSession.ConnectThriftPipeSession(true, pipeName, autoClose, timeout);
 	}
-
-#endif
 
 	public static void RecreateDefaultSessionData()
 	{
