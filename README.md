@@ -28,7 +28,7 @@ For support and reporting bugs:
 ## Supported Unity versions
 Currently, the supported Unity versions are:
 
-* 5.6 and newer
+* 2018.1 and newer
 
 ## Installing from Source
 1. Fork this repository to your own Github account using the Fork button at the top.

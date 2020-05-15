@@ -1255,9 +1255,9 @@ namespace HoudiniEngineUnity
 	    if (_helpGridBoxStyle == null)
 	    {
 		_helpGridBoxStyle = new GUIStyle(GUI.skin.box);
-		float c = 0.4f;
-		_helpGridBoxStyle.normal.background = HEU_GeneralUtility.MakeTexture(1, 1, new Color(c, c, c, 0.2f));
-		_helpGridBoxStyle.normal.textColor = Color.white;
+		Color bgColor = HEU_EditorUI.IsEditorDarkSkin() ? new Color(0.8f, 0.8f, 0.8f, 0.2f) : new Color(0.6f, 0.6f, 0.6f, 0.6f);
+		_helpGridBoxStyle.normal.background = HEU_GeneralUtility.MakeTexture(1, 1, bgColor);
+		_helpGridBoxStyle.normal.textColor = HEU_EditorUI.IsEditorDarkSkin() ? Color.white : Color.black;
 		_helpGridBoxStyle.fontStyle = FontStyle.Normal;
 		_helpGridBoxStyle.fontSize = 11;
 		_helpGridBoxStyle.alignment = TextAnchor.MiddleLeft;
