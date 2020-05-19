@@ -25,6 +25,7 @@
 */
 
 using UnityEngine;
+using System.Text;
 
 // Bring in Houdini Engine Unity API
 using HoudiniEngineUnity;
@@ -60,24 +61,21 @@ public class HEU_ExampleInstanceCustomAttribute : MonoBehaviour
 	HEU_OutputAttribute healthAttr = attrStore.GetAttribute("health");
 	if (healthAttr != null)
 	{
-	    Debug.LogFormat("Found health attribute with data for {0} instances.", healthAttr._intValues.Length);
+	    LogAttr(healthAttr);
+	}
 
-	    for (int i = 0; i < healthAttr._intValues.Length; ++i)
-	    {
-		Debug.LogFormat("{0} = {1}", i, healthAttr._intValues[i]);
-	    }
+	// Query for the vector size attribute
+	HEU_OutputAttribute sizeAttr = attrStore.GetAttribute("size");
+	if (sizeAttr != null)
+	{
+	    LogAttr(sizeAttr);
 	}
 
 	// Query for the stringdata attribute
 	HEU_OutputAttribute stringAttr = attrStore.GetAttribute("stringdata");
 	if (stringAttr != null)
 	{
-	    Debug.LogFormat("Found stringdata attribute with data for {0} instances.", stringAttr._stringValues.Length);
-
-	    for (int i = 0; i < stringAttr._stringValues.Length; ++i)
-	    {
-		Debug.LogFormat("{0} = {1}", i, stringAttr._stringValues[i]);
-	    }
+	    LogAttr(stringAttr);
 	}
 
 	// Example of how to map the attribute array values to instances
@@ -102,6 +100,61 @@ public class HEU_ExampleInstanceCustomAttribute : MonoBehaviour
 
 		childTrans[i].localScale = scale;
 	    }
+	}
+    }
+
+    static void LogArray<T>(string name, T[] arr, int tupleSize)
+    {
+	int index = 0;
+	int count = arr.Length / tupleSize;
+	StringBuilder sb = new StringBuilder();
+
+	for (int i = 0; i < count; ++i)
+	{
+	    sb.AppendFormat("{0}[{1}] = ", name, i);
+
+	    if (tupleSize > 1)
+	    {
+		sb.Append("[");
+
+		for (int j = 0; j < tupleSize; ++j)
+		{
+		    index = i * tupleSize + j;
+
+		    if (j != 0)
+		    {
+			sb.Append(",");
+		    }
+
+		    sb.AppendFormat("{0}", arr[index]);
+		}
+
+		sb.AppendLine("]");
+	    }
+	    else
+	    {
+		sb.AppendFormat("{0}\n", arr[i]);
+	    }
+	}
+
+	Debug.Log(sb.ToString());
+    }
+
+    static void LogAttr(HEU_OutputAttribute outAttr)
+    {
+	Debug.LogFormat("Found {0} attribute:", outAttr._name);
+
+	if (outAttr._intValues != null)
+	{
+	    LogArray(outAttr._name, outAttr._intValues, outAttr._tupleSize);
+	}
+	else if (outAttr._floatValues != null)
+	{
+	    LogArray(outAttr._name, outAttr._floatValues, outAttr._tupleSize);
+	}
+	else if (outAttr._stringValues != null)
+	{
+	    LogArray(outAttr._name, outAttr._stringValues, outAttr._tupleSize);
 	}
     }
 }

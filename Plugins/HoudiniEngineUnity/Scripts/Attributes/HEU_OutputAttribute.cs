@@ -41,6 +41,9 @@ namespace HoudiniEngineUnity
 	// Storage type
 	public HAPI_StorageType _type;
 
+	public int _count;
+	public int _tupleSize;
+
 	// Arrays of values, based on class.
 	public int[] _intValues;
 	public float[] _floatValues;
