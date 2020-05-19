@@ -567,6 +567,8 @@ namespace HoudiniEngineUnity
 	    outputAttr._name = attrName;
 	    outputAttr._class = attrInfo.owner;
 	    outputAttr._type = attrInfo.storage;
+	    outputAttr._count = attrInfo.count;
+	    outputAttr._tupleSize = attrInfo.tupleSize;
 	    return outputAttr;
 	}
 
