@@ -30,13 +30,18 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
+    // Derived class to support dictionary serialization
+    [System.Serializable]
+    public class HEU_OutputAttributeDictionary : HEU_SerializableDictionary<string, HEU_OutputAttribute> { }
+
     /// <summary>
     /// Contains Houdini attributes data (HEU_OutpuAttribute) for generated gameobjects.
     /// Query the attributes by name.
     /// </summary>
     public class HEU_OutputAttributesStore : MonoBehaviour
     {
-	private Dictionary<string, HEU_OutputAttribute> _attributes = new Dictionary<string, HEU_OutputAttribute>();
+	[SerializeField]
+	HEU_OutputAttributeDictionary _attributes = new HEU_OutputAttributeDictionary();
 
 	/// <summary>
 	/// Add the given attribute to the internal map by name.
