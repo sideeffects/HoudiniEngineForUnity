@@ -299,12 +299,12 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns>True if successfully created session.</returns>
-	public static bool CreateThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout, bool bLogError)
+	public static bool CreateThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout, bool logError)
 	{
 	    CheckAndCloseExistingSession();
 
 	    _defaultSession = CreateSessionObject();
-	    return _defaultSession.CreateThriftSocketSession(true, hostName, serverPort, autoClose, timeout, bLogError);
+	    return _defaultSession.CreateThriftSocketSession(true, hostName, serverPort, autoClose, timeout, logError);
 	}
 
 	/// <summary>
@@ -314,12 +314,12 @@ namespace HoudiniEngineUnity
 	/// <param name="autoClose"></param>
 	/// <param name="timeout"></param>
 	/// <returns>True if successfully created session.</returns>
-	public static bool CreateThriftPipeSession(string pipeName, bool autoClose, float timeout, bool bLogError)
+	public static bool CreateThriftPipeSession(string pipeName, bool autoClose, float timeout, bool logError)
 	{
 	    CheckAndCloseExistingSession();
 
 	    _defaultSession = CreateSessionObject();
-	    return _defaultSession.CreateThriftPipeSession(true, pipeName, autoClose, timeout, bLogError);
+	    return _defaultSession.CreateThriftPipeSession(true, pipeName, autoClose, timeout, logError);
 	}
 
 	/// <summary>
@@ -357,28 +357,28 @@ namespace HoudiniEngineUnity
 
 	public static bool ConnectSessionSyncUsingThriftSocket(
 	    string hostName, int serverPort, bool autoClose, 
-	    float timeout, HEU_SessionSyncInfo sessionSync)
+	    float timeout, bool logError)
 	{
 	    if (_defaultSession == null)
 	    {
 		RecreateDefaultSessionData();
 	    }
 	    return _defaultSession.ConnectThriftSocketSession(
-		true, hostName, serverPort, autoClose, timeout, 
-		 sessionSync, false);
+		true, hostName, serverPort, autoClose, timeout,
+		 logError, false);
 	}
 
 	public static bool ConnectSessionSyncUsingThriftPipe(
 	    string pipeName, bool autoClose,
-	    float timeout, HEU_SessionSyncInfo sessionSync)
+	    float timeout, bool logError)
 	{
 	    if (_defaultSession == null)
 	    {
 		RecreateDefaultSessionData();
 	    }
 	    return _defaultSession.ConnectThriftPipeSession(
-		true, pipeName, autoClose, timeout, 
-		sessionSync, false);
+		true, pipeName, autoClose, timeout,
+		logError, false);
 	}
 
 	public static bool InitializeDefaultSession()

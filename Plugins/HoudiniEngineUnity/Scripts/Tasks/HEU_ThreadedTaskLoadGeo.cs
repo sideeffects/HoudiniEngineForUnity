@@ -190,7 +190,7 @@ namespace HoudiniEngineUnity
 	    HAPI_State statusCode = HAPI_State.HAPI_STATE_STARTING_LOAD;
 	    while (bResult && statusCode > HAPI_State.HAPI_STATE_MAX_READY_STATE)
 	    {
-		bResult = session.GetStatus(HAPI_StatusType.HAPI_STATUS_COOK_STATE, out statusCode);
+		bResult = session.GetCookState(out statusCode);
 
 		Sleep();
 	    }
