@@ -24,12 +24,8 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define EXPERIMENTAL
-
 using UnityEngine;
 using UnityEditor;
-using System.Threading;
-using System.Collections.Concurrent;
 using System.Text;
 
 namespace HoudiniEngineUnity
@@ -38,8 +34,14 @@ namespace HoudiniEngineUnity
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
 
-#if EXPERIMENTAL
-
+    /// <summary>
+    /// Handles the SessionSync UI and logic.
+    /// Users can start Houdini with SessionSync or connect to SessionSync
+    /// already running in Houdini.
+    /// Allows to set connection settings, and SessionSync settings.
+    /// Allows to create new nodes in Houdini.
+    /// </summary>
+    [InitializeOnLoad]
     public class HEU_SessionSyncWindow : EditorWindow
     {
 	public static void ShowWindow()
@@ -50,11 +52,18 @@ namespace HoudiniEngineUnity
 	private void OnEnable()
 	{
 	    ReInitialize();
+
+	    EditorApplication.update += UpdateSync;
+	}
+
+	private void OnDisable()
+	{
+	    EditorApplication.update -= UpdateSync;
 	}
 
 	void ReInitialize()
 	{
-	    _sessionType = SessionType.Pipe;
+	    _sessionType = HEU_PluginSettings.Session_Type;
 
 	    _port = HEU_PluginSettings.Session_Port;
 	    _pipeName = HEU_PluginSettings.Session_PipeName;
@@ -66,36 +75,53 @@ namespace HoudiniEngineUnity
 	{
 	    SetupUI();
 
-	    HEU_SessionSyncInfo syncInfo = null;
-	    if (syncInfo == null)
-	    {
-		HEU_SessionData sessionData = HEU_SessionManager.GetSessionData();
-		if (sessionData != null)
-		{
-		    // On domain reload, re-acquire serialized SessionSync
-		    // if session exists
-		    syncInfo = sessionData.GetOrCreateSessionSync();
-		}
-	    }
-
-	    if (syncInfo != null)
-	    {
-		syncInfo.Update();
-	    }
+	    HEU_SessionSyncInfo syncInfo = GetSessionSync();
 
 	    EditorGUI.BeginChangeCheck();
 
 	    bool bSessionStarted = (syncInfo != null && syncInfo.SyncStatus != HEU_SessionSyncInfo.Status.Stopped);
+	    bool bSessionCanStart = !bSessionStarted;
+
+	    if (bSessionCanStart)
+	    {
+		// Only able to start a session if no session exists.
+		HEU_SessionBase session = HEU_SessionManager.GetDefaultSession();
+		if (session != null && session.IsSessionValid())
+		{
+		    bSessionCanStart = false;
+		}
+	    }
 
 	    HEU_HoudiniAssetUI.DrawHeaderSection();
 
 	    if (syncInfo != null)
 	    {
-		EditorGUILayout.LabelField("Status: " + syncInfo.SyncStatus);
+		if (syncInfo.SyncStatus == HEU_SessionSyncInfo.Status.Stopped)
+		{
+		    if (!bSessionCanStart)
+		    {
+			EditorGUILayout.LabelField("Another session already running. Disconnect it to start SessionSync.");
+		    }
+		    else
+		    {
+			EditorGUILayout.LabelField("Status: " + syncInfo.SyncStatus);
+		    }
+		}
+		else
+		{
+		    EditorGUILayout.LabelField("Status: " + syncInfo.SyncStatus);
+		}
 	    }
 	    else
 	    {
-		EditorGUILayout.LabelField("No active session");
+		if (!bSessionCanStart)
+		{
+		    EditorGUILayout.LabelField("Another session already running. Disconnect it to start SessionSync.");
+		}
+		else
+		{
+		    EditorGUILayout.LabelField("No active session.");
+		}
 	    }
 
 	    EditorGUILayout.Separator();
@@ -104,20 +130,20 @@ namespace HoudiniEngineUnity
 
 	    using (new EditorGUILayout.HorizontalScope())
 	    {
-		using (new EditorGUI.DisabledScope(bSessionStarted))
+		using (new EditorGUI.DisabledScope(bSessionStarted || !bSessionCanStart))
 		{
 		    if (GUILayout.Button("Start Houdini"))
 		    {
 			StartAndConnectToHoudini(syncInfo);
 		    }
-		    else if (GUILayout.Button("Connect To Houdini"))
+		    else if (GUILayout.Button("Connect to Houdini"))
 		    {
 			ConnectSessionSync(syncInfo);
 		    }
 		}
 	    }
 
-	    using (new EditorGUI.DisabledScope(syncInfo == null || !bSessionStarted))
+	    using (new EditorGUI.DisabledScope((syncInfo == null || !bSessionStarted) && bSessionCanStart))
 	    {
 		if (GUILayout.Button("Disconnect"))
 		{
@@ -125,18 +151,21 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
-	    ProcessConnectingToHoudini(syncInfo);
-
 	    EditorGUILayout.Separator();
 
-	    EditorGUILayout.LabelField("Connection");
+	    EditorGUILayout.LabelField("Connection Settings");
 
 	    using (new EditorGUI.DisabledScope(bSessionStarted))
 	    {
-		_sessionType = (SessionType)EditorGUILayout.EnumPopup("Type", _sessionType);
+		HEU_SessionBase.SessionType newSessionType = (HEU_SessionBase.SessionType)EditorGUILayout.EnumPopup("Type", _sessionType);
+		if (_sessionType != newSessionType)
+		{
+		    _sessionType = newSessionType;
+		    HEU_PluginSettings.Session_Type = newSessionType;
+		}
 
 		EditorGUI.indentLevel++;
-		if (_sessionType == SessionType.Pipe)
+		if (_sessionType == HEU_SessionBase.SessionType.Pipe)
 		{
 		    string newPipeName = EditorGUILayout.DelayedTextField("Pipe Name", _pipeName);
 		    if (_pipeName != newPipeName)
@@ -145,7 +174,7 @@ namespace HoudiniEngineUnity
 			_pipeName = newPipeName;
 		    }
 		}
-		else if (_sessionType == SessionType.Socket)
+		else if (_sessionType == HEU_SessionBase.SessionType.Socket)
 		{
 		    int newPort = EditorGUILayout.DelayedIntField("Port", _port);
 		    HEU_PluginSettings.Session_Port = newPort;
@@ -292,13 +321,15 @@ namespace HoudiniEngineUnity
 	    bool result = InternalConnect(_sessionType, _pipeName,
 		HEU_PluginSettings.Session_Localhost, _port,
 		HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout,
-		syncInfo);
+		true);
 
 	    if (result)
 	    {
 		try
 		{
 		    HEU_SessionManager.InitializeDefaultSession();
+
+		    HEU_SessionManager.GetDefaultSession().GetSessionData().SetSessionSync(syncInfo);
 
 		    syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Connected;
 		    Log("Connected!");
@@ -318,17 +349,17 @@ namespace HoudiniEngineUnity
 	}
 
 	bool InternalConnect(
-	    SessionType sessionType, string pipeName, 
+	    HEU_SessionBase.SessionType sessionType, string pipeName, 
 	    string ip, int port, bool autoClose, float timeout, 
-	    HEU_SessionSyncInfo syncInfo)
+	    bool logError)
 	{
-	    if (sessionType == SessionType.Pipe)
+	    if (sessionType == HEU_SessionBase.SessionType.Pipe)
 	    {
 		return HEU_SessionManager.ConnectSessionSyncUsingThriftPipe(
 		    pipeName,
 		    autoClose,
 		    timeout,
-		    sessionSync: syncInfo);
+		    logError);
 	    }
 	    else
 	    {
@@ -337,7 +368,7 @@ namespace HoudiniEngineUnity
 		    port,
 		    autoClose,
 		    timeout,
-		    sessionSync: syncInfo);
+		    logError);
 	    }
 	}
 
@@ -346,13 +377,9 @@ namespace HoudiniEngineUnity
 	    if (syncInfo != null)
 	    {
 		syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Stopped;
-	    }
 
-	    if (_taskThread != null)
-	    {
-		Log("Stopping connection thread...");
-		_taskThread.Join();
-		_taskThread = null;
+		// Store the sync info as it gets cleared in the session below
+		_connectionSyncInfo = syncInfo;
 	    }
 
 	    if (HEU_SessionManager.CloseDefaultSession())
@@ -371,7 +398,7 @@ namespace HoudiniEngineUnity
 	    string args = "";
 
 	    // Form argument
-	    if (_sessionType == SessionType.Pipe)
+	    if (_sessionType == HEU_SessionBase.SessionType.Pipe)
 	    {
 		args = string.Format("-hess=pipe:{0}", _pipeName);
 	    }
@@ -400,12 +427,6 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    if (_taskThread != null)
-	    {
-		// Task already in process. Wait
-		return;
-	    }
-
 	    if (!OpenHoudini())
 	    {
 		return;
@@ -430,64 +451,139 @@ namespace HoudiniEngineUnity
 
 	    syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Connecting;
 
-	    _taskThread = new Thread(() => ConnectToHoudini(_sessionType, _pipeName, 
-		HEU_PluginSettings.Session_Localhost, _port,
-		HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout,
-		syncInfo));
-	    _taskThread.Priority = System.Threading.ThreadPriority.Lowest;
-	    _taskThread.IsBackground = true;
-	    _taskThread.Start();
+	    _connectionSyncInfo = syncInfo;
+	    Log("Connecting...");
+
+	    syncInfo._timeStartConnection = Time.realtimeSinceStartup;
+	    syncInfo._timeLastUpdate = Time.realtimeSinceStartup;
 	}
 
-	void ProcessConnectingToHoudini(HEU_SessionSyncInfo syncInfo)
+	void UpdateSync()
 	{
-	    if (syncInfo != null &&
-		syncInfo.SyncStatus == HEU_SessionSyncInfo.Status.Initializing)
+	    HEU_SessionSyncInfo syncInfo = GetSessionSync();
+
+	    if (syncInfo != null)
 	    {
-		try
+		if (syncInfo.SyncStatus == HEU_SessionSyncInfo.Status.Connecting)
 		{
-		    HEU_SessionManager.InitializeDefaultSession();
-
-		    syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Connected;
-		    Log("Connected!");
+		    UpdateConnecting(syncInfo);
 		}
-		catch (System.Exception ex)
+		else if (syncInfo.SyncStatus == HEU_SessionSyncInfo.Status.Connected)
 		{
-		    syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Stopped;
-		    Log("Connection errored!");
-		    Log(ex.ToString());
-
-		    Debug.Log(ex.ToString());
-		}
-
-		if (_taskThread != null)
-		{
-		    _taskThread.Join();
-		    _taskThread = null;
+		    UpdateConnected(syncInfo);
 		}
 	    }
 	}
 
-	void ConnectToHoudini(SessionType sessionType, 
-	    string pipeName, string ip, int port, bool autoClose, float timeout, 
-	    HEU_SessionSyncInfo syncInfo)
+	void UpdateConnecting(HEU_SessionSyncInfo syncInfo)
 	{
-	    Log("Connecting...");
-
-	    while (syncInfo != null &&
-		syncInfo.SyncStatus == HEU_SessionSyncInfo.Status.Connecting)
+	    if (syncInfo == null || syncInfo.SyncStatus != HEU_SessionSyncInfo.Status.Connecting)
 	    {
-		if (InternalConnect(sessionType, pipeName, ip, port, autoClose, timeout, syncInfo))
+		return;
+	    }
+
+	    if (Time.realtimeSinceStartup - syncInfo._timeLastUpdate >= CONNECTION_ATTEMPT_RATE)
+	    {
+		if (InternalConnect(_sessionType, _pipeName,
+		    HEU_PluginSettings.Session_Localhost, _port,
+		    HEU_PluginSettings.Session_AutoClose,
+		    HEU_PluginSettings.Session_Timeout, false))
 		{
 		    Log("Initializing...");
 		    syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Initializing;
+
+		    try
+		    {
+			HEU_SessionManager.InitializeDefaultSession();
+
+			HEU_SessionManager.GetDefaultSession().GetSessionData().SetSessionSync(syncInfo);
+
+			syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Connected;
+
+			Log("Connected!");
+		    }
+		    catch (System.Exception ex)
+		    {
+			syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Stopped;
+			Log("Connection errored!");
+			Log(ex.ToString());
+
+			Debug.Log(ex.ToString());
+		    }
+		    finally
+		    {
+			// Clear this to get out of the connection state
+			_connectionSyncInfo = null;
+		    }
+		}
+		else if (Time.realtimeSinceStartup - syncInfo._timeStartConnection >= CONNECTION_TIME_OUT)
+		{
+		    syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Stopped;
+		    Log("Timed out trying to connect to Houdini."
+			+ "\nCheck if Houdini is running and SessionSync is enabled."
+			+ "\nCheck port or pipe name are correct by comparing with Houdini SessionSync panel.");
 		}
 		else
 		{
-		    Thread.Sleep(1000);
+		    // Try again in a bit
+		    syncInfo._timeLastUpdate = Time.realtimeSinceStartup;
 		}
 	    }
-	} 
+	}
+
+	void UpdateConnected(HEU_SessionSyncInfo syncInfo)
+	{
+	    if (!HEU_PluginSettings.SessionSyncAutoCook)
+	    {
+		return;
+	    }
+
+	    HEU_SessionBase session = HEU_SessionManager.GetDefaultSession();
+	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync())
+	    {
+		return;
+	    }
+
+	    if (session.ConnectedState == HEU_SessionBase.SessionConnectionState.CONNECTED)
+	    {
+		// Get latest use time from HAPI
+		syncInfo._useHoudiniTime = session.GetUseHoudiniTime();
+
+		// Use the above call to check validity of the session.
+		// Note that once HAPI_IsSessionValid is improved, we might just use that.
+		if (session.LastCallResultCode == HAPI_Result.HAPI_RESULT_INVALID_SESSION)
+		{
+		    // Bad session
+		    Log("Session is invalid. Disconnecting.");
+		    Disconnect(syncInfo);
+		}
+	    }
+	    else
+	    {
+		if (syncInfo.SyncStatus == HEU_SessionSyncInfo.Status.Connected)
+		{
+		    // Bad session
+		    Log("Session is invalid. Disconnecting.");
+		    Disconnect(syncInfo);
+		}
+	    }
+	}
+
+	HEU_SessionSyncInfo GetSessionSync()
+	{
+	    HEU_SessionSyncInfo syncInfo = _connectionSyncInfo;
+	    if (syncInfo == null)
+	    {
+		HEU_SessionData sessionData = HEU_SessionManager.GetSessionData();
+		if (sessionData != null)
+		{
+		    // On domain reload, re-acquire serialized SessionSync
+		    // if session exists
+		    syncInfo = sessionData.GetOrCreateSessionSync();
+		}
+	    }
+	    return syncInfo;
+	}
 
 	void CreateCurve(string name)
 	{
@@ -615,33 +711,17 @@ namespace HoudiniEngineUnity
 
 	private GUIContent _eventMessageContent;
 
-	public class HEU_SessionSyncTask
-	{
-	    public enum TaskAction
-	    {
-		Start,
-		Connect,
-		Stop
-	    }
+	// Initial sync info while connecting
+	[SerializeField]
+	private HEU_SessionSyncInfo _connectionSyncInfo;
 
-	    public TaskAction _action;
-	    public SessionType _sessionType;
-	    public string _pipeName;
-	    public int _port;
-	}
-
-	private Thread _taskThread;
-
-	public enum SessionType
-	{
-	    Pipe,
-	    Socket
-	}
-
-	public SessionType _sessionType = SessionType.Pipe;
+	public HEU_SessionBase.SessionType _sessionType = HEU_SessionBase.SessionType.Socket;
 
 	public int _port = 0;
 	public string _pipeName = "";
+
+	const float CONNECTION_ATTEMPT_RATE = 3f;
+	const float CONNECTION_TIME_OUT = 60f;
 
 	[SerializeField]
 	private StringBuilder _log = new StringBuilder();
@@ -667,7 +747,5 @@ namespace HoudiniEngineUnity
 	};
 
     }
-
-#endif
 
 }

@@ -398,6 +398,26 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static HEU_SessionBase.SessionType Session_Type
+	{
+	    get
+	    {
+		int mode = 0;
+		HEU_PluginStorage.Instance.Get("HAPI_SessionType", out mode, mode);
+		if(mode == (int)HEU_SessionBase.SessionType.Pipe)
+		{
+		    return HEU_SessionBase.SessionType.Pipe;
+		}
+
+		return HEU_SessionBase.SessionType.Socket;
+	    }
+	    set
+	    {
+		int mode = (int)value;
+		HEU_PluginStorage.Instance.Set("HAPI_SessionType", mode);
+	    }
+	}
+
 	public static string Session_PipeName
 	{
 	    get

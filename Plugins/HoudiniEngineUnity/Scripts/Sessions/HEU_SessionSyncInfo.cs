@@ -47,6 +47,9 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private int _status = 0;
 
+	public float _timeLastUpdate = 0;
+	public float _timeStartConnection = 0;
+
 	// Thread-safe access
 	public Status SyncStatus
 	{
@@ -66,28 +69,6 @@ namespace HoudiniEngineUnity
 
 	public string _newNodeName = "geo1";
 	public int _nodeTypeIndex = 0;
-
-	public void Update()
-	{
-	    if (!HEU_PluginSettings.SessionSyncAutoCook)
-	    {
-		return;
-	    }
-
-	    HEU_SessionBase session = HEU_SessionManager.GetDefaultSession();
-
-	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync())
-	    {
-		return;
-	    }
-
-	    // TODO: integrate this check into session.IsSessionValid() above?
-	    if (session.ConnectedState == HEU_SessionBase.SessionConnectionState.CONNECTED)
-	    {
-		// Get latest use time from HAPI
-		_useHoudiniTime = session.GetUseHoudiniTime();
-	    }
-	}
 
 	public void SetHuseHoudiniTime(bool enable)
 	{

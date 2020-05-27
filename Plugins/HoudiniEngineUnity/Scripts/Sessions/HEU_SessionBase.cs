@@ -67,6 +67,13 @@ namespace HoudiniEngineUnity
 	}
 	public SessionConnectionState ConnectedState { get; set; }
 
+	public enum SessionType
+	{
+	    Pipe,
+	    Socket
+	}
+	public SessionType ThisSessionType { get; set; }
+
 	// The last error message for this session
 	private string _sessionErrorMsg;
 
@@ -79,6 +86,9 @@ namespace HoudiniEngineUnity
 	public bool ThrowErrorOverride { get; set; }
 
 	public bool IsSessionSync() { return (_sessionData != null) ? _sessionData.IsSessionSync : false; }
+
+	// Holds the last HAPI call result code
+	public HAPI_Result LastCallResultCode { get; set; }
 
 	// ASSET REGISTRATION -----------------------------------------------------------------------------------------------
 
@@ -264,7 +274,7 @@ namespace HoudiniEngineUnity
 	    int serverPort = HEU_Defines.HEU_SESSION_PORT, 
 	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
 	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
-	    HEU_SessionSyncInfo sessionSync = null,
+	    bool logError = true,
 	    bool autoInitialize = true)
 	{
 	    return false;
@@ -274,7 +284,7 @@ namespace HoudiniEngineUnity
 	    string pipeName = HEU_Defines.HEU_SESSION_PIPENAME, 
 	    bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE, 
 	    float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
-	    HEU_SessionSyncInfo sessionSync = null,
+	    bool logError = true,
 	    bool autoInitialize = true)
 	{
 	    return false;
@@ -404,15 +414,21 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	/// <summary>
-	/// Gives back the status code for a specific status type
-	/// </summary>
-	/// <param name="statusType">Status type to query</param>
-	/// <param name="statusCode">Result status code</param>
-	/// <returns>True if successfully queried status</returns>
-	public virtual bool GetStatus(HAPI_StatusType statusType, out HAPI_State statusCode)
+	public virtual bool GetCallResult(out HAPI_Result result)
 	{
-	    statusCode = HAPI_State.HAPI_STATE_READY;
+	    result = HAPI_Result.HAPI_RESULT_SUCCESS;
+	    return false;
+	}
+
+	public virtual bool GetCookResult(out HAPI_Result result)
+	{
+	    result = HAPI_Result.HAPI_RESULT_SUCCESS;
+	    return false;
+	}
+
+	public virtual bool GetCookState(out HAPI_State state)
+	{
+	    state = HAPI_State.HAPI_STATE_READY;
 	    return false;
 	}
 

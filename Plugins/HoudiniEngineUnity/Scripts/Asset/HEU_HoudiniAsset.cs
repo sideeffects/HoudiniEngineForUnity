@@ -1541,7 +1541,7 @@ namespace HoudiniEngineUnity
 		bool bResult = true;
 		do
 		{
-		    bResult = session.GetStatus(HAPI_StatusType.HAPI_STATUS_COOK_STATE, out statusCode);
+		    bResult = session.GetCookState(out statusCode);
 		    if (bResult && (statusCode > HAPI_State.HAPI_STATE_MAX_READY_STATE))
 		    {
 			// Still cooking. If async, we'll return, otherwise busy wait.
