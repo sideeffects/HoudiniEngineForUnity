@@ -33,6 +33,21 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
+    [Serializable]
+    public enum SessionConnectionState
+    {
+	NOT_CONNECTED,
+	CONNECTED,
+	FAILED_TO_CONNECT
+    }
+
+    [Serializable]
+    public enum SessionMode
+    {
+	Pipe,
+	Socket
+    }
+
     /// <summary>
     /// Container for session-specific data.
     /// Note that this is sealed for serialization purposes.
@@ -88,7 +103,6 @@ namespace HoudiniEngineUnity
 	{
 	    _sessionSync = syncInfo;
 	}
-
 
 	public long SessionID
 	{
@@ -227,6 +241,16 @@ namespace HoudiniEngineUnity
 		return _sessionSync != null;
 	    }
 	}
+
+	[SerializeField]
+	private SessionConnectionState _connectionState;
+
+	public SessionConnectionState ThisConnectionMode { get { return _connectionState; } set { _connectionState = value; } }
+
+	[SerializeField]
+	private SessionMode _sessionMode;
+
+	public SessionMode ThisSessionMode { get { return _sessionMode; } set { _sessionMode = value; } }
     }
 
 }   // HoudiniEngineUnity

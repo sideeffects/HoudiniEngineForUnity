@@ -776,6 +776,52 @@ namespace HoudiniEngineUnity
 	public HAPI_RSTOrder rstOrder;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct HAPI_Viewport
+    {
+	public HAPI_Viewport(bool initializeFields)
+	{
+	    position = new float[HEU_Defines.HAPI_POSITION_VECTOR_SIZE];
+	    rotationQuaternion = new float[HEU_Defines.HAPI_QUATERNION_VECTOR_SIZE];
+
+	    offset = 0;
+
+	    if (initializeFields)
+		Init();
+	}
+
+	[MarshalAs(
+		UnmanagedType.ByValArray,
+		SizeConst = HEU_Defines.HAPI_POSITION_VECTOR_SIZE,
+		ArraySubType = UnmanagedType.R4)]
+	public float[] position;
+
+	[MarshalAs(
+		UnmanagedType.ByValArray,
+		SizeConst = HEU_Defines.HAPI_QUATERNION_VECTOR_SIZE,
+		ArraySubType = UnmanagedType.R4)]
+	public float[] rotationQuaternion;
+
+	[MarshalAs(UnmanagedType.R4)]
+	public float offset;
+
+	public void Init()
+	{
+	    for (int n = 0; n < HEU_Defines.HAPI_POSITION_VECTOR_SIZE; n++)
+		position[n] = 0.0f;
+
+	    for (int n = 0; n < HEU_Defines.HAPI_QUATERNION_VECTOR_SIZE; n++)
+	    {
+		if (n == 3)
+		    rotationQuaternion[n] = .0f;
+		else
+		    rotationQuaternion[n] = 0.0f;
+	    }
+
+	    offset = 0;
+	}
+    }
+
     // SESSIONS -----------------------------------------------------------------------------------------------------
 
     [StructLayout(LayoutKind.Sequential)]

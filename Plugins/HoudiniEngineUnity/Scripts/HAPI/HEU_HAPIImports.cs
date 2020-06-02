@@ -1589,6 +1589,23 @@ namespace HoudiniEngineUnity
 		[MarshalAs(UnmanagedType.U1)] bool include_children,
 		out int count);
 
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_SetSessionSync(
+	    ref HAPI_Session session,
+	    [MarshalAs(UnmanagedType.U1)] bool enable);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_GetViewport(
+	    ref HAPI_Session session,
+	    out HAPI_Viewport transform);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_SetViewport(
+	    ref HAPI_Session session,
+	    ref HAPI_Viewport transform);
 #endif
     }
 

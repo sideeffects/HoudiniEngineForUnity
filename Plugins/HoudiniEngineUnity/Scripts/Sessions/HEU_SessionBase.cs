@@ -59,20 +59,29 @@ namespace HoudiniEngineUnity
 	// Whether user has been notified of this session is invalid (so we don't keep doing it)
 	public bool UserNotifiedSessionInvalid { get; set; }
 
-	public enum SessionConnectionState
+	public SessionConnectionState ConnectionState
 	{
-	    NOT_CONNECTED,
-	    CONNECTED,
-	    FAILED_TO_CONNECT
+	    get
+	    {
+		return _sessionData != null ? _sessionData.ThisConnectionMode : SessionConnectionState.NOT_CONNECTED;
+	    }
+	    set
+	    {
+		if (_sessionData != null) { _sessionData.ThisConnectionMode = value; }
+	    }
 	}
-	public SessionConnectionState ConnectedState { get; set; }
 
-	public enum SessionType
+	public SessionMode ThisSessionMode
 	{
-	    Pipe,
-	    Socket
+	    get
+	    {
+		return _sessionData != null ? _sessionData.ThisSessionMode : SessionMode.Socket;
+	    }
+	    set
+	    {
+		if (_sessionData != null) { _sessionData.ThisSessionMode = value; }
+	    }
 	}
-	public SessionType ThisSessionType { get; set; }
 
 	// The last error message for this session
 	private string _sessionErrorMsg;
@@ -1532,6 +1541,21 @@ namespace HoudiniEngineUnity
 	public virtual bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
 	{
 	    count = 0;
+	    return false;
+	}
+
+	public virtual bool SetSessionSync(bool enable)
+	{
+	    return false;
+	}
+
+	public virtual bool GetViewport(ref HAPI_Viewport viewport)
+	{
+	    return false;
+	}
+
+	public virtual bool SetViewport(ref HAPI_Viewport viewport)
+	{
 	    return false;
 	}
     }

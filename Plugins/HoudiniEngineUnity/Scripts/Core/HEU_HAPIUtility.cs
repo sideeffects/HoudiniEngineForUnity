@@ -796,7 +796,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="hapiTransform">Houdini Engine transform to get data from</param>
 	/// <param name="unityTransform">The Unity transform to apply data to</param>
-	public static void ApplyWorldTransfromFromHoudiniToUnity(HAPI_Transform hapiTransform, Transform unityTransform)
+	public static void ApplyWorldTransfromFromHoudiniToUnity(ref HAPI_Transform hapiTransform, Transform unityTransform)
 	{
 	    // Houdini uses right-handed coordinate system, while Unity uses left-handed.
 	    // Note: we always use global transform space when communicating with Houdini
@@ -1014,6 +1014,40 @@ namespace HoudiniEngineUnity
 	    return transform;
 	}
 
+	public static HAPI_Transform GetHAPITransformQuatFromMatrix(ref Matrix4x4 mat)
+	{
+	    Quaternion q = GetQuaternion(ref mat);
+	    Vector3 r = q.eulerAngles;
+
+	    Vector3 p = GetPosition(ref mat);
+	    Vector3 s = GetScale(ref mat);
+
+	    HAPI_Transform transform = new HAPI_Transform(true);
+
+	    transform.position[0] = -p[0];
+	    transform.position[1] = p[1];
+	    transform.position[2] = p[2];
+
+	    Quaternion rotation = mat.rotation;
+	    Vector3 euler = rotation.eulerAngles;
+	    euler.y = -euler.y;
+	    euler.z = -euler.z;
+	    rotation = Quaternion.Euler(euler);
+
+	    transform.rotationQuaternion[0] = rotation.x;
+	    transform.rotationQuaternion[1] = rotation.y;
+	    transform.rotationQuaternion[2] = rotation.z;
+	    transform.rotationQuaternion[3] = rotation.w;
+
+	    transform.scale[0] = s[0];
+	    transform.scale[1] = s[1];
+	    transform.scale[2] = s[2];
+
+	    transform.rstOrder = HAPI_RSTOrder.HAPI_SRT;
+
+	    return transform;
+	}
+
 	public static Matrix4x4 GetMatrix4x4(ref Vector3 p, ref Vector3 r, ref Vector3 s)
 	{
 	    Matrix4x4 matrix = new Matrix4x4();
@@ -1025,6 +1059,75 @@ namespace HoudiniEngineUnity
 	{
 	    // TODO: optimize this
 	    return (transformMatrix == GetMatrix4x4(ref p, ref r, ref s));
+	}
+
+	public static bool IsEqualTol(float a, float b, float t = 0.00001f)
+	{
+	    return Mathf.Abs(a - b) <= t;
+	}
+
+	public static bool IsTransformEqual(ref HAPI_Transform transA, ref HAPI_Transform transB)
+	{
+	    int length = transA.position.Length;
+	    for (int n = 0; n < length; n++)
+	    {
+		if (!IsEqualTol(transA.position[n], transB.position[n]))
+		{
+		    return false;
+		}
+	    }
+
+	    length = transA.rotationQuaternion.Length;
+	    for (int n = 0; n < length; n++)
+	    {
+		if (!IsEqualTol(transA.rotationQuaternion[n], transB.rotationQuaternion[n]))
+		{
+		    return false;
+		}
+	    }
+
+	    length = transA.scale.Length;
+	    for (int n = 0; n < length; n++)
+	    {
+		if (!IsEqualTol(transA.scale[n], transB.scale[n]))
+		{
+		    return false;
+		}
+	    }
+
+	    length = transA.shear.Length;
+	    for (int n = 0; n < length; n++)
+	    {
+		if (!IsEqualTol(transA.shear[n], transB.shear[n]))
+		{
+		    return false;
+		}
+	    }
+
+	    return transA.rstOrder == transB.rstOrder;
+	}
+
+	public static bool IsViewportEqual(ref HAPI_Viewport viewA, ref HAPI_Viewport viewB)
+	{
+	    int length = viewA.position.Length;
+	    for (int n = 0; n < length; n++)
+	    {
+		if (!IsEqualTol(viewA.position[n], viewB.position[n]))
+		{
+		    return false;
+		}
+	    }
+
+	    length = viewA.rotationQuaternion.Length;
+	    for (int n = 0; n < length; n++)
+	    {
+		if (!IsEqualTol(viewA.rotationQuaternion[n], viewB.rotationQuaternion[n]))
+		{
+		    return false;
+		}
+	    }
+
+	    return viewA.offset == viewB.offset;
 	}
 
 	public static bool DoesGeoPartHaveAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string attrName, HAPI_AttributeOwner owner, ref HAPI_AttributeInfo attributeInfo)
