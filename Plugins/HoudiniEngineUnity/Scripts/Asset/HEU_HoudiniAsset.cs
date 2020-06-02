@@ -2457,7 +2457,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    HAPI_Transform hapiTransform = new HAPI_Transform();
+		    HAPI_Transform hapiTransform = new HAPI_Transform(true);
 		    session.GetObjectTransform(objectID, AssetID, HAPI_RSTOrder.HAPI_SRT, ref hapiTransform);
 		    if (Mathf.Approximately(0f, hapiTransform.scale[0]) || Mathf.Approximately(0f, hapiTransform.scale[1]) || Mathf.Approximately(0f, hapiTransform.scale[2]))
 		    {
@@ -2950,7 +2950,7 @@ namespace HoudiniEngineUnity
 		    return;
 		}
 
-		HAPI_Transform hapiTransform = new HAPI_Transform();
+		HAPI_Transform hapiTransform = new HAPI_Transform(true);
 		session.GetObjectTransform(queryNodeID, -1, HAPI_RSTOrder.HAPI_SRT, ref hapiTransform);
 		if (Mathf.Approximately(0f, hapiTransform.scale[0]) || Mathf.Approximately(0f, hapiTransform.scale[1]) || Mathf.Approximately(0f, hapiTransform.scale[2]))
 		{
@@ -2958,7 +2958,7 @@ namespace HoudiniEngineUnity
 		}
 
 		// Using root transform as that represents our asset in the world
-		HEU_HAPIUtility.ApplyWorldTransfromFromHoudiniToUnity(hapiTransform, _rootGameObject.transform);
+		HEU_HAPIUtility.ApplyWorldTransfromFromHoudiniToUnity(ref hapiTransform, _rootGameObject.transform);
 
 		// Save last sync'd transform
 		_lastSyncedTransformMatrix = _rootGameObject.transform.localToWorldMatrix;

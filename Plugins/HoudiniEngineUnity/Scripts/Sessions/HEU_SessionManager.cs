@@ -198,7 +198,6 @@ namespace HoudiniEngineUnity
 			    sessionBase.SetSessionData(sessionData);
 			    _sessionMap.Add(sessionData.SessionID, sessionBase);
 
-
 			    if (sessionData.IsDefaultSession)
 			    {
 				_defaultSession = sessionBase;
@@ -260,7 +259,7 @@ namespace HoudiniEngineUnity
 	    {
 		return _defaultSession;
 	    }
-	    else if (_defaultSession == null || _defaultSession.ConnectedState == HEU_SessionBase.SessionConnectionState.NOT_CONNECTED)
+	    else if (_defaultSession == null || _defaultSession.ConnectionState == SessionConnectionState.NOT_CONNECTED)
 	    {
 		// Try creating it if we haven't tried yet
 		bNotifyUserError &= !CreateThriftPipeSession(HEU_PluginSettings.Session_PipeName, 

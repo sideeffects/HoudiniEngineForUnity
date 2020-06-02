@@ -58,11 +58,20 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
 	    EditorApplication.update += Update;
 
+	    AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+
 #if UNITY_2017_1_OR_NEWER
 	    PrefabUtility.prefabInstanceUpdated += OnPrefabInstanceUpdate;
 #endif
 
 #endif
+	}
+
+	static void OnBeforeAssemblyReload()
+	{
+	    // Save the session before code domain reload so
+	    // that the session file has the latest session state.
+	    HEU_SessionManager.SaveAllSessionData();
 	}
 
 	static void Update()

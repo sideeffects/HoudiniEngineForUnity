@@ -67,8 +67,23 @@ namespace HoudiniEngineUnity
 
 	public bool _useHoudiniTime;
 
+	public bool _syncViewport;
+
 	public string _newNodeName = "geo1";
 	public int _nodeTypeIndex = 0;
+
+	// Flag to disregard this object due to Unity serialization
+	// automatically creating it on code donmain reload
+	public bool _validForConnection;
+
+	// The last HAPI_Viewport update from HAPI
+	public HAPI_Viewport _viewportHAPI = new HAPI_Viewport(true);
+
+	// The last HAPI_Viewport update from local 
+	public HAPI_Viewport _viewportLocal = new HAPI_Viewport(true);
+
+	// Whether the viewport was just update locally
+	public bool _viewportJustUpdated;
 
 	public void SetHuseHoudiniTime(bool enable)
 	{

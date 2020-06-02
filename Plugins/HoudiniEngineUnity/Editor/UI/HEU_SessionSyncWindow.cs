@@ -24,9 +24,9 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-using UnityEngine;
-using UnityEditor;
 using System.Text;
+using UnityEditor;
+using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
@@ -63,12 +63,19 @@ namespace HoudiniEngineUnity
 
 	void ReInitialize()
 	{
-	    _sessionType = HEU_PluginSettings.Session_Type;
+	    _sessionMode = HEU_PluginSettings.Session_Mode;
 
 	    _port = HEU_PluginSettings.Session_Port;
 	    _pipeName = HEU_PluginSettings.Session_PipeName;
 
 	    _log = new StringBuilder();
+
+	    if (_connectionSyncInfo != null && !_connectionSyncInfo._validForConnection)
+	    {
+		// The serializer creates a default _connectionSyncInfo which isn't
+		// the correct SessionInfo. The real one is stored in SessionData.
+		_connectionSyncInfo = null;
+	    }
 	}
 
 	void OnGUI()
@@ -157,15 +164,15 @@ namespace HoudiniEngineUnity
 
 	    using (new EditorGUI.DisabledScope(bSessionStarted))
 	    {
-		HEU_SessionBase.SessionType newSessionType = (HEU_SessionBase.SessionType)EditorGUILayout.EnumPopup("Type", _sessionType);
-		if (_sessionType != newSessionType)
+		SessionMode newSessionMode = (SessionMode)EditorGUILayout.EnumPopup("Type", _sessionMode);
+		if (_sessionMode != newSessionMode)
 		{
-		    _sessionType = newSessionType;
-		    HEU_PluginSettings.Session_Type = newSessionType;
+		    _sessionMode = newSessionMode;
+		    HEU_PluginSettings.Session_Mode = newSessionMode;
 		}
 
 		EditorGUI.indentLevel++;
-		if (_sessionType == HEU_SessionBase.SessionType.Pipe)
+		if (_sessionMode == SessionMode.Pipe)
 		{
 		    string newPipeName = EditorGUILayout.DelayedTextField("Pipe Name", _pipeName);
 		    if (_pipeName != newPipeName)
@@ -174,7 +181,7 @@ namespace HoudiniEngineUnity
 			_pipeName = newPipeName;
 		    }
 		}
-		else if (_sessionType == HEU_SessionBase.SessionType.Socket)
+		else if (_sessionMode == SessionMode.Socket)
 		{
 		    int newPort = EditorGUILayout.DelayedIntField("Port", _port);
 		    HEU_PluginSettings.Session_Port = newPort;
@@ -206,6 +213,8 @@ namespace HoudiniEngineUnity
 		    {
 			syncInfo.SetHuseHoudiniTime(enableHoudiniTime);
 		    }
+
+		    syncInfo._syncViewport = HEU_EditorUI.DrawToggleLeft(syncInfo._syncViewport, "Sync Viewport");
 
 		    EditorGUI.indentLevel--;
 		}
@@ -318,7 +327,7 @@ namespace HoudiniEngineUnity
 	    }
 
 
-	    bool result = InternalConnect(_sessionType, _pipeName,
+	    bool result = InternalConnect(_sessionMode, _pipeName,
 		HEU_PluginSettings.Session_Localhost, _port,
 		HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout,
 		true);
@@ -349,11 +358,11 @@ namespace HoudiniEngineUnity
 	}
 
 	bool InternalConnect(
-	    HEU_SessionBase.SessionType sessionType, string pipeName, 
+	    SessionMode sessionType, string pipeName, 
 	    string ip, int port, bool autoClose, float timeout, 
 	    bool logError)
 	{
-	    if (sessionType == HEU_SessionBase.SessionType.Pipe)
+	    if (sessionType == SessionMode.Pipe)
 	    {
 		return HEU_SessionManager.ConnectSessionSyncUsingThriftPipe(
 		    pipeName,
@@ -398,7 +407,7 @@ namespace HoudiniEngineUnity
 	    string args = "";
 
 	    // Form argument
-	    if (_sessionType == HEU_SessionBase.SessionType.Pipe)
+	    if (_sessionMode == SessionMode.Pipe)
 	    {
 		args = string.Format("-hess=pipe:{0}", _pipeName);
 	    }
@@ -447,6 +456,8 @@ namespace HoudiniEngineUnity
 		{
 		    syncInfo = new HEU_SessionSyncInfo();
 		}
+
+		syncInfo._validForConnection = true;
 	    }
 
 	    syncInfo.SyncStatus = HEU_SessionSyncInfo.Status.Connecting;
@@ -484,7 +495,7 @@ namespace HoudiniEngineUnity
 
 	    if (Time.realtimeSinceStartup - syncInfo._timeLastUpdate >= CONNECTION_ATTEMPT_RATE)
 	    {
-		if (InternalConnect(_sessionType, _pipeName,
+		if (InternalConnect(_sessionMode, _pipeName,
 		    HEU_PluginSettings.Session_Localhost, _port,
 		    HEU_PluginSettings.Session_AutoClose,
 		    HEU_PluginSettings.Session_Timeout, false))
@@ -544,7 +555,7 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    if (session.ConnectedState == HEU_SessionBase.SessionConnectionState.CONNECTED)
+	    if (session.ConnectionState == SessionConnectionState.CONNECTED)
 	    {
 		// Get latest use time from HAPI
 		syncInfo._useHoudiniTime = session.GetUseHoudiniTime();
@@ -556,6 +567,12 @@ namespace HoudiniEngineUnity
 		    // Bad session
 		    Log("Session is invalid. Disconnecting.");
 		    Disconnect(syncInfo);
+		    return;
+		}
+
+		if (syncInfo._syncViewport)
+		{
+		    UpdateViewport(session, syncInfo);
 		}
 	    }
 	    else
@@ -569,6 +586,110 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	/// <summary>
+	/// Synchronize the viewport between HAPI and Unity.
+	/// </summary>
+	void UpdateViewport(HEU_SessionBase session, HEU_SessionSyncInfo syncInfo)
+	{
+	    SceneView sceneView = SceneView.lastActiveSceneView;
+	    if (sceneView == null)
+	    {
+		return;
+	    }
+
+	    // Get the latest viewport from HAPI, and check it agianst last update.
+	    HAPI_Viewport viewHAPI = new HAPI_Viewport(true);
+	    session.GetViewport(ref viewHAPI);
+
+	    if (!HEU_HAPIUtility.IsViewportEqual(ref viewHAPI, ref syncInfo._viewportHAPI))
+	    {
+		// HAPI has changed. Update local viewport.
+
+		Transform target = sceneView.camera.transform;
+
+		// Account for left-handed coordinate system
+		Vector3 pivot = new Vector3(-viewHAPI.position[0], viewHAPI.position[1], viewHAPI.position[2]);
+
+		Quaternion rotation = new Quaternion(viewHAPI.rotationQuaternion[0], 
+		    viewHAPI.rotationQuaternion[1], viewHAPI.rotationQuaternion[2], 
+		    viewHAPI.rotationQuaternion[3]);
+		Vector3 euler = rotation.eulerAngles;
+		euler.y = -euler.y;
+		euler.z = -euler.z;
+		// Flip the camera direction for Unity camera
+		rotation = Quaternion.Euler(euler) * Quaternion.Euler(0, 180f, 0);
+
+		// TODO: use viewHAPI.offset to set camera distance
+		// Unfortuantely no direct API to set the camera distance in Unity
+
+		sceneView.LookAtDirect(pivot, rotation);
+		sceneView.Repaint();
+
+		// Store HAPI viewport for comparison on next update
+		syncInfo._viewportHAPI = viewHAPI;
+		syncInfo._viewportLocal = viewHAPI;
+		syncInfo._viewportJustUpdated = true;
+	    }
+	    else
+	    {
+		// HAPI hasn't changed, so let's see if local viewport has
+
+		Vector3 pivot = sceneView.pivot;
+		Quaternion rotation = sceneView.rotation;
+		float localDistance = sceneView.cameraDistance;
+
+		// Generate the local HAPI_Viewport
+		HAPI_Viewport viewLocal = new HAPI_Viewport(true);
+
+		// Account for left-handed coordinate system
+		viewLocal.position[0] = -pivot.x;
+		viewLocal.position[1] = pivot.y;
+		viewLocal.position[2] = pivot.z;
+
+		// Flip the camera direction for Unity camera
+		rotation = rotation * Quaternion.Euler(0, 180f, 0);
+		Vector3 euler = rotation.eulerAngles;
+		euler.y = -euler.y;
+		euler.z = -euler.z;
+		rotation = Quaternion.Euler(euler);
+
+		viewLocal.rotationQuaternion[0] = rotation.x;
+		viewLocal.rotationQuaternion[1] = rotation.y;
+		viewLocal.rotationQuaternion[2] = rotation.z;
+		viewLocal.rotationQuaternion[3] = rotation.w;
+
+		viewLocal.offset = syncInfo._viewportHAPI.offset;
+
+		if (!HEU_HAPIUtility.IsViewportEqual(ref viewLocal, ref syncInfo._viewportLocal))
+		{
+		    // Always store local viewport for comparison on next update
+		    syncInfo._viewportLocal = viewLocal;
+
+		    if (syncInfo._viewportJustUpdated)
+		    {
+			// Unity's SceneView internally updates the
+			// viewport after setting it, so this makes sure
+			// to update and store the latest change locally,
+			// and skip sending it to HAPI
+			syncInfo._viewportJustUpdated = false;
+		    }
+		    else
+		    {
+			session.SetViewport(ref viewLocal);
+
+			// Store HAPI viewport for comparison on next update
+			syncInfo._viewportHAPI = viewLocal;
+		    }
+
+		    //Debug.Log("Setting HAPI (from local)");
+		    //Debug.LogFormat("Pos: {0}, {1}, {2}", viewLocal.position[0], viewLocal.position[1], viewLocal.position[2]);
+		    //Debug.LogFormat("Rot: {0}, {1}, {2}, {3}", viewLocal.rotationQuaternion[0], 
+			//viewLocal.rotationQuaternion[1], viewLocal.rotationQuaternion[2], viewLocal.rotationQuaternion[3]);
+		    //Debug.LogFormat("Dis: {0}, sceneView.camDist: {1}", viewLocal.offset, sceneView.cameraDistance);
+		}
+	    }
+	}
+
 	HEU_SessionSyncInfo GetSessionSync()
 	{
 	    HEU_SessionSyncInfo syncInfo = _connectionSyncInfo;
@@ -578,8 +699,8 @@ namespace HoudiniEngineUnity
 		if (sessionData != null)
 		{
 		    // On domain reload, re-acquire serialized SessionSync
-		    // if session exists
-		    syncInfo = sessionData.GetOrCreateSessionSync();
+		    // if session exists 
+		    syncInfo = sessionData.GetOrCreateSessionSync();  
 		}
 	    }
 	    return syncInfo;
@@ -715,12 +836,12 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private HEU_SessionSyncInfo _connectionSyncInfo;
 
-	public HEU_SessionBase.SessionType _sessionType = HEU_SessionBase.SessionType.Socket;
+	public SessionMode _sessionMode = SessionMode.Socket;
 
 	public int _port = 0;
 	public string _pipeName = "";
 
-	const float CONNECTION_ATTEMPT_RATE = 3f;
+	const float CONNECTION_ATTEMPT_RATE = 5f;
 	const float CONNECTION_TIME_OUT = 60f;
 
 	[SerializeField]
@@ -745,7 +866,6 @@ namespace HoudiniEngineUnity
 	    "Curve",
 	    "Input",
 	};
-
     }
 
 }

@@ -142,7 +142,7 @@ namespace HoudiniEngineUnity
 		}
 
 		// Start at failed since this is several steps. Once connected, we can set it as such.
-		ConnectedState = SessionConnectionState.FAILED_TO_CONNECT;
+		ConnectionState = SessionConnectionState.FAILED_TO_CONNECT;
 
 		HAPI_Result result = HEU_HAPIImports.HAPI_CreateInProcessSession(out _sessionData._HAPISession);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
@@ -239,7 +239,7 @@ namespace HoudiniEngineUnity
 	    HAPI_Result result;
 
 	    // Start at failed since this is several steps. Once connected, we can set it as such.
-	    ConnectedState = SessionConnectionState.FAILED_TO_CONNECT;
+	    ConnectionState = SessionConnectionState.FAILED_TO_CONNECT;
 
 	    HEU_SessionManager.ClearConnectionError();
 
@@ -367,7 +367,7 @@ namespace HoudiniEngineUnity
 	    _sessionData.PipeName = pipeName;
 
 	    // Start at failed since this is several steps. Once connected, we can set it as such.
-	    ConnectedState = SessionConnectionState.FAILED_TO_CONNECT;
+	    ConnectionState = SessionConnectionState.FAILED_TO_CONNECT;
 
 	    HEU_SessionManager.ClearConnectionError();
 
@@ -590,7 +590,7 @@ namespace HoudiniEngineUnity
 	public override bool IsSessionValid()
 	{
 	    // TODO: change to SessionConnectionState.CONNECTED
-	    if (_sessionData != null && ConnectedState != SessionConnectionState.FAILED_TO_CONNECT)
+	    if (_sessionData != null && ConnectionState != SessionConnectionState.FAILED_TO_CONNECT)
 	    {
 		try
 		{
@@ -699,7 +699,7 @@ namespace HoudiniEngineUnity
 	    SetServerEnvString(HEU_Defines.HAPI_ENV_CLIENT_NAME, "unity");
 
 	    sessionData.IsInitialized = true;
-	    ConnectedState = SessionConnectionState.CONNECTED;
+	    ConnectionState = SessionConnectionState.CONNECTED;
 
 	    HEU_SessionManager.RegisterSession(_sessionData.SessionID, this);
 
@@ -2339,6 +2339,27 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetTotalCookCount(ref _sessionData._HAPISession, nodeID, nodeTypeFilter, nodeFlagFilter, includeChildren, out count);
 	    HandleStatusResult(result, "Getting Total Cook Count", false, false);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetSessionSync(bool enable)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetSessionSync(ref _sessionData._HAPISession, enable);
+	    HandleStatusResult(result, "Setting SessionSync", false, false);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetViewport(ref HAPI_Viewport viewport)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetViewport(ref _sessionData._HAPISession,  out viewport);
+	    HandleStatusResult(result, "Getting Viewport", false, false);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetViewport(ref HAPI_Viewport viewport)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetViewport(ref _sessionData._HAPISession, ref viewport);
+	    HandleStatusResult(result, "Setting Viewport", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
