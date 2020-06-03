@@ -113,16 +113,7 @@ namespace HoudiniEngineUnity
 		HEU_SessionData sessionData = session.GetSessionData();
 		if (sessionData != null)
 		{
-		    sb.AppendFormat("  Session ID: {0}\n", sessionData.SessionID);
-		    sb.AppendFormat("  Session Type: {0}\n", sessionData.SessionType);
-		    sb.AppendFormat("  Process ID: {0}\n", sessionData.ProcessID);
-
-		    if (sessionData.SessionType == HAPI_SessionType.HAPI_SESSION_THRIFT)
-		    {
-			sb.AppendFormat("  Pipe name: {0}\n", sessionData.PipeName);
-		    }
-
-		    sb.AppendLine();
+		    sb.AppendLine(session.GetSessionInfo());
 		}
 	    }
 	    else // Unable to establish a session
@@ -142,7 +133,7 @@ namespace HoudiniEngineUnity
 
 	    return sb.ToString();
 #else
-			return "";
+	    return "";
 #endif
 	}
 
@@ -1128,6 +1119,12 @@ namespace HoudiniEngineUnity
 	    }
 
 	    return viewA.offset == viewB.offset;
+	}
+
+	public static bool IsSessionSyncEqual(ref HAPI_SessionSyncInfo syncA, ref HAPI_SessionSyncInfo syncB)
+	{
+	    return syncA.cookUsingHoudiniTime == syncB.cookUsingHoudiniTime
+		&& syncA.syncViewport == syncB.syncViewport;
 	}
 
 	public static bool DoesGeoPartHaveAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string attrName, HAPI_AttributeOwner owner, ref HAPI_AttributeInfo attributeInfo)

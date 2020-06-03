@@ -1538,6 +1538,8 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	// SESSIONSYNC ------------------------------------------------------------------------------------------------
+
 	public virtual bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
 	{
 	    count = 0;
@@ -1555,6 +1557,16 @@ namespace HoudiniEngineUnity
 	}
 
 	public virtual bool SetViewport(ref HAPI_Viewport viewport)
+	{
+	    return false;
+	}
+
+	public virtual bool GetSessionSyncInfo(ref HAPI_SessionSyncInfo syncInfo)
+	{
+	    return false;
+	}
+
+	public virtual bool SetSessionSyncInfo(ref HAPI_SessionSyncInfo syncInfo)
 	{
 	    return false;
 	}

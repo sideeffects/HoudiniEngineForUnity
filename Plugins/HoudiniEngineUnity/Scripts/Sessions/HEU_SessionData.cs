@@ -44,8 +44,8 @@ namespace HoudiniEngineUnity
     [Serializable]
     public enum SessionMode
     {
-	Pipe,
-	Socket
+	Socket,
+	Pipe
     }
 
     /// <summary>
@@ -72,6 +72,9 @@ namespace HoudiniEngineUnity
 	// Name of pipe (for pipe session)
 	[SerializeField]
 	private string _pipeName;
+
+	[SerializeField]
+	private int _port;
 #pragma warning restore 0414
 
 	// ID for the HEU_SessionBase class type
@@ -83,25 +86,25 @@ namespace HoudiniEngineUnity
 	private bool _isDefaultSession;
 
 	[SerializeField]
-	private HEU_SessionSyncInfo _sessionSync = null;
+	private HEU_SessionSyncData _sessionSync = null;
 
-	public HEU_SessionSyncInfo GetOrCreateSessionSync()
+	public HEU_SessionSyncData GetOrCreateSessionSync()
 	{
 	    if (_sessionSync == null)
 	    {
-		_sessionSync = new HEU_SessionSyncInfo();
+		_sessionSync = new HEU_SessionSyncData();
 	    }
 	    return _sessionSync;
 	}
 
-	public HEU_SessionSyncInfo GetSessionSync()
+	public HEU_SessionSyncData GetSessionSync()
 	{
 	    return _sessionSync;
 	}
 
-	public void SetSessionSync(HEU_SessionSyncInfo syncInfo)
+	public void SetSessionSync(HEU_SessionSyncData syncData)
 	{
-	    _sessionSync = syncInfo;
+	    _sessionSync = syncData;
 	}
 
 	public long SessionID
@@ -198,6 +201,19 @@ namespace HoudiniEngineUnity
 	    set
 	    {
 		_pipeName = value;
+	    }
+	}
+
+	public int Port
+	{
+	    get
+	    {
+		return _port;
+	    }
+
+	    set
+	    {
+		_port = value;
 	    }
 	}
 

@@ -25,15 +25,18 @@
 */
 
 using System.Threading;
-
-using System.Collections.Generic;
-
 using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
+    /// <summary>
+    /// Contains the SessionSync local state information for Unity plugin.
+    /// The HEU_SesionSyncWindow uses the data stored here.
+    /// This is stored as part of the Houdini Engine data (HEU_SessionData)
+    /// when SessionSync is active.
+    /// </summary>
     [System.Serializable]
-    public class HEU_SessionSyncInfo
+    public class HEU_SessionSyncData
     {
 	public enum Status
 	{
@@ -44,13 +47,17 @@ namespace HoudiniEngineUnity
 	    Connected
 	}
 
+	// The SessionSync state for local session
 	[SerializeField]
 	private int _status = 0;
 
+	// The time since last update
 	public float _timeLastUpdate = 0;
+
+	// The time when connecting to Houdini was started (used for timing out)
 	public float _timeStartConnection = 0;
 
-	// Thread-safe access
+	// Thread-safe access to _status
 	public Status SyncStatus
 	{
 	    get
@@ -65,11 +72,10 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public bool _useHoudiniTime;
-
-	public bool _syncViewport;
-
+	// UI name for new node
 	public string _newNodeName = "geo1";
+
+	// UI index of node type
 	public int _nodeTypeIndex = 0;
 
 	// Flag to disregard this object due to Unity serialization
@@ -85,16 +91,8 @@ namespace HoudiniEngineUnity
 	// Whether the viewport was just update locally
 	public bool _viewportJustUpdated;
 
-	public void SetHuseHoudiniTime(bool enable)
-	{
-	    _useHoudiniTime = enable;
-
-	    HEU_SessionBase session = HEU_SessionManager.GetDefaultSession();
-	    if (session != null)
-	    {
-		session.SetUseHoudiniTime(enable);
-	    }
-	}
+	// The last HAPI_SessionSyncInfo update
+	public HAPI_SessionSyncInfo _syncInfo = new HAPI_SessionSyncInfo();
     }
 
 }
