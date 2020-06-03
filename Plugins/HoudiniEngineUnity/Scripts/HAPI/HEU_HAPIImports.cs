@@ -1579,6 +1579,8 @@ namespace HoudiniEngineUnity
 		HAPI_NodeId node_id,
 		string format, byte[] buffer, int length);
 
+	// SESSIONSYNC ----------------------------------------------------------------------------------------------
+
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
 	HAPI_GetTotalCookCount(
@@ -1606,6 +1608,18 @@ namespace HoudiniEngineUnity
 	HAPI_SetViewport(
 	    ref HAPI_Session session,
 	    ref HAPI_Viewport transform);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_GetSessionSyncInfo(
+	    ref HAPI_Session session,
+	    out HAPI_SessionSyncInfo syncInfo);
+
+	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+	public static extern HAPI_Result
+	HAPI_SetSessionSyncInfo(
+	    ref HAPI_Session session,
+	    ref HAPI_SessionSyncInfo syncInfo);
 #endif
     }
 

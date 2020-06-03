@@ -263,6 +263,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    _sessionData.ProcessID = processID;
+	    _sessionData.Port = serverPort;
 
 	    // Then create the session
 	    _sessionData._HAPISession.type = HAPI_SessionType.HAPI_SESSION_THRIFT;
@@ -556,6 +557,7 @@ namespace HoudiniEngineUnity
 		_sessionData.SessionID = -1;
 		_sessionData.ProcessID = -1;
 		_sessionData.PipeName = "";
+		_sessionData.Port = 0;
 		_sessionData = null;
 	    }
 	}
@@ -570,11 +572,18 @@ namespace HoudiniEngineUnity
 	    {
 		StringBuilder sb = new StringBuilder();
 
-		sb.AppendFormat("Session ID: {0}\nSession Type: {1}", _sessionData.SessionID, _sessionData.SessionType);
+		sb.Append("\nSession Info:");
+		sb.AppendFormat("\n  Session ID: {0}", _sessionData.SessionID);
+		sb.AppendFormat("\n  Process ID: {0}", _sessionData.ProcessID);
+		sb.AppendFormat("\n  Type: {0}", _sessionData.SessionType);
 
-		if (_sessionData.ProcessID > 0)
+		if (_sessionData.ThisSessionMode == SessionMode.Pipe)
 		{
-		    sb.AppendFormat("\nProcess ID: {0}", _sessionData.ProcessID);
+		    sb.AppendFormat("\n  Mode: {0}, name: {1}", _sessionData.ThisSessionMode, _sessionData.PipeName);
+		}
+		else
+		{
+		    sb.AppendFormat("\n  Mode: {0}, port: {1}", _sessionData.ThisSessionMode, _sessionData.Port);
 		}
 
 		return sb.ToString();
@@ -2335,6 +2344,8 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+	// SESSIONSYNC ------------------------------------------------------------------------------------------------
+
 	public override bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetTotalCookCount(ref _sessionData._HAPISession, nodeID, nodeTypeFilter, nodeFlagFilter, includeChildren, out count);
@@ -2360,6 +2371,20 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_SetViewport(ref _sessionData._HAPISession, ref viewport);
 	    HandleStatusResult(result, "Setting Viewport", false, false);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetSessionSyncInfo(ref HAPI_SessionSyncInfo syncInfo)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetSessionSyncInfo(ref _sessionData._HAPISession, out syncInfo);
+	    HandleStatusResult(result, "Getting SessionSyncInfo", false, false);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetSessionSyncInfo(ref HAPI_SessionSyncInfo syncInfo)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetSessionSyncInfo(ref _sessionData._HAPISession, ref syncInfo);
+	    HandleStatusResult(result, "Setting SessionSyncInfo", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
