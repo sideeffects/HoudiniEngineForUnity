@@ -4274,7 +4274,7 @@ namespace HoudiniEngineUnity
 
 	    if (bRequiresCook)
 	    {
-		Debug.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
+		//Debug.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
 
 		// Disable parm and input uploading for the recook process
 		bool thisCheckParameterChangeForCook = false;
