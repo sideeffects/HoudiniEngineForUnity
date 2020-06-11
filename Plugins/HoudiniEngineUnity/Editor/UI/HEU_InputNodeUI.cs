@@ -150,7 +150,6 @@ namespace HoudiniEngineUnity
 			    if (GUILayout.Button("Add Slot"))
 			    {
 				inputAssetsProperty.InsertArrayElementAtIndex(inputCount);
-
 				bSkipElements = true;
 			    }
 
@@ -192,16 +191,19 @@ namespace HoudiniEngineUnity
 				    EditorGUI.indentLevel++;
 				    using (var vs4 = new EditorGUILayout.VerticalScope())
 				    {
-					HEU_InputNodeUICache.HEU_InputAssetUICache assetCache = inputNode._uiCache._inputAssetCache[i];
-
-					UnityEngine.Object setObject = EditorGUILayout.ObjectField(assetCache._gameObjectProperty.objectReferenceValue, typeof(HEU_HoudiniAssetRoot), true);
-					if (setObject != assetCache._gameObjectProperty.objectReferenceValue)
+					if (i < inputNode._uiCache._inputAssetCache.Count)
 					{
-					    GameObject inputGO = setObject != null ? (setObject as HEU_HoudiniAssetRoot).gameObject : null;
-					    // Check not setting same asset as self
-					    if (inputGO == null || inputGO != inputNode.ParentAsset.RootGameObject)
+					    HEU_InputNodeUICache.HEU_InputAssetUICache assetCache = inputNode._uiCache._inputAssetCache[i];
+
+					    UnityEngine.Object setObject = EditorGUILayout.ObjectField(assetCache._gameObjectProperty.objectReferenceValue, typeof(HEU_HoudiniAssetRoot), true);
+					    if (setObject != assetCache._gameObjectProperty.objectReferenceValue)
 					    {
-						assetCache._gameObjectProperty.objectReferenceValue = inputGO;
+						GameObject inputGO = setObject != null ? (setObject as HEU_HoudiniAssetRoot).gameObject : null;
+						// Check not setting same asset as self
+						if (inputGO == null || inputGO != inputNode.ParentAsset.RootGameObject)
+						{
+						    assetCache._gameObjectProperty.objectReferenceValue = inputGO;
+						}
 					    }
 					}
 				    }
@@ -234,7 +236,6 @@ namespace HoudiniEngineUnity
 			    {
 				inputObjectsProperty.arraySize++;
 				FixUpScaleProperty(inputObjectsProperty, inputObjectsProperty.arraySize - 1);
-
 				bSkipElements = true;
 			    }
 
@@ -281,18 +282,21 @@ namespace HoudiniEngineUnity
 				    EditorGUI.indentLevel++;
 				    using (var vs4 = new EditorGUILayout.VerticalScope())
 				    {
-					HEU_InputNodeUICache.HEU_InputObjectUICache objectCache = inputNode._uiCache._inputObjectCache[i];
-
-					EditorGUILayout.PropertyField(objectCache._gameObjectProperty, GUIContent.none);
-
-					using (new EditorGUI.DisabledScope(!inputNode._uiCache._keepWorldTransformProperty.boolValue))
+					if (i < inputNode._uiCache._inputObjectCache.Count)
 					{
-					    objectCache._transformOffsetProperty.boolValue = HEU_EditorUI.DrawToggleLeft(objectCache._transformOffsetProperty.boolValue, "Transform Offset");
-					    if (objectCache._transformOffsetProperty.boolValue)
+					    HEU_InputNodeUICache.HEU_InputObjectUICache objectCache = inputNode._uiCache._inputObjectCache[i];
+
+					    EditorGUILayout.PropertyField(objectCache._gameObjectProperty, GUIContent.none);
+
+					    using (new EditorGUI.DisabledScope(!inputNode._uiCache._keepWorldTransformProperty.boolValue))
 					    {
-						objectCache._translateProperty.vector3Value = EditorGUILayout.Vector3Field(translateLabel, objectCache._translateProperty.vector3Value);
-						objectCache._rotateProperty.vector3Value = EditorGUILayout.Vector3Field(rotateLabel, objectCache._rotateProperty.vector3Value);
-						objectCache._scaleProperty.vector3Value = EditorGUILayout.Vector3Field(scaleLabel, objectCache._scaleProperty.vector3Value);
+						objectCache._transformOffsetProperty.boolValue = HEU_EditorUI.DrawToggleLeft(objectCache._transformOffsetProperty.boolValue, "Transform Offset");
+						if (objectCache._transformOffsetProperty.boolValue)
+						{
+						    objectCache._translateProperty.vector3Value = EditorGUILayout.Vector3Field(translateLabel, objectCache._translateProperty.vector3Value);
+						    objectCache._rotateProperty.vector3Value = EditorGUILayout.Vector3Field(rotateLabel, objectCache._rotateProperty.vector3Value);
+						    objectCache._scaleProperty.vector3Value = EditorGUILayout.Vector3Field(scaleLabel, objectCache._scaleProperty.vector3Value);
+						}
 					    }
 					}
 				    }
@@ -314,6 +318,7 @@ namespace HoudiniEngineUnity
 
 		// When cooking, this will force input data to be uploaded
 		inputNode.RequiresUpload = true;
+		inputNode.ClearUICache();
 	    }
 	}
 
