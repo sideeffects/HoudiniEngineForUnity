@@ -512,10 +512,18 @@ namespace HoudiniEngineUnity
 		    // Kill HARS if its still running
 		    if (_sessionData.ProcessID > 0)
 		    {
-			System.Diagnostics.Process serverProcess = System.Diagnostics.Process.GetProcessById(_sessionData.ProcessID);
-			if (serverProcess != null && !serverProcess.HasExited && serverProcess.ProcessName.Equals("HARS"))
+			try
 			{
-			    serverProcess.Kill();
+			    System.Diagnostics.Process serverProcess = System.Diagnostics.Process.GetProcessById(_sessionData.ProcessID);
+			    if (serverProcess != null && !serverProcess.HasExited && serverProcess.ProcessName.Equals("HARS"))
+			    {
+				serverProcess.Kill();
+				_sessionData.ProcessID = -1;
+			    }
+			}
+			catch(System.ArgumentException)
+			{
+			    // Gets thrown if proces is invalid, so just ignore it
 			    _sessionData.ProcessID = -1;
 			}
 		    }
