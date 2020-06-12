@@ -77,8 +77,13 @@ namespace HoudiniEngineUnity
 		// The height values will be mapped over this terrain size.
 		float gridSpacingX = scale.x * 2f;
 		float gridSpacingY = scale.y * 2f;
-		float terrainSizeX = Mathf.Round((volumeInfo.xLength) * gridSpacingX);
-		float terrainSizeY = Mathf.Round((volumeInfo.yLength) * gridSpacingY);
+
+		// Subtracting 1 to account for the corner sampling.
+		// In HEU_InputInterfaceTerrain::GenerateTerrainDataFromGameObject we add voxel size to
+		// account for corner sampling as well. This ensures maintaining the size
+		// when roundtripping the terrain.
+		float terrainSizeX = Mathf.Round((volumeInfo.xLength - 1) * gridSpacingX);
+		float terrainSizeY = Mathf.Round((volumeInfo.yLength - 1) * gridSpacingY);
 
 		//Debug.LogFormat("volumeInfo: {0}x{1}", volumeInfo.xLength, volumeInfo.yLength);
 		//Debug.LogFormat("GS = {0}x{1}, Size = {2}x{3}", gridSpacingX, gridSpacingY, terrainSizeX, terrainSizeY);
@@ -308,6 +313,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    heightRange = (maxHeight - minHeight);
+	    //Debug.LogFormat("HF min={0}, max={1}, range={2}", minHeight, maxHeight, heightRange);
 
 	    // Use the override height range if user has set via attribute
 	    bool bHeightRangeOverriden = false;

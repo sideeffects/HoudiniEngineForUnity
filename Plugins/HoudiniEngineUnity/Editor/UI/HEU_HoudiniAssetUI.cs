@@ -179,7 +179,7 @@ namespace HoudiniEngineUnity
 
 	    bool guiEnabled = GUI.enabled;
 
-	    using (var hs = new EditorGUILayout.VerticalScope())
+	    using (new EditorGUILayout.VerticalScope())
 	    {
 		DrawHeaderSection();
 
