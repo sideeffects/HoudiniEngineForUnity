@@ -844,68 +844,67 @@ namespace HoudiniEngineUnity
 		     || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE)
 	    {
 		GUIStyle boxStyle = HEU_EditorUI.GetGUIStyle("Groupbox", 4, 0);
-		using (var vs = new EditorGUILayout.VerticalScope(boxStyle))
+		using (new EditorGUILayout.VerticalScope(boxStyle))
 		{
 		    GUIContent labelContent = new GUIContent(parameterData._labelName);
 		    EditorGUILayout.LabelField(labelContent);
 
-		    EditorGUILayout.BeginHorizontal();
-
-		    SerializedProperty stringsProperty = paramUICache._primaryValue;
-		    Debug.Assert(stringsProperty.arraySize == 1, "File path parameter property should only have a single value!");
-		    EditorGUILayout.DelayedTextField(stringsProperty.GetArrayElementAtIndex(0), GUIContent.none);
-
-		    GUIStyle buttonStyle = HEU_EditorUI.GetNewButtonStyle_MarginPadding(0, 0);
-		    if (GUILayout.Button("...", buttonStyle, GUILayout.Width(30), GUILayout.Height(18)))
+		    using (new EditorGUILayout.HorizontalScope())
 		    {
-			string filePattern = parameterData._fileTypeInfo;
-			if (string.IsNullOrEmpty(filePattern))
-			{
-			    filePattern = "*";
-			}
-			else
-			{
-			    filePattern.Replace(" ", ";");
-			    if (filePattern.StartsWith("*."))
-			    {
-				filePattern = filePattern.Substring(2);
-			    }
-			    else if (filePattern.StartsWith("*"))
-			    {
-				filePattern = filePattern.Substring(1);
-			    }
-			}
+			SerializedProperty stringsProperty = paramUICache._primaryValue;
+			Debug.Assert(stringsProperty.arraySize == 1, "File path parameter property should only have a single value!");
+			EditorGUILayout.DelayedTextField(stringsProperty.GetArrayElementAtIndex(0), GUIContent.none);
 
-			string userFilePath = null;
-			if (parameterData._parmInfo.permissions == HAPI_Permissions.HAPI_PERMISSIONS_WRITE_ONLY)
+			GUIStyle buttonStyle = HEU_EditorUI.GetNewButtonStyle_MarginPadding(0, 0);
+			if (GUILayout.Button("...", buttonStyle, GUILayout.Width(30), GUILayout.Height(18)))
 			{
-			    if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
+			    string filePattern = parameterData._fileTypeInfo;
+			    if (string.IsNullOrEmpty(filePattern))
 			    {
-				userFilePath = EditorUtility.SaveFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+				filePattern = "*";
 			    }
 			    else
 			    {
-				userFilePath = EditorUtility.SaveFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, "", filePattern);
+				filePattern.Replace(" ", ";");
+				if (filePattern.StartsWith("*."))
+				{
+				    filePattern = filePattern.Substring(2);
+				}
+				else if (filePattern.StartsWith("*"))
+				{
+				    filePattern = filePattern.Substring(1);
+				}
 			    }
-			}
-			else
-			{
-			    if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
+
+			    string userFilePath = null;
+			    if (parameterData._parmInfo.permissions == HAPI_Permissions.HAPI_PERMISSIONS_WRITE_ONLY)
 			    {
-				userFilePath = EditorUtility.OpenFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+				if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
+				{
+				    userFilePath = EditorUtility.SaveFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+				}
+				else
+				{
+				    userFilePath = EditorUtility.SaveFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, "", filePattern);
+				}
 			    }
 			    else
 			    {
-				userFilePath = EditorUtility.OpenFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, filePattern);
+				if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
+				{
+				    userFilePath = EditorUtility.OpenFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+				}
+				else
+				{
+				    userFilePath = EditorUtility.OpenFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, filePattern);
+				}
 			    }
-			}
-			if (!string.IsNullOrEmpty(userFilePath))
-			{
-			    stringsProperty.GetArrayElementAtIndex(0).stringValue = userFilePath;
+			    if (!string.IsNullOrEmpty(userFilePath))
+			    {
+				stringsProperty.GetArrayElementAtIndex(0).stringValue = userFilePath;
+			    }
 			}
 		    }
-
-		    EditorGUILayout.EndHorizontal();
 		}
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_SEPARATOR)
