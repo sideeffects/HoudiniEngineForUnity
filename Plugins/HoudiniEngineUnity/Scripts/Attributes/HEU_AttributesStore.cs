@@ -231,7 +231,8 @@ namespace HoudiniEngineUnity
 
 	public void SetupMeshAndMaterials(HEU_HoudiniAsset asset, HAPI_PartType partType, GameObject outputGameObject)
 	{
-	    Color[] oldColors = _outputMesh != null ? _outputMesh.colors : null;
+	    Color[] oldColors = _outputMesh != null && _outputMesh.isReadable ? 
+		_outputMesh.colors : null;
 
 	    _outputMesh = null;
 	    _outputGameObject = null;
@@ -243,41 +244,44 @@ namespace HoudiniEngineUnity
 		if (meshFilter != null && meshFilter.sharedMesh != null)
 		{
 		    _outputMesh = meshFilter.sharedMesh;
-		    Color[] newColors = _outputMesh.colors;
 
-		    if (oldColors != null)
+		    if (_outputMesh.isReadable)
 		    {
-			// Restore old colors back to newly generated mesh so
-			// as to keep color "state" for visualization
+			Color[] newColors = _outputMesh.colors;
 
-			int oldLen = oldColors.Length;
-
-			if (newColors == null || newColors.Length == 0)
+			if (oldColors != null)
 			{
-			    newColors = new Color[_outputMesh.vertices.Length];
-			}
-			int newLen = newColors.Length;
+			    // Restore old colors back to newly generated mesh so
+			    // as to keep color "state" for visualization
 
-			for (int i = 0; i < newLen && i < oldLen; ++i)
-			{
-			    newColors[i] = oldColors[i];
+			    int oldLen = oldColors.Length;
+
+			    if (newColors == null || newColors.Length == 0)
+			    {
+				newColors = new Color[_outputMesh.vertices.Length];
+			    }
+			    int newLen = newColors.Length;
+
+			    for (int i = 0; i < newLen && i < oldLen; ++i)
+			    {
+				newColors[i] = oldColors[i];
+			    }
+			    _outputMesh.colors = newColors;
+			    _outputMesh.UploadMeshData(false);
 			}
-			_outputMesh.colors = newColors;
-			_outputMesh.UploadMeshData(false);
+			else if (newColors == null || newColors.Length == 0)
+			{
+			    // Assign new default colors
+			    int count = _outputMesh.vertices.Length;
+			    newColors = new Color[count];
+			    for (int i = 0; i < count; ++i)
+			    {
+				newColors[i] = new Color(0.3f, 0.06f, 0.62f);
+			    }
+			    _outputMesh.colors = newColors;
+			    _outputMesh.UploadMeshData(false);
+			}
 		    }
-		    else if (newColors == null || newColors.Length == 0)
-		    {
-			// Assign new default colors
-			int count = _outputMesh.vertices.Length;
-			newColors = new Color[count];
-			for (int i = 0; i < count; ++i)
-			{
-			    newColors[i] = new Color(0.3f, 0.06f, 0.62f);
-			}
-			_outputMesh.colors = newColors;
-			_outputMesh.UploadMeshData(false);
-		    }
-
 
 		}
 		else

@@ -216,6 +216,12 @@ namespace HoudiniEngineUnity
 	    {
 		geoCache._isMeshReadWrite = meshReadWrite != 0;
 	    }
+	    else if (geoCache._geoInfo.isEditable)
+	    {
+		// Unity changed meshe to be non-readable recently, so
+		// forcing to readable here for editable meshes (e.g. painting)
+		geoCache._isMeshReadWrite = true;
+	    }
 
 	    if (!geoCache.PopulateGeometryData(session, bUseLODGroups))
 	    {
