@@ -37,70 +37,70 @@
 namespace HoudiniEngineUnity
 {
 
-	public class HEU_HoudiniVersion
-	{
-		public const int HOUDINI_MAJOR			= 18;
-		public const int HOUDINI_MINOR			= 5;
-		public const int HOUDINI_BUILD			= 241;
-		public const int HOUDINI_PATCH			= 0;
+        public class HEU_HoudiniVersion
+        {
+                public const int HOUDINI_MAJOR			= 18;
+                public const int HOUDINI_MINOR			= 5;
+                public const int HOUDINI_BUILD			= 261;
+                public const int HOUDINI_PATCH			= 0;
 
-		public const string HOUDINI_VERSION_STRING = "18.5.241";
+                public const string HOUDINI_VERSION_STRING = "18.5.261";
 
-		public const int HOUDINI_ENGINE_MAJOR	= 3;
-		public const int HOUDINI_ENGINE_MINOR	= 3;
+                public const int HOUDINI_ENGINE_MAJOR	= 3;
+                public const int HOUDINI_ENGINE_MINOR	= 3;
 
-		public const int HOUDINI_ENGINE_API		= 16;
+                public const int HOUDINI_ENGINE_API		= 16;
 
-		public const int UNITY_PLUGIN_VERSION	= 2;
+                public const int UNITY_PLUGIN_VERSION	= 2;
 
 #if UNITY_EDITOR_WIN || ( UNITY_METRO && UNITY_EDITOR ) || UNITY_STANDALONE_WIN
 
-		public const string HAPI_BIN_PATH		= "/bin";
+                public const string HAPI_BIN_PATH		= "/bin";
 
-		#if UNITY_EDITOR_64 || UNITY_64
-			public const string HAPI_LIBRARY	= "libHAPIL";
-		#else
-			public const string HAPI_LIBRARY	= "libHARC32";
-		#endif // UNITY_EDITOR_64
+                #if UNITY_EDITOR_64 || UNITY_64
+                        public const string HAPI_LIBRARY	= "libHAPIL";
+                #else
+                        public const string HAPI_LIBRARY	= "libHARC32";
+                #endif // UNITY_EDITOR_64
 
         public const string SIDEFX_SOFTWARE_REGISTRY = "SOFTWARE\\Side Effects Software\\";
 
 #elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
 
-		public const string HOUDINI_INSTALL_PATH = "/Applications/Houdini/Houdini" + HOUDINI_VERSION_STRING;
-		public const string HOUDINI_FRAMEWORKS_PATH = "/Frameworks/Houdini.framework/Versions/Current";
+                public const string HOUDINI_INSTALL_PATH = "/Applications/Houdini/Houdini" + HOUDINI_VERSION_STRING;
+                public const string HOUDINI_FRAMEWORKS_PATH = "/Frameworks/Houdini.framework/Versions/Current";
 
-		public const string HAPI_BIN_PATH		= HOUDINI_FRAMEWORKS_PATH + "/Resources/bin";
-		public const string HAPI_LIBRARY_PATH		= HOUDINI_FRAMEWORKS_PATH + "/Libraries";
+                public const string HAPI_BIN_PATH		= HOUDINI_FRAMEWORKS_PATH + "/Resources/bin";
+                public const string HAPI_LIBRARY_PATH		= HOUDINI_FRAMEWORKS_PATH + "/Libraries";
 
-		#if UNITY_EDITOR_64 || UNITY_64
-			public const string HAPI_LIBRARY	= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.dylib";
-		#else
-			public const string HAPI_LIBRARY	= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHARC32.dylib";
-		#endif // UNITY_EDITOR_64
+                #if UNITY_EDITOR_64 || UNITY_64
+                        public const string HAPI_LIBRARY	= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.dylib";
+                #else
+                        public const string HAPI_LIBRARY	= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHARC32.dylib";
+                #endif // UNITY_EDITOR_64
 
 #elif UNITY_STANDALONE_LINUX
 
-		public const string HOUDINI_INSTALL_PATH	= "/opt/hfs" + HOUDINI_VERSION_STRING;
+                public const string HOUDINI_INSTALL_PATH	= "/opt/hfs" + HOUDINI_VERSION_STRING;
 
-		public const string HAPI_BIN_PATH			= "/bin";
-		public const string HAPI_LIBRARY_PATH		= "/dsolib";
+                public const string HAPI_BIN_PATH			= "/bin";
+                public const string HAPI_LIBRARY_PATH		= "/dsolib";
 
-		public const string HAPI_SERVER				= HOUDINI_INSTALL_PATH + HAPI_BIN_PATH + "/HARS";
-		public const string HAPI_LIBRARY			= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.so";
+                public const string HAPI_SERVER				= HOUDINI_INSTALL_PATH + HAPI_BIN_PATH + "/HARS";
+                public const string HAPI_LIBRARY			= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.so";
 
 #else
 
-		// Unsupported platform: cannot be empty but its ok if not found.
+                // Unsupported platform: cannot be empty but its ok if not found.
 
-		public const string HOUDINI_INSTALL_PATH	= "/opt/hfs" + HOUDINI_VERSION_STRING;
+                public const string HOUDINI_INSTALL_PATH	= "/opt/hfs" + HOUDINI_VERSION_STRING;
 
-		public const string HAPI_BIN_PATH			= "/bin";
-		public const string HAPI_LIBRARY_PATH		= "/dsolib";
+                public const string HAPI_BIN_PATH			= "/bin";
+                public const string HAPI_LIBRARY_PATH		= "/dsolib";
 
-		public const string HAPI_SERVER				= HOUDINI_INSTALL_PATH + HAPI_BIN_PATH + "/HARS";
-		public const string HAPI_LIBRARY			= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.so";
+                public const string HAPI_SERVER				= HOUDINI_INSTALL_PATH + HAPI_BIN_PATH + "/HARS";
+                public const string HAPI_LIBRARY			= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.so";
 #endif
-	};
+        };
 
 }	// HoudiniEngineUnity
