@@ -101,7 +101,7 @@ namespace HoudiniEngineUnity
 	{
 	    string HAPIPath = null;
 
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
 
 	    // Look up in environment variable
 	    HAPIPath = System.Environment.GetEnvironmentVariable(HEU_Defines.HAPI_PATH, System.EnvironmentVariableTarget.Machine);
@@ -136,7 +136,7 @@ namespace HoudiniEngineUnity
 		//Debug.Log("HAPI Path: " + HAPIPath);
 	    }
 
-#elif (UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX)
+#elif (UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX || (!UNITY_EDITOR && (UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX)))
 	    HAPIPath = HEU_HoudiniVersion.HOUDINI_INSTALL_PATH;
 #else
 	    _lastErrorMsg = "Unable to find Houdini installation because this is an unsupported platform!";

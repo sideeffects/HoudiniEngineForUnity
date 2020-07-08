@@ -318,8 +318,8 @@ namespace HoudiniEngineUnity
 	public const string HEU_SUBASSET = "SUBASSET::";
 
 	// HEngine Tools
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-		public const string HEU_HENGINE_TOOLS_SHIPPED_FOLDER = "<HFS>" + HEU_HoudiniVersion.HOUDINI_FRAMEWORKS_PATH + "/Resources/engine/tools";
+#if UNITY_EDITOR_OSX || (!UNITY_EDITOR && UNITY_STANDALONE_OSX)
+	public const string HEU_HENGINE_TOOLS_SHIPPED_FOLDER = "<HFS>" + HEU_HoudiniVersion.HOUDINI_FRAMEWORKS_PATH + "/Resources/engine/tools";
 #else
 	public const string HEU_HENGINE_TOOLS_SHIPPED_FOLDER = "<HFS>/engine/tools";
 #endif
@@ -349,8 +349,8 @@ namespace HoudiniEngineUnity
 	public const string HEU_EXT_TERRAINLAYER = ".terrainlayer";
 
 	// Keys
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-		public const string HEU_KEY_CTRL = "Command";
+#if UNITY_STANDALONE_OSX || (!UNITY_EDITOR && UNITY_STANDALONE_OSX)
+	public const string HEU_KEY_CTRL = "Command";
 #else
 	public const string HEU_KEY_CTRL = "Ctrl";
 #endif

@@ -26,7 +26,7 @@
 
 using UnityEngine;
 
-#if (UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN)
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -40,7 +40,7 @@ namespace HoudiniEngineUnity
     /// </summary>
     public static class HEU_PlatformWin
     {
-#if (UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN)
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
 
 	public enum RegSAM
 	{

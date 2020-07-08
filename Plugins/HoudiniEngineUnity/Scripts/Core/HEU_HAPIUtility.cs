@@ -146,10 +146,10 @@ namespace HoudiniEngineUnity
 	{
 	    string pathStr = System.Environment.GetEnvironmentVariable("PATH", System.EnvironmentVariableTarget.Process);
 
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
 	    pathStr = pathStr.Replace(";", "\n");
-#elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
-			pathStr = pathStr.Replace(":", "\n");
+#elif (UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX || (!UNITY_EDITOR && (UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX)))
+	    pathStr = pathStr.Replace(":", "\n");
 #endif
 	    return pathStr;
 	}
