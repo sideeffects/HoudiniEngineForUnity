@@ -41,10 +41,10 @@ namespace HoudiniEngineUnity
         {
                 public const int HOUDINI_MAJOR			= 18;
                 public const int HOUDINI_MINOR			= 5;
-                public const int HOUDINI_BUILD			= 261;
+                public const int HOUDINI_BUILD			= 267;
                 public const int HOUDINI_PATCH			= 0;
 
-                public const string HOUDINI_VERSION_STRING = "18.5.261";
+                public const string HOUDINI_VERSION_STRING = "18.5.267";
 
                 public const int HOUDINI_ENGINE_MAJOR	= 3;
                 public const int HOUDINI_ENGINE_MINOR	= 3;
@@ -53,7 +53,7 @@ namespace HoudiniEngineUnity
 
                 public const int UNITY_PLUGIN_VERSION	= 2;
 
-#if UNITY_EDITOR_WIN || ( UNITY_METRO && UNITY_EDITOR ) || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
 
                 public const string HAPI_BIN_PATH		= "/bin";
 
@@ -63,9 +63,9 @@ namespace HoudiniEngineUnity
                         public const string HAPI_LIBRARY	= "libHARC32";
                 #endif // UNITY_EDITOR_64
 
-        public const string SIDEFX_SOFTWARE_REGISTRY = "SOFTWARE\\Side Effects Software\\";
+                public const string SIDEFX_SOFTWARE_REGISTRY = "SOFTWARE\\Side Effects Software\\";
 
-#elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+#elif UNITY_EDITOR_OSX || (!UNITY_EDITOR && UNITY_STANDALONE_OSX)
 
                 public const string HOUDINI_INSTALL_PATH = "/Applications/Houdini/Houdini" + HOUDINI_VERSION_STRING;
                 public const string HOUDINI_FRAMEWORKS_PATH = "/Frameworks/Houdini.framework/Versions/Current";
@@ -79,7 +79,7 @@ namespace HoudiniEngineUnity
                         public const string HAPI_LIBRARY	= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHARC32.dylib";
                 #endif // UNITY_EDITOR_64
 
-#elif UNITY_STANDALONE_LINUX
+#elif UNITY_EDITOR_LINUX || (!UNITY_EDITOR && UNITY_STANDALONE_LINUX)
 
                 public const string HOUDINI_INSTALL_PATH	= "/opt/hfs" + HOUDINI_VERSION_STRING;
 
