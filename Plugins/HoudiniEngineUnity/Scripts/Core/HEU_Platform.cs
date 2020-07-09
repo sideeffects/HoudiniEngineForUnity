@@ -79,7 +79,7 @@ namespace HoudiniEngineUnity
 	/// <returns>Path to the Houdini Engine plugin installation.</returns>
 	public static string GetHoudiniEnginePath()
 	{
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
 	    // Limiting only to Windows since unable to dynamically load HAPI libs
 	    // with relative custom paths for now.
 
@@ -203,7 +203,7 @@ namespace HoudiniEngineUnity
 
 	    _pathSet = false;
 
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
 	    bool bFoundLib = false;
 
 	    // Add path to system path if not already in there
@@ -255,32 +255,32 @@ namespace HoudiniEngineUnity
 
 	    _pathSet = true;
 
-#elif (UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX)
-			if(!System.IO.Directory.Exists(appPath))
-			{
-				_lastErrorMsg = string.Format("Could not find Houdini Engine library at {0}", appPath);
-				Debug.LogError(_lastErrorMsg);
-				return;
-			}
+#elif (UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX || (!UNITY_EDITOR && (UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX)))
+	    if(!System.IO.Directory.Exists(appPath))
+	    {
+		    _lastErrorMsg = string.Format("Could not find Houdini Engine library at {0}", appPath);
+		    Debug.LogError(_lastErrorMsg);
+		    return;
+	    }
 
-			_libPath = appPath + HEU_HoudiniVersion.HAPI_LIBRARY_PATH;
+	    _libPath = appPath + HEU_HoudiniVersion.HAPI_LIBRARY_PATH;
 
-			// Set HARS bin path to environment path so that we can start Thrift server
-			string systemPath = System.Environment.GetEnvironmentVariable("PATH", System.EnvironmentVariableTarget.Process);
-			if (string.IsNullOrEmpty(systemPath) || !systemPath.Contains(binPath))
-			{
-				if (string.IsNullOrEmpty(systemPath))
-				{
-					systemPath = binPath;
-				}
-				else
-				{
-					systemPath = binPath + ":" + systemPath;
-				}
-			}
-			System.Environment.SetEnvironmentVariable("PATH", systemPath, System.EnvironmentVariableTarget.Process);
+	    // Set HARS bin path to environment path so that we can start Thrift server
+	    string systemPath = System.Environment.GetEnvironmentVariable("PATH", System.EnvironmentVariableTarget.Process);
+	    if (string.IsNullOrEmpty(systemPath) || !systemPath.Contains(binPath))
+	    {
+		    if (string.IsNullOrEmpty(systemPath))
+		    {
+			    systemPath = binPath;
+		    }
+		    else
+		    {
+			    systemPath = binPath + ":" + systemPath;
+		    }
+	    }
+	    System.Environment.SetEnvironmentVariable("PATH", systemPath, System.EnvironmentVariableTarget.Process);
 			
-			_pathSet = true;
+	    _pathSet = true;
 #endif
 
 #endif
