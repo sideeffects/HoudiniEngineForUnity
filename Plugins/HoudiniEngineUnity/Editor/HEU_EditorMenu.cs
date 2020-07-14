@@ -278,7 +278,7 @@ namespace HoudiniEngineUnity
 		HEU_PluginSettings.LastLoadHDAPath = Path.GetDirectoryName(hdaPath);
 
 		GameObject go = HEU_HAPIUtility.InstantiateHDA(hdaPath, Vector3.zero, HEU_SessionManager.GetOrCreateDefaultSession(), 
-		    bBuildAsync:true, bLoadFromMemory);
+		    bBuildAsync:true, bLoadFromMemory:bLoadFromMemory);
 		if (go != null)
 		{
 		    HEU_EditorUtility.SelectObject(go);
