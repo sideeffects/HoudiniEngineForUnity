@@ -856,6 +856,8 @@ namespace HoudiniEngineUnity
 
 	    _eventMessageStyle = new GUIStyle(EditorStyles.textArea);
 	    _eventMessageStyle.richText = true;
+
+	    _eventMessageStyle.normal.textColor = new Color(1f, 1f, 1f, 1f);
 	    _eventMessageStyle.normal.background = HEU_GeneralUtility.MakeTexture(1, 1, new Color(0, 0, 0, 1f));
 	}
 

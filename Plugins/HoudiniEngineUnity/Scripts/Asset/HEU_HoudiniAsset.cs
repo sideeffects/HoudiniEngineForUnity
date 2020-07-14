@@ -112,6 +112,13 @@ namespace HoudiniEngineUnity
 	private string _assetPath;
 	public string AssetPath { get { return _assetPath; } }
 
+	// If true, this asset file will be loaded into memory first
+	// in Unity, then HARS will load it from memory buffer.
+	[SerializeField]
+	private bool _loadAssetFromMemory;
+
+	public bool LoadAssetFromMemory { get { return _loadAssetFromMemory; } set { _loadAssetFromMemory = value; } }
+
 #pragma warning disable 0414
 	[SerializeField]
 	private UnityEngine.Object _assetFileObject;
@@ -1873,7 +1880,20 @@ namespace HoudiniEngineUnity
 	    }
 
 	    HAPI_AssetLibraryId libraryID = 0;
-	    bool bResult = session.LoadAssetLibraryFromFile(validAssetPath, false, out libraryID);
+	    bool bResult = false;
+	    if (!_loadAssetFromMemory)
+	    {
+		bResult = session.LoadAssetLibraryFromFile(validAssetPath, false, out libraryID);
+	    }
+	    else
+	    {
+		byte[] buffer = null;
+		bResult = HEU_Platform.LoadFileIntoMemory(validAssetPath, out buffer);
+		if (bResult)
+		{
+		    bResult = session.LoadAssetLibraryFromMemory(buffer, false, out libraryID);
+		}
+	    }
 	    if (!bResult)
 	    {
 		return false;

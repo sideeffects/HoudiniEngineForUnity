@@ -542,6 +542,12 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public virtual bool LoadAssetLibraryFromMemory(byte[] buffer, bool bAllowOverwrite, out HAPI_StringHandle libraryID)
+	{
+	    libraryID = 0;
+	    return false;
+	}
+
 	/// <summary>
 	/// Creates a node inside a node network.
 	/// </summary>
