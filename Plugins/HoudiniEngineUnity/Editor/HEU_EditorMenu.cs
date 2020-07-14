@@ -228,28 +228,39 @@ namespace HoudiniEngineUnity
 
 	// GENERATE ---------------------------------------------------------------------------------------------------
 
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load HDA File", false, 40)]
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load File/HDA", false, 40)]
 	public static void LoadHoudiniAssetWindow()
 	{
 	    if (HEU_SessionManager.ValidatePluginSession())
 	    {
 		string[] extensions = { "HDAs", "otl,hda,otllc,hdalc,otlnc,hdanc" };
 		string hdaPath = EditorUtility.OpenFilePanelWithFilters("Load Houdini Digital Asset", HEU_PluginSettings.LastLoadHDAPath, extensions);
-		LoadHoudiniAssetFromPath(hdaPath);
+		LoadHoudiniAssetFromPath(hdaPath, false);
 	    }
 	}
 
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load HDA Expanded", false, 40)]
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load File/HDA Expanded", false, 40)]
 	public static void LoadHoudiniAssetExpandedWindow()
 	{
 	    if (HEU_SessionManager.ValidatePluginSession())
 	    {
 		string hdaPath = EditorUtility.OpenFolderPanel("Load Houdini Digital Asset (Expanded)", HEU_PluginSettings.LastLoadHDAPath, "");
-		LoadHoudiniAssetFromPath(hdaPath);
+		LoadHoudiniAssetFromPath(hdaPath, false);
 	    }
 	}
 
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load Geo File", false, 40)]
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load File/HDA From Memory", false, 40)]
+	public static void LoadHoudiniAssetWindowMemory()
+	{
+	    if (HEU_SessionManager.ValidatePluginSession())
+	    {
+		string[] extensions = { "HDAs", "otl,hda,otllc,hdalc,otlnc,hdanc" };
+		string hdaPath = EditorUtility.OpenFilePanelWithFilters("Load Houdini Digital Asset", HEU_PluginSettings.LastLoadHDAPath, extensions);
+		LoadHoudiniAssetFromPath(hdaPath, true);
+	    }
+	}
+
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Load File/Bgeo", false, 40)]
 	public static void LoadGeoFile()
 	{
 	    GameObject newGO = HEU_HAPIUtility.LoadGeoWithNewGeoSync();
@@ -259,14 +270,15 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private static void LoadHoudiniAssetFromPath(string hdaPath)
+	private static void LoadHoudiniAssetFromPath(string hdaPath, bool bLoadFromMemory)
 	{
 	    if (!string.IsNullOrEmpty(hdaPath))
 	    {
 		// Store HDA path for next time
 		HEU_PluginSettings.LastLoadHDAPath = Path.GetDirectoryName(hdaPath);
 
-		GameObject go = HEU_HAPIUtility.InstantiateHDA(hdaPath, Vector3.zero, HEU_SessionManager.GetOrCreateDefaultSession(), true);
+		GameObject go = HEU_HAPIUtility.InstantiateHDA(hdaPath, Vector3.zero, HEU_SessionManager.GetOrCreateDefaultSession(), 
+		    bBuildAsync:true, bLoadFromMemory);
 		if (go != null)
 		{
 		    HEU_EditorUtility.SelectObject(go);
@@ -274,13 +286,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Houdini Engine Tools", false, 40)]
-	public static void ShowHEngineTools()
-	{
-	    HEU_ShelfToolsWindow.ShowWindow();
-	}
-
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/New Curve Asset", false, 60)]
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/New Node/Curve", false, 40)]
 	public static void CreateNewCurveAsset()
 	{
 	    GameObject newCurveGO = HEU_HAPIUtility.CreateNewCurveAsset();
@@ -291,7 +297,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/New Input Asset", false, 60)]
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/New Node/Input", false, 40)]
 	public static void CreateNewInputAsset()
 	{
 	    GameObject newCurveGO = HEU_HAPIUtility.CreateNewInputAsset();
@@ -299,6 +305,12 @@ namespace HoudiniEngineUnity
 	    {
 		HEU_EditorUtility.SelectObject(newCurveGO);
 	    }
+	}
+
+	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Houdini Engine Tools", false, 60)]
+	public static void ShowHEngineTools()
+	{
+	    HEU_ShelfToolsWindow.ShowWindow();
 	}
 
 	// BATCH ACTIONS ----------------------------------------------------------------------------------------------

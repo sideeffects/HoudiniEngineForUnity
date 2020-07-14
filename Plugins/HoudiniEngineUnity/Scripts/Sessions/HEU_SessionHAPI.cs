@@ -479,10 +479,14 @@ namespace HoudiniEngineUnity
 
 		    if (IsSessionValid())
 		    {
-			result = HEU_HAPIImports.HAPI_Cleanup(ref _sessionData._HAPISession);
-			if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
+			// TODO: revisit not calling HAPI_CleanUp for SessionSync
+			//if (!IsSessionSync())
 			{
-			    HandleStatusResult(result, "Clean Up Session", false, true);
+			    result = HEU_HAPIImports.HAPI_Cleanup(ref _sessionData._HAPISession);
+			    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
+			    {
+				HandleStatusResult(result, "Clean Up Session", false, true);
+			    }
 			}
 
 			result = HEU_HAPIImports.HAPI_CloseSession(ref _sessionData._HAPISession);
@@ -1044,6 +1048,37 @@ namespace HoudiniEngineUnity
 		}
 	    }
 	    HandleStatusResult(result, "Loading Asset Library From File", false, true);
+
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+	/// <summary>
+	/// Loads asset from given buffer (HDA file must have been loaded and stored in buffer).
+	/// Note that this might show a dialog if there is an existing matching asset definition.
+	/// </summary>
+	/// <param name="buffer">Memory buffer containing HDA file data</param>
+	/// <param name="bAllowOverwrite">Whether to overwrite an existing matching asset definition</param>
+	/// <param name="libraryID">ID of the asset in the library</param>
+	/// <returns>True if successfully loaded the asset</returns>
+	public override bool LoadAssetLibraryFromMemory(byte[] buffer, bool bAllowOverwrite, out HAPI_StringHandle libraryID)
+	{
+	    libraryID = 0;
+	    if (buffer == null)
+	    {
+		return false;
+	    }
+
+	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadAssetLibraryFromMemory(ref _sessionData._HAPISession, buffer, buffer.Length, bAllowOverwrite, out libraryID);
+	    if (result == HAPI_Result.HAPI_RESULT_ASSET_DEF_ALREADY_LOADED)
+	    {
+		if (HEU_EditorUtility.DisplayDialog("Houdini Asset Definition Overwrite",
+							"The asset file being loaded contains asset defintions " +
+							"that have already been loaded from another asset library file.\n" +
+							"Would you like to overwrite them?", "Yes", "No"))
+		{
+		    result = HEU_HAPIImports.HAPI_LoadAssetLibraryFromMemory(ref _sessionData._HAPISession, buffer, buffer.Length, true, out libraryID);
+		}
+	    }
+	    HandleStatusResult(result, "Loading Asset Library From Memory", false, true);
 
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}

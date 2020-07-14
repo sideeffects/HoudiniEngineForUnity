@@ -539,6 +539,27 @@ namespace HoudiniEngineUnity
 
 	    return HEU_Platform.DoesFileExist(envPath) ? envPath : "";
 	}
+
+	public static bool LoadFileIntoMemory(string path, out byte[] buffer)
+	{
+	    buffer = null;
+	    try
+	    {
+		if (File.Exists(path))
+		{
+		    buffer = File.ReadAllBytes(path);
+		}
+		else
+		{
+		    Debug.LogErrorFormat("Failed to open (0}. File doesn't exist!", path);
+		}
+	    }
+	    catch(Exception ex)
+	    {
+		Debug.LogErrorFormat("Failed to open (0}. Exception: {1}", path, ex.ToString());
+	    }
+	    return buffer != null;
+	}
     }
 
 }   // HoudiniEngineUnity

@@ -299,12 +299,17 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
-	/// Load and instantiate an HDA asset in Unity and Houdini, for the asset located at given path.
+	/// Load and instantiate an HDA asset in Unity and Houdini.
 	/// </summary>
 	/// <param name="filePath">Full path to the HDA in Unity project</param>
 	/// <param name="initialPosition">Initial location to create the instance in Unity.</param>
-	/// <returns>Returns the newly created gameobject for the asset in the scene, or null if creation failed.</returns>
-	public static GameObject InstantiateHDA(string filePath, Vector3 initialPosition, HEU_SessionBase session, bool bBuildAsync)
+	/// <param name="session">Houdini Engine session to load into</param>
+	/// <param name="bBuildAsync">Whether to load, cook, and build asynchronously</param>
+	/// <param name="bLoadFromMemory">Whether to load file into memory, then load from memory in HAPi</param>
+	/// <returns></returns>
+	public static GameObject InstantiateHDA(string filePath, Vector3 initialPosition, HEU_SessionBase session, 
+	    bool bBuildAsync, 
+	    bool bLoadFromMemory=false)
 	{
 	    if (filePath == null || !DoesMappedPathExist(filePath))
 	    {
@@ -334,6 +339,8 @@ namespace HoudiniEngineUnity
 
 	    // Populate asset with what we know
 	    asset.SetupAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_HDA, filePath, rootGO, session);
+
+	    asset.LoadAssetFromMemory = bLoadFromMemory;
 
 	    // Build it in Houdini Engine
 	    asset.RequestReload(bBuildAsync);

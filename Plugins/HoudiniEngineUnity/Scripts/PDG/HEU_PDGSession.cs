@@ -723,10 +723,10 @@ namespace HoudiniEngineUnity
 
 	private string[] _eventMessageColorCode =
 	{
-			"#c0c0c0ff",
-			"#ffa500ff",
-			"#ff0000ff"
-		};
+	    "#c0c0c0ff",
+	    "#ffa500ff",
+	    "#ff0000ff"
+	};
     }
 
 
