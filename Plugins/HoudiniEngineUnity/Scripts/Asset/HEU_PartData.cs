@@ -862,9 +862,43 @@ namespace HoudiniEngineUnity
 
 		    if (!loadedUnityObjectMap.TryGetValue(instancePathAttrValues[i], out unitySrcGO))
 		    {
-			// Try loading it
-			HEU_AssetDatabase.ImportAsset(instancePathAttrValues[i], HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
-			unitySrcGO = HEU_AssetDatabase.LoadAssetAtPath(instancePathAttrValues[i], typeof(GameObject)) as GameObject;
+			// First try loading from Resources/ as its faster
+			if (instancePathAttrValues[i].Contains("Resources/"))
+			{
+			    // Remove up to Resources/
+			    string resPath = instancePathAttrValues[i];
+			    int resIndex = resPath.IndexOf("Resources/");
+			    if (resIndex > 0)
+			    {
+				resPath = resPath.Substring(resIndex);
+			    }
+
+			    if (resPath.StartsWith("Resources/"))
+			    {
+				resPath = resPath.Replace("Resources/", "");
+
+				// Remove file extension
+				int extIndex = resPath.LastIndexOf(".");
+				if (extIndex > 0)
+				{
+				    resPath = resPath.Substring(0, extIndex);
+				}
+
+				//Debug.Log("Resource path: " + resPath);
+				unitySrcGO = Resources.Load<GameObject>(resPath) as GameObject;
+			    }
+			}
+			else if (!instancePathAttrValues[i].StartsWith("Assets"))
+			{
+			    // Attempt to load from resources if it doesn't have Assets/ in path
+			    unitySrcGO = Resources.Load<GameObject>(instancePathAttrValues[i]) as GameObject;
+			}
+
+			if (unitySrcGO == null)
+			{
+			    HEU_AssetDatabase.ImportAsset(instancePathAttrValues[i], HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
+			    unitySrcGO = HEU_AssetDatabase.LoadAssetAtPath(instancePathAttrValues[i], typeof(GameObject)) as GameObject;
+			}
 
 			if (unitySrcGO == null)
 			{
