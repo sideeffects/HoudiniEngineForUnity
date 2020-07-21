@@ -73,8 +73,6 @@ namespace HoudiniEngineUnity
 	/// <param name="assetObject">Serialized HEU_HoudiniAsset</param>
 	private void PopulateInstanceInputCache(HEU_HoudiniAsset asset, SerializedObject assetObject)
 	{
-	    //Debug.Log("PopulateInstanceInputCache");
-
 	    if (asset.InstanceInputUIState == null)
 	    {
 		// This could be null due to upgrade of the plugin with an asset that was
@@ -147,8 +145,17 @@ namespace HoudiniEngineUnity
 	    {
 		HEU_EditorUI.BeginSection();
 
+		EditorGUI.BeginChangeCheck();
+
 		_showInstanceInputsProperty.boolValue = HEU_EditorUI.DrawFoldOut
 			(_showInstanceInputsProperty.boolValue, "INSTANCE INPUTS");
+
+		if (EditorGUI.EndChangeCheck())
+		{
+		    // Only apply change to the UI object so don't need to cook entire asset
+		    _serializedObject.ApplyModifiedProperties();
+		}
+
 		if (_showInstanceInputsProperty.boolValue)
 		{
 		    EditorGUI.BeginChangeCheck();
