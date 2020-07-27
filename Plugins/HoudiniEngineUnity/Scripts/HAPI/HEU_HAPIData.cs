@@ -1323,6 +1323,7 @@ namespace HoudiniEngineUnity
 	    originalOwner = HAPI_AttributeOwner.HAPI_ATTROWNER_INVALID;
 	    count = 0;
 	    tupleSize = 0;
+	    totalArrayElements = 0;
 	    typeInfo = HAPI_AttributeTypeInfo.HAPI_ATTRIBUTE_TYPE_INVALID;
 	}
 
@@ -1336,6 +1337,7 @@ namespace HoudiniEngineUnity
 
 	public int count;
 	public int tupleSize;
+	HAPI_Int64 totalArrayElements;
 
 	public HAPI_AttributeTypeInfo typeInfo;
     }
