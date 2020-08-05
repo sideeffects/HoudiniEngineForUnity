@@ -907,9 +907,8 @@ namespace HoudiniEngineUnity
 	/// <param name="nodeID">The node ID</param>
 	/// <param name="groupType">The group type to query</param>
 	/// <returns>Populated array of string names, or null if failed</returns>
-	public static string[] GetGroupNames(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, bool isInstanced)
+	public static string[] GetGroupNames(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, bool isInstanced)
 	{
-	    HEU_SessionBase session = GetOrCreateDefaultSession();
 	    if (session != null)
 	    {
 		HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
@@ -952,7 +951,7 @@ namespace HoudiniEngineUnity
 			string[] nameStrings = new string[groupCount];
 			for (int i = 0; i < groupCount; ++i)
 			{
-			    nameStrings[i] = GetString(groupNames[i]);
+			    nameStrings[i] = GetString(groupNames[i], session);
 			}
 			return nameStrings;
 		    }

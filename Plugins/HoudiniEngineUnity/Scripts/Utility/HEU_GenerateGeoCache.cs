@@ -464,7 +464,7 @@ namespace HoudiniEngineUnity
 			+ "\nCurrently set as owner type {1}. Set them as per point or vertices in HDA.", _partName, _colorAttrInfo.owner);
 	    }
 
-	    _groups = HEU_SessionManager.GetGroupNames(GeoID, _partInfo.id, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, _partInfo.isInstanced);
+	    _groups = HEU_SessionManager.GetGroupNames(session, GeoID, _partInfo.id, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, _partInfo.isInstanced);
 
 	    _allCollisionVertexList = new int[_vertexList.Length];
 	    _allCollisionFaceIndices = new int[_partInfo.faceCount];

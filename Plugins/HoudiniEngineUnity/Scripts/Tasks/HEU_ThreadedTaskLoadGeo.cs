@@ -98,6 +98,23 @@ namespace HoudiniEngineUnity
 	    SetupLoad(session, ownerSync, LoadType.FILE, cookNodeID, filePath, filePath);
 	}
 
+	/// <summary>
+	/// Initial setup for loading an asset (HDA) file.
+	/// </summary>
+	/// <param name="session">Houdini Engine session</param>
+	/// <param name="ownerSync">HEU_BaseSync object owns this and does Unity geometry creation</param>
+	/// <param name="assetPath">Path to the asset (HDA) file</param>
+	/// <param name="name">Name of the node</param>
+	public void SetupLoadAsset(HEU_SessionBase session, HEU_BaseSync ownerSync, string assetPath, string name)
+	{
+	    SetupLoad(session, ownerSync, LoadType.ASSET, -1, name, assetPath);
+	}
+
+	public void SetLoadCallback(HEU_LoadCallback loadCallback)
+	{
+	    _loadCallback = loadCallback;
+	}
+
 	#endregion
 
 	#region WORK
@@ -125,6 +142,13 @@ namespace HoudiniEngineUnity
 		    return;
 		}
 	    }
+	    else if (_loadType == LoadType.ASSET)
+	    {
+		if (!DoAssetLoad())
+		{
+		    return;
+		}
+	    }
 
 	    // For LoadType.NODE, assume the node already exists in Houdini session
 	    // We simply recook and generate geometry
@@ -136,11 +160,21 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
+	    if (_loadCallback != null)
+	    {
+		_loadCallback(_session, _loadData, HEU_LoadCallbackType.PRECOOK);
+	    }
+
 	    // Cooking it will update the node so we can query its details
 	    // This will block until cook has completed or failed
 	    if (!CookNode(_session, cookNodeID))
 	    {
 		return;
+	    }
+
+	    if (_loadCallback != null)
+	    {
+		_loadCallback(_session, _loadData, HEU_LoadCallbackType.POSTCOOK);
 	    }
 
 	    // Get nodes to cook based on the type of node
@@ -363,6 +397,63 @@ namespace HoudiniEngineUnity
 	    {
 		SetLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to set file path parm."));
 		return false;
+	    }
+
+	    return true;
+	}
+
+	public virtual bool DoAssetLoad()
+	{
+	    string assetPath = _filePath;
+	    if (!HEU_Platform.DoesFileExist(assetPath))
+	    {
+		assetPath = HEU_AssetDatabase.GetValidAssetPath(assetPath);
+	    }
+
+	    HAPI_NodeId libraryID = -1;
+	    HAPI_NodeId newNodeID = -1;
+
+	    byte[] buffer = null;
+	    bool bResult = HEU_Platform.LoadFileIntoMemory(assetPath, out buffer);
+	    if (bResult)
+	    {
+		if (!_session.LoadAssetLibraryFromMemory(buffer, true, out libraryID))
+		{
+		    Debug.LogErrorFormat("Unable to load asset library.");
+		    return false;
+		}
+		//Debug.Log("Loaded asset");
+
+		int assetCount = 0;
+		bResult = _session.GetAvailableAssetCount(libraryID, out assetCount);
+		if (!bResult)
+		{
+		    return false;
+		}
+
+		int[] assetNameLengths = new int[assetCount];
+		bResult = _session.GetAvailableAssets(libraryID, ref assetNameLengths, assetCount);
+		if (!bResult)
+		{
+		    return false;
+		}
+
+		string[] assetNames = new string[assetCount];
+		for (int i = 0; i < assetCount; ++i)
+		{
+		    assetNames[i] = HEU_SessionManager.GetString(assetNameLengths[i], _session);
+		}
+
+		// Create top level node. Note that CreateNode will cook the node if HAPI was initialized with threaded cook setting on.
+		string topNodeName = assetNames[0];
+		bResult = _session.CreateNode(-1, topNodeName, "", false, out newNodeID);
+		if (!bResult)
+		{
+		    return false;
+		}
+		//Debug.Log("Created asset node");
+
+		_loadData._cookNodeID = newNodeID;
 	    }
 
 	    return true;
@@ -1179,7 +1270,8 @@ namespace HoudiniEngineUnity
 	public enum LoadType
 	{
 	    FILE,
-	    NODE
+	    NODE,
+	    ASSET
 	}
 	private LoadType _loadType;
 	private string _filePath;
@@ -1219,6 +1311,16 @@ namespace HoudiniEngineUnity
 
 	    public List<HEU_LoadBufferInstancer> _instancerBuffers;
 	}
+
+	public enum HEU_LoadCallbackType
+	{
+	    PRECOOK,
+	    POSTCOOK
+	}
+
+	public delegate void HEU_LoadCallback(HEU_SessionBase session, HEU_LoadData loadData, HEU_LoadCallbackType callbackType);
+
+	private HEU_LoadCallback _loadCallback;
 
 	#endregion
     }

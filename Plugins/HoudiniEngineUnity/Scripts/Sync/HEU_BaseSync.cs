@@ -230,7 +230,7 @@ namespace HoudiniEngineUnity
 
 	#region CALLBACKS
 
-	public void OnLoadComplete(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
+	public virtual void OnLoadComplete(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
 	{
 	    Log(loadData._logStr);
 	    _cookNodeID = loadData._cookNodeID;
