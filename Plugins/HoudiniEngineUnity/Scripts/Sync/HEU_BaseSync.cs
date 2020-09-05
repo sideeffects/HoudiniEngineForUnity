@@ -667,6 +667,9 @@ namespace HoudiniEngineUnity
 			bResult = HEU_GenerateGeoCache.GenerateMeshFromSingleGroup(session, meshBuffers[m]._LODGroupMeshes[0],
 				meshBuffers[m]._geoCache, generatedOutput, meshBuffers[m]._defaultMaterialKey,
 				meshBuffers[m]._bGenerateUVs, meshBuffers[m]._bGenerateTangents, meshBuffers[m]._bGenerateNormals, meshBuffers[m]._bPartInstanced);
+
+			HEU_GeneralUtility.UpdateGeneratedAttributeStore(session, _cookNodeID, meshBuffers[m]._id,
+			    generatedOutput._outputData._gameObject);
 		    }
 		    else
 		    {
