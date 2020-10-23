@@ -358,6 +358,25 @@ namespace HoudiniEngineUnity
 	    return GetAttributeArray(geoID, partID, name, ref info, data, getFunc, info.count);
 	}
 
+        public static bool GetAttributeStrict<T>(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, HAPI_AttributeOwner attrOwner, string name, ref HAPI_AttributeInfo info, ref T[] data, GetAttributeArrayInputFunc<T> getFunc)
+        {
+            int originalTupleSize = info.tupleSize;
+            bool bResult = false;
+            bResult = session.GetAttributeInfo(geoID, partID, name, attrOwner, ref info);
+            if (!bResult || !info.exists)
+            {
+                return false;
+            }
+
+            if (originalTupleSize > 0)
+            {
+                info.tupleSize = originalTupleSize;
+            }
+
+            data = new T[info.count * info.tupleSize];
+            return GetAttributeArray(geoID, partID, name, ref info, data, getFunc, info.count);
+        }
+
 	public static void GetAttributeStringDataHelper(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo info, ref HAPI_StringHandle[] data)
 	{
 	    int originalTupleSize = info.tupleSize;
@@ -1376,6 +1395,45 @@ namespace HoudiniEngineUnity
 	    }
 	    return null;
 	}
+
+	/// <summary>
+	/// Returns the single string value from Attribute with given name and owner type, or null if failed.
+        /// This is the strict version of GetAttributeStringValueSingle, which means that the attribute must be
+        /// owned by the owner specified in the attrOwner parameter, otherwise it will return null.
+	/// </summary>
+	/// <param name="session">Houdini Engine session to query</param>
+	/// <param name="geoID">The geometry ID in Houdini</param>
+	/// <param name="partID">The part ID in Houdini</param>
+	/// <param name="attrName">Name of the attribute to query</param>
+	/// <param name="attrOwner">Owner type of the attribute</param>
+	/// <returns>Valid string if successful, otherwise returns null</returns>
+        public static string GetAttributeStringValueSingleStrict(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string attrName, HAPI_AttributeOwner attrOwner)
+        {
+            if (string.IsNullOrEmpty(attrName))
+            {
+                return null;
+            }
+
+            HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
+            int[] stringHandle = new int[0];
+            HEU_GeneralUtility.GetAttributeStrict(session, geoID, partID, attrOwner, attrName, ref attrInfo, ref stringHandle, session.GetAttributeStringData);
+            if (attrInfo.exists)
+            {
+                if (attrInfo.owner != attrOwner)
+                {
+                    Debug.LogWarningFormat("Expected {0} attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.owner);
+                }
+                else if (attrInfo.originalOwner != attrOwner)
+                {
+                    Debug.LogWarningFormat("Expected {0} original attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.originalOwner);
+                }
+                else if (stringHandle.Length > 0)
+                {
+                    return HEU_SessionManager.GetString(stringHandle[0]);
+                }
+            }
+            return null;
+        }
 
 	/// <summary>
 	/// Helper to get a single float value for the Attribute with given name, or 0 if none found.
