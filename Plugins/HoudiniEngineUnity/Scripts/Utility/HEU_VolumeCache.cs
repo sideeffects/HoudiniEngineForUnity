@@ -764,8 +764,8 @@ namespace HoudiniEngineUnity
 		int terrainLayerIndex = -1;
 
 		// The TerrainLayer attribute overrides existing TerrainLayer. So if its set, load and use it.
-		string terrainLayerFile = HEU_GeneralUtility.GetAttributeStringValueSingle(session, geoID, partID,
-				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
+                string terrainLayerFile = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, geoID, partID,
+                                HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 		if (!string.IsNullOrEmpty(terrainLayerFile))
 		{
 		    terrainLayer = HEU_AssetDatabase.LoadAssetAtPath(terrainLayerFile, typeof(TerrainLayer)) as TerrainLayer;
