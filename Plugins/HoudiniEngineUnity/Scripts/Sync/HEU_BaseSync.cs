@@ -38,6 +38,7 @@ namespace HoudiniEngineUnity
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
+    using HAPI_PartId = System.Int32;
 
     [ExecuteInEditMode] // Needed to get OnDestroy callback when deleted in Editor
     public class HEU_BaseSync : MonoBehaviour
@@ -226,6 +227,24 @@ namespace HoudiniEngineUnity
 	    Log("Unloaded!");
 	}
 
+	public virtual void Reset()
+	{
+	    if (_syncing)
+	    {
+		StopSync();
+
+		if (_loadTask != null)
+		{
+		    _loadTask.Stop();
+		    _loadTask.Reset();
+		}
+	    }
+
+	    DeleteSessionData();
+	    DestroyGeneratedData();
+	    _log.Clear();
+	}
+
 	#endregion
 
 	#region CALLBACKS
@@ -264,17 +283,17 @@ namespace HoudiniEngineUnity
 
 	    if (loadObject._meshBuffers != null && loadObject._meshBuffers.Count > 0)
 	    {
-		GenerateMesh(loadObject._meshBuffers);
+		GenerateMesh(loadData._cookNodeID, loadObject._meshBuffers);
 	    }
 
 	    if (loadObject._terrainBuffers != null && loadObject._terrainBuffers.Count > 0)
 	    {
-		GenerateTerrain(loadObject._terrainBuffers);
+		GenerateTerrain(loadData._cookNodeID, loadObject._terrainBuffers);
 	    }
 
 	    if (loadObject._instancerBuffers != null && loadObject._instancerBuffers.Count > 0)
 	    {
-		GenerateAllInstancers(loadObject._instancerBuffers, loadData);
+		GenerateAllInstancers(loadData._cookNodeID, loadObject._instancerBuffers, loadData);
 	    }
 	}
 
@@ -290,8 +309,9 @@ namespace HoudiniEngineUnity
 
 	#region GENERATE
 
-	private void GenerateTerrain(List<HEU_LoadBufferVolume> terrainBuffers)
+	private void GenerateTerrain(HAPI_NodeId cookNodeId, List<HEU_LoadBufferVolume> terrainBuffers)
 	{
+	    HEU_SessionBase session = GetHoudiniSession(true);
 	    Transform parent = this.gameObject.transform;
 
 	    // Directory to store generated terrain files.
@@ -304,6 +324,10 @@ namespace HoudiniEngineUnity
 		if (terrainBuffers[t]._heightMap != null)
 		{
 		    GameObject newGameObject = new GameObject("heightfield_" + terrainBuffers[t]._tileIndex);
+
+		    HAPI_PartId partId = terrainBuffers[t]._id;
+		    ApplyAttributeModifiersOnGameObjectOutput(session, cookNodeId, partId, ref newGameObject);
+
 		    Transform newTransform = newGameObject.transform;
 		    newTransform.parent = parent;
 
@@ -636,7 +660,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void GenerateMesh(List<HEU_LoadBufferMesh> meshBuffers)
+	private void GenerateMesh(HAPI_NodeId cookNodeId, List<HEU_LoadBufferMesh> meshBuffers)
 	{
 	    HEU_SessionBase session = GetHoudiniSession(true);
 
@@ -648,6 +672,10 @@ namespace HoudiniEngineUnity
 		if (meshBuffers[m]._geoCache != null)
 		{
 		    GameObject newGameObject = new GameObject("mesh_" + meshBuffers[m]._geoCache._partName);
+
+		    HAPI_PartId partId = meshBuffers[m]._geoCache.PartID;
+		    ApplyAttributeModifiersOnGameObjectOutput(session, cookNodeId, partId, ref newGameObject);
+
 		    Transform newTransform = newGameObject.transform;
 		    newTransform.parent = parent;
 
@@ -694,16 +722,16 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void GenerateAllInstancers(List<HEU_LoadBufferInstancer> instancerBuffers, HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
+	private void GenerateAllInstancers(HAPI_NodeId cookNodeId, List<HEU_LoadBufferInstancer> instancerBuffers, HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
 	{
 	    int numBuffers = instancerBuffers.Count;
 	    for (int m = 0; m < numBuffers; ++m)
 	    {
-		GenerateInstancer(instancerBuffers[m], loadData._idBuffersMap);
+		GenerateInstancer(cookNodeId, instancerBuffers[m], loadData._idBuffersMap);
 	    }
 	}
 
-	private void GenerateInstancer(HEU_LoadBufferInstancer instancerBuffer, Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap)
+	private void GenerateInstancer(HAPI_NodeId cookNodeId, HEU_LoadBufferInstancer instancerBuffer, Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap)
 	{
 	    if (instancerBuffer._generatedOutput != null)
 	    {
@@ -711,9 +739,15 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
+	    HEU_SessionBase session = GetHoudiniSession(true);
+
 	    Transform parent = this.gameObject.transform;
 
 	    GameObject instanceRootGO = new GameObject("instance_" + instancerBuffer._name);
+
+	    HAPI_PartId partId = instancerBuffer._id;
+	    ApplyAttributeModifiersOnGameObjectOutput(session, cookNodeId, partId, ref instanceRootGO);
+
 	    Transform instanceRootTransform = instanceRootGO.transform;
 	    instanceRootTransform.parent = parent;
 	    instanceRootTransform.localPosition = Vector3.zero;
@@ -726,7 +760,7 @@ namespace HoudiniEngineUnity
 
 	    if (instancerBuffer._instanceNodeIDs != null && instancerBuffer._instanceNodeIDs.Length > 0)
 	    {
-		GenerateInstancesFromNodeIDs(instancerBuffer, idBuffersMap, instanceRootTransform);
+		GenerateInstancesFromNodeIDs(cookNodeId, instancerBuffer, idBuffersMap, instanceRootTransform);
 	    }
 	    else if (instancerBuffer._assetPaths != null && instancerBuffer._assetPaths.Length > 0)
 	    {
@@ -736,7 +770,7 @@ namespace HoudiniEngineUnity
 	    SetOutputVisiblity(instancerBuffer);
 	}
 
-	private void GenerateInstancesFromNodeIDs(HEU_LoadBufferInstancer instancerBuffer, Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap,
+	private void GenerateInstancesFromNodeIDs(HAPI_NodeId cookNodeId, HEU_LoadBufferInstancer instancerBuffer, Dictionary<HAPI_NodeId, HEU_LoadBufferBase> idBuffersMap,
 		Transform instanceRootTransform)
 	{
 	    // For single collision geo override
@@ -777,7 +811,7 @@ namespace HoudiniEngineUnity
 		    HEU_LoadBufferInstancer sourceBufferInstancer = instancerBuffer as HEU_LoadBufferInstancer;
 		    if (sourceBufferInstancer != null)
 		    {
-			GenerateInstancer(sourceBufferInstancer, idBuffersMap);
+			GenerateInstancer(cookNodeId, sourceBufferInstancer, idBuffersMap);
 		    }
 		}
 
@@ -980,6 +1014,13 @@ namespace HoudiniEngineUnity
 	    HEU_GeneralUtility.SetGameObjectChildrenRenderVisibility(newInstanceGO, true);
 	    HEU_GeneralUtility.SetGameObjectColliderState(newInstanceGO, true);
 	    HEU_GeneralUtility.SetGameObjectChildrenColliderState(newInstanceGO, true);
+	}
+
+	private void ApplyAttributeModifiersOnGameObjectOutput(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partId, ref GameObject go)
+	{
+	    HEU_GeneralUtility.AssignUnityTag(session, geoID, partId, go);
+	    HEU_GeneralUtility.AssignUnityLayer(session, geoID, partId, go);
+	    HEU_GeneralUtility.MakeStaticIfHasAttribute(session, geoID, partId, go);
 	}
 
 	#endregion
