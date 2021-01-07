@@ -1475,8 +1475,8 @@ namespace HoudiniEngineUnity
 		    string bakedTerrainPath = bakedAssetPath;
 
 		    // Find the geo name and terrain tile index
-		    //	@"/(Working)/(\w+)/(\w+)/(Terrain/Tile\d)/TerrainData.asset$"
-		    string pattern = string.Format(@"{0}(Working){0}(\w+){0}(\w+){0}({1}{0}{2}\d){0}TerrainData{3}",
+		    //	@"/(Working)/(\w+)/(\w+)/(Terrain/Tile[0-9]+)/TerrainData.asset$"
+		    string pattern = string.Format(@"{0}(Working){0}(\w+){0}(\w+){0}({1}{0}{2}[0-9]+){0}TerrainData{3}",
 			    HEU_Platform.DirectorySeparatorStr,
 			    HEU_Defines.HEU_FOLDER_TERRAIN,
 			    HEU_Defines.HEU_FOLDER_TILE,
@@ -1500,6 +1500,11 @@ namespace HoudiniEngineUnity
 		    if (match.Success && match.Groups.Count == 5)
 		    {
 			bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
+		    }
+		    else
+		    {	
+			    string supposedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
+			    Debug.LogError("Invalid build path format: " +  supposedTerrainPath);
 		    }
 
 		    // We're going to copy the source terrain data asset file, then load the copy and assign to the target
