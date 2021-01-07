@@ -562,12 +562,14 @@ namespace HoudiniEngineUnity
 	{
 	    get
 	    {
-		string path = "";
+		string path = "Resources/unity_builtin_extra::name::Default-Terrain-Diffuse";
 		HEU_PluginStorage.Instance.Get("HAPI_DefaultTerrainMaterial", out path, path);
 		return path;
 	    }
 	    set
 	    {
+		Debug.Log("Set Terrain default material: " + value);
+
 		HEU_PluginStorage.Instance.Set("HAPI_DefaultTerrainMaterial", value);
 	    }
 	}

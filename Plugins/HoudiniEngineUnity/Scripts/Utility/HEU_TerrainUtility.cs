@@ -132,6 +132,8 @@ namespace HoudiniEngineUnity
 		// Look up terrain material, if specified, on the height layer
 		string specifiedTerrainMaterialName = HEU_GeneralUtility.GetMaterialAttributeValueFromPart(session,
 			geoID, partID);
+
+		specifiedTerrainMaterialName = "Resources/unity_builtin_extra::name::Default-Terrain-Diffuse";
 		SetTerrainMaterial(terrain, specifiedTerrainMaterialName);
 
 #if !HEU_TERRAIN_COLLIDER_DISABLED
