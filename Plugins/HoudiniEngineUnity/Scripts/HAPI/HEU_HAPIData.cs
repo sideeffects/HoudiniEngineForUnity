@@ -36,6 +36,9 @@ namespace HoudiniEngineUnity
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs
     using HAPI_SessionId = System.Int64;
+    using HAPI_UInt8 = System.Byte;
+    using HAPI_Int8 = System.SByte;
+    using HAPI_Int16 = System.Int16;
     using HAPI_Int64 = System.Int64;
     using HAPI_StringHandle = System.Int32;
     using HAPI_ErrorCodeBits = System.Int32;
@@ -378,6 +381,9 @@ namespace HoudiniEngineUnity
 	HAPI_STORAGETYPE_FLOAT,
 	HAPI_STORAGETYPE_FLOAT64,
 	HAPI_STORAGETYPE_STRING,
+	HAPI_STORAGETYPE_UINT8,
+	HAPI_STORAGETYPE_INT8,
+	HAPI_STORAGETYPE_INT16,
 	HAPI_STORAGETYPE_MAX
     }
 
