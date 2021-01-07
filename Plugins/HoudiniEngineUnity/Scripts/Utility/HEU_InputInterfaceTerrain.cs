@@ -56,6 +56,10 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_InputInterfaceTerrain inputInterface = new HEU_InputInterfaceTerrain();
 	    HEU_InputUtility.RegisterInputInterface(inputInterface);
+	    #if UNITY_2019_2_OR_NEWER
+	        // Make sure that the default terrain material is always included in the build
+	        HEU_AssetDatabase.AddAlwaysIncludedShader("Nature/Terrain/Diffuse");
+	    #endif
 	}
 #endif
 
