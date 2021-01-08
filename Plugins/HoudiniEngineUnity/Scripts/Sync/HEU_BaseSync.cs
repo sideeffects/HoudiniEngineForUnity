@@ -242,7 +242,7 @@ namespace HoudiniEngineUnity
 
 	    DeleteSessionData();
 	    DestroyGeneratedData();
-	    _log.Clear();
+	    _log = new StringBuilder();
 	}
 
 	#endregion
