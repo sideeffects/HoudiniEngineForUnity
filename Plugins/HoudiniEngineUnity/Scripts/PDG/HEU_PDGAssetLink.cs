@@ -601,15 +601,18 @@ namespace HoudiniEngineUnity
 		int numGOs = result._generatedGOs.Count;
 		for (int i = 0; i < numGOs; ++i)
 		{
-		    HEU_GeoSync geoSync = result._generatedGOs[i].GetComponent<HEU_GeoSync>();
-		    if (geoSync != null)
-		    {
-			geoSync.Unload();
-		    }
+			if (result._generatedGOs[i] != null)
+			{
+				HEU_GeoSync geoSync = result._generatedGOs[i].GetComponent<HEU_GeoSync>();
+				if (geoSync != null)
+				{
+					geoSync.Unload();
+				}
 
-		    //Debug.LogFormat("Destroy result: " + result._generatedGOs[i].name);
-		    HEU_GeneralUtility.DestroyImmediate(result._generatedGOs[i]);
-		    result._generatedGOs[i] = null;
+				//Debug.LogFormat("Destroy result: " + result._generatedGOs[i].name);
+				HEU_GeneralUtility.DestroyImmediate(result._generatedGOs[i]);
+				result._generatedGOs[i] = null;
+		    }
 		}
 
 		result._generatedGOs.Clear();
@@ -791,6 +794,7 @@ namespace HoudiniEngineUnity
 		string tag = HEU_SessionManager.GetString(resultInfos[i].resultTagSH, session);
 		string path = HEU_SessionManager.GetString(resultInfos[i].resultSH, session);
 
+
 		//Debug.LogFormat("Result for work item {0}: result={1}, tag={2}, path={3}", result._workItemIndex, i, tag, path);
 
 		if (string.IsNullOrEmpty(tag) || !tag.StartsWith("file"))
@@ -811,19 +815,44 @@ namespace HoudiniEngineUnity
 		    topNode._workResultParentGO.SetActive(topNode._showResults);
 		}
 
-		GameObject newGO = new GameObject(name);
-		HEU_GeneralUtility.SetParentWithCleanTransform(topNode._workResultParentGO.transform, newGO.transform);
+		GameObject newOrExistingGO = null;
+		int existingObjectIndex = -1;
+		
+		for (int j = 0; j < result._generatedGOs.Count; j++)
+		{
+			if (result._generatedGOs[j] != null)
+			{
+				HEU_GeoSync oldGeoSync = result._generatedGOs[j].GetComponent<HEU_GeoSync>();
+				if (oldGeoSync != null && oldGeoSync._filePath == path)
+				{
+					oldGeoSync.Reset();
+					existingObjectIndex = j;
+					newOrExistingGO = result._generatedGOs[j];
+					break;
+				}
+			}
+		}
 
-		result._generatedGOs.Add(newGO);
+		if (existingObjectIndex < 0)
+		{
+			newOrExistingGO = new GameObject(name);
+			result._generatedGOs.Add(newOrExistingGO);
+		}
+
+
+		HEU_GeneralUtility.SetParentWithCleanTransform(topNode._workResultParentGO.transform, newOrExistingGO.transform);
 
 		// HEU_GeoSync does the loading
-		HEU_GeoSync geoSync = newGO.AddComponent<HEU_GeoSync>();
-		if (geoSync != null)
+		HEU_GeoSync geoSync = newOrExistingGO.GetComponent<HEU_GeoSync>();
+
+		if (geoSync == null)
 		{
-		    geoSync._filePath = path;
-		    geoSync.SetOutputCacheDirectory(_outputCachePathRoot);
-		    geoSync.StartSync();
+			geoSync = newOrExistingGO.AddComponent<HEU_GeoSync>();
 		}
+
+		geoSync._filePath = path;
+		geoSync.SetOutputCacheDirectory(_outputCachePathRoot);
+		geoSync.StartSync();
 	    }
 	}
 
