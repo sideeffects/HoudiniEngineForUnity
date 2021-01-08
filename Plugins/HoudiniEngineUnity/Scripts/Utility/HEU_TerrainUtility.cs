@@ -256,19 +256,29 @@ namespace HoudiniEngineUnity
 	{
 	    // Use material specified in Plugin settings.
 	    string terrainMaterialPath = string.IsNullOrEmpty(specifiedMaterialName) ? HEU_PluginSettings.DefaultTerrainMaterial :
-		    specifiedMaterialName;
+	        specifiedMaterialName;
 	    if (!string.IsNullOrEmpty(terrainMaterialPath))
 	    {
-		Material material = HEU_MaterialFactory.LoadUnityMaterial(terrainMaterialPath);
-		if (material != null)
-		{
-#if UNITY_2019_2_OR_NEWER
-		    terrain.materialTemplate = material;
-#else
-					terrain.materialType = Terrain.MaterialType.Custom;
-					terrain.materialTemplate = material;
-#endif
-		}
+	        Material material = HEU_MaterialFactory.LoadUnityMaterial(terrainMaterialPath);
+	        if (material != null)
+	        {
+	            #if UNITY_2019_2_OR_NEWER
+	                terrain.materialTemplate = material;
+	            #else
+	                terrain.materialType = Terrain.MaterialType.Custom;
+	                terrain.materialTemplate = material;
+	            #endif
+	        } 
+	        else
+	        {
+	            Debug.LogWarning("Warning: Specified material does not exist!");
+	        }
+	    }
+	    else
+	    {
+	        #if UNITY_2019_2_OR_NEWER
+		     terrain.materialTemplate = HEU_MaterialFactory.LoadUnityMaterial("Resources/unity_builtin_extra::name::Default-Terrain-Diffuse");
+		#endif
 	    }
 
 	    // TODO: If none specified, guess based on Render settings?
