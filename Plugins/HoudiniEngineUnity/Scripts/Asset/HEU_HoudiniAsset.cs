@@ -2160,7 +2160,10 @@ namespace HoudiniEngineUnity
 	{
 	    foreach (HEU_AttributesStore attributeStore in _attributeStores)
 	    {
-		attributeStore.SyncDirtyAttributesToHoudini(session);
+		if (attributeStore.AreAttributesDirty())
+		{
+		    attributeStore.SyncDirtyAttributesToHoudini(session);
+		}
 	    }
 	}
 
