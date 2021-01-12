@@ -491,6 +491,15 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 	    //Debug.Log("HEU_HoudiniAsset::Awake - " + AssetName);
 
+	    // We want to support Object.Instantiate, but ScriptableObjects cannot copy by value by 
+	    // default. So we simulate the "duplicate" function when we detect that this occurs
+	    // This would be a lot easier if Unity provided some sort of Instantiate() callback...
+	    if (this.HasBeenInstantiated())
+	    {
+		HEU_HoudiniAsset instantiatedAsset = this.GetInstantiatedObject();
+	    	this.CopyInstantiatedProperties(instantiatedAsset);
+	    }
+
 	    // All assets are checked if valid in Houdini Engine session in Awake.
 	    // Awake is called at scene load / script compilation / play mode change.
 	    // This will re-register with existing session that created this asset
@@ -3740,171 +3749,7 @@ namespace HoudiniEngineUnity
 	    newRootTransform.localRotation = _rootGameObject.transform.localRotation;
 	    newRootTransform.localScale = _rootGameObject.transform.localScale;
 
-	    // Set parameter preset for asset
-	    newAsset.Parameters.SetPresetData(_parameters.GetPresetData());
-
-	    // Set parameter preset for curves
-	    int numCurves = newAsset._curves.Count;
-	    for (int i = 0; i < numCurves; ++i)
-	    {
-		HEU_Curve srcCurve = GetCurve(newAsset._curves[i].CurveName);
-		if (srcCurve != null)
-		{
-		    newAsset._curves[i].Parameters.SetPresetData(srcCurve.Parameters.GetPresetData());
-		}
-	    }
-
-	    newAsset._curveEditorEnabled = this._curveEditorEnabled;
-	    newAsset._curveDrawCollision = this._curveDrawCollision;
-	    newAsset._curveDrawColliders = new List<Collider>(this._curveDrawColliders);
-	    newAsset._curveDrawLayerMask = this._curveDrawLayerMask;
-
-	    // Upload parameter preset
-	    newAsset.UploadParameterPresetToHoudini(newAsset.GetAssetSession(false));
-
-	    this._instanceInputUIState.CopyTo(newAsset._instanceInputUIState);
-
-	    // Copy over asset options
-	    newAsset._showHDAOptions = this._showHDAOptions;
-	    newAsset._showGenerateSection = this._showGenerateSection;
-	    newAsset._showBakeSection = this._showBakeSection;
-	    newAsset._showEventsSection = this._showEventsSection;
-	    newAsset._showCurvesSection = this._showCurvesSection;
-	    newAsset._showInputNodesSection = this._showInputNodesSection;
-	    newAsset._showToolsSection = this._showToolsSection;
-	    newAsset._showTerrainSection = this._showTerrainSection;
-
-	    newAsset._generateUVs = this._generateUVs;
-	    newAsset._generateTangents = this._generateTangents;
-	    newAsset._generateNormals = this._generateNormals;
-	    newAsset._pushTransformToHoudini = this._pushTransformToHoudini;
-	    newAsset._transformChangeTriggersCooks = this._transformChangeTriggersCooks;
-	    newAsset._cookingTriggersDownCooks = this._cookingTriggersDownCooks;
-	    newAsset._autoCookOnParameterChange = this._autoCookOnParameterChange;
-	    newAsset._ignoreNonDisplayNodes = this._ignoreNonDisplayNodes;
-	    newAsset._generateMeshUsingPoints = this._generateMeshUsingPoints;
-	    newAsset._useLODGroups = this._useLODGroups;
-
-	    // Copy over tools state
-	    newAsset._editableNodesToolsEnabled = this._editableNodesToolsEnabled;
-	    newAsset._toolsInfo = ScriptableObject.Instantiate(this._toolsInfo) as HEU_ToolsInfo;
-
-	    // Copy events
-	    newAsset._reloadEvent = this._reloadEvent;
-	    newAsset._cookedEvent = this._cookedEvent;
-	    newAsset._bakedEvent = this._bakedEvent;
-
-	    newAsset._downstreamConnectionCookedEvent = this._downstreamConnectionCookedEvent;
-
-	    // Copy and upload attribute values
-	    int numAttributeStores = newAsset._attributeStores.Count;
-	    for (int i = 0; i < numAttributeStores; ++i)
-	    {
-		HEU_AttributesStore newAttrStore = newAsset._attributeStores[i];
-
-		HEU_AttributesStore srcAttrStore = this.GetAttributeStore(newAttrStore.GeoName, newAttrStore.PartID);
-		if (srcAttrStore != null)
-		{
-		    srcAttrStore.CopyAttributeValuesTo(newAttrStore);
-		}
-	    }
-
-	    // Copy and upload input nodes
-	    int numInputNodes = newAsset._inputNodes.Count;
-	    for (int i = 0; i < numInputNodes; ++i)
-	    {
-		HEU_InputNode newInputNode = newAsset._inputNodes[i];
-
-		HEU_InputNode srcInputNode = GetInputNodeByIndex(i);
-		if (srcInputNode != null)
-		{
-		    srcInputNode.CopyInputValuesTo(session, newInputNode);
-
-		    newInputNode.RequiresCook = srcInputNode.RequiresCook;
-		    newInputNode.RequiresUpload = srcInputNode.RequiresUpload;
-		}
-	    }
-
-	    // Copy and upload volume data
-	    int numVolumeCaches = newAsset._volumeCaches.Count;
-	    for (int i = 0; i < numVolumeCaches; ++i)
-	    {
-		HEU_VolumeCache newVolumeCache = newAsset._volumeCaches[i];
-
-		HEU_ObjectNode newObject = newAsset.GetObjectNodeByName(newVolumeCache.ObjectName);
-		HEU_ObjectNode srcObject = GetObjectNodeByName(newVolumeCache.ObjectName);
-
-		if (newObject != null && srcObject != null)
-		{
-		    HEU_GeoNode newGeoNode = newObject.GetGeoNode(newAsset._volumeCaches[i].GeoName);
-		    HEU_GeoNode srcGeoNode = srcObject.GetGeoNode(newAsset._volumeCaches[i].GeoName);
-
-		    if (newGeoNode != null && srcGeoNode != null)
-		    {
-			HEU_VolumeCache srcVolumeCache = srcGeoNode.GetVolumeCacheByTileIndex(newVolumeCache.TileIndex);
-			if (srcVolumeCache != null)
-			{
-			    srcVolumeCache.CopyValuesTo(newVolumeCache);
-			    newVolumeCache.IsDirty = true;
-			}
-		    }
-		}
-	    }
-
-	    if (newAsset._cookStatus == AssetCookStatus.POSTLOAD)
-	    {
-		newAsset.SetCookStatus(AssetCookStatus.NONE, AssetCookResult.SUCCESS);
-	    }
-
-	    newAsset.RequestCook(false, false, false, false);
-
-	    // For outputs, copy over material overrides, and custom (non-generated) components
-
-	    List<HEU_GeneratedOutput> sourceOutputs = new List<HEU_GeneratedOutput>();
-	    this.GetOutput(sourceOutputs);
-
-	    List<HEU_GeneratedOutput> destOutputs = new List<HEU_GeneratedOutput>();
-	    newAsset.GetOutput(destOutputs);
-
-	    int numSourceOutuputs = sourceOutputs.Count;
-	    int numDestOutputs = destOutputs.Count;
-	    if (numSourceOutuputs == numDestOutputs)
-	    {
-		for (int i = 0; i < numSourceOutuputs; ++i)
-		{
-		    // Main gameobject -> copy components (skip existing)
-		    if (sourceOutputs[i]._outputData._gameObject != null && destOutputs[i]._outputData._gameObject != null)
-		    {
-			HEU_GeneralUtility.CopyComponents(sourceOutputs[i]._outputData._gameObject, destOutputs[i]._outputData._gameObject);
-		    }
-
-		    bool bSrcHasLODGroup = HEU_GeneratedOutput.HasLODGroup(sourceOutputs[i]);
-		    bool bDestHasLODGroup = HEU_GeneratedOutput.HasLODGroup(destOutputs[i]);
-		    if (bSrcHasLODGroup && bDestHasLODGroup)
-		    {
-			// LOD Group -> copy child components (skip existing), and copy material overrides
-
-			int numSrcChildren = sourceOutputs[i]._childOutputs.Count;
-			int numDestChildren = destOutputs[i]._childOutputs.Count;
-			if (numSrcChildren == numDestChildren)
-			{
-			    for (int j = 0; j < numSrcChildren; ++j)
-			    {
-				HEU_GeneralUtility.CopyComponents(sourceOutputs[i]._childOutputs[j]._gameObject, destOutputs[i]._childOutputs[j]._gameObject);
-
-				HEU_GeneratedOutput.CopyMaterialOverrides(sourceOutputs[i]._childOutputs[j], destOutputs[i]._childOutputs[j]);
-			    }
-			}
-		    }
-		    else if (!bSrcHasLODGroup && !bDestHasLODGroup)
-		    {
-			// Non-LOD Group -> Copy material overrides
-
-			HEU_GeneratedOutput.CopyMaterialOverrides(sourceOutputs[i]._outputData, destOutputs[i]._outputData);
-		    }
-		}
-	    }
-
+	    this.CopyPropertiesTo(newAsset);
 
 	    // Select it
 	    HEU_EditorUtility.SelectObject(newRootGO);
@@ -4331,6 +4176,226 @@ namespace HoudiniEngineUnity
 		    (int)(HAPI_NodeType.HAPI_NODETYPE_OBJ | HAPI_NodeType.HAPI_NODETYPE_SOP),
 		    (int)(HAPI_NodeFlags.HAPI_NODEFLAGS_OBJ_GEOMETRY | HAPI_NodeFlags.HAPI_NODEFLAGS_DISPLAY),
 		    true, out _totalCookCount);
+	}
+
+	private void CopyInstantiatedProperties(HEU_HoudiniAsset newAsset)
+	{
+	    HEU_SessionBase session = GetAssetSession(true);
+	    bool bBuildAsync = false;
+		
+	    // Populate asset with what we know
+	    this.SetupAsset(newAsset._assetType, newAsset._assetPath, this.transform.parent.gameObject, session);
+
+	    // Build it in Houdini Engine
+	    this.RequestReload(bBuildAsync);
+
+	    newAsset.CopyPropertiesTo(this);
+	}
+
+	private bool HasBeenInstantiated()
+	{
+	    if (this._objectNodes == null)
+	    {
+	        return false;
+	    }
+	    // ScriptableObjects do not instanitate correctly. The only way I found
+	    // to check this is to check if _objectNodes[i].ParentAsset is our object
+	    foreach (HEU_ObjectNode objNode in this._objectNodes)
+	    {
+		if (objNode.ParentAsset != this)
+		{
+		    return true;
+		}
+	    }
+
+	    return false;
+	}
+
+	private HEU_HoudiniAsset GetInstantiatedObject()
+	{
+	    if (this._objectNodes == null || this._objectNodes.Count == 0)
+	    {
+		return null;
+	    }
+
+	    if (!HasBeenInstantiated())
+	    {
+ 	        return null;
+	    }
+	    
+	    // See: HasBeenInstantiated()
+	    return this._objectNodes[0].ParentAsset;
+	}
+
+
+	private void CopyPropertiesTo(HEU_HoudiniAsset newAsset)
+	{
+	    HEU_SessionBase session = GetAssetSession(true);
+
+	    // Set parameter preset for asset
+	    newAsset.Parameters.SetPresetData(_parameters.GetPresetData());
+
+	    // Set parameter preset for curves
+	    int numCurves = newAsset._curves.Count;
+	    for (int i = 0; i < numCurves; ++i)
+	    {
+		HEU_Curve srcCurve = GetCurve(newAsset._curves[i].CurveName);
+		if (srcCurve != null)
+		{
+		    newAsset._curves[i].Parameters.SetPresetData(srcCurve.Parameters.GetPresetData());
+		}
+	    }
+
+	    newAsset._curveEditorEnabled = this._curveEditorEnabled;
+	    newAsset._curveDrawCollision = this._curveDrawCollision;
+	    newAsset._curveDrawColliders = new List<Collider>(this._curveDrawColliders);
+	    newAsset._curveDrawLayerMask = this._curveDrawLayerMask;
+
+	    // Upload parameter preset
+	    newAsset.UploadParameterPresetToHoudini(newAsset.GetAssetSession(false));
+
+	    this._instanceInputUIState.CopyTo(newAsset._instanceInputUIState);
+
+	    // Copy over asset options
+	    newAsset._showHDAOptions = this._showHDAOptions;
+	    newAsset._showGenerateSection = this._showGenerateSection;
+	    newAsset._showBakeSection = this._showBakeSection;
+	    newAsset._showEventsSection = this._showEventsSection;
+	    newAsset._showCurvesSection = this._showCurvesSection;
+	    newAsset._showInputNodesSection = this._showInputNodesSection;
+	    newAsset._showToolsSection = this._showToolsSection;
+	    newAsset._showTerrainSection = this._showTerrainSection;
+
+	    newAsset._generateUVs = this._generateUVs;
+	    newAsset._generateTangents = this._generateTangents;
+	    newAsset._generateNormals = this._generateNormals;
+	    newAsset._pushTransformToHoudini = this._pushTransformToHoudini;
+	    newAsset._transformChangeTriggersCooks = this._transformChangeTriggersCooks;
+	    newAsset._cookingTriggersDownCooks = this._cookingTriggersDownCooks;
+	    newAsset._autoCookOnParameterChange = this._autoCookOnParameterChange;
+	    newAsset._ignoreNonDisplayNodes = this._ignoreNonDisplayNodes;
+	    newAsset._generateMeshUsingPoints = this._generateMeshUsingPoints;
+	    newAsset._useLODGroups = this._useLODGroups;
+
+	    // Copy over tools state
+	    newAsset._editableNodesToolsEnabled = this._editableNodesToolsEnabled;
+	    newAsset._toolsInfo = ScriptableObject.Instantiate(this._toolsInfo) as HEU_ToolsInfo;
+
+	    // Copy events
+	    newAsset._reloadEvent = this._reloadEvent;
+	    newAsset._cookedEvent = this._cookedEvent;
+	    newAsset._bakedEvent = this._bakedEvent;
+
+	    newAsset._downstreamConnectionCookedEvent = this._downstreamConnectionCookedEvent;
+
+	    // Copy and upload attribute values
+	    int numAttributeStores = newAsset._attributeStores.Count;
+	    for (int i = 0; i < numAttributeStores; ++i)
+	    {
+		HEU_AttributesStore newAttrStore = newAsset._attributeStores[i];
+
+		HEU_AttributesStore srcAttrStore = this.GetAttributeStore(newAttrStore.GeoName, newAttrStore.PartID);
+		if (srcAttrStore != null)
+		{
+		    srcAttrStore.CopyAttributeValuesTo(newAttrStore);
+		}
+	    }
+
+	    // Copy and upload input nodes
+	    int numInputNodes = newAsset._inputNodes.Count;
+	    for (int i = 0; i < numInputNodes; ++i)
+	    {
+		HEU_InputNode newInputNode = newAsset._inputNodes[i];
+
+		HEU_InputNode srcInputNode = GetInputNodeByIndex(i);
+		if (srcInputNode != null)
+		{
+		    srcInputNode.CopyInputValuesTo(session, newInputNode);
+
+		    newInputNode.RequiresCook = srcInputNode.RequiresCook;
+		    newInputNode.RequiresUpload = srcInputNode.RequiresUpload;
+		}
+	    }
+
+	    // Copy and upload volume data
+	    int numVolumeCaches = newAsset._volumeCaches.Count;
+	    for (int i = 0; i < numVolumeCaches; ++i)
+	    {
+		HEU_VolumeCache newVolumeCache = newAsset._volumeCaches[i];
+
+		HEU_ObjectNode newObject = newAsset.GetObjectNodeByName(newVolumeCache.ObjectName);
+		HEU_ObjectNode srcObject = GetObjectNodeByName(newVolumeCache.ObjectName);
+
+		if (newObject != null && srcObject != null)
+		{
+		    HEU_GeoNode newGeoNode = newObject.GetGeoNode(newAsset._volumeCaches[i].GeoName);
+		    HEU_GeoNode srcGeoNode = srcObject.GetGeoNode(newAsset._volumeCaches[i].GeoName);
+
+		    if (newGeoNode != null && srcGeoNode != null)
+		    {
+			HEU_VolumeCache srcVolumeCache = srcGeoNode.GetVolumeCacheByTileIndex(newVolumeCache.TileIndex);
+			if (srcVolumeCache != null)
+			{
+			    srcVolumeCache.CopyValuesTo(newVolumeCache);
+			    newVolumeCache.IsDirty = true;
+			}
+		    }
+		}
+	    }
+
+	    if (newAsset._cookStatus == AssetCookStatus.POSTLOAD)
+	    {
+		newAsset.SetCookStatus(AssetCookStatus.NONE, AssetCookResult.SUCCESS);
+	    }
+
+	    newAsset.RequestCook(false, false, false, false);
+
+	    // For outputs, copy over material overrides, and custom (non-generated) components
+
+	    List<HEU_GeneratedOutput> sourceOutputs = new List<HEU_GeneratedOutput>();
+	    this.GetOutput(sourceOutputs);
+
+	    List<HEU_GeneratedOutput> destOutputs = new List<HEU_GeneratedOutput>();
+	    newAsset.GetOutput(destOutputs);
+
+	    int numSourceOutuputs = sourceOutputs.Count;
+	    int numDestOutputs = destOutputs.Count;
+	    if (numSourceOutuputs == numDestOutputs)
+	    {
+		for (int i = 0; i < numSourceOutuputs; ++i)
+		{
+		    // Main gameobject -> copy components (skip existing)
+		    if (sourceOutputs[i]._outputData._gameObject != null && destOutputs[i]._outputData._gameObject != null)
+		    {
+			HEU_GeneralUtility.CopyComponents(sourceOutputs[i]._outputData._gameObject, destOutputs[i]._outputData._gameObject);
+		    }
+
+		    bool bSrcHasLODGroup = HEU_GeneratedOutput.HasLODGroup(sourceOutputs[i]);
+		    bool bDestHasLODGroup = HEU_GeneratedOutput.HasLODGroup(destOutputs[i]);
+		    if (bSrcHasLODGroup && bDestHasLODGroup)
+		    {
+			// LOD Group -> copy child components (skip existing), and copy material overrides
+
+			int numSrcChildren = sourceOutputs[i]._childOutputs.Count;
+			int numDestChildren = destOutputs[i]._childOutputs.Count;
+			if (numSrcChildren == numDestChildren)
+			{
+			    for (int j = 0; j < numSrcChildren; ++j)
+			    {
+				HEU_GeneralUtility.CopyComponents(sourceOutputs[i]._childOutputs[j]._gameObject, destOutputs[i]._childOutputs[j]._gameObject);
+
+				HEU_GeneratedOutput.CopyMaterialOverrides(sourceOutputs[i]._childOutputs[j], destOutputs[i]._childOutputs[j]);
+			    }
+			}
+		    }
+		    else if (!bSrcHasLODGroup && !bDestHasLODGroup)
+		    {
+			// Non-LOD Group -> Copy material overrides
+
+			HEU_GeneratedOutput.CopyMaterialOverrides(sourceOutputs[i]._outputData, destOutputs[i]._outputData);
+		    }
+		}
+	    }
 	}
     }
 
