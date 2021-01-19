@@ -28,8 +28,10 @@
 #define HOUDINIENGINEUNITY_ENABLED
 #endif
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
@@ -248,6 +250,20 @@ namespace HoudiniEngineUnity
 
 	    if (bCreateSession)
 	    {
+                AppDomain currentDomain = AppDomain.CurrentDomain;
+                Assembly[] assemblies = currentDomain.GetAssemblies();
+                string assemblyList = "";
+                foreach (Assembly assembly in assemblies)
+                {
+                    if (!String.IsNullOrEmpty(assemblyList))
+                    {
+                        assemblyList = String.Concat(assemblyList, ";");
+                    }
+                    assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
+                }
+
+                HEU_HAPIImports.harcSetManagedHostLibrariesList(assemblyList);
+
 		// First create the socket server
 		HAPI_ThriftServerOptions serverOptions = new HAPI_ThriftServerOptions();
 		serverOptions.autoClose = autoClose;
@@ -719,8 +735,6 @@ namespace HoudiniEngineUnity
 		HandleSessionConnectionFailure();
 		return false;
 	    }
-
-	    SetServerEnvString(HEU_Defines.HAPI_ENV_CLIENT_NAME, "unity");
 
 	    sessionData.IsInitialized = true;
 	    ConnectionState = SessionConnectionState.CONNECTED;
