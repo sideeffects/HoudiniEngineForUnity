@@ -2115,6 +2115,15 @@ namespace HoudiniEngineUnity
 
 	private void UploadAttributeValues(HEU_SessionBase session)
 	{
+	    for (int i = _attributeStores.Count - 1; i >= 0; i--)
+	    {
+		HEU_AttributesStore attributeStore = _attributeStores[i];
+		if (!attributeStore.IsValidStore(session))
+		{
+		    RemoveAttributeStore(attributeStore);
+		}
+	    }
+
 	    // Normally only the attribute stores that are dirty will be uploaded to Houdini.
 	    // But if _toolsInfo._alwaysCookUpstream is true, we will upload all attributes
 	    // if there is at least one of them that is dirty. This is to handle case where

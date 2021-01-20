@@ -1086,6 +1086,19 @@ namespace HoudiniEngineUnity
 		}
 	    }
 	}
+
+	public bool IsValidStore(HEU_SessionBase session)
+	{
+	    HAPI_NodeInfo nodeInfo = new HAPI_NodeInfo();
+	    if (session.GetNodeInfo(_geoID, ref nodeInfo, false))
+	    {
+		return nodeInfo.isValid;
+	    }
+	    else
+	    {
+		return false;
+	    }
+	}
     }
 
 }   // HoudiniEngineUnity
