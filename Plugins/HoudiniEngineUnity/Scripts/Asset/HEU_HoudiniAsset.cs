@@ -1514,7 +1514,7 @@ namespace HoudiniEngineUnity
 	    // Notify listeners that we've cooked!
 	    List<GameObject> outputObjects = new List<GameObject>();
 	    GetOutputGameObjects(outputObjects);
-	    if (_downstreamConnectionCookedEvent != null)
+	    if (_downstreamConnectionCookedEvent != null && HEU_PluginSettings.CookingTriggersDownstreamCooks && _cookingTriggersDownCooks)
 	    {
 		_downstreamConnectionCookedEvent.Invoke(this, true, outputObjects);
 	    }
