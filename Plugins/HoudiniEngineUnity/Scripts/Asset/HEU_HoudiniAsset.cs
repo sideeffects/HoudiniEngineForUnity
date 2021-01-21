@@ -497,7 +497,7 @@ namespace HoudiniEngineUnity
 	    if (this.HasBeenInstantiated())
 	    {
 		HEU_HoudiniAsset instantiatedAsset = this.GetInstantiatedObject();
-	    	this.CopyInstantiatedProperties(instantiatedAsset);
+	    	this.ResetAndCopyInstantiatedProperties(instantiatedAsset);
 	    }
 
 	    // All assets are checked if valid in Houdini Engine session in Awake.
@@ -4187,8 +4187,27 @@ namespace HoudiniEngineUnity
 		    true, out _totalCookCount);
 	}
 
-	private void CopyInstantiatedProperties(HEU_HoudiniAsset newAsset)
+	private void ResetAndCopyInstantiatedProperties(HEU_HoudiniAsset newAsset)
 	{
+	    InvalidateAsset();
+
+	    // Setup again to avoid null references
+	    SetupAsset(_assetType, _assetPath, _rootGameObject, GetAssetSession(true));
+
+	    // Destroy everything except the root object and this
+	    // This ensures that there are no dangling gameobjects from the instantiation
+	    // Note that this creates a limitation, where a duplicated object destroys all children of it
+	    // but I think it's fine, since we stated in the docs that we don't fully support duplication in the first
+	    // place ;)
+	    Transform[] gos = _rootGameObject.GetComponentsInChildren<Transform>();
+	    foreach (Transform trans in gos)
+	    {
+		if (trans.gameObject != this.gameObject && trans.gameObject != _rootGameObject)
+		{
+		    DestroyImmediate(trans.gameObject);
+		}
+	    }
+
 	    HEU_SessionBase session = GetAssetSession(true);
 	    bool bBuildAsync = false;
 		
