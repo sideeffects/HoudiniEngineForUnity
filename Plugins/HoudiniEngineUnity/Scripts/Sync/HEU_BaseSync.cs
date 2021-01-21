@@ -137,7 +137,18 @@ namespace HoudiniEngineUnity
 
 	public void Log(string msg)
 	{
-	    _log.Append(msg);
+	    lock (_log)
+	    {
+	        _log.AppendLine(msg);
+	    }
+	}
+
+	public void ClearLog()
+	{
+	    lock (_log)
+	    {
+	        _log = new StringBuilder();
+	    }
 	}
 
 	public void Error(string error)
@@ -251,7 +262,7 @@ namespace HoudiniEngineUnity
 
 	public virtual void OnLoadComplete(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
 	{
-	    Log(loadData._logStr);
+	    Log(loadData._logStr.ToString());
 	    _cookNodeID = loadData._cookNodeID;
 
 	    if (loadData._loadStatus == HEU_ThreadedTaskLoadGeo.HEU_LoadData.LoadStatus.SUCCESS)
@@ -301,7 +312,7 @@ namespace HoudiniEngineUnity
 	{
 	    _syncing = false;
 
-	    Log(loadData._logStr);
+	    Log(loadData._logStr.ToString());
 	    _cookNodeID = loadData._cookNodeID;
 	}
 
@@ -412,7 +423,7 @@ namespace HoudiniEngineUnity
 		    terrainData.heightmapResolution = heightMapSize;
 		    if (terrainData.heightmapResolution != heightMapSize)
 		    {
-			Debug.LogErrorFormat("Unsupported terrain size: {0}", heightMapSize);
+			Debug.LogErrorFormat("Unsupported terrain size: {0}. Terrain resolution should be a power of 2 + 1.", heightMapSize);
 			continue;
 		    }
 
