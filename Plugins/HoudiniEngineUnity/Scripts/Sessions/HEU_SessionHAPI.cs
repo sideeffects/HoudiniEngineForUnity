@@ -38,6 +38,9 @@ namespace HoudiniEngineUnity
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
+    using HAPI_UInt8 = System.Byte;
+    using HAPI_Int8 = System.SByte;
+    using HAPI_Int16 = System.Int16;
     using HAPI_Int64 = System.Int64;
     using HAPI_StringHandle = System.Int32;
     using HAPI_ErrorCodeBits = System.Int32;
@@ -1604,6 +1607,27 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+	public override bool GetAttributeUInt8Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_UInt8[] data, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeUInt8Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HandleStatusResult(result, "Getting Attribute Int8 Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetAttributeInt8Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int8[] data, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInt8Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HandleStatusResult(result, "Getting Attribute Int8 Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetAttributeInt16Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int16[] data, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInt16Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HandleStatusResult(result, "Getting Attribute Int16 Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 	public override bool GetAttributeInt64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int64[] data, int start, int length)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInt64Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
@@ -1798,6 +1822,30 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeIntData(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
 	    HandleStatusResult(result, "Setting Attribute Int Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetAttributeInt8Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		HAPI_Int8[] data, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeInt8Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HandleStatusResult(result, "Setting Attribute Int8 Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetAttributeInt16Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		HAPI_Int16[] data, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeInt16Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HandleStatusResult(result, "Setting Attribute Int16 Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetAttributeInt64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		HAPI_Int64[] data, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeInt64Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HandleStatusResult(result, "Setting Attribute Int64 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 

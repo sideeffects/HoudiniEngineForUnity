@@ -34,6 +34,9 @@ using System.Collections.Generic;
 
 namespace HoudiniEngineUnity
 {
+    using HAPI_UInt8 = System.SByte;
+    using HAPI_Int8 = System.SByte;
+    using HAPI_Int16 = System.Int16;
     using HAPI_Int64 = System.Int64;
     using HAPI_NodeId = System.Int32;
     using HAPI_PartId = System.Int32;
@@ -389,6 +392,30 @@ namespace HoudiniEngineUnity
 		    if (HEU_GeneralUtility.GetAttributeArray<int>(GeoID, PartID, uvName, ref _uvsAttrInfo[i], intUVs, session.GetAttributeIntData, _uvsAttrInfo[i].count))
 		    {
 			_uvsAttr[i] = System.Array.ConvertAll<int, float>(intUVs, System.Convert.ToSingle);
+		    }
+		}
+		else if (_uvsAttrInfo[i].storage == HAPI_StorageType.HAPI_STORAGETYPE_UINT8)
+		{
+		    HAPI_UInt8[] uint8UVs = new HAPI_UInt8[_uvsAttrInfo[i].count * _uvsAttrInfo[i].tupleSize];
+		    if (HEU_GeneralUtility.GetAttributeArray<HAPI_UInt8>(GeoID, PartID, uvName, ref _uvsAttrInfo[i], uint8UVs, session.GetAttributeInt8Data, _uvsAttrInfo[i].count))
+		    {
+				_uvsAttr[i] = System.Array.ConvertAll<HAPI_UInt8, float>(uint8UVs, System.Convert.ToSingle);
+		    }
+		}
+		else if (_uvsAttrInfo[i].storage == HAPI_StorageType.HAPI_STORAGETYPE_INT8)
+		{
+		    HAPI_Int8[] int8UVs = new HAPI_Int8[_uvsAttrInfo[i].count * _uvsAttrInfo[i].tupleSize];
+		    if (HEU_GeneralUtility.GetAttributeArray<HAPI_Int8>(GeoID, PartID, uvName, ref _uvsAttrInfo[i], int8UVs, session.GetAttributeInt8Data, _uvsAttrInfo[i].count))
+		    {
+				_uvsAttr[i] = System.Array.ConvertAll<HAPI_Int8, float>(int8UVs, System.Convert.ToSingle);
+		    }
+		}
+		else if (_uvsAttrInfo[i].storage == HAPI_StorageType.HAPI_STORAGETYPE_INT16)
+		{
+		    HAPI_Int16[] int16UVs = new HAPI_Int16[_uvsAttrInfo[i].count * _uvsAttrInfo[i].tupleSize];
+		    if (HEU_GeneralUtility.GetAttributeArray<HAPI_Int16>(GeoID, PartID, uvName, ref _uvsAttrInfo[i], int16UVs, session.GetAttributeInt16Data, _uvsAttrInfo[i].count))
+		    {
+				_uvsAttr[i] = System.Array.ConvertAll<HAPI_Int16, float>(int16UVs, System.Convert.ToSingle);
 		    }
 		}
 		else if (_uvsAttrInfo[i].storage == HAPI_StorageType.HAPI_STORAGETYPE_INT64)
