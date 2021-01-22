@@ -1192,8 +1192,10 @@ namespace HoudiniEngineUnity
 	/// <param name="bakedAssetPath">Path to asset's database cache. Could be null in which case it will be filled.</param>
 	/// <param name="assetDBObject">The asset database object to write out the persistent mesh data to. Could be null, in which case it might be created.</param>
 	/// <param name="assetObjectFileName">File name of the asset database object. This will be used to create new assetDBObject.</param>
+	/// <param name="lodTransformValues"> Data to sets the local transform of LOD after copy. Set to null if default </param>
 	private void CopyGameObjectComponents(GameObject sourceGO, GameObject targetGO, string assetName, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, bool bWriteMeshesToAssetDatabase,
-		ref string bakedAssetPath, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bDeleteExistingComponents, bool bDontDeletePersistantResources)
+		ref string bakedAssetPath, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bDeleteExistingComponents, bool bDontDeletePersistantResources,
+		List<TransformData> lodTransformValues)
 	{
 	    // Copy mesh, collider, material, and textures into its own directory in the Assets folder
 
@@ -1211,7 +1213,7 @@ namespace HoudiniEngineUnity
 		}
 
 		CopyChildGameObjects(sourceGO, targetGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
-				ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
+				ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, lodTransformValues != null);
 
 		LOD[] sourceLODs = sourceLODGroup.GetLODs();
 		if (sourceLODs != null)
@@ -1240,6 +1242,11 @@ namespace HoudiniEngineUnity
 
 		    targetLODGroup.SetLODs(targetLODs);
 		}
+	    }
+
+	    if (lodTransformValues != null)
+	    {
+		HEU_GeneralUtility.SetLODTransformValues(targetGO, lodTransformValues);
 	    }
 
 	    // Mesh for render
@@ -1571,7 +1578,8 @@ namespace HoudiniEngineUnity
 	/// <param name="bDeleteExistingComponents">True if should delete existing components to then re-add.</param>
 	/// <param name="bDontDeletePersistantResources">True if not to delete persisten file resources in the project.</param>
 	private void CopyChildGameObjects(GameObject sourceGO, GameObject targetGO, string assetName, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials,
-		bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bDeleteExistingComponents, bool bDontDeletePersistantResources)
+		bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bDeleteExistingComponents, bool bDontDeletePersistantResources,
+		bool bKeepPreviousTransformValues)
 	{
 	    Transform targetTransform = targetGO.transform;
 	    List<GameObject> unprocessedTargetChildren = HEU_GeneralUtility.GetChildGameObjects(targetGO);
@@ -1583,6 +1591,7 @@ namespace HoudiniEngineUnity
 		GameObject srcChildGO = srcChildGameObjects[i];
 
 		GameObject targetChildGO = HEU_GeneralUtility.GetGameObjectByName(unprocessedTargetChildren, srcChildGO.name);
+		List<TransformData> previousTransformValues = null;
 		if (targetChildGO == null)
 		{
 		    targetChildGO = new GameObject(srcChildGO.name);
@@ -1590,6 +1599,14 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
+
+		    if (bKeepPreviousTransformValues)
+		    {
+		    	previousTransformValues = new List<TransformData>();
+		    	List<Transform> previousTransforms = HEU_GeneralUtility.GetLODTransforms(targetGO);
+		    	previousTransforms.ForEach((Transform trans) => {  previousTransformValues.Add(new TransformData(trans)); });
+		    }
+
 		    if (bDeleteExistingComponents)
 		    {
 			HEU_GeneralUtility.DestroyGeneratedMeshMaterialsLODGroups(targetChildGO, bDontDeletePersistantResources);
@@ -1603,7 +1620,7 @@ namespace HoudiniEngineUnity
 
 		// Copy component data
 		CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
-			ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
+			ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, previousTransformValues);
 	    }
 
 	    if (unprocessedTargetChildren.Count > 0)
@@ -1639,7 +1656,7 @@ namespace HoudiniEngineUnity
 	    GameObject targetGO = HEU_EditorUtility.InstantiateGameObject(outputGameObject, parentTransform, true, true);
 	    targetGO.name = HEU_PartData.AppendBakedCloneName(outputGameObject.name);
 
-	    BakePartToGameObject(targetGO, false, false, bWriteMeshesToAssetDatabase, ref bakedAssetPath, sourceToTargetMeshMap, sourceToCopiedMaterials, ref assetDBObject, assetObjectFileName, bReconnectPrefabInstances);
+	    BakePartToGameObject(targetGO, false, false, bWriteMeshesToAssetDatabase, ref bakedAssetPath, sourceToTargetMeshMap, sourceToCopiedMaterials, ref assetDBObject, assetObjectFileName, bReconnectPrefabInstances, false);
 
 	    return targetGO;
 	}
@@ -1658,7 +1675,8 @@ namespace HoudiniEngineUnity
 	/// <param name="assetDBObject">The asset database object to write out the persistent mesh data to. Could be null, in which case it might be created.</param>
 	/// <param name="assetObjectFileName">File name of the asset database object. This will be used to create new assetDBObject.</param>
 	/// <param name="bReconnectPrefabInstances">Reconnect prefab instances to its prefab parent.</param>
-	public void BakePartToGameObject(GameObject targetGO, bool bDeleteExistingComponents, bool bDontDeletePersistantResources, bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bReconnectPrefabInstances)
+	/// <param name="bKeepPreviousTransformValues">Keeps transform values of previous groups.</param>
+	public void BakePartToGameObject(GameObject targetGO, bool bDeleteExistingComponents, bool bDontDeletePersistantResources, bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bReconnectPrefabInstances, bool bKeepPreviousTransformValues)
 	{
 	    GameObject outputGameObject = OutputGameObject;
 	    if (outputGameObject == null)
@@ -1695,6 +1713,8 @@ namespace HoudiniEngineUnity
 
 		    GameObject targetChildGO = HEU_GeneralUtility.GetGameObjectByName(unprocessedTargetChildren, srcChildGO.name);
 
+		    List<TransformData> previousTransformValues = null;
+
 		    if (bSrcPrefabInstance && targetChildGO != null && !HEU_EditorUtility.IsPrefabInstance(targetChildGO))
 		    {
 			// A not-so-ideal workaround to the fact that when calling GameObject.Instantiate, copies of child prefab instances
@@ -1730,6 +1750,14 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
+			
+			if (bKeepPreviousTransformValues)
+			{
+			    previousTransformValues = new List<TransformData>();
+			    List<Transform> previousTransforms = HEU_GeneralUtility.GetLODTransforms(targetGO);
+			    previousTransforms.ForEach((Transform trans) => {  previousTransformValues.Add(new TransformData(trans)); });
+			}
+			
 			if (bDeleteExistingComponents)
 			{
 			    HEU_GeneralUtility.DestroyGeneratedMeshMaterialsLODGroups(targetChildGO, bDontDeletePersistantResources);
@@ -1746,7 +1774,7 @@ namespace HoudiniEngineUnity
 			// Copy component data only if not a prefab instance. 
 			// Otherwise, copying prefab instances breaks the prefab connection and creates duplicates (e.g. instancing existing prefabs).
 			CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
-				ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
+				ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, previousTransformValues);
 		    }
 		    else
 		    {
@@ -1770,6 +1798,15 @@ namespace HoudiniEngineUnity
 		// Not an instancer, regular object (could also be instanced)
 		// TODO: For instanced object, should we not instantiate if it is not visible?
 
+		List<TransformData> previousTransformValues = null;
+
+		if (bKeepPreviousTransformValues)
+		{
+		    previousTransformValues = new List<TransformData>();
+		    List<Transform> previousTransforms = HEU_GeneralUtility.GetLODTransforms(targetGO);
+		    previousTransforms.ForEach((Transform trans) => {  previousTransformValues.Add(new TransformData(trans)); });
+		}
+
 		if (bDeleteExistingComponents)
 		{
 		    HEU_GeneralUtility.DestroyGeneratedMeshMaterialsLODGroups(targetGO, bDontDeletePersistantResources);
@@ -1777,7 +1814,7 @@ namespace HoudiniEngineUnity
 
 		// Copy component data
 		CopyGameObjectComponents(outputGameObject, targetGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
-			ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources);
+			ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, previousTransformValues);
 
 	    }
 	}
