@@ -43,6 +43,49 @@ namespace HoudiniEngineUnity
     using HAPI_PartId = System.Int32;
     using HAPI_StringHandle = System.Int32;
 
+    // Struct for copying transform data Unity-side
+    public struct TransformData {
+	public Vector3 position;
+	public Quaternion rotation;
+	
+	public Vector3 localPosition;
+	public Vector3 localScale;
+	public Quaternion localRotation;
+	
+	public Transform parent;
+
+	public TransformData(Transform other)
+	{
+	    this.position = other.position;
+	    this.rotation = other.rotation;
+	    this.localPosition = other.localPosition;
+	    this.localScale = other.localScale;
+	    this.localRotation = other.localRotation;
+	    this.parent = other.parent;
+	}
+
+	public void CopyTo(Transform other, bool copyParent)
+	{
+	    other.position = this.position;
+	    other.rotation = this.rotation;
+	    other.localScale = this.localScale;
+	    if (copyParent)
+	    {
+	        other.parent = this.parent;
+	    }
+	}
+
+	public void CopyToLocal(Transform other, bool copyParent)
+	{
+	    other.localPosition = this.localPosition;
+	    other.localRotation = this.localRotation;
+	    other.localScale = this.localScale;
+	    if (copyParent)
+	    {
+	        other.parent = this.parent;
+	    }
+	}
+    };
 
 
     /// <summary>
@@ -997,6 +1040,48 @@ namespace HoudiniEngineUnity
 		}
 
 		DestroyImmediate(lodGroup);
+	    }
+	}
+
+	public static List<Transform> GetLODTransforms(GameObject targetGO)
+	{
+	    List<Transform> transforms = new List<Transform>();
+	    LODGroup lodGroup = targetGO.GetComponent<LODGroup>();
+	    if (lodGroup != null)
+	    {
+		List<GameObject> childrenGO = GetChildGameObjects(targetGO);
+		if (childrenGO != null)
+		{
+		    for (int i = 0; i < childrenGO.Count; ++i)
+		    {
+			transforms.Add(childrenGO[i].transform);
+		    }
+		}
+
+	    }
+
+	    return transforms;
+	}
+
+	public static void SetLODTransformValues(GameObject targetGO, List<TransformData> transformData)
+	{
+	    if (transformData != null)
+	    {
+		List<Transform> currentTransforms = HEU_GeneralUtility.GetLODTransforms(targetGO);
+		
+		int size = Mathf.Min(transformData.Count, currentTransforms.Count);
+		if (size > 0)
+		{
+		    if (transformData.Count != currentTransforms.Count)
+		    {
+		    	Debug.LogWarning("Newly baked object doesn't have the same child count as the old object! Transforms values will be applied based on index");
+		    }
+		    
+		    for (int i = 0; i < size; i++)
+		    {
+		    	transformData[i].CopyToLocal(currentTransforms[i], false);
+		    }
+		}
 	    }
 	}
 

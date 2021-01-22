@@ -351,6 +351,11 @@ namespace HoudiniEngineUnity
 
 	public bool SessionSyncAutoCook { get { return _sessionSyncAutoCook; } set { _sessionSyncAutoCook = value; } }
 
+	[SerializeField]
+	private bool _bakeUpdateKeepPreviousTransformValues = false;
+
+	public bool BakeUpdateKeepPreviousTransformValues { get { return _bakeUpdateKeepPreviousTransformValues; } set { _bakeUpdateKeepPreviousTransformValues = value; } }
+
 	// CURVES -----------------------------------------------------------------------------------------------------
 
 	// Toggle curve editing tool in Scene view
@@ -2748,9 +2753,24 @@ namespace HoudiniEngineUnity
 	    string bakedAssetPath = existingPrefabFolder;
 	    bool bWriteMeshesToAssetDatabase = true;
 	    bool bReconnectPrefabInstances = false;
+
+	    List<TransformData> previousTransformValues = null;
+
+	    if (_bakeUpdateKeepPreviousTransformValues)
+	    {
+		previousTransformValues = new List<TransformData>();
+		List<Transform> previousTransforms = HEU_GeneralUtility.GetLODTransforms(bakeTargetGO);
+		previousTransforms.ForEach((Transform trans) => {  previousTransformValues.Add(new TransformData(trans)); });
+	    }
+	    
 	    GameObject newClonedRoot = CloneAssetWithoutHDA(ref bakedAssetPath, bWriteMeshesToAssetDatabase, bReconnectPrefabInstances);
 	    if (newClonedRoot != null)
 	    {
+		if (previousTransformValues != null)
+		{
+		    HEU_GeneralUtility.SetLODTransformValues(newClonedRoot, previousTransformValues);
+		}
+
 		try
 		{
 		    if (string.IsNullOrEmpty(bakedAssetPath))
@@ -2796,6 +2816,7 @@ namespace HoudiniEngineUnity
 	    bool bWriteMeshesToAssetDatabase = true;
 	    bool bDeleteExistingComponents = true;
 	    bool bReconnectPrefabInstances = true;
+	    bool bKeepPreviousTransformValues = _bakeUpdateKeepPreviousTransformValues;
 
 	    UnityEngine.Object targetAssetDBObject = null;
 
@@ -2825,7 +2846,7 @@ namespace HoudiniEngineUnity
 	    {
 		// Single object
 
-		clonableParts[0].BakePartToGameObject(bakeTargetGO, bDeleteExistingComponents, bDontDeletePersistantResources, bWriteMeshesToAssetDatabase, ref targetAssetPath, sourceToTargetMeshMap, sourceToCopiedMaterials, ref targetAssetDBObject, assetDBObjectFileName, bReconnectPrefabInstances);
+		clonableParts[0].BakePartToGameObject(bakeTargetGO, bDeleteExistingComponents, bDontDeletePersistantResources, bWriteMeshesToAssetDatabase, ref targetAssetPath, sourceToTargetMeshMap, sourceToCopiedMaterials, ref targetAssetDBObject, assetDBObjectFileName, bReconnectPrefabInstances, bKeepPreviousTransformValues);
 
 		outputObjects.Add(bakeTargetGO);
 		bBakedSuccessful = true;
@@ -2857,7 +2878,7 @@ namespace HoudiniEngineUnity
 			// Remove from target child list to avoid destroying it later when we process excess child gameobjects
 			unprocessedTargetChildren.Remove(targetObject);
 
-			partData.BakePartToGameObject(targetObject, bDeleteExistingComponents, bDontDeletePersistantResources, bWriteMeshesToAssetDatabase, ref targetAssetPath, sourceToTargetMeshMap, sourceToCopiedMaterials, ref targetAssetDBObject, assetDBObjectFileName, bReconnectPrefabInstances);
+			partData.BakePartToGameObject(targetObject, bDeleteExistingComponents, bDontDeletePersistantResources, bWriteMeshesToAssetDatabase, ref targetAssetPath, sourceToTargetMeshMap, sourceToCopiedMaterials, ref targetAssetDBObject, assetDBObjectFileName, bReconnectPrefabInstances, bKeepPreviousTransformValues);
 		    }
 
 		    outputObjects.Add(targetObject);

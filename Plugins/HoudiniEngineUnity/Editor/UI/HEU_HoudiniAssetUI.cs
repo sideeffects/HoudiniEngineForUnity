@@ -734,6 +734,10 @@ namespace HoudiniEngineUnity
 				EditorGUILayout.PropertyField(bakeTargetsProp, _dragAndDropField, true);
 			    }
 			}
+
+			HEU_EditorUI.BeginSimpleSection("Bake Update");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_bakeUpdateKeepPreviousTransformValues", "Keep Previous Transform Values", "Copy previous transform values when doing a Bake Update.");
+			HEU_EditorUI.EndSimpleSection();
 		    }
 		}
 	    }
