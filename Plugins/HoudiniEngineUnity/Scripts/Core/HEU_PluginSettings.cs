@@ -562,14 +562,12 @@ namespace HoudiniEngineUnity
 	{
 	    get
 	    {
-		string path = "Resources/unity_builtin_extra::name::Default-Terrain-Diffuse";
+		string path = "";
 		HEU_PluginStorage.Instance.Get("HAPI_DefaultTerrainMaterial", out path, path);
 		return path;
 	    }
 	    set
 	    {
-		Debug.Log("Set Terrain default material: " + value);
-
 		HEU_PluginStorage.Instance.Set("HAPI_DefaultTerrainMaterial", value);
 	    }
 	}
@@ -870,6 +868,20 @@ namespace HoudiniEngineUnity
 	    set
 	    {
 		HEU_PluginStorage.Instance.Set("HAPI_SessionSyncAutoCook", value);
+	    }
+	}
+
+	public static bool WriteCookLogs
+	{
+	    get
+	    {
+		bool enabled = true;
+		HEU_PluginStorage.Instance.Get("HAPI_WriteCookLogs", out enabled, enabled);
+		return enabled;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_WriteCookLogs", value);
 	    }
 	}
     }

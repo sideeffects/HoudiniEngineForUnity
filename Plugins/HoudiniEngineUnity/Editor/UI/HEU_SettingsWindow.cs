@@ -446,6 +446,17 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
+	    HEU_EditorUI.DrawSeparator();
+	    {
+		bool oldValue = HEU_PluginSettings.WriteCookLogs;
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Write Cook Logs");
+		if (newValue != oldValue)
+		{
+		    HEU_PluginSettings.WriteCookLogs = newValue;
+		    bChanged = true;
+		}
+	    }
+
 	    return bChanged;
 	}
 
