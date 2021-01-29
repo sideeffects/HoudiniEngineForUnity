@@ -41,10 +41,10 @@ namespace HoudiniEngineUnity
         {
                 public const int HOUDINI_MAJOR			= 18;
                 public const int HOUDINI_MINOR			= 6;
-                public const int HOUDINI_BUILD			= 147;
+                public const int HOUDINI_BUILD			= 150;
                 public const int HOUDINI_PATCH			= 0;
 
-                public const string HOUDINI_VERSION_STRING = "18.6.147";
+                public const string HOUDINI_VERSION_STRING = "18.6.150";
 
                 public const int HOUDINI_ENGINE_MAJOR	= 4;
                 public const int HOUDINI_ENGINE_MINOR	= 0;
@@ -92,7 +92,7 @@ namespace HoudiniEngineUnity
 
                 public const string HAPI_SERVER				= HOUDINI_INSTALL_PATH + HAPI_BIN_PATH + "/HARS";
                 public const string HAPI_LIBRARY			= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.so";
-                public const string HARC_LIRARY                         = HOUDINI_INSTALL_PATH + HARC_LIBRARY_PATH + "/libHARC.so";
+                public const string HARC_LIBRARY                        = HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHARC.so";
 
 #else
 
@@ -105,7 +105,7 @@ namespace HoudiniEngineUnity
 
                 public const string HAPI_SERVER				= HOUDINI_INSTALL_PATH + HAPI_BIN_PATH + "/HARS";
                 public const string HAPI_LIBRARY			= HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHAPIL.so";
-                public const string HARC_LIBRARY                        = HOUDINI_INSTALL_PATH + HARC_LIBRARY_PATH + "/libHARC.so";
+                public const string HARC_LIBRARY                        = HOUDINI_INSTALL_PATH + HAPI_LIBRARY_PATH + "/libHARC.so";
 #endif
         };
 
