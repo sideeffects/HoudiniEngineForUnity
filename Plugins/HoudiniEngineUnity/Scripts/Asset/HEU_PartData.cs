@@ -993,6 +993,11 @@ namespace HoudiniEngineUnity
 		HEU_AssetDatabase.ImportAsset(assetPath, HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
 		instancedAssetGameObject = HEU_AssetDatabase.LoadAssetAtPath(assetPath, typeof(GameObject)) as GameObject;
 	    }
+	    else
+	    {
+		// Object already instanced
+		return;
+	    }
 
 	    if (instancedAssetGameObject != null)
 	    {
