@@ -941,10 +941,18 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="go">GameObject to set static state on</param>
 	/// <param name="bStatic">Static state to set</param>
-	public static void SetStatic(GameObject go, bool bStatic)
+	public static void SetStatic(GameObject go, bool bStatic, bool bIncludeChildren)
 	{
 #if UNITY_EDITOR
 	    go.isStatic = bStatic;
+	    if (bIncludeChildren)
+	    {
+		foreach (Transform trans in go.transform.GetComponentsInChildren<Transform>(true))
+		{
+		    trans.gameObject.isStatic = bStatic;
+		}
+	    }
+	    
 #endif
 	}
 
