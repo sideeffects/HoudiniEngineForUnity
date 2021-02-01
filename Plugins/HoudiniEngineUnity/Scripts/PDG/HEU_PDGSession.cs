@@ -688,6 +688,115 @@ namespace HoudiniEngineUnity
 	    _pdgEventMessages.Length = 0;
 	}
 
+	public static HAPI_NodeId [] GetNonBypassedNetworkIds(HEU_SessionBase session, HAPI_NodeId assetId)
+	{
+	    if (assetId < 0)
+	    {
+		return null;
+	    }
+
+	    // Get all network nodes recursively
+	    // Getting all networks because TOP nework SOPs aren't considered being of TTOP network type, but SOP type
+	    int networkNodeCount = 0;
+	    if (!session.ComposeChildNodeList(assetId, (int)HAPI_NodeType.HAPI_NODETYPE_ANY, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK, true, ref networkNodeCount))
+	    {
+		return null;
+	    }
+
+	    if (networkNodeCount <= 0)
+	    {
+		return null;;
+	    }
+
+	    HAPI_NodeId [] allNetworkNodeIds = new HAPI_NodeId[networkNodeCount];
+	    if (!session.GetComposedChildNodeList(assetId, allNetworkNodeIds, networkNodeCount))
+	    {
+		return null;
+	    }
+
+
+	    int byPassedTOPNetNodeCount = 0;
+	    if (!session.ComposeChildNodeList(assetId,
+	        (int)HAPI_NodeType.HAPI_NODETYPE_ANY, (int)(HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK | HAPI_NodeFlags.HAPI_NODEFLAGS_BYPASS ),
+		true, ref byPassedTOPNetNodeCount))
+	    {
+		return allNetworkNodeIds;
+	    }
+
+	    // Get only non bypassed nodes
+	    if (byPassedTOPNetNodeCount > 0)
+	    {
+	        HAPI_NodeId[] allBypassedTOPNetNodeIDs = new HAPI_NodeId[byPassedTOPNetNodeCount];
+	        if (!session.GetComposedChildNodeList(assetId, allBypassedTOPNetNodeIDs, byPassedTOPNetNodeCount))
+		{
+		    return allNetworkNodeIds;
+		}
+
+		int lastIndex = allNetworkNodeIds.Length - 1;
+		for (int idx = allNetworkNodeIds.Length - 1; idx >= 0; idx--)
+		{
+		    if (System.Array.Exists<HAPI_NodeId>(allBypassedTOPNetNodeIDs, (HAPI_NodeId id)  => id == allNetworkNodeIds[idx] ))
+		    {
+			// Remove idx by swapping to end and resizing
+			int tmp = allNetworkNodeIds[idx];
+			allNetworkNodeIds[idx] = allNetworkNodeIds[lastIndex];
+			allNetworkNodeIds[lastIndex] = tmp;
+			lastIndex--;
+		    }
+		}
+
+		System.Array.Resize<HAPI_NodeId>(ref allNetworkNodeIds, lastIndex + 1);
+	    }
+
+	    return allNetworkNodeIds;
+	}
+
+	// Checks whether or not an asset is a PDG asset, similar to the unreal plugin
+	public static bool IsPDGAsset(HEU_SessionBase session, HAPI_NodeId assetId)
+	{
+	    HAPI_NodeId[] allNetworkNodeIds = GetNonBypassedNetworkIds(session, assetId);
+	    if (allNetworkNodeIds == null || allNetworkNodeIds.Length == 0)
+	    {
+		return false;
+	    }
+
+	    // Find nodes with TOP child nodes
+	    foreach (HAPI_NodeId currentNodeId in allNetworkNodeIds)
+	    {
+		if (currentNodeId < 0)
+		{
+		    continue;
+		}
+
+		HAPI_NodeInfo currentNodeInfo = new HAPI_NodeInfo();
+		if (!session.GetNodeInfo(currentNodeId, ref currentNodeInfo, false))
+		{
+		    continue;
+		}
+
+		if (currentNodeInfo.type != HAPI_NodeType.HAPI_NODETYPE_TOP
+		    && currentNodeInfo.type != HAPI_NodeType.HAPI_NODETYPE_SOP)
+		{
+		    continue;
+		}
+
+		int topNodeCount = 0;
+		if (!session.ComposeChildNodeList(currentNodeId, 
+		    (int)HAPI_NodeType.HAPI_NODETYPE_TOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_TOP_NONSCHEDULER, true, ref topNodeCount))
+		{
+		    continue;
+		}
+
+		if (topNodeCount > 0)
+		{
+		    return true;
+		}
+	    }
+
+	    // No valid TOP node found :(
+	    return false;
+	}
+
 	//	DATA ------------------------------------------------------------------------------------------------------
 
 	// Global PDG session object

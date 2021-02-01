@@ -48,8 +48,13 @@ namespace HoudiniEngineUnity
 
 	// True if TOP node's generated results should be loaded into scene
 	public bool _autoload = false;
-    }
 
+	// Whether or not TOP node should show, according to henginedata param
+	// Note that if this is false, it will not show in HEU_TOPNetworkData at all
+	public bool _showHEngineData = false;
+	// Whether or not TOP node will be auto loaded, according to henginedata param
+	public bool _autoloadHEngineData = false;
+    }
 
     /// <summary>
     /// Container for TOP network data

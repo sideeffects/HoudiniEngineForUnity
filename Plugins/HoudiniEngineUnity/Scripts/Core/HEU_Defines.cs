@@ -90,6 +90,8 @@ namespace HoudiniEngineUnity
 	public const float HAPI_VOLUME_SURFACE_MAX_PT_PER_C = 64000; // Max points per container. 65000 is Unity max.
 	public const float HAPI_VOLUME_SURFACE_DELTA_MULT = 1.2f;
 	public const float HAPI_VOLUME_SURFACE_PT_SIZE_MULT = 1800.0f;
+	public const string DEFAULT_TOP_NODE_FILTER = "HE_";
+	public const string DEFAULT_TOP_OUTPUT_FILTER = "HE_OUT_";
 
 	// Shared Constants -------------------------------------------------
 	//

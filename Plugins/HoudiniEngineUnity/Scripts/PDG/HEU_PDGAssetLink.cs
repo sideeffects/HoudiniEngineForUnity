@@ -124,6 +124,10 @@ namespace HoudiniEngineUnity
 	    _assetGO = _heu.RootGameObject;
 	    _assetPath = _heu.AssetPath;
 	    _assetName = _heu.AssetName;
+	    _bUseTOPNodeFilter = true;
+	    _bUseTOPOutputFilter = true;
+	    _topNodeFilter = HEU_Defines.DEFAULT_TOP_NODE_FILTER;
+	    _topOutputFilter = HEU_Defines.DEFAULT_TOP_OUTPUT_FILTER;
 
 	    // Use the HDAs cache folder for generating output files
 	    string hdaCachePath = _heu.GetValidAssetCacheFolderPath();
@@ -253,22 +257,8 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_SessionBase session = GetHAPISession();
 
-	    HAPI_NodeInfo assetInfo = new HAPI_NodeInfo();
-	    if (!session.GetNodeInfo(_assetID, ref assetInfo, true))
-	    {
-		return false;
-	    }
-
-	    // Get all networks within the asset, recursively.
-	    // The reason to get all networks is because there can be TOP network SOP which isn't a TOP network type, but rather a SOP type
-	    int nodeCount = 0;
-	    if (!session.ComposeChildNodeList(_assetID, (int)(HAPI_NodeType.HAPI_NODETYPE_ANY), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK, true, ref nodeCount))
-	    {
-		return false;
-	    }
-
-	    HAPI_NodeId[] nodeIDs = new HAPI_NodeId[nodeCount];
-	    if (!session.GetComposedChildNodeList(_assetID, nodeIDs, nodeCount))
+	    HAPI_NodeId[] allNetworkNodeIds = HEU_PDGSession.GetNonBypassedNetworkIds(session, _assetID);
+	    if (allNetworkNodeIds == null || allNetworkNodeIds.Length == 0)
 	    {
 		return false;
 	    }
@@ -276,11 +266,11 @@ namespace HoudiniEngineUnity
 	    // Holds TOP networks in use
 	    List<HEU_TOPNetworkData> newNetworks = new List<HEU_TOPNetworkData>();
 
-	    // For each network, only add those with TOP child nodes (therefore guaranteeing only TOP networks are added).
-	    for (int t = 0; t < nodeCount; ++t)
+	    // Find nodes with TOP child nodes
+	    foreach (HAPI_NodeId currentNodeId in allNetworkNodeIds)
 	    {
 		HAPI_NodeInfo topNodeInfo = new HAPI_NodeInfo();
-		if (!session.GetNodeInfo(nodeIDs[t], ref topNodeInfo))
+		if (!session.GetNodeInfo(currentNodeId, ref topNodeInfo))
 		{
 		    return false;
 		}
@@ -296,7 +286,7 @@ namespace HoudiniEngineUnity
 
 		// Get list of all TOP nodes within this network.
 		HAPI_NodeId[] topNodeIDs = null;
-		if (!HEU_SessionManager.GetComposedChildNodeList(session, nodeIDs[t], (int)(HAPI_NodeType.HAPI_NODETYPE_TOP), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_TOP_NONSCHEDULER, true, out topNodeIDs))
+		if (!HEU_SessionManager.GetComposedChildNodeList(session, currentNodeId, (int)(HAPI_NodeType.HAPI_NODETYPE_TOP), (int)HAPI_NodeFlags.HAPI_NODEFLAGS_TOP_NONSCHEDULER, true, out topNodeIDs))
 		{
 		    continue;
 		}
@@ -311,9 +301,9 @@ namespace HoudiniEngineUnity
 		TOPNodeTags tags = new TOPNodeTags();
 		if (_useHEngineData)
 		{
-		    ParseHEngineData(session, nodeIDs[t], ref topNodeInfo, ref tags);
+		    ParseHEngineData(session, currentNodeId, ref topNodeInfo, ref tags);
 
-		    if (!tags._show)
+		    if (!tags._showHEngineData)
 		    {
 			continue;
 		    }
@@ -321,6 +311,7 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    tags._show = true;
+		    tags._showHEngineData = true;
 		}
 
 		HEU_TOPNetworkData topNetworkData = GetTOPNetworkByName(nodeName, _topNetworks);
@@ -337,12 +328,22 @@ namespace HoudiniEngineUnity
 
 		newNetworks.Add(topNetworkData);
 
-		topNetworkData._nodeID = nodeIDs[t];
+		topNetworkData._nodeID = currentNodeId;
 		topNetworkData._nodeName = nodeName;
 		topNetworkData._parentName = _assetName;
 		topNetworkData._tags = tags;
 
-		PopulateTOPNodes(session, topNetworkData, topNodeIDs, _useHEngineData);
+		if (PopulateTOPNodes(session, topNetworkData, topNodeIDs, _useHEngineData))
+		{
+		    for (int i = 0; i < topNetworkData._topNodes.Count; i++)
+		    {
+			if (topNetworkData._topNodes[i]._tags._show)
+			{
+			    topNetworkData._selectedTOPIndex = i;
+			    break;
+			}
+		    }
+		}
 	    }
 
 	    // Clear old TOP networks and nodes
@@ -367,7 +368,7 @@ namespace HoudiniEngineUnity
 	/// <param name="topNodeIDs">List of TOP nodes in the TOP network</param>
 	/// <param name="useHEngineData">Whether or not to use HEngine data for filtering</param>
 	/// <returns>True if successfully populated data</returns>
-	public static bool PopulateTOPNodes(HEU_SessionBase session, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs, bool useHEngineData)
+	public bool PopulateTOPNodes(HEU_SessionBase session, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs, bool useHEngineData)
 	{
 	    // Holds list of found TOP nodes
 	    List<HEU_TOPNodeData> newNodes = new List<HEU_TOPNodeData>();
@@ -391,7 +392,7 @@ namespace HoudiniEngineUnity
 		{
 		    ParseHEngineData(session, topNodeID, ref childNodeInfo, ref tags);
 
-		    if (!tags._show)
+		    if (!tags._showHEngineData)
 		    {
 			continue;
 		    }
@@ -399,6 +400,7 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    tags._show = true;
+		    tags._showHEngineData = true;
 		}
 
 		HEU_TOPNodeData topNodeData = GetTOPNodeByName(nodeName, topNetwork._topNodes);
@@ -418,6 +420,31 @@ namespace HoudiniEngineUnity
 		topNodeData._nodeName = nodeName;
 		topNodeData._parentName = topNetwork._parentName + "_" + topNetwork._nodeName;
 		topNodeData._tags = tags;
+
+		// Note: Don't have to compare with _showHEngineData because it won't exist in network if false
+		if (_bUseTOPOutputFilter && _topNodeFilter != "")
+		{
+		    if (!nodeName.StartsWith(_topNodeFilter))
+		    {
+			topNodeData._tags._show = false;
+		    }
+		}
+
+		if (_bUseTOPOutputFilter)
+		{
+		    bool bAutoLoad = false;
+		    if (_topOutputFilter == "")
+		    {
+			bAutoLoad = true;
+		    }
+		    else if (nodeName.StartsWith(_topOutputFilter))
+		    {
+			bAutoLoad = true;
+		    }
+
+		    topNodeData._tags._autoload |= bAutoLoad;
+		    topNodeData._showResults = topNodeData._tags._autoload;
+		}
 	    }
 
 	    // Clear old unused TOP nodes
@@ -428,13 +455,24 @@ namespace HoudiniEngineUnity
 	    topNetwork._topNodes = newNodes;
 
 	    // Get list of updated TOP node names
-	    topNetwork._topNodeNames = new string[topNetwork._topNodes.Count];
-	    for (int i = 0; i < topNetwork._topNodes.Count; ++i)
-	    {
-		topNetwork._topNodeNames[i] = topNetwork._topNodes[i]._nodeName;
-	    }
+	    SetupTopNetworkNames(topNetwork);
 
 	    return true;
+	}
+
+	public List<KeyValuePair<int, HEU_TOPNodeData>> GetNonHiddenTOPNodes(HEU_TOPNetworkData topNetwork)
+	{
+	    List<KeyValuePair<int, HEU_TOPNodeData>> nonHiddenNodes = new List<KeyValuePair<int, HEU_TOPNodeData>>();
+
+	    for (int i = 0; i < topNetwork._topNodes.Count; ++i)
+	    {
+		if (topNetwork._topNodes[i]._tags._show)
+		{
+		    nonHiddenNodes.Add(new KeyValuePair<int, HEU_TOPNodeData>(i, topNetwork._topNodes[i]));
+		}
+	    }
+
+	    return nonHiddenNodes;
 	}
 
 	/// <summary>
@@ -948,6 +986,54 @@ namespace HoudiniEngineUnity
 	    return "";
 	}
 
+	public void OnTOPNodeFilterChanged(string filter)
+	{
+	    _topNodeFilter = filter;
+
+            foreach (HEU_TOPNetworkData topNetwork in _topNetworks)
+            {
+                foreach (HEU_TOPNodeData topNode in topNetwork._topNodes)
+                {
+		    // Note: Don't have to compare with _showHEngineData because it won't exist in network if false
+                    if (_bUseTOPNodeFilter)
+                    {
+                        topNode._tags._show = _topNodeFilter == "" || topNode._nodeName.StartsWith(_topNodeFilter);
+                    }
+                    else
+                    {
+                        topNode._tags._show = true;
+                    }
+                }
+
+                SetupTopNetworkNames(topNetwork);
+            }
+	}
+
+	public void OnTOPOutputFilterChanged(string filter)
+	{
+	    _topOutputFilter = filter;
+
+            foreach (HEU_TOPNetworkData topNetwork in _topNetworks)
+            {
+                foreach (HEU_TOPNodeData topNode in topNetwork._topNodes)
+                {
+
+		    bool bAutoLoad = false;
+		    if (_topOutputFilter == "")
+		    {
+			bAutoLoad = true;
+		    }
+		    else if (topNode._nodeName.StartsWith(_topOutputFilter))
+		    {
+			bAutoLoad = true;
+		    }
+
+                    topNode._tags._autoload = bAutoLoad | topNode._tags._autoloadHEngineData;
+		    topNode._showResults = topNode._tags._autoload;
+                }
+            }
+	}
+
 	/// <summary>
 	/// Helper to parse spare parm containing the filter key words.
 	/// </summary>
@@ -977,10 +1063,12 @@ namespace HoudiniEngineUnity
 			{
 			    if (t.Equals("show"))
 			    {
+				nodeTags._showHEngineData = true;
 				nodeTags._show = true;
 			    }
 			    else if (t.Equals("autoload"))
 			    {
+				nodeTags._autoloadHEngineData = true;
 				nodeTags._autoload = true;
 			    }
 			}
@@ -991,6 +1079,16 @@ namespace HoudiniEngineUnity
 	    // Logging error back on
 	    session.LogErrorOverride = bLogError;
 	}
+        private void SetupTopNetworkNames(HEU_TOPNetworkData topNetwork)
+        {
+	    // Get list of updated TOP node names
+	    List<KeyValuePair<int, HEU_TOPNodeData>> displayNodeNames = GetNonHiddenTOPNodes(topNetwork);
+	    topNetwork._topNodeNames = new string[displayNodeNames.Count];
+	    for (int i = 0; i < displayNodeNames.Count; ++i)
+	    {
+		topNetwork._topNodeNames[i] = displayNodeNames[i].Value._nodeName;
+	    }
+        }
 
 	//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -1058,6 +1156,12 @@ namespace HoudiniEngineUnity
 	// The root directory for generated output
 	[SerializeField]
 	private string _outputCachePathRoot;
+
+	// Filter strings
+	public bool _bUseTOPNodeFilter;
+	public bool _bUseTOPOutputFilter;
+	public string _topNodeFilter;
+	public string _topOutputFilter;
     }
 
 }   // HoudiniEngineUnity

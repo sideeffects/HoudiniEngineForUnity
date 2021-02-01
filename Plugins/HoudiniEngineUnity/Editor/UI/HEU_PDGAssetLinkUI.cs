@@ -123,6 +123,41 @@ namespace HoudiniEngineUnity
 		// Whether to use HEngine meta data to filter TOP networks and nodes
 		_assetLink._useHEngineData = EditorGUILayout.Toggle(_useHEngineDataContent, _assetLink._useHEngineData);
 
+
+		{
+		    GUILayout.BeginHorizontal();
+
+		    _assetLink._bUseTOPNodeFilter = EditorGUILayout.Toggle(_assetLink._bUseTOPNodeFilter, GUILayout.MaxWidth(25));
+		    string oldValue = _assetLink._topNodeFilter;
+		    using (new EditorGUI.DisabledScope(!_assetLink._bUseTOPNodeFilter))
+		    {
+			string newValue = EditorGUILayout.DelayedTextField(_topNodeFilterContent, _assetLink._topNodeFilter);
+			if (oldValue != newValue)
+			{
+			    _assetLink.OnTOPNodeFilterChanged(newValue);
+			}
+		    }
+
+		    GUILayout.EndHorizontal();
+		}
+
+		{
+		    GUILayout.BeginHorizontal();
+
+		    _assetLink._bUseTOPOutputFilter = EditorGUILayout.Toggle(_assetLink._bUseTOPOutputFilter, GUILayout.MaxWidth(25));
+		    string oldValue = _assetLink._topOutputFilter;
+		    using (new EditorGUI.DisabledScope(!_assetLink._bUseTOPOutputFilter))
+		    {
+			string newValue = EditorGUILayout.DelayedTextField(_topOutputFilterContent, _assetLink._topOutputFilter);
+			if (oldValue != newValue)
+			{
+			    _assetLink.OnTOPOutputFilterChanged(newValue);
+			}
+		    }
+
+		    GUILayout.EndHorizontal();
+		}
+		
 		EditorGUILayout.Space();
 
 		// Asset status
@@ -263,18 +298,29 @@ namespace HoudiniEngineUnity
 
 	    using (new EditorGUILayout.VerticalScope(_backgroundStyle))
 	    {
-		int numTopNodes = topNetworkData._topNodeNames.Length;
+		List<KeyValuePair<int, HEU_TOPNodeData>> displayNodeData = _assetLink.GetNonHiddenTOPNodes(topNetworkData);
+		int numTopNodes = displayNodeData.Count;
 		if (numTopNodes > 0)
 		{
 		    using (new EditorGUILayout.HorizontalScope())
 		    {
 			EditorGUILayout.PrefixLabel(_topNodeChooseLabel);
 
-			int selectedIndex = Mathf.Clamp(topNetworkData._selectedTOPIndex, 0, numTopNodes);
+			int currentSelectedIndex = -1;
+			for (int i = 0; i < displayNodeData.Count; i++)
+			{
+			    if (displayNodeData[i].Key == topNetworkData._selectedTOPIndex)
+			    {
+				currentSelectedIndex = i;
+				break;
+			    }
+			}
+
+			int selectedIndex = Mathf.Clamp(currentSelectedIndex, 0, displayNodeData.Count);
 			int newSelectedIndex = EditorGUILayout.Popup(selectedIndex, topNetworkData._topNodeNames);
 			if (newSelectedIndex != selectedIndex)
 			{
-			    _assetLink.SelectTOPNode(topNetworkData, newSelectedIndex);
+			    _assetLink.SelectTOPNode(topNetworkData, displayNodeData[newSelectedIndex].Key);
 			}
 		    }
 		}
@@ -428,6 +474,10 @@ namespace HoudiniEngineUnity
 
 	    _resetContent = new GUIContent("Reset", "Reset the state and generated items. Updates from linked HDA.");
 	    _refreshContent = new GUIContent("Refresh", "Refresh the state and UI.");
+
+	    _topNodeFilterContent = new GUIContent("TOP Node Filter", "When enabled, the TOP Node Filter will only display the TOP Nodes found in the current network that start with the filter prefix. Disabling the Filter will display all of the TOP Network's TOP Nodes.");
+	    _topOutputFilterContent = new GUIContent("TOP Output Filter", "When enabled, the Work Item Output Files created for the TOP Nodes found in the current network that start with the filter prefix will be automatically loaded int the world after being cooked.");
+
 	    _autocookContent = new GUIContent("Autocook", "Automatically cook the output node when the linked asset is cooked.");
 	    _useHEngineDataContent = new GUIContent("Use HEngine Data", "Whether to use henginedata parm values for displaying and loading node resuls.");
 
@@ -560,6 +610,9 @@ namespace HoudiniEngineUnity
 	private GUIContent _resetContent;
 	private GUIContent _refreshContent;
 	private GUIContent _autocookContent;
+	private GUIContent _topNodeFilterContent;
+	private GUIContent _topOutputFilterContent;
+
 	private GUIContent _useHEngineDataContent;
 
 	private GUIContent _topNetworkChooseLabel;
