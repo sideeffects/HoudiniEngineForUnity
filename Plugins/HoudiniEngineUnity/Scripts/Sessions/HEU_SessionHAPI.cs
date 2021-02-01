@@ -811,6 +811,7 @@ namespace HoudiniEngineUnity
 	    // Though allowing it now behind an option.
 	    cookOptions.splitGeosByGroup = HEU_PluginSettings.CookOptionSplitGeosByGroup;
 	    cookOptions.splitGeosByAttribute = false;
+	    cookOptions.splitGroupSH = 0;
 	    cookOptions.splitAttrSH = 0;
 	    cookOptions.splitPointsByVertexAttributes = false;
 
