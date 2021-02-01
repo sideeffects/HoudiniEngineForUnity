@@ -1418,7 +1418,7 @@ namespace HoudiniEngineUnity
 	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityStaticAttributeName, ref staticAttrInfo, ref staticAttr, session.GetAttributeIntData);
 	    if (staticAttrInfo.exists && staticAttr.Length > 0)
 	    {
-		HEU_EditorUtility.SetStatic(gameObject, (staticAttr[0] == 1));
+		HEU_EditorUtility.SetStatic(gameObject, (staticAttr[0] == 1), true);
 	    }
 	}
 
