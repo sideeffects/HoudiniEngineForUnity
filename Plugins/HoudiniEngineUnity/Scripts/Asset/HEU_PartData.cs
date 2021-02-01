@@ -716,7 +716,6 @@ namespace HoudiniEngineUnity
 
 	    Transform partTransform = OutputGameObject.transform;
 
-	    int numInstancesCreated = 0;
 	    for (int i = 0; i < numInstances; ++i)
 	    {
 		if (instancedNodeIds[i] == HEU_Defines.HEU_INVALID_NODE_ID)
@@ -731,10 +730,9 @@ namespace HoudiniEngineUnity
 		    List<HEU_InstancedInput> validInstancedGameObjects = instanceInfo._instancedInputs;
 		    int randomIndex = UnityEngine.Random.Range(0, validInstancedGameObjects.Count);
 
-		    CreateNewInstanceFromObject(validInstancedGameObjects[randomIndex]._instancedGameObject, (numInstancesCreated + 1), partTransform, ref instanceTransforms[i],
+		    CreateNewInstanceFromObject(validInstancedGameObjects[randomIndex]._instancedGameObject, (i + 1), partTransform, ref instanceTransforms[i],
 			    instanceInfo._instancedObjectNodeID, null,
 			    validInstancedGameObjects[randomIndex]._rotationOffset, validInstancedGameObjects[randomIndex]._scaleOffset, instancePrefixes, null);
-		    numInstancesCreated++;
 		}
 		else
 		{
@@ -751,9 +749,8 @@ namespace HoudiniEngineUnity
 		    int numClones = cloneParts.Count;
 		    for (int c = 0; c < numClones; ++c)
 		    {
-			CreateNewInstanceFromObject(cloneParts[c].OutputGameObject, (numInstancesCreated + 1), partTransform, ref instanceTransforms[i],
+			CreateNewInstanceFromObject(cloneParts[c].OutputGameObject, (i + 1), partTransform, ref instanceTransforms[i],
 				instancedObjNode.ObjectID, null, Vector3.zero, Vector3.one, instancePrefixes, null);
-			numInstancesCreated++;
 		    }
 		}
 	    }
@@ -834,7 +831,6 @@ namespace HoudiniEngineUnity
 	    // Temporary empty gameobject in case where specified Unity object is not found
 	    GameObject tempGO = null;
 
-	    int numInstancesCreated = 0;
 	    for (int i = 0; i < numInstances; ++i)
 	    {
 		GameObject unitySrcGO = null;
@@ -943,10 +939,9 @@ namespace HoudiniEngineUnity
 		    }
 		}
 
-		CreateNewInstanceFromObject(unitySrcGO, (numInstancesCreated + 1), partTransform, ref instanceTransforms[i],
+		CreateNewInstanceFromObject(unitySrcGO, (i + 1), partTransform, ref instanceTransforms[i],
 			HEU_Defines.HEU_INVALID_NODE_ID, instancePathAttrValues[i], rotationOffset, scaleOffset, instancePrefixes,
 			collisionSrcGO);
-		numInstancesCreated++;
 	    }
 
 	    if (tempGO != null)
@@ -1001,7 +996,6 @@ namespace HoudiniEngineUnity
 
 	    if (instancedAssetGameObject != null)
 	    {
-		int numInstancesCreated = 0;
 		for (int i = 0; i < numInstances; ++i)
 		{
 		    GameObject instancedGameObject;
@@ -1018,9 +1012,8 @@ namespace HoudiniEngineUnity
 			instancedGameObject = instancedAssetGameObject;
 		    }
 
-		    CreateNewInstanceFromObject(instancedGameObject, (numInstancesCreated + 1), OutputGameObject.transform, ref instanceTransforms[i],
+		    CreateNewInstanceFromObject(instancedGameObject, (i + 1), OutputGameObject.transform, ref instanceTransforms[i],
 			    HEU_Defines.HEU_INVALID_NODE_ID, assetPath, rotationOffset, scaleOffset, instancePrefixes, null);
-		    numInstancesCreated++;
 		}
 	    }
 	    else
