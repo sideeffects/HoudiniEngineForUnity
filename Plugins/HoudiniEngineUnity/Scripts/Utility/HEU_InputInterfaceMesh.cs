@@ -127,6 +127,10 @@ namespace HoudiniEngineUnity
 		{
 		    return true;
 		}
+		else if (inputObject.GetComponentInChildren<SkinnedMeshRenderer>(true) != null)
+		{
+		    return true;
+		}
 	    }
 	    return false;
 	}
@@ -693,6 +697,18 @@ namespace HoudiniEngineUnity
 			inputMeshes._inputMeshes.Add(meshData);
 		    }
 		}
+
+
+		SkinnedMeshRenderer[] skinnedMeshRenderers = inputObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+		
+		foreach (SkinnedMeshRenderer skinnedMeshRend in skinnedMeshRenderers)
+		{
+		    HEU_InputDataMesh meshData = CreateSingleMeshData(skinnedMeshRend.gameObject);
+		    if (meshData != null)
+		    {
+		        inputMeshes._inputMeshes.Add(meshData);
+		    }
+		}
 	    }
 
 	    return inputMeshes;
@@ -707,17 +723,19 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_InputDataMesh meshData = new HEU_InputDataMesh();
 
-	    MeshFilter meshfilter = meshGameObject.GetComponent<MeshFilter>();
-	    if (meshfilter == null)
+	    if (meshGameObject == null)
 	    {
 		return null;
 	    }
 
-	    if (meshfilter.sharedMesh == null)
+	    Mesh sharedMesh = GetMeshFromObject(meshGameObject);
+
+	    if (sharedMesh == null)
 	    {
 		return null;
 	    }
-	    meshData._mesh = meshfilter.sharedMesh;
+
+	    meshData._mesh = sharedMesh;
 	    meshData._numVertices = meshData._mesh.vertexCount;
 	    meshData._numSubMeshes = meshData._mesh.subMeshCount;
 
@@ -748,6 +766,30 @@ namespace HoudiniEngineUnity
 
 	    return meshData;
 	}
+
+	private static Mesh GetMeshFromObject(GameObject meshGameObject)
+	{
+	    if (meshGameObject == null)
+	    {
+	        return null;
+	    }
+
+	    MeshFilter filter = meshGameObject.GetComponent<MeshFilter>();
+	    if (filter != null)
+	    {
+	        return filter.sharedMesh;
+	    }
+
+
+	    SkinnedMeshRenderer skinnedMesh = meshGameObject.GetComponent<SkinnedMeshRenderer>();
+	    if (skinnedMesh != null)
+	    {
+	        return skinnedMesh.sharedMesh;
+	    }
+
+	    return null;
+	}
+
     }
 
 }   // HoudiniEngineUnity
