@@ -1015,7 +1015,8 @@ namespace HoudiniEngineUnity
 
 	    // To get the instance output name, we pass in the instance index. The actual name will be +1 from this.
 	    newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(instanceName, instancePrefixes, instanceIndex);
-	    newInstanceGO.isStatic = assetSourceGO.isStatic;
+
+	    HEU_GeneralUtility.CopyFlags(assetSourceGO, newInstanceGO, true);
 
 	    Transform instanceTransform = newInstanceGO.transform;
 	    HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnityForInstance(ref hapiTransform, instanceTransform);

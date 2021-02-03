@@ -956,6 +956,22 @@ namespace HoudiniEngineUnity
 #endif
 	}
 
+	public static void SetIsHidden(GameObject go, bool isHidden, bool bIncludeChildren)
+	{
+#if UNITY_EDITOR && UNITY_2019_2_OR_NEWER
+	    SceneVisibilityManager visibilityManager = SceneVisibilityManager.instance;
+	    
+	    if (isHidden)
+	    {
+		visibilityManager.Hide(go, bIncludeChildren);
+	    }
+	    else
+	    {
+		visibilityManager.Show(go, bIncludeChildren);
+	    }
+#endif
+	}
+
 	/// <summary>
 	/// Returns array of currently selected gameobjects.
 	/// </summary>

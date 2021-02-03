@@ -1314,6 +1314,18 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static void CopyFlags(GameObject srcGO, GameObject dstGO, bool bIncludeChildren)
+	{
+	    HEU_EditorUtility.SetStatic(dstGO, srcGO.isStatic, bIncludeChildren);
+	    SetTag(dstGO, srcGO.tag, bIncludeChildren);
+	    SetLayer(dstGO, srcGO.layer, bIncludeChildren);
+
+#if UNITY_2019_2_OR_NEWER
+	    bool isHidden = SceneVisibilityManager.instance.IsHidden(srcGO);
+	    HEU_EditorUtility.SetIsHidden(dstGO, isHidden, bIncludeChildren);
+#endif
+	}
+
 	public static bool IsMouseWithinSceneView(Camera camera, Vector2 mousePosition)
 	{
 	    return (mousePosition.x < camera.pixelWidth && mousePosition.y < camera.pixelHeight
