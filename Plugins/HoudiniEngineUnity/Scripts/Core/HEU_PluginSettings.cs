@@ -70,7 +70,7 @@ namespace HoudiniEngineUnity
 	{
 	    get
 	    {
-		bool bValue = false;
+		bool bValue = true;
 		HEU_PluginStorage.Instance.Get("HAPI_CookingTriggersDownCooks", out bValue, bValue);
 		return bValue;
 	    }
