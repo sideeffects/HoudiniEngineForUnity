@@ -536,7 +536,7 @@ namespace HoudiniEngineUnity
 		partTransform.parent = parentAsset.RootGameObject.transform;
 	    }
 
-	    partData.OutputGameObject.isStatic = partTransform.parent.gameObject.isStatic;
+	    HEU_GeneralUtility.CopyFlags(partTransform.parent.gameObject, partData.OutputGameObject, true);
 
 	    // Reset to origin
 	    partTransform.localPosition = Vector3.zero;
@@ -634,9 +634,9 @@ namespace HoudiniEngineUnity
 	    // For geo curve, the parent is the HDA_Data
 	    Transform curveTransform = curve._targetGameObject.transform;
 	    curveTransform.parent = ParentAsset.OwnerGameObject.transform;
-
-	    curve._targetGameObject.isStatic = curveTransform.parent.gameObject.isStatic;
-
+	    
+	    HEU_GeneralUtility.CopyFlags(curveTransform.parent.gameObject, curve._targetGameObject, true);
+	    
 	    // Reset to origin
 	    curveTransform.localPosition = Vector3.zero;
 	    curveTransform.localRotation = Quaternion.identity;
