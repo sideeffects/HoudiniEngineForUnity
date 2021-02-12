@@ -250,20 +250,6 @@ namespace HoudiniEngineUnity
 
 	    if (bCreateSession)
 	    {
-                AppDomain currentDomain = AppDomain.CurrentDomain;
-                Assembly[] assemblies = currentDomain.GetAssemblies();
-                string assemblyList = "";
-                foreach (Assembly assembly in assemblies)
-                {
-                    if (!String.IsNullOrEmpty(assemblyList))
-                    {
-                        assemblyList = String.Concat(assemblyList, ";");
-                    }
-                    assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
-                }
-
-                HEU_HAPIImports.harcSetManagedHostLibrariesList(assemblyList);
-
 		// First create the socket server
 		HAPI_ThriftServerOptions serverOptions = new HAPI_ThriftServerOptions();
 		serverOptions.autoClose = autoClose;
@@ -280,6 +266,20 @@ namespace HoudiniEngineUnity
 		    return false;
 		}
 	    }
+
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            Assembly[] assemblies = currentDomain.GetAssemblies();
+            string assemblyList = "";
+            foreach (Assembly assembly in assemblies)
+            {
+                if (!String.IsNullOrEmpty(assemblyList))
+                {
+                    assemblyList = String.Concat(assemblyList, ";");
+                }
+                assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
+            }
+
+            HEU_HAPIImports.harcSetManagedHostLibrariesList(assemblyList);
 
 	    _sessionData.ProcessID = processID;
 	    _sessionData.Port = serverPort;
@@ -393,20 +393,6 @@ namespace HoudiniEngineUnity
 
 	    if (bCreateSession)
 	    {
-                AppDomain currentDomain = AppDomain.CurrentDomain;
-                Assembly[] assemblies = currentDomain.GetAssemblies();
-                string assemblyList = "";
-                foreach (Assembly assembly in assemblies)
-                {
-                    if (!String.IsNullOrEmpty(assemblyList))
-                    {
-                        assemblyList = String.Concat(assemblyList, ";");
-                    }
-                    assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
-                }
-
-                HEU_HAPIImports.harcSetManagedHostLibrariesList(assemblyList);
-
 		// First create the pipe server
 		HAPI_ThriftServerOptions serverOptions = new HAPI_ThriftServerOptions();
 		serverOptions.autoClose = autoClose;
@@ -423,6 +409,20 @@ namespace HoudiniEngineUnity
 		    return false;
 		}
 	    }
+
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            Assembly[] assemblies = currentDomain.GetAssemblies();
+            string assemblyList = "";
+            foreach (Assembly assembly in assemblies)
+            {
+                if (!String.IsNullOrEmpty(assemblyList))
+                {
+                    assemblyList = String.Concat(assemblyList, ";");
+                }
+                assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
+            }
+
+            HEU_HAPIImports.harcSetManagedHostLibrariesList(assemblyList);
 
 	    _sessionData.ProcessID = processID;
 
