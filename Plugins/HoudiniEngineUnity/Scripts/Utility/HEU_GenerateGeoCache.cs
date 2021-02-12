@@ -804,7 +804,7 @@ namespace HoudiniEngineUnity
 
 	    // Final material set is the superset of new materials and current materials
 	    int newTotalMaterials = numNewMaterials > numCurrentMaterials ? numNewMaterials : numCurrentMaterials;
-	    finalMaterials = new Material[newTotalMaterials];
+	    List<Material> finalMaterialsList = new List<Material>();
 
 	    for (int i = 0; i < newTotalMaterials; ++i)
 	    {
@@ -816,30 +816,33 @@ namespace HoudiniEngineUnity
 			if (currentMaterials[i] != previousMaterials[i])
 			{
 			    // Material has been overriden by user. Keep it.
-			    finalMaterials[i] = currentMaterials[i];
+			    finalMaterialsList.Add(currentMaterials[i]);
 			}
 			else if (i < numNewMaterials)
 			{
 			    // Material is same as previously generated, so update to new
-			    finalMaterials[i] = newMaterials[i];
+			    finalMaterialsList.Add(newMaterials[i]);
 			}
 		    }
 		    else if (currentMaterials[i] == null && i < numNewMaterials)
 		    {
-			finalMaterials[i] = newMaterials[i];
+			finalMaterialsList.Add(newMaterials[i]);
 		    }
 		    else
 		    {
 			// User must have added this material, so keep it
-			finalMaterials[i] = currentMaterials[i];
+			finalMaterialsList.Add(currentMaterials[i]);
 		    }
 		}
 		else
 		{
 		    // Current material does not exist. So set new material.
-		    finalMaterials[i] = newMaterials[i];
+		    finalMaterialsList.Add(newMaterials[i]);
 		}
 	    }
+
+	    finalMaterialsList.RemoveAll((material) => material == null);
+	    finalMaterials = finalMaterialsList.ToArray();
 	}
 
 	/// <summary>
