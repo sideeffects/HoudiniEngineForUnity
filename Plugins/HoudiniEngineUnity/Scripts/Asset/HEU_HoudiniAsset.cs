@@ -4234,7 +4234,7 @@ namespace HoudiniEngineUnity
 	    Transform[] gos = _rootGameObject.GetComponentsInChildren<Transform>();
 	    foreach (Transform trans in gos)
 	    {
-		if (trans.gameObject != this.gameObject && trans.gameObject != _rootGameObject)
+		if (trans != null && trans.gameObject != null && trans.gameObject != this.gameObject && trans.gameObject != _rootGameObject)
 		{
 		    DestroyImmediate(trans.gameObject);
 		}
