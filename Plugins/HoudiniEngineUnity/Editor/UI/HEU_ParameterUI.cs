@@ -24,9 +24,13 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Uncomment to profile
+// #define HEU_PROFILER_ON
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System;
 
 namespace HoudiniEngineUnity
 {
@@ -43,23 +47,380 @@ namespace HoudiniEngineUnity
 	private HEU_Parameters _parameters;
 
 	// Cached list of parameter objects property
-	private SerializedProperty _rootParametersProperty;
-	private SerializedProperty _parameterListProperty;
-
-	private SerializedProperty _showParametersProperty;
+	private List<int> _rootParameters = null;
+	private List<HEU_ParameterData> _parameterList = null;
 
 	// Layout constants
 	private const float _multiparmPlusMinusWidth = 40f;
 
+	public enum UIDataFieldType {
+	    UNKNOWN,
+	    LIST_INT,
+	    INT_ARRAY,
+	    FLOAT_ARRAY,
+	    STRING_ARRAY,
+	    INPUT_NODE,
+
+	    BOOL,
+	    INT,
+	    COLOR,
+	    GRADIENT,
+	    ANIM_CURVE
+	};
+
+	// Wrapper for arrays to make sure that we use the correct get/set function
+	// (Because if we don't, then undo gets bugged)
+	public class ArrayWrapper<T>
+	{
+	    private T[] _array;
+
+	    private Action<T> _preGetCallback;
+	    private Action<T> _preSetCallback;
+	    UnityEngine.Object _undoObject;
+	    public ArrayWrapper(T[] array, UnityEngine.Object undoObject)
+	    {
+		this._array = array;
+		this._undoObject = undoObject;
+	    }
+
+	    public T this[int i]
+	    {
+		get
+		{ 
+		    return _array[i];
+		}
+
+		set
+		{
+		    if (value.Equals(_array[i]))
+		    {
+			return;
+		    }
+
+		    if (_undoObject != null)
+		    {
+			Undo.RecordObject(_undoObject, "Changed array value");
+		    }
+
+		    _array[i] = value;
+		}
+	    }
+
+	    public int Length()
+	    {
+		return _array.Length;
+	    }
+	    
+	}
+
+	public class UIDataField {
+	    public UIDataFieldType _fieldType;
+
+	    public HEU_Parameters _parameters;
+
+	    private ArrayWrapper<int> _intArrayValue;
+	    public ArrayWrapper<int> IntArrayValue
+	    {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.INT_ARRAY)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    }
+
+
+		    return _intArrayValue;
+		}
+	    }
+
+	    private ArrayWrapper<float> _floatArrayValue;
+	    public ArrayWrapper<float> FloatArrayValue
+	    {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.FLOAT_ARRAY)
+		    {
+			Debug.LogError("Error: Field type incorrect!: " + _fieldType);
+		    }
+
+		    return _floatArrayValue;
+		}
+	    }
+
+	    private ArrayWrapper<string> _stringArrayValue;
+	    public ArrayWrapper<string> StringArrayValue
+	    {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.STRING_ARRAY)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    }
+
+		    return _stringArrayValue;
+		}
+	    }
+
+	    private List<int> _listIntValue; // Usually used for child indices
+	    public List<int> ListIntValue
+	    {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.LIST_INT)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    }
+
+		    return _listIntValue;
+		}
+	    }
+
+
+	    private HEU_InputNode _inputNodeValue;
+	    public HEU_InputNode InputNodeValue
+	    {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.INPUT_NODE)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    }
+
+		    return _inputNodeValue;
+		}
+	    }
+
+
+	    // STRUCTURE OBJECTS:
+	    // Note: Because these are structs, need to make sure to use callback if it is used
+	    private int _intValue;
+	    private Action<int> _intValueCallback;
+
+	    public int IntValue {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.INT)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    } 
+
+		    return _intValue; 
+		} 
+		set
+		{
+		    if (value == _intValue)
+		    {
+			return;
+		    }
+
+		    Undo.RecordObject(_parameters, "Changed Int value");
+		    _intValue = value;
+		    if (this._intValueCallback != null)
+		    {
+		        this._intValueCallback(value);
+		    }
+	        }
+	    }
+
+
+	    private bool _boolValue;
+	    private Action<bool> _boolValueCallback;
+
+	    public bool BoolValue {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.BOOL)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    } 
+
+		    return _boolValue; 
+		} 
+		set
+		{
+		    if (value == _boolValue)
+		    {
+			return;
+		    }
+
+		    Undo.RecordObject(_parameters, "Changed bool value");
+		    _boolValue = value;
+		    if (this._boolValueCallback != null)
+		    {
+		        this._boolValueCallback(value);
+		    }
+
+	        }
+	    }
+	    
+	    private Color _colorValue;
+	    private Action<Color> _colorValueCallback;
+	    public Color ColorValue {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.COLOR)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    } 
+
+		    return _colorValue; 
+		} 
+		set
+		{
+		    if (_colorValue.Equals(value))
+		    {
+			return;
+		    }
+
+		    Undo.RecordObject(_parameters, "Changed Color value");
+		    _colorValue = value;
+		    if (this._colorValueCallback != null)
+		    {
+		        this._colorValueCallback(value);
+		    }
+	        }
+	    }
+
+	    // These are classes that are used like structs due to assignment
+	    private Gradient _gradientValue;
+	    private Action<Gradient> _gradientValueCallback;
+	    public Gradient GradientValue
+	    {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.GRADIENT)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    }
+
+		    return _gradientValue;
+		}
+
+		set
+		{
+		    if (value.Equals(_gradientValue))
+		    {
+			return;
+		    }
+
+		    Undo.RecordObject(_parameters, "Changed Gradient value");
+
+		    _gradientValue = value;
+		    if (this._gradientValueCallback != null)
+		    {
+		        this._gradientValueCallback(value);
+		    }
+	        }
+	    }
+
+
+	    private AnimationCurve _animCurveValue;
+	    private Action<AnimationCurve> _animCurveValueCallback;
+	    public AnimationCurve AnimCurveValue
+	    {
+		get
+		{
+		    if (_fieldType != UIDataFieldType.ANIM_CURVE)
+		    {
+			Debug.LogError("Error: Field type incorrect!");
+		    }
+
+		    return _animCurveValue;
+		}
+		set
+		{
+		    if (_animCurveValue.Equals(value))
+		    {
+			return;
+		    }
+
+		    Undo.RecordObject(_parameters, "Changed Anim curve value");
+
+		    _animCurveValue = value;
+		    if (this._animCurveValueCallback != null)
+		    {
+		        this._animCurveValueCallback(value);
+		    }
+	        }
+	    }
+
+	    public void SetValue(int intValue, Action<int> callback)
+	    {
+		this._intValue = intValue;
+		this._intValueCallback = callback;
+		this._fieldType = UIDataFieldType.INT;
+	    }
+
+	    public void SetValue(bool boolValue, Action<bool> callback)
+	    {
+		this._boolValue = boolValue;
+		this._boolValueCallback = callback;
+		this._fieldType = UIDataFieldType.BOOL;
+	    }
+
+	    public void SetValue(Color colorValue, Action<Color> callback)
+	    {
+		this._colorValue = colorValue;
+		this._colorValueCallback = callback;
+		this._fieldType = UIDataFieldType.COLOR;
+	    }
+
+
+    	    public void SetValue(List<int> list)
+	    {
+		this._listIntValue = list;
+		this._fieldType = UIDataFieldType.LIST_INT;
+	    }
+
+    	    public void SetValue(Gradient gradient, Action<Gradient> callback)
+	    {
+		this._gradientValue = gradient;
+		this._gradientValueCallback = callback;
+		this._fieldType = UIDataFieldType.GRADIENT;
+	    }
+
+    	    public void SetValue(AnimationCurve animationCurve, Action<AnimationCurve> callback)
+	    {
+		this._animCurveValue = animationCurve;
+		this._animCurveValueCallback = callback;
+		this._fieldType = UIDataFieldType.ANIM_CURVE;
+	    }
+
+	    public void SetValue(int[] value)
+	    {
+		this._fieldType = UIDataFieldType.INT_ARRAY;
+		this._intArrayValue = new ArrayWrapper<int>(value, _parameters);
+	    }
+
+	    public void SetValue(float[] value)
+	    {
+		this._floatArrayValue = new ArrayWrapper<float>(value, _parameters);
+		this._fieldType = UIDataFieldType.FLOAT_ARRAY;
+	    }
+
+	    public void SetValue(string[] value)
+	    {
+		this._stringArrayValue = new ArrayWrapper<string>(value, _parameters);
+		this._fieldType = UIDataFieldType.STRING_ARRAY;
+	    }
+
+	    public void SetValue(HEU_InputNode inputNode)
+	    {
+		this._inputNodeValue = inputNode;
+		this._fieldType = UIDataFieldType.INPUT_NODE;
+	    }
+	};
 
 	// Store cached SerializedProperties of a HEU_ParameterData class, and store as list
 	private class HEU_ParameterUICache
 	{
 	    public HEU_ParameterData _parameterData;
 
-	    public SerializedProperty _paramType;
-	    public SerializedProperty _primaryValue;
-	    public SerializedProperty _secondaryValue;
+	    public HAPI_ParmType _paramType;
+
+
+	    public UIDataField _primaryValue = new UIDataField();
+	    public UIDataField _secondaryValue = new UIDataField();
 
 	    // For multiparm instance, this would be its index into the multiparm list
 	    public int _instanceIndex = -1;
@@ -70,24 +431,21 @@ namespace HoudiniEngineUnity
 
 	    public string[] _tabLabels;
 
-	    // Need to wrap up the gradient in order to figure out what had changed in the gradient window
-	    public SerializedObject _gradientSerializedObject;
-
 	    // List of objects for string-based asset paths
 	    public List<UnityEngine.Object> _assetObjects;
+
+	    public HEU_ParameterUICache(HEU_Parameters parameters)
+	    {
+		this._primaryValue._parameters = parameters;
+		this._secondaryValue._parameters = parameters;
+	    }
 	}
 	private List<HEU_ParameterUICache> _parameterCache;
 
-	private SerializedProperty _parameterModifiersProperty;
+	private List<HEU_ParameterModifier>  _parameterModifiers;
 
 	private static GUIStyle _sliderStyle;
 	private static GUIStyle _sliderThumbStyle;
-
-	public class HEU_GradientContainer : ScriptableObject
-	{
-	    public Gradient _gradient;
-	}
-
 
 
 	private void OnEnable()
@@ -98,10 +456,9 @@ namespace HoudiniEngineUnity
 
 	private void OnDisable()
 	{
-	    _rootParametersProperty = null;
-	    _parameterListProperty = null;
-	    _showParametersProperty = null;
-	    _parameterModifiersProperty = null;
+	    _rootParameters = null;
+	    _parameterList = null;
+	    _parameterModifiers = null;
 
 	    _parameterCache = null;
 	}
@@ -111,7 +468,13 @@ namespace HoudiniEngineUnity
 	    // First check if serialized properties need to be cached
 	    if (_parameterCache == null || _parameters.RecacheUI)
 	    {
+		#if HEU_PROFILER_ON
+		float profileTime = Time.realtimeSinceStartup;
+		#endif
 		CacheProperties();
+		#if HEU_PROFILER_ON
+		Debug.Log("PARAMETER UI GENERATION TIME: " + (Time.realtimeSinceStartup - profileTime));
+		#endif
 	    }
 
 	    InitializeGUIStyles();
@@ -126,8 +489,8 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUI.BeginSection();
 
 	    // Draw all the parameters. Start at root parameters, and draw their children recursively.
-	    _showParametersProperty.boolValue = HEU_EditorUI.DrawFoldOut(_showParametersProperty.boolValue, _parameters._uiLabel);
-	    if (_showParametersProperty.boolValue)
+	    _parameters.ShowParameters = HEU_EditorUI.DrawFoldOut(_parameters.ShowParameters, _parameters._uiLabel);
+	    if (_parameters.ShowParameters)
 	    {
 		if (!_parameters.AreParametersValid())
 		{
@@ -177,27 +540,24 @@ namespace HoudiniEngineUnity
 
 	    // Flag that we've cached
 	    _parameters.RecacheUI = false;
+	    _rootParameters = _parameters.RootParameters;
 
-	    _rootParametersProperty = HEU_EditorUtility.GetSerializedProperty(serializedObject, "_rootParameters");
-	    _parameterListProperty = HEU_EditorUtility.GetSerializedProperty(serializedObject, "_parameterList");
+	    _parameterList = _parameters.GetParameters();
 
-	    _showParametersProperty = HEU_EditorUtility.GetSerializedProperty(serializedObject, "_showParameters");
-
-	    _parameterModifiersProperty = HEU_EditorUtility.GetSerializedProperty(serializedObject, "_parameterModifiers");
+	    _parameterModifiers = _parameters.ParameterModifiers;
 
 	    // Cache each parameter based on its type
 	    _parameterCache = new List<HEU_ParameterUICache>();
-	    int paramCount = _rootParametersProperty.arraySize;
+	    int paramCount = _rootParameters.Count;
 	    for (int i = 0; i < paramCount; ++i)
 	    {
 		// Get each root level index
-		SerializedProperty elementProperty = _rootParametersProperty.GetArrayElementAtIndex(i);
-		int childListIndex = elementProperty.intValue;
+		int childListIndex = _rootParameters[i];
 
 		// Find the parameter data associated with the index
-		SerializedProperty childParameterProperty = _parameterListProperty.GetArrayElementAtIndex(childListIndex);
+		HEU_ParameterData childParameter = _parameterList[childListIndex];
 
-		HEU_ParameterUICache newParamUI = ProcessParamUICache(childListIndex, childParameterProperty);
+		HEU_ParameterUICache newParamUI = ProcessParamUICache(childListIndex);
 		if (newParamUI != null)
 		{
 		    _parameterCache.Add(newParamUI);
@@ -205,7 +565,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private HEU_ParameterUICache ProcessParamUICache(int parameterIndex, SerializedProperty parameterProperty)
+	private HEU_ParameterUICache ProcessParamUICache(int parameterIndex)
 	{
 	    // Get the actual parameter data associated with this parameter
 	    HEU_ParameterData parameterData = _parameters.GetParameter(parameterIndex);
@@ -213,43 +573,35 @@ namespace HoudiniEngineUnity
 	    HEU_ParameterUICache newParamUICache = null;
 	    if (parameterData.IsMultiParam())
 	    {
-		newParamUICache = ProcessMultiParamUICache(parameterData, parameterProperty);
+		newParamUICache = ProcessMultiParamUICache(parameterData);
 	    }
 	    else if (parameterData.IsContainer())
 	    {
-		newParamUICache = ProcessContainerParamUICache(parameterData, parameterProperty);
+		newParamUICache = ProcessContainerParamUICache(parameterData);
 	    }
 	    else
 	    {
-		newParamUICache = ProcessLeafParameterCache(parameterData, parameterProperty);
+		newParamUICache = ProcessLeafParameterCache(parameterData);
 	    }
 
 	    return newParamUICache;
 	}
 
-	private HEU_ParameterUICache ProcessMultiParamUICache(HEU_ParameterData parameterData, SerializedProperty parameterProperty)
+	private HEU_ParameterUICache ProcessMultiParamUICache(HEU_ParameterData parameterData)
 	{
 	    HEU_ParameterUICache paramUICache = null;
 
 	    if (parameterData._parmInfo.rampType == HAPI_RampType.HAPI_RAMPTYPE_COLOR)
 	    {
-		paramUICache = new HEU_ParameterUICache();
+		paramUICache = new HEU_ParameterUICache(_parameters);
 		paramUICache._parameterData = parameterData;
 		paramUICache._childrenCache = new List<HEU_ParameterUICache>();
 
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_childParameterIDs");
-		Debug.Assert(paramUICache._primaryValue != null && paramUICache._primaryValue.arraySize > 0, "Multiparams should have at least 1 child");
+		paramUICache._primaryValue.SetValue(parameterData._childParameterIDs);
+		
+		Debug.Assert(paramUICache._primaryValue.ListIntValue != null && paramUICache._primaryValue.ListIntValue.Count > 0, "Multiparams should have at least 1 child");
 
-		// This is ugly but can't figure out a better way due to Gradient not being easily accessible from a SerializedProperty.
-		// Instead, have to wrap it up into a new container, serialize the container, and use the SerializedProperty within.
-		// This allows to draw the gradient, then de-serialize it by using ApplyModifierProperties on the container.
-		// The other way would be to just use the serialized Parameters object, but that will apply changes to all parameters
-		// which isn't ideal as we wouldn't want to update just yet.
-		HEU_GradientContainer gc = ScriptableObject.CreateInstance<HEU_GradientContainer>();
-		gc._gradient = parameterData._gradient;
-		SerializedObject gcSO = new SerializedObject(gc);
-		paramUICache._gradientSerializedObject = gcSO;
-		paramUICache._secondaryValue = gcSO.FindProperty("_gradient");
+		paramUICache._secondaryValue.SetValue(parameterData._gradient, (grad) => parameterData._gradient = grad);
 
 		// For ramps, the number of instances is the number of points in the ramp
 		// Each point can then have a number of parameters.
@@ -261,10 +613,9 @@ namespace HoudiniEngineUnity
 		{
 		    for (int paramIndex = 0; paramIndex < numParamsPerPoint; ++paramIndex)
 		    {
-			SerializedProperty childIndexProperty = paramUICache._primaryValue.GetArrayElementAtIndex(childIndex);
-			SerializedProperty childParameterProperty = _parameterListProperty.GetArrayElementAtIndex(childIndexProperty.intValue);
+			int childIndexValue = paramUICache._primaryValue.ListIntValue[childIndex];
 
-			HEU_ParameterUICache newChildParamUI = ProcessParamUICache(childIndexProperty.intValue, childParameterProperty);
+			HEU_ParameterUICache newChildParamUI = ProcessParamUICache(childIndexValue);
 			if (newChildParamUI != null)
 			{
 			    paramUICache._childrenCache.Add(newChildParamUI);
@@ -281,10 +632,10 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (parameterData._parmInfo.rampType == HAPI_RampType.HAPI_RAMPTYPE_FLOAT)
 	    {
-		paramUICache = new HEU_ParameterUICache();
+		paramUICache = new HEU_ParameterUICache(_parameters);
 		paramUICache._parameterData = parameterData;
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_childParameterIDs");
-		paramUICache._secondaryValue = parameterProperty.FindPropertyRelative("_animCurve");
+		paramUICache._primaryValue.SetValue(parameterData._childParameterIDs);
+		paramUICache._secondaryValue.SetValue(parameterData._animCurve, (animCurve) => parameterData._animCurve = animCurve);
 		paramUICache._childrenCache = new List<HEU_ParameterUICache>();
 
 		int numPoints = parameterData._parmInfo.instanceCount;
@@ -295,10 +646,8 @@ namespace HoudiniEngineUnity
 		{
 		    for (int paramIndex = 0; paramIndex < numParamsPerPoint; ++paramIndex)
 		    {
-			SerializedProperty childIndexProperty = paramUICache._primaryValue.GetArrayElementAtIndex(childIndex);
-			SerializedProperty childParameterProperty = _parameterListProperty.GetArrayElementAtIndex(childIndexProperty.intValue);
-
-			HEU_ParameterUICache newChildParamUI = ProcessParamUICache(childIndexProperty.intValue, childParameterProperty);
+			int childParameterIndex = paramUICache._primaryValue.ListIntValue[childIndex];
+			HEU_ParameterUICache newChildParamUI = ProcessParamUICache(childParameterIndex);
 			if (newChildParamUI != null)
 			{
 			    paramUICache._childrenCache.Add(newChildParamUI);
@@ -316,23 +665,22 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		paramUICache = new HEU_ParameterUICache();
+		paramUICache = new HEU_ParameterUICache(_parameters);
 		paramUICache._parameterData = parameterData;
 
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_childParameterIDs");
+		paramUICache._primaryValue.SetValue(parameterData._childParameterIDs);
 
-		if (paramUICache._primaryValue != null)
+		if (paramUICache._primaryValue.ListIntValue != null)
 		{
 		    paramUICache._childrenCache = new List<HEU_ParameterUICache>();
 
-		    for (int i = 0; i < paramUICache._primaryValue.arraySize; ++i)
+		    for (int i = 0; i < paramUICache._primaryValue.ListIntValue.Count; ++i)
 		    {
-			SerializedProperty childIndexProperty = paramUICache._primaryValue.GetArrayElementAtIndex(i);
-			int childIndex = childIndexProperty.intValue;
-			SerializedProperty childParameterProperty = _parameterListProperty.GetArrayElementAtIndex(childIndex);
-			if (childParameterProperty != null)
+			int childIndex = paramUICache._primaryValue.ListIntValue[i];
+			HEU_ParameterData childParameter = _parameterList[childIndex];
+			if (childParameter != null)
 			{
-			    HEU_ParameterUICache newChildParamUI = ProcessParamUICache(childIndex, childParameterProperty);
+			    HEU_ParameterUICache newChildParamUI = ProcessParamUICache(childIndex);
 
 			    if (newChildParamUI != null)
 			    {
@@ -349,28 +697,29 @@ namespace HoudiniEngineUnity
 	    return paramUICache;
 	}
 
-	private HEU_ParameterUICache ProcessContainerParamUICache(HEU_ParameterData parameterData, SerializedProperty parameterProperty)
+	private HEU_ParameterUICache ProcessContainerParamUICache(HEU_ParameterData parameterData)
 	{
-	    HEU_ParameterUICache paramUICache = new HEU_ParameterUICache();
+	    HEU_ParameterUICache paramUICache = new HEU_ParameterUICache(_parameters);
 	    paramUICache._parameterData = parameterData;
 
 	    //Debug.LogFormat("Container: name={0}, type={1}, size={2}, chidlren={3}", parameterData._name, parameterData._parmInfo.type, parameterData._parmInfo.size, parameterData._childParameterIDs.Count);
 
-	    paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_childParameterIDs");
-	    if (paramUICache._primaryValue != null && paramUICache._primaryValue.arraySize > 0)
+	    paramUICache._primaryValue.SetValue(parameterData._childParameterIDs);
+	    if (paramUICache._primaryValue.ListIntValue != null && paramUICache._primaryValue.ListIntValue.Count > 0)
 	    {
-		paramUICache._secondaryValue = parameterProperty.FindPropertyRelative("_showChildren");
+		paramUICache._secondaryValue.SetValue(parameterData._showChildren, (showChildren) => parameterData._showChildren = showChildren);
+
 		paramUICache._childrenCache = new List<HEU_ParameterUICache>();
 
 		// Process child parameters
-		for (int i = 0; i < paramUICache._primaryValue.arraySize; ++i)
+		for (int i = 0; i < paramUICache._primaryValue.ListIntValue.Count; ++i)
 		{
-		    SerializedProperty childIndexProperty = paramUICache._primaryValue.GetArrayElementAtIndex(i);
-		    int childIndex = childIndexProperty.intValue;
-		    SerializedProperty childParameterProperty = _parameterListProperty.GetArrayElementAtIndex(childIndex);
+		    int childIndex = paramUICache._primaryValue.ListIntValue[i];
+		    
+		    HEU_ParameterData childParameterProperty = _parameterList[childIndex];
 		    if (childParameterProperty != null)
 		    {
-			HEU_ParameterUICache newChildUICache = ProcessParamUICache(childIndex, childParameterProperty);
+			HEU_ParameterUICache newChildUICache = ProcessParamUICache(childIndex);
 			if (newChildUICache != null)
 			{
 			    paramUICache._childrenCache.Add(newChildUICache);
@@ -387,49 +736,48 @@ namespace HoudiniEngineUnity
 			paramUICache._tabLabels[i] = paramUICache._childrenCache[i]._parameterData._labelName;
 		    }
 
-		    paramUICache._secondaryValue = parameterProperty.FindPropertyRelative("_tabSelectedIndex");
+		    paramUICache._secondaryValue.SetValue(parameterData._tabSelectedIndex, (selectedIndex) => parameterData._tabSelectedIndex = selectedIndex);
 		}
 	    }
 
 	    return paramUICache;
 	}
 
-	private HEU_ParameterUICache ProcessLeafParameterCache(HEU_ParameterData parameterData, SerializedProperty parameterProperty)
+	private HEU_ParameterUICache ProcessLeafParameterCache(HEU_ParameterData parameterData)
 	{
-	    HEU_ParameterUICache paramUICache = new HEU_ParameterUICache();
+	    HEU_ParameterUICache paramUICache = new HEU_ParameterUICache(_parameters);
 	    paramUICache._parameterData = parameterData;
 
-	    paramUICache._paramType = parameterProperty.FindPropertyRelative("_parmInfo.type");
-	    HAPI_ParmType parmType = (HAPI_ParmType)paramUICache._paramType.intValue;
+	    paramUICache._paramType = parameterData._parmInfo.type;
 
-	    if (parmType == HAPI_ParmType.HAPI_PARMTYPE_INT)
+	    if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_INT)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_intValues");
+		paramUICache._primaryValue.SetValue(parameterData._intValues);
 
 		if (parameterData._parmInfo.choiceCount > 0)
 		{
-		    paramUICache._secondaryValue = parameterProperty.FindPropertyRelative("_choiceValue");
+		    paramUICache._secondaryValue.SetValue(parameterData._choiceValue, (choice) => parameterData._choiceValue = choice);
 		}
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_FLOAT)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_FLOAT)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_floatValues");
+		paramUICache._primaryValue.SetValue(parameterData._floatValues);
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_STRING)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_STRING)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_stringValues");
+		paramUICache._primaryValue.SetValue(parameterData._stringValues);
 
 		if (parameterData.IsAssetPath())
 		{
 		    // For asset paths, load and cache the assets if we have valid paths.
-		    int numItems = paramUICache._primaryValue.arraySize;
-		    paramUICache._assetObjects = new List<Object>(numItems);
+		    int numItems = paramUICache._primaryValue.StringArrayValue.Length();
+		    paramUICache._assetObjects = new List<UnityEngine.Object>(numItems);
 		    for (int i = 0; i < numItems; ++i)
 		    {
-			SerializedProperty parmProperty = paramUICache._primaryValue.GetArrayElementAtIndex(i);
-			if (!string.IsNullOrEmpty(parmProperty.stringValue))
+			string stringValue = paramUICache._primaryValue.StringArrayValue[i];
+			if (!string.IsNullOrEmpty(stringValue))
 			{
-			    paramUICache._assetObjects.Add(HEU_AssetDatabase.LoadAssetAtPath(parmProperty.stringValue, typeof(UnityEngine.Object)));
+			    paramUICache._assetObjects.Add(HEU_AssetDatabase.LoadAssetAtPath(stringValue, typeof(UnityEngine.Object)));
 			}
 			else
 			{
@@ -439,35 +787,35 @@ namespace HoudiniEngineUnity
 		}
 		else if (parameterData._parmInfo.choiceCount > 0)
 		{
-		    paramUICache._secondaryValue = parameterProperty.FindPropertyRelative("_choiceValue");
+		    paramUICache._secondaryValue.SetValue(parameterData._choiceValue, (int a) => { parameterData._choiceValue = a; });
 		}
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_TOGGLE)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_TOGGLE)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_toggle");
+		paramUICache._primaryValue.SetValue(parameterData._toggle, (bool a) => { parameterData._toggle = a; });
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_COLOR)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_COLOR)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_color");
+		paramUICache._primaryValue.SetValue(parameterData._color, (Color col) => { parameterData._color = col; });
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_BUTTON)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_BUTTON)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_intValues");
+		paramUICache._primaryValue.SetValue(parameterData._intValues);
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO
-		    || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE || paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO
+		    || paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR || paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_stringValues");
+		paramUICache._primaryValue.SetValue(parameterData._stringValues);
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_NODE)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_NODE)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_paramInputNode");
+		paramUICache._primaryValue.SetValue(parameterData._paramInputNode);
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_LABEL)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_LABEL)
 	    {
-		paramUICache._primaryValue = parameterProperty.FindPropertyRelative("_stringValues");
+		paramUICache._primaryValue.SetValue(parameterData._stringValues);
 	    }
-	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_SEPARATOR)
+	    else if (paramUICache._paramType == HAPI_ParmType.HAPI_PARMTYPE_SEPARATOR)
 	    {
 		// Allow these
 	    }
@@ -499,7 +847,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyStringPath(string labelString, SerializedProperty arrayProperty, List<UnityEngine.Object> assetObjects)
+	private void DrawArrayPropertyStringPath(string labelString, ArrayWrapper<string> stringValues, List<UnityEngine.Object> assetObjects)
 	{
 	    // Arrays are drawn with a label, and rows of object paths.
 
@@ -509,7 +857,7 @@ namespace HoudiniEngineUnity
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
-		    int numElements = arrayProperty.arraySize;
+		    int numElements = stringValues.Length();
 		    int maxElementsPerRow = 4;
 
 		    GUILayout.BeginHorizontal();
@@ -529,13 +877,13 @@ namespace HoudiniEngineUnity
 				if (newAssetObject != assetObjects[i])
 				{
 				    // Since its just a string parm, we only need to store the path to asset
-				    arrayProperty.GetArrayElementAtIndex(i).stringValue = HEU_AssetDatabase.GetAssetPath(newAssetObject);
+				    stringValues[i] = HEU_AssetDatabase.GetAssetPath(newAssetObject);
 				    assetObjects[i] = newAssetObject;
 				}
 			    }
 			    else
 			    {
-				arrayProperty.GetArrayElementAtIndex(i).stringValue = null;
+				stringValues[i] = null;
 			    }
 			}
 		    }
@@ -544,7 +892,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyString(string labelString, SerializedProperty arrayProperty)
+	private void DrawArrayPropertyString(string labelString, ArrayWrapper<string> stringsValue)
 	{
 	    // Arrays are drawn with a label, and rows of values.
 
@@ -554,7 +902,7 @@ namespace HoudiniEngineUnity
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
-		    int numElements = arrayProperty.arraySize;
+		    int numElements = stringsValue.Length();
 		    int maxElementsPerRow = 4;
 
 		    GUILayout.BeginHorizontal();
@@ -567,7 +915,7 @@ namespace HoudiniEngineUnity
 				GUILayout.BeginHorizontal();
 			    }
 
-			    EditorGUILayout.DelayedTextField(arrayProperty.GetArrayElementAtIndex(i), GUIContent.none);
+			    stringsValue[i] = EditorGUILayout.DelayedTextField(stringsValue[i]);
 			}
 		    }
 		    GUILayout.EndHorizontal();
@@ -575,7 +923,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyInt(string labelString, SerializedProperty arrayProperty)
+	private void DrawArrayPropertyInt(string labelString, ArrayWrapper<int> intsValue)
 	{
 	    // Arrays are drawn with a label, and rows of values.
 
@@ -585,7 +933,7 @@ namespace HoudiniEngineUnity
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
-		    int numElements = arrayProperty.arraySize;
+		    int numElements = intsValue.Length();
 		    int maxElementsPerRow = 4;
 
 		    GUILayout.BeginHorizontal();
@@ -598,7 +946,7 @@ namespace HoudiniEngineUnity
 				GUILayout.BeginHorizontal();
 			    }
 
-			    EditorGUILayout.DelayedIntField(arrayProperty.GetArrayElementAtIndex(i), GUIContent.none);
+			    intsValue[i] = EditorGUILayout.DelayedIntField(intsValue[i]);
 			}
 		    }
 		    GUILayout.EndHorizontal();
@@ -606,7 +954,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyFloat(string labelString, SerializedProperty arrayProperty)
+	private void DrawArrayPropertyFloat(string labelString, ArrayWrapper<float> floatsValue)
 	{
 	    // Arrays are drawn with a label, and rows of values.
 
@@ -616,7 +964,7 @@ namespace HoudiniEngineUnity
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
-		    int numElements = arrayProperty.arraySize;
+		    int numElements = floatsValue.Length();
 		    int maxElementsPerRow = 4;
 
 		    EditorGUILayout.BeginHorizontal();
@@ -629,7 +977,7 @@ namespace HoudiniEngineUnity
 				EditorGUILayout.BeginHorizontal();
 			    }
 
-			    EditorGUILayout.DelayedFloatField(arrayProperty.GetArrayElementAtIndex(i), GUIContent.none);
+			    floatsValue[i] = EditorGUILayout.DelayedFloatField(floatsValue[i]);
 			}
 		    }
 		    EditorGUILayout.EndHorizontal();
@@ -649,11 +997,11 @@ namespace HoudiniEngineUnity
 
 		    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 		    {
-			int tabChoice = GUILayout.Toolbar(paramUICache._secondaryValue.intValue, paramUICache._tabLabels);
+			int tabChoice = GUILayout.Toolbar(paramUICache._secondaryValue.IntValue, paramUICache._tabLabels);
 			if (tabChoice >= 0 && tabChoice < paramUICache._childrenCache.Count)
 			{
-			    paramUICache._secondaryValue.intValue = tabChoice;
-			    DrawParamUICache(paramUICache._childrenCache[paramUICache._secondaryValue.intValue], false);
+			    paramUICache._secondaryValue.IntValue = tabChoice;
+			    DrawParamUICache(paramUICache._childrenCache[paramUICache._secondaryValue.IntValue], false);
 			}
 		    }
 		    EditorGUILayout.EndVertical();
@@ -672,10 +1020,10 @@ namespace HoudiniEngineUnity
 		    if (bDrawFoldout)
 		    {
 			EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-			paramUICache._secondaryValue.boolValue = EditorGUILayout.Foldout(paramUICache._secondaryValue.boolValue, parameterData._labelName, true, EditorStyles.foldout);
+			paramUICache._secondaryValue.BoolValue = EditorGUILayout.Foldout(paramUICache._secondaryValue.BoolValue, parameterData._labelName, true, EditorStyles.foldout);
 		    }
 
-		    if (!bDrawFoldout || paramUICache._secondaryValue.boolValue)
+		    if (!bDrawFoldout || paramUICache._secondaryValue.BoolValue)
 		    {
 			foreach (HEU_ParameterUICache paramCache in paramUICache._childrenCache)
 			{
@@ -697,35 +1045,33 @@ namespace HoudiniEngineUnity
 
 	    HEU_ParameterData parameterData = paramUICache._parameterData;
 
-	    HAPI_ParmType parmType = (HAPI_ParmType)paramUICache._paramType.intValue;
+	    HAPI_ParmType parmType = paramUICache._paramType;
 	    if (parmType == HAPI_ParmType.HAPI_PARMTYPE_INT)
 	    {
-		SerializedProperty intsProperty = paramUICache._primaryValue;
+		ArrayWrapper<int> intsValue = paramUICache._primaryValue.IntArrayValue;
 
 		if (parameterData._parmInfo.choiceCount > 0)
 		{
 		    // Drop-down choice list for INTs
 
 		    // Get the current choice value
-		    SerializedProperty choiceProperty = paramUICache._secondaryValue;
-
 		    // Draw it as an int popup, passing in the user options (_choiceLabels), and the corresponding Houdini values (_choiceIntValues)
-		    EditorGUILayout.IntPopup(choiceProperty, parameterData._choiceLabels, parameterData._choiceIntValues, new GUIContent(parameterData._labelName));
+		    paramUICache._secondaryValue.IntValue = EditorGUILayout.IntPopup(new GUIContent(parameterData._labelName), paramUICache._secondaryValue.IntValue, parameterData._choiceLabels, parameterData._choiceIntValues);
 
 		    // No need to check, just always updated with latest choiceProperty
-		    if (intsProperty.GetArrayElementAtIndex(0).intValue != parameterData._choiceIntValues[choiceProperty.intValue])
+		    if (intsValue[0] != parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue])
 		    {
 			//Debug.LogFormat("Setting int property {0} from {1} to {2}", parameterData._labelName, intsProperty.GetArrayElementAtIndex(0).intValue, parameterData._choiceIntValues[choiceProperty.intValue]);
-			intsProperty.GetArrayElementAtIndex(0).intValue = parameterData._choiceIntValues[choiceProperty.intValue];
+			intsValue[0] = parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue];
 		    }
 		}
 		else
 		{
-		    if (intsProperty.arraySize == 1)
+		    if (intsValue.Length() == 1)
 		    {
 			bool bHasUIMinMax = (parameterData.HasUIMin() && parameterData.HasUIMax());
 
-			int value = intsProperty.GetArrayElementAtIndex(0).intValue;
+			int value = intsValue[0];
 
 			EditorGUILayout.BeginHorizontal();
 			{
@@ -745,27 +1091,28 @@ namespace HoudiniEngineUnity
 			{
 			    value = Mathf.Min(parameterData.IntMax, value);
 			}
-			intsProperty.GetArrayElementAtIndex(0).intValue = value;
+
+			intsValue[0] = value;
 		    }
 		    else
 		    {
 			// Multiple ints. Display label, then each element.
 
-			DrawArrayPropertyInt(parameterData._labelName, intsProperty);
+			DrawArrayPropertyInt(parameterData._labelName, intsValue);
 		    }
 		}
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_FLOAT)
 	    {
-		SerializedProperty floatsProperty = paramUICache._primaryValue;
+		ArrayWrapper<float> floatsValue = paramUICache._primaryValue.FloatArrayValue;
 
-		if (floatsProperty.arraySize == 1)
+		if (floatsValue.Length() == 1)
 		{
 		    // Draw single float as either a slider (if min & max are available, or simply as a field)
 
 		    bool bHasUIMinMax = (parameterData.HasUIMin() && parameterData.HasUIMax());
 
-		    float value = floatsProperty.GetArrayElementAtIndex(0).floatValue;
+		    float value = floatsValue[0];
 
 		    EditorGUILayout.BeginHorizontal();
 		    {
@@ -785,59 +1132,59 @@ namespace HoudiniEngineUnity
 		    {
 			value = Mathf.Min(parameterData.FloatMax, value);
 		    }
-		    floatsProperty.GetArrayElementAtIndex(0).floatValue = value;
+
+		    floatsValue[0] = value;
 		}
 		else
 		{
 		    // Multiple floats. Display label, then each element.
 
-		    DrawArrayPropertyFloat(parameterData._labelName, floatsProperty);
+		    DrawArrayPropertyFloat(parameterData._labelName, floatsValue);
 		}
 
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_STRING)
 	    {
-		SerializedProperty stringsProperty = paramUICache._primaryValue;
+		ArrayWrapper<string> stringsValue = paramUICache._primaryValue.StringArrayValue;
 
 		if (parameterData._parmInfo.choiceCount > 0)
 		{
 		    // Dropdown choice list for STRINGS
 
 		    // Get the current choice value
-		    SerializedProperty choiceProperty = paramUICache._secondaryValue;
 
 		    // Draw it as an int popup, passing in the user options (_choiceLabels), and the corresponding Houdini values (_choiceIntValues)
-		    EditorGUILayout.IntPopup(choiceProperty, parameterData._choiceLabels, parameterData._choiceIntValues, new GUIContent(parameterData._labelName));
+		    paramUICache._secondaryValue.IntValue = EditorGUILayout.IntPopup(new GUIContent(parameterData._labelName), paramUICache._secondaryValue.IntValue, parameterData._choiceLabels, parameterData._choiceIntValues);
 
 		    // choiceProperty.intValue now holds the user's choice, so just update it
-		    stringsProperty.GetArrayElementAtIndex(0).stringValue = parameterData._choiceStringValues[choiceProperty.intValue];
+		    stringsValue[0] = parameterData._choiceStringValues[paramUICache._secondaryValue.IntValue];
 		}
 		else if (parameterData.IsAssetPath())
 		{
-		    DrawArrayPropertyStringPath(parameterData._labelName, stringsProperty, paramUICache._assetObjects);
+		    DrawArrayPropertyStringPath(parameterData._labelName, stringsValue, paramUICache._assetObjects);
 		}
 		else
 		{
 		    // Draw strings as list or singularly, or as asset path
-		    DrawArrayPropertyString(parameterData._labelName, stringsProperty);
+		    DrawArrayPropertyString(parameterData._labelName, stringsValue);
 		}
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_TOGGLE)
 	    {
-		EditorGUILayout.PropertyField(paramUICache._primaryValue, new GUIContent(parameterData._labelName));
+		paramUICache._primaryValue.BoolValue = EditorGUILayout.Toggle(new GUIContent(parameterData._labelName), paramUICache._primaryValue.BoolValue);
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_COLOR)
 	    {
-		EditorGUILayout.PropertyField(paramUICache._primaryValue, new GUIContent(parameterData._labelName));
+		paramUICache._primaryValue.ColorValue = EditorGUILayout.ColorField(new GUIContent(parameterData._labelName), paramUICache._primaryValue.ColorValue );
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_BUTTON)
 	    {
-		SerializedProperty intsProperty = paramUICache._primaryValue;
-		Debug.Assert(intsProperty.arraySize == 1, "Button parameter property should have only a single value!");
+		ArrayWrapper<int> intValues = paramUICache._primaryValue.IntArrayValue;
+		Debug.Assert(intValues.Length() == 1, "Button parameter property should have only a single value!");
 
 		if (GUILayout.Button(parameterData._labelName))
 		{
-		    intsProperty.GetArrayElementAtIndex(0).intValue = intsProperty.GetArrayElementAtIndex(0).intValue == 0 ? 1 : 0;
+		    intValues[0] = intValues[0] == 0 ? 1 : 0;
 		}
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE || parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO
@@ -851,9 +1198,8 @@ namespace HoudiniEngineUnity
 
 		    using (new EditorGUILayout.HorizontalScope())
 		    {
-			SerializedProperty stringsProperty = paramUICache._primaryValue;
-			Debug.Assert(stringsProperty.arraySize == 1, "File path parameter property should only have a single value!");
-			EditorGUILayout.DelayedTextField(stringsProperty.GetArrayElementAtIndex(0), GUIContent.none);
+			ArrayWrapper<string> stringsValue = paramUICache._primaryValue.StringArrayValue;
+			stringsValue[0] =  EditorGUILayout.DelayedTextField(stringsValue[0]);
 
 			GUIStyle buttonStyle = HEU_EditorUI.GetNewButtonStyle_MarginPadding(0, 0);
 			if (GUILayout.Button("...", buttonStyle, GUILayout.Width(30), GUILayout.Height(18)))
@@ -881,27 +1227,27 @@ namespace HoudiniEngineUnity
 			    {
 				if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
 				{
-				    userFilePath = EditorUtility.SaveFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+				    userFilePath = EditorUtility.SaveFolderPanel("Select Folder", stringsValue[0], "");
 				}
 				else
 				{
-				    userFilePath = EditorUtility.SaveFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, "", filePattern);
+				    userFilePath = EditorUtility.SaveFilePanel("Select File", stringsValue[0], "", filePattern);
 				}
 			    }
 			    else
 			    {
 				if (parmType == HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR)
 				{
-				    userFilePath = EditorUtility.OpenFolderPanel("Select Folder", stringsProperty.GetArrayElementAtIndex(0).stringValue, "");
+				    userFilePath = EditorUtility.OpenFolderPanel("Select Folder", stringsValue[0], "");
 				}
 				else
 				{
-				    userFilePath = EditorUtility.OpenFilePanel("Select File", stringsProperty.GetArrayElementAtIndex(0).stringValue, filePattern);
+				    userFilePath = EditorUtility.OpenFilePanel("Select File", stringsValue[0], filePattern);
 				}
 			    }
 			    if (!string.IsNullOrEmpty(userFilePath))
 			    {
-				stringsProperty.GetArrayElementAtIndex(0).stringValue = userFilePath;
+				stringsValue[0] = userFilePath;
 			    }
 			}
 		    }
@@ -922,7 +1268,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_NODE)
 	    {
-		HEU_InputNode inputNode = paramUICache._primaryValue.objectReferenceValue as HEU_InputNode;
+		HEU_InputNode inputNode = paramUICache._primaryValue.InputNodeValue;
 		if (inputNode != null)
 		{
 		    HEU_InputNodeUI.EditorDrawInputNode(inputNode);
@@ -1047,10 +1393,8 @@ namespace HoudiniEngineUnity
 	    //	Color		: color value
 	    //	Interpolation: current point interpolation
 
-	    SerializedProperty childParameterIDsProperty = paramUICache._primaryValue;
-	    Debug.Assert(childParameterIDsProperty != null && childParameterIDsProperty.arraySize > 0, "Multiparams should have at least 1 child");
-
-	    SerializedProperty gradientProperty = paramUICache._secondaryValue;
+	    List<int> childParameterIDs = paramUICache._primaryValue.ListIntValue;
+	    Debug.Assert(childParameterIDs != null && childParameterIDs.Count > 0, "Multiparams should have at least 1 child");
 
 	    HEU_ParameterData parameterData = paramUICache._parameterData;
 
@@ -1071,14 +1415,12 @@ namespace HoudiniEngineUnity
 			+ "\nUse the drop-down for each point below to set interpolation individually.";
 
 		GradientMode previousGradientMode = parameterData._gradient.mode;
+		Gradient previousGradient = parameterData._gradient;
 		EditorGUI.BeginChangeCheck();
-		EditorGUILayout.PropertyField(gradientProperty, GUIContent.none, GUILayout.Height(40));
+		paramUICache._secondaryValue.GradientValue = EditorGUILayout.GradientField(paramUICache._secondaryValue.GradientValue, GUILayout.Height(40));
 		EditorGUILayout.LabelField(rampInterpolationInfo, GUILayout.Height(50));
-		if (EditorGUI.EndChangeCheck())
+		if (previousGradient == parameterData._gradient)
 		{
-		    gradientProperty.serializedObject.ApplyModifiedProperties();
-		    //paramUICache._gradientSerializedObject.ApplyModifiedProperties();
-
 		    Gradient gradient = parameterData._gradient;
 		    UpdateParameterFromGradient(gradient, parameterData, paramUICache, (previousGradientMode != gradient.mode));
 		}
@@ -1187,8 +1529,6 @@ namespace HoudiniEngineUnity
 	    //	Value		: float value (with slider 0 to 1)
 	    //	Interpolation: current point interpolation
 
-	    SerializedProperty animCurveProperty = paramUICache._secondaryValue;
-
 	    HEU_ParameterData parameterData = paramUICache._parameterData;
 
 	    using (var vs = new GUILayout.VerticalScope(EditorStyles.helpBox))
@@ -1201,12 +1541,11 @@ namespace HoudiniEngineUnity
 
 		// Draw the Animation Curve and handle changes
 		EditorGUI.BeginChangeCheck();
-		animCurveProperty.animationCurveValue = EditorGUILayout.CurveField(animCurveProperty.animationCurveValue, GUILayout.Height(50));
+		paramUICache._secondaryValue.AnimCurveValue = EditorGUILayout.CurveField(paramUICache._secondaryValue.AnimCurveValue, GUILayout.Height(50));
 		EditorGUILayout.LabelField(rampInterpolationInfo, GUILayout.Height(50));
 		if (EditorGUI.EndChangeCheck())
 		{
-		    AnimationCurve animCurve = animCurveProperty.animationCurveValue;
-		    UpdateParameterFromAnimationCurve(animCurve, parameterData, paramUICache);
+		    UpdateParameterFromAnimationCurve(paramUICache._secondaryValue.AnimCurveValue, parameterData, paramUICache);
 		    return;
 		}
 		else
@@ -1323,8 +1662,8 @@ namespace HoudiniEngineUnity
 		{
 		    int childIndex = i * numParamsPerPoint;
 
-		    paramUICache._childrenCache[childIndex]._primaryValue.GetArrayElementAtIndex(0).floatValue = keys[i].time;
-		    paramUICache._childrenCache[childIndex + 1]._primaryValue.GetArrayElementAtIndex(0).floatValue = keys[i].value;
+		    paramUICache._childrenCache[childIndex]._primaryValue.FloatArrayValue[0] = keys[i].time;
+		    paramUICache._childrenCache[childIndex + 1]._primaryValue.FloatArrayValue[0] = keys[i].value;
 
 		    // Only supporting the following tangement modes, with corresponding Houdini equivalent of:
 		    //	Linear		-> Linear
@@ -1332,7 +1671,7 @@ namespace HoudiniEngineUnity
 		    //	Free		-> Catmull-Rom
 		    AnimationUtility.TangentMode rightTangentMode = AnimationUtility.GetKeyRightTangentMode(animCurve, i);
 		    int interpolateMode = HEU_HAPIUtility.TangentModeToHoudiniRampInterpolation(rightTangentMode);
-		    paramUICache._childrenCache[childIndex + 2]._primaryValue.GetArrayElementAtIndex(0).intValue = interpolateMode;
+		    paramUICache._childrenCache[childIndex + 2]._primaryValue.IntArrayValue[0] = interpolateMode;
 		}
 	    }
 	    else if (numKeys > numPoints)
@@ -1349,7 +1688,7 @@ namespace HoudiniEngineUnity
 
 		    if (childIndex < paramUICache._childrenCache.Count)
 		    {
-			if (paramUICache._childrenCache[childIndex]._primaryValue.GetArrayElementAtIndex(0).floatValue != keys[i].time)
+			if (paramUICache._childrenCache[childIndex]._primaryValue.FloatArrayValue[0] != keys[i].time)
 			{
 			    newPointInstanceIndex = paramUICache._childrenCache[childIndex]._instanceIndex;
 			    keyIndex = i;
@@ -1398,7 +1737,7 @@ namespace HoudiniEngineUnity
 
 		    if (keyIndex < numKeys)
 		    {
-			if (paramUICache._childrenCache[childIndex]._primaryValue.GetArrayElementAtIndex(0).floatValue != keys[keyIndex].time)
+			if (paramUICache._childrenCache[childIndex]._primaryValue.FloatArrayValue[0] != keys[keyIndex].time)
 			{
 			    // As we remove items, the indices will shift, so need to account for it by subtracting num items removed
 			    int correctedIndex = paramUICache._childrenCache[childIndex]._instanceIndex - numRemoved;
@@ -1448,15 +1787,15 @@ namespace HoudiniEngineUnity
 		{
 		    int childIndex = i * numParamsPerPoint;
 
-		    paramUICache._childrenCache[childIndex]._primaryValue.GetArrayElementAtIndex(0).floatValue = colorKeys[i].time;
-		    paramUICache._childrenCache[childIndex + 1]._primaryValue.colorValue = colorKeys[i].color;
+		    paramUICache._childrenCache[childIndex]._primaryValue.FloatArrayValue[0] = colorKeys[i].time;
+		    paramUICache._childrenCache[childIndex + 1]._primaryValue.ColorValue = colorKeys[i].color;
 
 		    // Unity has a single blend mode for the entire gradient. Houdini supports each color having its own blend mode.
 		    // The compromise is then only change blend mode in Houdini (for all points) if it was changed in Unity.
 		    if (bUpdateGradientMode)
 		    {
 			// Update the choice array which will then update 
-			paramUICache._childrenCache[childIndex + 2]._primaryValue.GetArrayElementAtIndex(0).intValue = gradientValue;
+			paramUICache._childrenCache[childIndex + 2]._primaryValue.IntArrayValue[0] = gradientValue;
 		    }
 		}
 	    }
@@ -1474,7 +1813,7 @@ namespace HoudiniEngineUnity
 
 		    if (childIndex < paramUICache._childrenCache.Count)
 		    {
-			if (paramUICache._childrenCache[childIndex]._primaryValue.GetArrayElementAtIndex(0).floatValue != colorKeys[i].time)
+			if (paramUICache._childrenCache[childIndex]._primaryValue.FloatArrayValue[0] != colorKeys[i].time)
 			{
 			    newPointInstanceIndex = paramUICache._childrenCache[childIndex]._instanceIndex;
 			    keyIndex = i;
@@ -1525,7 +1864,7 @@ namespace HoudiniEngineUnity
 
 		    if (keyIndex < numKeys)
 		    {
-			if (paramUICache._childrenCache[childIndex]._primaryValue.GetArrayElementAtIndex(0).floatValue != colorKeys[keyIndex].time)
+			if (paramUICache._childrenCache[childIndex]._primaryValue.FloatArrayValue[0] != colorKeys[keyIndex].time)
 			{
 			    // As we remove items, the indices will shift, so need to account for it by subtracting num items removed
 			    int correctedIndex = paramUICache._childrenCache[childIndex]._instanceIndex - numRemoved;
@@ -1548,30 +1887,33 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private SerializedProperty AddMultiParmModifierProperty(HEU_ParameterModifier.ModifierAction action, int unityParamIndex, int instanceIndex, int numInstancesToAdd)
+	private HEU_ParameterModifier AddMultiParmModifierProperty(HEU_ParameterModifier.ModifierAction action, int unityParamIndex, int instanceIndex, int numInstancesToAdd)
 	{
-	    int newIndex = _parameterModifiersProperty.arraySize;
-	    _parameterModifiersProperty.InsertArrayElementAtIndex(newIndex);
+	    int newIndex = _parameterModifiers.Count;
 
-	    SerializedProperty newModifierProperty = _parameterModifiersProperty.GetArrayElementAtIndex(newIndex);
-	    newModifierProperty.FindPropertyRelative("_action").intValue = (int)action;
-	    newModifierProperty.FindPropertyRelative("_parameterIndex").intValue = unityParamIndex;
-	    newModifierProperty.FindPropertyRelative("_instanceIndex").intValue = instanceIndex;
-	    newModifierProperty.FindPropertyRelative("_modifierValue").intValue = numInstancesToAdd;
 
-	    return newModifierProperty;
+
+	    HEU_ParameterModifier parameterModifier = new HEU_ParameterModifier();
+	    parameterModifier._action = action;
+	    parameterModifier._parameterIndex = unityParamIndex;
+	    parameterModifier._instanceIndex = instanceIndex;
+	    parameterModifier._modifierValue = numInstancesToAdd;
+
+	    _parameterModifiers.Insert(newIndex, parameterModifier);
+
+	    return parameterModifier;
 	}
 
 	private void AddMultiParmModifierPropertyFloat(int unityParamIndex, int instanceIndex, int numInstancesToAdd, float floatValue)
 	{
-	    SerializedProperty newModifierProperty = AddMultiParmModifierProperty(HEU_ParameterModifier.ModifierAction.SET_FLOAT, unityParamIndex, instanceIndex, numInstancesToAdd);
-	    newModifierProperty.FindPropertyRelative("_floatValue").floatValue = floatValue;
+	    HEU_ParameterModifier newModifier = AddMultiParmModifierProperty(HEU_ParameterModifier.ModifierAction.SET_FLOAT, unityParamIndex, instanceIndex, numInstancesToAdd);
+	    newModifier._floatValue = floatValue;
 	}
 
 	private void AddMultiParmModifierPropertyInt(int unityParamIndex, int instanceIndex, int numInstancesToAdd, int intValue)
 	{
-	    SerializedProperty newModifierProperty = AddMultiParmModifierProperty(HEU_ParameterModifier.ModifierAction.SET_INT, unityParamIndex, instanceIndex, numInstancesToAdd);
-	    newModifierProperty.FindPropertyRelative("_intValue").intValue = intValue;
+	    HEU_ParameterModifier newModifier = AddMultiParmModifierProperty(HEU_ParameterModifier.ModifierAction.SET_INT, unityParamIndex, instanceIndex, numInstancesToAdd);
+	    newModifier._intValue = intValue;
 	}
 
 	private void GetFloatRampPointData(HEU_ParameterUICache paramUICache, int pointIndex, ref float position, ref float value, ref int interp)
