@@ -59,12 +59,15 @@ namespace HoudiniEngineUnity
 	// Hierarychy list (for UI)		
 	[SerializeField]
 	private List<int> _rootParameters = new List<int>();
+	public List<int> RootParameters  { get { return _rootParameters; } set { _rootParameters = value; } }
 
 	[SerializeField]
 	private List<HEU_ParameterData> _parameterList = new List<HEU_ParameterData>();
 
 	[SerializeField]
 	private List<HEU_ParameterModifier> _parameterModifiers = new List<HEU_ParameterModifier>();
+
+	public List<HEU_ParameterModifier> ParameterModifiers { get { return _parameterModifiers; } set { _parameterModifiers = value; } }
 
 	// If true, need to recreate the parameters by querying HAPI.
 	// Should be called after inserting or removing an multiparm instance.
@@ -97,7 +100,9 @@ namespace HoudiniEngineUnity
 #pragma warning disable 0414
 
 	[SerializeField]
+	[HideInInspector]
 	private bool _showParameters = true;
+	public bool ShowParameters { get { return _showParameters; } set { _showParameters = value; } }
 
 #pragma warning restore 0414
 
