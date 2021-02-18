@@ -1320,7 +1320,7 @@ namespace HoudiniEngineUnity
 	    SetTag(dstGO, srcGO.tag, bIncludeChildren);
 	    SetLayer(dstGO, srcGO.layer, bIncludeChildren);
 
-#if UNITY_2019_2_OR_NEWER
+#if UNITY_2019_2_OR_NEWER && UNITY_EDITOR
 	    bool isHidden = SceneVisibilityManager.instance.IsHidden(srcGO);
 	    HEU_EditorUtility.SetIsHidden(dstGO, isHidden, bIncludeChildren);
 #endif
