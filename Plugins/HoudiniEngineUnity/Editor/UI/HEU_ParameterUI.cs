@@ -1417,6 +1417,8 @@ namespace HoudiniEngineUnity
 		GradientMode previousGradientMode = parameterData._gradient.mode;
 		Gradient previousGradient = parameterData._gradient;
 		EditorGUI.BeginChangeCheck();
+
+		#if UNITY_2018_3_OR_NEWER
 		paramUICache._secondaryValue.GradientValue = EditorGUILayout.GradientField(paramUICache._secondaryValue.GradientValue, GUILayout.Height(40));
 		EditorGUILayout.LabelField(rampInterpolationInfo, GUILayout.Height(50));
 		if (previousGradient == parameterData._gradient)
@@ -1516,6 +1518,10 @@ namespace HoudiniEngineUnity
 			GUILayout.EndHorizontal();
 		    }
 		}
+		#else
+		Debug.LogError("Error: The Houdini Plugin requires Unity 2018.4 or newer")
+		#endif
+
 	    }
 	}
 
