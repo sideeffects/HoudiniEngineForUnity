@@ -1519,7 +1519,7 @@ namespace HoudiniEngineUnity
 		    }
 		}
 		#else
-		Debug.LogError("Error: The Houdini Plugin requires Unity 2018.4 or newer")
+		Debug.LogError("Error: The Houdini Plugin requires Unity 2018.4 or newer");
 		#endif
 
 	    }
