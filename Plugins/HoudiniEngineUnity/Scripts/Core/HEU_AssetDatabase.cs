@@ -1291,6 +1291,7 @@ namespace HoudiniEngineUnity
 
 	public static void AddAlwaysIncludedShader(string shaderName)
 	{
+#if UNITY_EDITOR
 	    Shader shader = Shader.Find(shaderName);
 
 	    if (shader == null)
@@ -1321,9 +1322,8 @@ namespace HoudiniEngineUnity
 	        serializedObject.ApplyModifiedProperties();
 	        AssetDatabase.SaveAssets();
 	    }
+#endif
 	}
-
-
     }
 
 }   // HoudiniEngineUnity
