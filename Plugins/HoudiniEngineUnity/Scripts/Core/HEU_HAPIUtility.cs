@@ -555,7 +555,8 @@ namespace HoudiniEngineUnity
 	    {
 		bResult = session.GetCookState(out statusCode);
 
-		// TODO: notify user using HAPI_GetStatusString, and HAPI_GetCookingCurrentCount / HAPI_GetCookingTotalCount for % completion.
+		string cookStatus = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_STATE, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
+		session.AppendCookLog(cookStatus);
 	    }
 
 	    // Check cook results for any errors
@@ -564,11 +565,13 @@ namespace HoudiniEngineUnity
 		// We should be able to continue even with these errors, but at least notify user.
 		string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);
 		Debug.LogWarning(string.Format("Houdini Engine: Cooking finished with some warnings for asset: {0}\n{1}", assetName, statusString));
+		session.AppendCookLog(statusString);
 	    }
 	    else if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_FATAL_ERRORS)
 	    {
 		string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
 		Debug.LogError(string.Format("Houdini Engine: Cooking failed for asset: {0}\n{1}", assetName, statusString));
+		session.AppendCookLog(statusString);
 		return false;
 	    }
 	    else
