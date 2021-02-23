@@ -870,6 +870,20 @@ namespace HoudiniEngineUnity
 		HEU_PluginStorage.Instance.Set("HAPI_SessionSyncAutoCook", value);
 	    }
 	}
+
+	public static bool WriteCookLogs
+	{
+	    get
+	    {
+		bool enabled = true;
+		HEU_PluginStorage.Instance.Get("HAPI_WriteCookLogs", out enabled, enabled);
+		return enabled;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_WriteCookLogs", value);
+	    }
+	}
     }
 
 }   // HoudiniEngineUnity
