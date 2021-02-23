@@ -811,6 +811,7 @@ namespace HoudiniEngineUnity
 	    // Though allowing it now behind an option.
 	    cookOptions.splitGeosByGroup = HEU_PluginSettings.CookOptionSplitGeosByGroup;
 	    cookOptions.splitGeosByAttribute = false;
+	    cookOptions.splitGroupSH = 0;
 	    cookOptions.splitAttrSH = 0;
 	    cookOptions.splitPointsByVertexAttributes = false;
 
@@ -933,6 +934,37 @@ namespace HoudiniEngineUnity
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		return "Failed to get status string. Likely the session is invalid.";
+	    }
+
+	    return strBuilder.ToString();
+	}
+
+	/// <summary>
+	/// Compose the node cook result string
+	/// </summary>
+	/// <param name="nodeId"> The node to parse </param>
+	/// <param name="verbosity"> The status verbosity. </param>
+	/// <returns>True if successfully queried status string</returns>
+	public override string ComposeNodeCookResult(HAPI_NodeId nodeId, HAPI_StatusVerbosity verbosity)
+	{
+	    int bufferLength = 0;
+	    HAPI_Result result = HEU_HAPIImports.HAPI_ComposeNodeCookResult(ref _sessionData._HAPISession, nodeId, verbosity, out bufferLength);
+	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
+	    {
+		return "";
+	    }
+
+	    if (bufferLength <= 0)
+	    {
+		return "";
+	    }
+
+	    StringBuilder strBuilder = new StringBuilder(bufferLength);
+	    result = HEU_HAPIImports.HAPI_GetComposedNodeCookResult(ref _sessionData._HAPISession, strBuilder, bufferLength);
+
+	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
+	    {
+		return "";
 	    }
 
 	    return strBuilder.ToString();

@@ -868,7 +868,7 @@ namespace HoudiniEngineUnity
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct HAPI_CookOptions
+    public struct 	HAPI_CookOptions
     {
 	/// Normally, geos are split into parts in two different ways. First it
 	/// is split by group and within each group it is split by primitive type.
@@ -885,6 +885,7 @@ namespace HoudiniEngineUnity
 	/// set to false, geos will only be split by primitive type.
 	[MarshalAs(UnmanagedType.U1)]
 	public bool splitGeosByGroup;
+	public HAPI_StringHandle splitGroupSH;
 
 	/// This toggle lets you enable the splitting by unique values
 	/// of a specified attribute. By default, this is false and
