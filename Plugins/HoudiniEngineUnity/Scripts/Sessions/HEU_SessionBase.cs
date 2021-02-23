@@ -489,6 +489,17 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
+	/// Compose the node cook result string
+	/// </summary>
+	/// <param name="nodeId"> The node to parse </param>
+	/// <param name="verbosity"> The status verbosity. </param>
+	/// <returns>True if successfully queried status string</returns>
+	public virtual string ComposeNodeCookResult(HAPI_NodeId nodeId, HAPI_StatusVerbosity verbosity)
+	{
+	    return "";
+	}
+
+	/// <summary>
 	/// Returns environment value in Houdini Engine.
 	/// </summary>
 	/// <param name="intType">Type of environment variable</param>
