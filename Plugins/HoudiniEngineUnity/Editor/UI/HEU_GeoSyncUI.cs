@@ -49,12 +49,15 @@ namespace HoudiniEngineUnity
 	private GUIContent _unloadContent = new GUIContent("Unload", "Delete the file node and clean up all generated content.");
 	private GUIContent _eventMessageContent = new GUIContent("Log", "Status messages logged here.");
 
-	private HEU_OutputLogUIComponent _outputLogUIComponent = null;
+	private GUIStyle _eventMessageStyle;
+
+	private GUIStyle _backgroundStyle;
+
+	private Vector2 _eventMessageScrollPos = new Vector2();
 
 	private void OnEnable()
 	{
 	    AcquireTarget();
-	    
 	}
 
 	private void AcquireTarget()
@@ -64,12 +67,19 @@ namespace HoudiniEngineUnity
 
 	private void SetupUI()
 	{
-	    if (_outputLogUIComponent == null)
-	    {
-		_outputLogUIComponent = new HEU_OutputLogUIComponent(_eventMessageContent, ClearEventLog);
-	    }
+	    _backgroundStyle = new GUIStyle(GUI.skin.box);
+	    RectOffset br = _backgroundStyle.margin;
+	    br.top = 10;
+	    br.bottom = 6;
+	    br.left = 4;
+	    br.right = 4;
+	    _backgroundStyle.margin = br;
 
-	    _outputLogUIComponent.SetupUI();
+	    _eventMessageStyle = new GUIStyle(EditorStyles.textArea);
+	    _eventMessageStyle.richText = true;
+
+	    _eventMessageStyle.normal.textColor = new Color(1f, 1f, 1f, 1f);
+	    _eventMessageStyle.normal.background = HEU_GeneralUtility.MakeTexture(1, 1, new Color(0, 0, 0, 1f));
 	}
 
 
@@ -139,18 +149,30 @@ namespace HoudiniEngineUnity
 		    }
 		}
 
-		if (_outputLogUIComponent != null &&_geoSync._log != null)
+		if (_geoSync._log != null)
 		{
-		    _outputLogUIComponent.OnGUI(_geoSync._log.ToString());
-		}
-	    }
-	}
+		    using (new EditorGUILayout.VerticalScope(_backgroundStyle))
+		    {
+			using (new EditorGUILayout.HorizontalScope())
+			{
+			    EditorGUILayout.PrefixLabel(_eventMessageContent);
 
-	private void ClearEventLog()
-	{
-	    if (_geoSync)
-	    {
-		_geoSync.ClearLog();
+			    if (GUILayout.Button("Clear"))
+			    {
+			        _geoSync.ClearLog();
+			    }
+			}
+
+			string logMsg = _geoSync._log.ToString();
+
+			using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(_eventMessageScrollPos, GUILayout.Height(120)))
+			{
+			    _eventMessageScrollPos = scrollViewScope.scrollPosition;
+
+			    GUILayout.Label(logMsg, _eventMessageStyle);
+			}
+		    }
+		}
 	    }
 	}
 

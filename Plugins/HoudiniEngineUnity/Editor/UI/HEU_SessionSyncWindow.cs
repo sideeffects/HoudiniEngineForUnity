@@ -293,9 +293,27 @@ namespace HoudiniEngineUnity
 
 		EditorGUILayout.Separator();
 
-		if (_outputLogUI != null)
+		// Log
+		using (new EditorGUILayout.VerticalScope(_backgroundStyle))
 		{
-		    _outputLogUI.OnGUI(GetLog());
+		    using (new EditorGUILayout.HorizontalScope())
+		    {
+			EditorGUILayout.PrefixLabel(_eventMessageContent);
+
+			if (GUILayout.Button("Clear"))
+			{
+			    ClearLog();
+			}
+		    }
+
+		    string logMsg = GetLog();
+
+		    using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(_eventMessageScrollPos, GUILayout.Height(120)))
+		    {
+			_eventMessageScrollPos = scrollViewScope.scrollPosition;
+
+			GUILayout.Label(logMsg, _eventMessageStyle);
+		    }
 		}
 	    }
 
@@ -819,13 +837,28 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	void SetupUI()
 	{
+	    _backgroundStyle = new GUIStyle(GUI.skin.box);
+	    RectOffset br = _backgroundStyle.margin;
+	    br.top = 10;
+	    br.bottom = 6;
+	    br.left = 4;
+	    br.right = 4;
+	    _backgroundStyle.margin = br;
+
+	    br = _backgroundStyle.padding;
+	    br.top = 8;
+	    br.bottom = 8;
+	    br.left = 8;
+	    br.right = 8;
+	    _backgroundStyle.padding = br;
+
 	    _eventMessageContent = new GUIContent("Log", "Status messages logged here."); 
-	    if (_outputLogUI == null)
-	    {
-		_outputLogUI = new HEU_OutputLogUIComponent(_eventMessageContent, ClearLog);
-	    }
-	    
-	    _outputLogUI.SetupUI();
+
+	    _eventMessageStyle = new GUIStyle(EditorStyles.textArea);
+	    _eventMessageStyle.richText = true;
+
+	    _eventMessageStyle.normal.textColor = new Color(1f, 1f, 1f, 1f);
+	    _eventMessageStyle.normal.background = HEU_GeneralUtility.MakeTexture(1, 1, new Color(0, 0, 0, 1f));
 	}
 
 	/// <summary>
@@ -916,6 +949,11 @@ namespace HoudiniEngineUnity
 
 	// DATA ---------------------------------------------------------------
 
+	GUIStyle _backgroundStyle;
+
+	private GUIStyle _eventMessageStyle;
+	private Vector2 _eventMessageScrollPos = new Vector2();
+
 	private GUIContent _eventMessageContent;
 
 	// Sync data while connecting or if session is disconnected.
@@ -960,7 +998,6 @@ namespace HoudiniEngineUnity
 	    "Curve",
 	    "Input",
 	};
-	private HEU_OutputLogUIComponent _outputLogUI = null;
     }
 
 }
