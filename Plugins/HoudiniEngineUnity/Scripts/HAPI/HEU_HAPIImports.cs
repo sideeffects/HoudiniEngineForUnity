@@ -62,6 +62,10 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 
 	// SESSIONS ---------------------------------------------------------------------------------------------
+        
+        [DllImport(HEU_HoudiniVersion.HARC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void
+        harcSetManagedHostLibrariesList(string libraries);
 
 	[DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
 	public static extern HAPI_Result
