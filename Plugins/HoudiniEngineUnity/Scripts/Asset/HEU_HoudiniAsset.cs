@@ -1045,7 +1045,7 @@ namespace HoudiniEngineUnity
 		_savedAssetPreset = null;
 	    }
 
-	    if (HEU_PDGSession.IsPDGAsset(session, newAssetID))
+	    if (HEU_PDGSession.IsPDGAsset(session, newAssetID) && RootGameObject.GetComponent<HEU_PDGAssetLink>() == null)
 	    {
 		HEU_PDGAssetLink assetLink = RootGameObject.AddComponent<HEU_PDGAssetLink>();
 		assetLink.Setup(this);
