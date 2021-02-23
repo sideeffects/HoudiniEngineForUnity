@@ -1467,6 +1467,22 @@ namespace HoudiniEngineUnity
 	    session.GetNodeInfo(_assetID, ref _nodeInfo);
 	    session.GetAssetInfo(_assetID, ref _assetInfo);
 
+	    string nodeStatusAll = session.ComposeNodeCookResult(_assetID, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ALL);
+	    if (nodeStatusAll != "")
+	    {
+		session.AppendCookLog(nodeStatusAll);
+	    }
+
+	    string nodeStatusError = session.ComposeNodeCookResult(_assetID, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
+	    if (nodeStatusError != "")
+	    {
+		SetCookStatus(AssetCookStatus.NONE, _lastCookResult = AssetCookResult.ERRORED);
+
+		string resultString = string.Format(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}! \n{1}", AssetName, nodeStatusError);
+		Debug.LogErrorFormat(resultString);
+		return;
+	    }
+
 	    // We will always regenerate parameters after cooking to make sure we're in sync.
 	    GenerateParameters(session);
 
@@ -4180,6 +4196,9 @@ namespace HoudiniEngineUnity
 	    int oldCount = _totalCookCount;
 	    UpdateTotalCookCount();
 	    bool bRequiresCook = oldCount != _totalCookCount;
+
+	    int numInputNodes = this._inputNodes.Count;
+
 
 	    if (bRequiresCook)
 	    {
