@@ -144,7 +144,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		HAPIPath = "/Applications/Houdini FX " + HEU_HoudiniVersion.HOUDINI_VERSION_STRING + ".app";
+		HAPIPath += "/Applications/Houdini FX " + HEU_HoudiniVersion.HOUDINI_VERSION_STRING + ".app";
 	    }
 #else
 	    _lastErrorMsg = "Unable to find Houdini installation because this is an unsupported platform!";
