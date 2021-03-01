@@ -729,8 +729,8 @@ namespace HoudiniEngineUnity
 			out layer._center.x, out layer._center.y, out layer._center.z);
 
 		// Look up TerrainLayer file via attribute if user has set it
-		layer._layerPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeParts[i].id,
-			HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
+		layer._layerPath = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, nodeID, volumeParts[i].id,
+                                HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 
 		if (layerType != HFLayerType.DETAIL)
 		{
