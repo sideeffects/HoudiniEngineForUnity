@@ -2866,6 +2866,23 @@ namespace HoudiniEngineUnity
 
 	    string targetAssetPath = null;
 
+#if UNITY_EDITOR
+	    MeshFilter currentObjectMesh = bakeTargetGO.GetComponent<MeshFilter>();
+	    if (currentObjectMesh != null && currentObjectMesh.sharedMesh != null)
+	    {
+	    	string currentObjectPath = AssetDatabase.GetAssetPath(currentObjectMesh.sharedMesh.GetInstanceID());
+		if (HEU_Platform.DoesFileExist(currentObjectPath))
+		{
+		    string combinedPath = HEU_Platform.GetParentDirectory(HEU_Platform.GetParentDirectory(currentObjectPath));
+
+		    if (HEU_Platform.DoesDirectoryExist(combinedPath))
+		    {
+		    	targetAssetPath = HEU_AssetDatabase.GetAssetRelativePath(combinedPath);
+		    }
+		}
+	    }
+#endif
+
 	    List<GameObject> outputObjects = new List<GameObject>();
 	    bool bBakedSuccessful = false;
 

@@ -474,6 +474,11 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public static string GetParentDirectory(string inPath)
+	{
+	    return Directory.GetParent(inPath).FullName;
+	}
+
 	public static string GetFullPath(string inPath)
 	{
 	    return Path.GetFullPath(inPath);
