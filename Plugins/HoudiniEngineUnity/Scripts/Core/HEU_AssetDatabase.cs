@@ -77,6 +77,7 @@ namespace HoudiniEngineUnity
 	/// <returns>Relative path to Assets/ folder, or null if invalid input path</returns>
 	public static string GetAssetRelativePath(string inFullPath)
 	{
+	    inFullPath = inFullPath.Replace('\\', '/');
 	    string replaceOld = Application.dataPath + HEU_Platform.DirectorySeparatorStr;
 	    string replaceNew = "Assets" + HEU_Platform.DirectorySeparatorStr;
 	    if (inFullPath.StartsWith(replaceOld))
