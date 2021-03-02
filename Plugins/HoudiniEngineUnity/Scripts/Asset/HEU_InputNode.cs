@@ -354,8 +354,48 @@ namespace HoudiniEngineUnity
 		{
 		    DisconnectAndDestroyInputs(session);
 
+		    List<HEU_InputObjectInfo> inputObjectClone = new List<HEU_InputObjectInfo>(_inputObjects);
+
+		    // Special input interface preprocessing
+		    for (int i = inputObjectClone.Count - 1; i >= 0; i--)
+		    {
+			if (inputObjectClone[i] == null || inputObjectClone[i]._gameObject == null)
+			{
+			    continue;
+			}
+
+			HEU_BoundingVolume boundingVolume = inputObjectClone[i]._gameObject.GetComponent<HEU_BoundingVolume>();
+			if (boundingVolume == null)
+			{
+			    continue;
+			}
+
+			List<GameObject> boundingBoxObjects = boundingVolume.GetAllIntersectingObjects();
+			if (boundingBoxObjects == null)
+			{
+			    continue;
+			}
+
+			foreach (GameObject obj in boundingBoxObjects)
+			{
+			    if (obj == null)
+			    {
+				continue;
+			    }
+
+			    HEU_InputObjectInfo newObjInfo = new HEU_InputObjectInfo();
+			    inputObjectClone[i].CopyTo(newObjInfo);
+			    newObjInfo._gameObject = obj;
+			    inputObjectClone.Add(newObjInfo);
+			}
+
+			// Remove this because it's not a real interface
+			inputObjectClone.RemoveAt(i);
+
+		    }
+
 		    // Create merge object, and input nodes with data, then connect them to the merge object
-		    bool bResult = HEU_InputUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref _inputObjects, ref _inputObjectsConnectedAssetIDs, _keepWorldTransform);
+		    bool bResult = HEU_InputUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref inputObjectClone, ref _inputObjectsConnectedAssetIDs, _keepWorldTransform);
 		    if (!bResult)
 		    {
 			DisconnectAndDestroyInputs(session);
