@@ -287,9 +287,17 @@ namespace HoudiniEngineUnity
 
 	// ASSET EVENTS -----------------------------------------------------------------------------------------------
 
+	// OBSOLETE, but don't want to annoy user with warning messages unless used
 	public ReloadEvent _reloadEvent = new ReloadEvent();
+	// OBSOLETE, but don't want to annoy user with warning messages unless used
 	public CookedEvent _cookedEvent = new CookedEvent();
+	// OBSOLETE, but don't want to annoy user with warning messages unless used
 	public BakedEvent _bakedEvent = new BakedEvent();
+
+	public HEU_ReloadDataEvent _reloadDataEvent = new HEU_ReloadDataEvent();
+	public HEU_CookedDataEvent _cookedDataEvent = new HEU_CookedDataEvent();
+	public HEU_BakedDataEvent _bakedDataEvent = new HEU_BakedDataEvent();
+	public HEU_PreAssetEvent _preAssetEvent = new HEU_PreAssetEvent();
 
 	// Delegate for Editor window to hook into for callback when needing updating
 	public delegate void UpdateUIDelegate();
@@ -797,6 +805,11 @@ namespace HoudiniEngineUnity
 	/// <param name="desiredSubassetIndex"></param>
 	private void ProcessRebuild(bool bPromptForSubasset, int desiredSubassetIndex)
 	{
+	    if (_preAssetEvent != null)
+	    {
+		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.RELOAD));
+	    }
+		
 	    bool bResult = false;
 
 	    try
@@ -824,12 +837,26 @@ namespace HoudiniEngineUnity
 		SetCookStatus(AssetCookStatus.POSTLOAD, AssetCookResult.ERRORED);
 	    }
 
-	    if (_reloadEvent != null)
+	    if (_reloadEvent != null || _reloadDataEvent != null)
 	    {
 		// Do callbacks regardless of success or failure as listeners might need to know
 		List<GameObject> outputObjects = new List<GameObject>();
 		GetOutputGameObjects(outputObjects);
-		_reloadEvent.Invoke(this, bResult, outputObjects);
+		InvokeReloadEvent(bResult, outputObjects);
+	    }
+	}
+
+	private void InvokeReloadEvent(bool bCookSuccess, List<GameObject> outputObjects)
+	{
+	    if (_reloadEvent != null)
+	    {
+		Debug.LogWarning("ReloadEvent is obsolete and will be removed in the next Houdini version. Please use ReloadDataEvent instead.");
+		_reloadEvent.Invoke(this, bCookSuccess, outputObjects);
+	    }
+
+	    if (_reloadDataEvent != null)
+	    {
+		_reloadDataEvent.Invoke(new HEU_ReloadEventData(this, bCookSuccess, outputObjects));
 	    }
 	}
 
@@ -1073,7 +1100,6 @@ namespace HoudiniEngineUnity
 #if HEU_PROFILER_ON
 	    _cookStartTime = Time.realtimeSinceStartup;
 #endif
-	    //Debug.Log("RecookAsync");
 
 	    bool bStarted = false;
 	    try
@@ -1208,12 +1234,27 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	private void ExecutePostCookCallbacks()
 	{
-	    if (_cookedEvent != null)
+	    if (_cookedEvent != null || _cookedDataEvent != null)
 	    {
 		List<GameObject> outputObjects = new List<GameObject>();
 		GetOutputGameObjects(outputObjects);
 		bool bCookSuccess = (_lastCookResult == AssetCookResult.SUCCESS);
+
+		InvokePostCookEvent(bCookSuccess, outputObjects);
+	    }
+	}
+
+	private void InvokePostCookEvent(bool bCookSuccess, List<GameObject> outputObjects)
+	{
+	    if (_cookedEvent != null)
+	    {
+		Debug.LogWarning("CookedEvent is obsolete and will be removed in the next Houdini version. Please use CookedDataEvent instead.");
 		_cookedEvent.Invoke(this, bCookSuccess, outputObjects);
+	    }
+
+	    if (_cookedDataEvent != null)
+	    {
+		_cookedDataEvent.Invoke(new HEU_CookedEventData(this, bCookSuccess, outputObjects));
 	    }
 	}
 
@@ -1232,6 +1273,12 @@ namespace HoudiniEngineUnity
 	    bool bUploadParameterPreset, bool bForceUploadInputs,
 	    bool bCookingSessionSync)
 	{
+
+	    if (_preAssetEvent != null)
+	    {
+		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.COOK));
+	    }
+
 	    HEU_SessionBase session = GetAssetSession(true);
 	    if (session == null)
 	    {
@@ -2563,11 +2610,17 @@ namespace HoudiniEngineUnity
 	    return null;
 	}
 
-	private void InvokeBakedEvent(bool bSuccess, List<GameObject> outputObjects)
+	private void InvokeBakedEvent(bool bSuccess, List<GameObject> outputObjects, bool isNewBake)
 	{
 	    if (_bakedEvent != null)
 	    {
+		Debug.LogWarning("BakedEvent is obsolete and will be removed in the next Houdini version. Please use BakedDataEvent instead.");
 		_bakedEvent.Invoke(this, bSuccess, outputObjects);
+	    }
+
+	    if (_bakedDataEvent != null)
+	    {
+		_bakedDataEvent.Invoke(new HEU_BakedEventData(this, bSuccess, outputObjects, isNewBake));
 	    }
 	}
 
@@ -2674,6 +2727,11 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public GameObject BakeToNewPrefab(string destinationPrefabPath = null)
 	{
+	    if (_preAssetEvent != null)
+	    {
+		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.BAKE_NEW));
+	    }
+
 	    // This creates a temporary clone of the asset without the HDA data
 	    // in the scene, then creates a prefab of the cloned object.
 
@@ -2703,7 +2761,7 @@ namespace HoudiniEngineUnity
 		    {
 			HEU_EditorUtility.SelectObject(prefabGO);
 
-			InvokeBakedEvent(true, new List<GameObject>() { prefabGO });
+			InvokeBakedEvent(true, new List<GameObject>() { prefabGO }, true);
 
 			Debug.LogFormat("Exported prefab to {0}", bakedAssetPath);
 		    }
@@ -2724,6 +2782,11 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public GameObject BakeToNewStandalone()
 	{
+	    if (_preAssetEvent != null)
+	    {
+		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.BAKE_NEW));
+	    }
+
 	    string bakedAssetPath = null;
 
 	    // Make sure to write mesh to database because otherwise if user tries to make prefab after, it fails to create mesh.
@@ -2735,7 +2798,7 @@ namespace HoudiniEngineUnity
 	    {
 		HEU_EditorUtility.SelectObject(newClonedRoot);
 
-		InvokeBakedEvent(true, new List<GameObject>() { newClonedRoot });
+		InvokeBakedEvent(true, new List<GameObject>() { newClonedRoot }, true);
 	    }
 	    return newClonedRoot;
 	}
@@ -2757,6 +2820,11 @@ namespace HoudiniEngineUnity
 	    {
 		Debug.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
 		return;
+	    }
+
+	    if (_preAssetEvent != null)
+	    {
+		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.BAKE_UPDATE));
 	    }
 
 	    // Since the prefab would have persistent files on disk, we'll need to get
@@ -2809,7 +2877,7 @@ namespace HoudiniEngineUnity
 		    // Note using ReplacePrefabOptions.ReplaceNameBased will keep local transform values and other changes on instances.
 		    HEU_EditorUtility.ReplacePrefab(newClonedRoot, bakeTargetGO, HEU_EditorUtility.HEU_ReplacePrefabOptions.ReplaceNameBased);
 
-		    InvokeBakedEvent(true, new List<GameObject>() { bakeTargetGO });
+		    InvokeBakedEvent(true, new List<GameObject>() { bakeTargetGO }, false);
 		}
 		finally
 		{
@@ -2830,6 +2898,11 @@ namespace HoudiniEngineUnity
 	    {
 		Debug.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
 		return;
+	    }
+
+	    if (_preAssetEvent != null)
+	    {
+		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.BAKE_UPDATE));
 	    }
 
 	    // Step through all the game objects that need to be cloned, clean up existing properties, 
@@ -2939,7 +3012,7 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
-	    InvokeBakedEvent(bBakedSuccessful, outputObjects);
+	    InvokeBakedEvent(bBakedSuccessful, outputObjects, false);
 	}
 
 	// EVENTS -------------------------------------------------------------------------------------------------
@@ -4381,6 +4454,11 @@ namespace HoudiniEngineUnity
 	    newAsset._reloadEvent = this._reloadEvent;
 	    newAsset._cookedEvent = this._cookedEvent;
 	    newAsset._bakedEvent = this._bakedEvent;
+
+	    newAsset._reloadDataEvent = this._reloadDataEvent;
+	    newAsset._cookedDataEvent = this._cookedDataEvent;
+	    newAsset._bakedDataEvent = this._bakedDataEvent;
+	    newAsset._preAssetEvent = this._preAssetEvent;
 
 	    newAsset._downstreamConnectionCookedEvent = this._downstreamConnectionCookedEvent;
 
