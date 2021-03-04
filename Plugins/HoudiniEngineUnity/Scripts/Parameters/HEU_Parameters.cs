@@ -312,6 +312,7 @@ namespace HoudiniEngineUnity
 		    newParameter._parmInfo = parmInfo;
 		    newParameter._name = HEU_SessionManager.GetString(parmInfo.nameSH, session);
 		    newParameter._labelName = HEU_SessionManager.GetString(parmInfo.labelSH, session);
+		    newParameter._help = HEU_SessionManager.GetString(parmInfo.helpSH, session);
 
 		    // Allow for %s placeholder
 		    newParameter._labelName = newParameter._labelName.Replace("%s", newParameter._name);

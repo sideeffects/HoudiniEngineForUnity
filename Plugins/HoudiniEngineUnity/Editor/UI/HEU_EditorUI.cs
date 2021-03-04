@@ -312,11 +312,11 @@ namespace HoudiniEngineUnity
 	    EditorGUI.DrawRect(r, color);
 	}
 
-	public static void DrawHeadingLabel(string labelText)
+	public static void DrawHeadingLabel(string labelText, string helpText = "")
 	{
 	    GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
 	    labelStyle.fontStyle = FontStyle.Bold;
-	    EditorGUILayout.LabelField(labelText, labelStyle);
+	    EditorGUILayout.LabelField(new GUIContent(labelText, helpText), labelStyle);
 	}
 
 	public static void DrawWarningLabel(string labelText)
