@@ -63,6 +63,7 @@ namespace HoudiniEngineUnity
 	// Cacheing these as they require a look up via HAPI_ParmInfo
 	public string _name;
 	public string _labelName;
+	public string _help;
 
 	// List of childrens' indices. Used for fast look up when drawing UI.
 	public List<int> _childParameterIDs = new List<int>();

@@ -429,7 +429,7 @@ namespace HoudiniEngineUnity
 
 	    public List<HEU_ParameterUICache> _childrenCache;
 
-	    public string[] _tabLabels;
+	    public GUIContent[] _tabLabels;
 
 	    // List of objects for string-based asset paths
 	    public List<UnityEngine.Object> _assetObjects;
@@ -730,10 +730,10 @@ namespace HoudiniEngineUnity
 		// Fill in children (folder) labels for folder list
 		if (paramUICache._parameterData._parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_FOLDERLIST)
 		{
-		    paramUICache._tabLabels = new string[paramUICache._childrenCache.Count];
+		    paramUICache._tabLabels = new GUIContent[paramUICache._childrenCache.Count];
 		    for (int i = 0; i < paramUICache._childrenCache.Count; ++i)
 		    {
-			paramUICache._tabLabels[i] = paramUICache._childrenCache[i]._parameterData._labelName;
+			paramUICache._tabLabels[i] = new GUIContent(paramUICache._childrenCache[i]._parameterData._labelName, paramUICache._childrenCache[i]._parameterData._help);
 		    }
 
 		    paramUICache._secondaryValue.SetValue(parameterData._tabSelectedIndex, (selectedIndex) => parameterData._tabSelectedIndex = selectedIndex);
@@ -847,13 +847,13 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyStringPath(string labelString, ArrayWrapper<string> stringValues, List<UnityEngine.Object> assetObjects)
+	private void DrawArrayPropertyStringPath(string labelString, string helpString, ArrayWrapper<string> stringValues, List<UnityEngine.Object> assetObjects)
 	{
 	    // Arrays are drawn with a label, and rows of object paths.
 
 	    using (new EditorGUILayout.HorizontalScope())
 	    {
-		EditorGUILayout.PrefixLabel(labelString);
+		EditorGUILayout.PrefixLabel(new GUIContent(labelString, helpString));
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
@@ -892,13 +892,13 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyString(string labelString, ArrayWrapper<string> stringsValue)
+	private void DrawArrayPropertyString(string labelString, string helpString, ArrayWrapper<string> stringsValue)
 	{
 	    // Arrays are drawn with a label, and rows of values.
 
 	    using (new EditorGUILayout.HorizontalScope())
 	    {
-		EditorGUILayout.PrefixLabel(labelString);
+		EditorGUILayout.PrefixLabel(new GUIContent(labelString, helpString));
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
@@ -923,13 +923,13 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyInt(string labelString, ArrayWrapper<int> intsValue)
+	private void DrawArrayPropertyInt(string labelString, string helpString, ArrayWrapper<int> intsValue)
 	{
 	    // Arrays are drawn with a label, and rows of values.
 
 	    using (new EditorGUILayout.HorizontalScope())
 	    {
-		EditorGUILayout.PrefixLabel(labelString);
+		EditorGUILayout.PrefixLabel(new GUIContent(labelString, helpString));
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
@@ -954,13 +954,13 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void DrawArrayPropertyFloat(string labelString, ArrayWrapper<float> floatsValue)
+	private void DrawArrayPropertyFloat(string labelString, string helpString, ArrayWrapper<float> floatsValue)
 	{
 	    // Arrays are drawn with a label, and rows of values.
 
 	    using (new EditorGUILayout.HorizontalScope())
 	    {
-		EditorGUILayout.PrefixLabel(labelString);
+		EditorGUILayout.PrefixLabel(new GUIContent(labelString, helpString));
 
 		using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 		{
@@ -1020,7 +1020,7 @@ namespace HoudiniEngineUnity
 		    if (bDrawFoldout)
 		    {
 			EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-			paramUICache._secondaryValue.BoolValue = EditorGUILayout.Foldout(paramUICache._secondaryValue.BoolValue, parameterData._labelName, true, EditorStyles.foldout);
+			paramUICache._secondaryValue.BoolValue = EditorGUILayout.Foldout(paramUICache._secondaryValue.BoolValue, new GUIContent(parameterData._labelName, parameterData._help), true, EditorStyles.foldout);
 		    }
 
 		    if (!bDrawFoldout || paramUICache._secondaryValue.BoolValue)
@@ -1056,7 +1056,7 @@ namespace HoudiniEngineUnity
 
 		    // Get the current choice value
 		    // Draw it as an int popup, passing in the user options (_choiceLabels), and the corresponding Houdini values (_choiceIntValues)
-		    paramUICache._secondaryValue.IntValue = EditorGUILayout.IntPopup(new GUIContent(parameterData._labelName), paramUICache._secondaryValue.IntValue, parameterData._choiceLabels, parameterData._choiceIntValues);
+		    paramUICache._secondaryValue.IntValue = EditorGUILayout.IntPopup(new GUIContent(parameterData._labelName, parameterData._help), paramUICache._secondaryValue.IntValue, parameterData._choiceLabels, parameterData._choiceIntValues);
 
 		    // No need to check, just always updated with latest choiceProperty
 		    if (intsValue[0] != parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue])
@@ -1075,7 +1075,7 @@ namespace HoudiniEngineUnity
 
 			EditorGUILayout.BeginHorizontal();
 			{
-			    value = EditorGUILayout.DelayedIntField(new GUIContent(parameterData._labelName), value, GUILayout.ExpandWidth(!bHasUIMinMax));
+			    value = EditorGUILayout.DelayedIntField(new GUIContent(parameterData._labelName, parameterData._help), value, GUILayout.ExpandWidth(!bHasUIMinMax));
 			    if (bHasUIMinMax)
 			    {
 				value = Mathf.RoundToInt(GUILayout.HorizontalSlider(value, (int)Mathf.Min(value, parameterData.IntUIMin), (int)Mathf.Max(value, parameterData.IntUIMax), _sliderStyle, _sliderThumbStyle));
@@ -1098,7 +1098,7 @@ namespace HoudiniEngineUnity
 		    {
 			// Multiple ints. Display label, then each element.
 
-			DrawArrayPropertyInt(parameterData._labelName, intsValue);
+			DrawArrayPropertyInt(parameterData._labelName, parameterData._help, intsValue);
 		    }
 		}
 	    }
@@ -1116,7 +1116,7 @@ namespace HoudiniEngineUnity
 
 		    EditorGUILayout.BeginHorizontal();
 		    {
-			value = EditorGUILayout.DelayedFloatField(new GUIContent(parameterData._labelName), value, GUILayout.ExpandWidth(!bHasUIMinMax));
+			value = EditorGUILayout.DelayedFloatField(new GUIContent(parameterData._labelName, parameterData._help), value, GUILayout.ExpandWidth(!bHasUIMinMax));
 			if (bHasUIMinMax)
 			{
 			    value = GUILayout.HorizontalSlider(value, Mathf.Min(value, parameterData.FloatUIMin), Mathf.Max(value, parameterData.FloatUIMax), _sliderStyle, _sliderThumbStyle);
@@ -1139,7 +1139,7 @@ namespace HoudiniEngineUnity
 		{
 		    // Multiple floats. Display label, then each element.
 
-		    DrawArrayPropertyFloat(parameterData._labelName, floatsValue);
+		    DrawArrayPropertyFloat(parameterData._labelName, parameterData._help, floatsValue);
 		}
 
 	    }
@@ -1154,35 +1154,35 @@ namespace HoudiniEngineUnity
 		    // Get the current choice value
 
 		    // Draw it as an int popup, passing in the user options (_choiceLabels), and the corresponding Houdini values (_choiceIntValues)
-		    paramUICache._secondaryValue.IntValue = EditorGUILayout.IntPopup(new GUIContent(parameterData._labelName), paramUICache._secondaryValue.IntValue, parameterData._choiceLabels, parameterData._choiceIntValues);
+		    paramUICache._secondaryValue.IntValue = EditorGUILayout.IntPopup(new GUIContent(parameterData._labelName, parameterData._help), paramUICache._secondaryValue.IntValue, parameterData._choiceLabels, parameterData._choiceIntValues);
 
 		    // choiceProperty.intValue now holds the user's choice, so just update it
 		    stringsValue[0] = parameterData._choiceStringValues[paramUICache._secondaryValue.IntValue];
 		}
 		else if (parameterData.IsAssetPath())
 		{
-		    DrawArrayPropertyStringPath(parameterData._labelName, stringsValue, paramUICache._assetObjects);
+		    DrawArrayPropertyStringPath(parameterData._labelName, parameterData._help, stringsValue, paramUICache._assetObjects);
 		}
 		else
 		{
 		    // Draw strings as list or singularly, or as asset path
-		    DrawArrayPropertyString(parameterData._labelName, stringsValue);
+		    DrawArrayPropertyString(parameterData._labelName, parameterData._help, stringsValue);
 		}
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_TOGGLE)
 	    {
-		paramUICache._primaryValue.BoolValue = EditorGUILayout.Toggle(new GUIContent(parameterData._labelName), paramUICache._primaryValue.BoolValue);
+		paramUICache._primaryValue.BoolValue = EditorGUILayout.Toggle(new GUIContent(parameterData._labelName, parameterData._help), paramUICache._primaryValue.BoolValue);
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_COLOR)
 	    {
-		paramUICache._primaryValue.ColorValue = EditorGUILayout.ColorField(new GUIContent(parameterData._labelName), paramUICache._primaryValue.ColorValue );
+		paramUICache._primaryValue.ColorValue = EditorGUILayout.ColorField(new GUIContent(parameterData._labelName, parameterData._help), paramUICache._primaryValue.ColorValue );
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_BUTTON)
 	    {
 		ArrayWrapper<int> intValues = paramUICache._primaryValue.IntArrayValue;
 		Debug.Assert(intValues.Length() == 1, "Button parameter property should have only a single value!");
 
-		if (GUILayout.Button(parameterData._labelName))
+		if (GUILayout.Button(new GUIContent(parameterData._labelName, parameterData._help)))
 		{
 		    intValues[0] = intValues[0] == 0 ? 1 : 0;
 		}
@@ -1193,7 +1193,7 @@ namespace HoudiniEngineUnity
 		GUIStyle boxStyle = HEU_EditorUI.GetGUIStyle("Groupbox", 4, 0);
 		using (new EditorGUILayout.VerticalScope(boxStyle))
 		{
-		    GUIContent labelContent = new GUIContent(parameterData._labelName);
+		    GUIContent labelContent = new GUIContent(parameterData._labelName, parameterData._help);
 		    EditorGUILayout.LabelField(labelContent);
 
 		    using (new EditorGUILayout.HorizontalScope())
@@ -1264,7 +1264,7 @@ namespace HoudiniEngineUnity
 		//SerializedProperty stringsProperty = paramUICache._primaryValue;
 		//HEU_EditorUI.DrawHeadingLabel(stringsProperty.GetArrayElementAtIndex(0).stringValue);
 		// Replaced above with this as it seems to be the correct label value
-		HEU_EditorUI.DrawHeadingLabel(parameterData._labelName);
+		HEU_EditorUI.DrawHeadingLabel(parameterData._labelName, parameterData._help);
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_NODE)
 	    {
@@ -1309,7 +1309,7 @@ namespace HoudiniEngineUnity
 		    ///	MultiParam Label [number of instances]  +  -  Clear
 		    GUILayout.BeginHorizontal();
 		    {
-			EditorGUILayout.PrefixLabel(parameterData._labelName);
+			EditorGUILayout.PrefixLabel(new GUIContent(parameterData._labelName, parameterData._help));
 			numInstances = EditorGUILayout.DelayedIntField(numInstances);
 
 			if (GUILayout.Button("+"))
@@ -1403,7 +1403,7 @@ namespace HoudiniEngineUnity
 
 	    using (var vs = new GUILayout.VerticalScope(EditorStyles.helpBox))
 	    {
-		EditorGUILayout.PrefixLabel(parameterData._labelName);
+		EditorGUILayout.PrefixLabel(new GUIContent(parameterData._labelName, parameterData._help));
 
 		// Draw the Gradient and handle changes. Points are drawn after the Gradient.
 		// Note that individual points and their properties are only drawn if the Gradient didn't
@@ -1539,7 +1539,7 @@ namespace HoudiniEngineUnity
 
 	    using (var vs = new GUILayout.VerticalScope(EditorStyles.helpBox))
 	    {
-		EditorGUILayout.PrefixLabel(parameterData._labelName);
+		EditorGUILayout.PrefixLabel(new GUIContent(parameterData._labelName, parameterData._help));
 
 		string rampInterpolationInfo = "Ramp only supports Constant, Linear, and Free (Catmull-Rom) tangent modes!"
 			+ "\nOnly the Right Tangent mode for a point is supported."
