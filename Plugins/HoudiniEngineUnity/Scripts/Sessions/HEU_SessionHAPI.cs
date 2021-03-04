@@ -1370,10 +1370,10 @@ namespace HoudiniEngineUnity
 	/// <param name="bRecursive">Whether or not to compose the list recursively</param>
 	/// <param name="count">Number of child nodes composed</param>
 	/// <returns>True if successfully composed the child node list</returns>
-	public override bool ComposeChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool bRecursive, ref int count)
+	public override bool ComposeChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool bRecursive, ref int count, bool bLogError = true)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_ComposeChildNodeList(ref _sessionData._HAPISession, parentNodeID, nodeTypeFilter, nodeFlagFilter, bRecursive, out count);
-	    HandleStatusResult(result, "Composing Child Node List", false, true);
+	    HandleStatusResult(result, "Composing Child Node List", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
@@ -1384,11 +1384,11 @@ namespace HoudiniEngineUnity
 	/// <param name="childNodeIDs">Array to store the child node IDs. If null, will create array of size count. If non-null, size must at least be count.</param>
 	/// <param name="count">Number of children in the composed list. Must match the count returned by ComposeChildNodeList</param>
 	/// <returns>True if successfully retrieved the child node list</returns>
-	public override bool GetComposedChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeId[] childNodeIDs, int count)
+	public override bool GetComposedChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeId[] childNodeIDs, int count, bool bLogError = true)
 	{
 	    Debug.Assert(childNodeIDs != null && childNodeIDs.Length == count, "Child node IDs array not set to correct size!");
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetComposedChildNodeList(ref _sessionData._HAPISession, parentNodeID, childNodeIDs, count);
-	    HandleStatusResult(result, "Getting Child Node List", false, true);
+	    HandleStatusResult(result, "Getting Child Node List", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 

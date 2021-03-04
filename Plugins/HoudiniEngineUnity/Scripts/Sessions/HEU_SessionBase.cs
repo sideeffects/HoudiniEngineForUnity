@@ -777,7 +777,7 @@ namespace HoudiniEngineUnity
 	/// <param name="bRecursive">Whether or not to compose the list recursively</param>
 	/// <param name="count">Number of child nodes composed</param>
 	/// <returns>True if successfully composed the child node list</returns>
-	public virtual bool ComposeChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool bRecursive, ref int count)
+	public virtual bool ComposeChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool bRecursive, ref int count, bool bLogError = true)
 	{
 	    return false;
 	}
@@ -789,7 +789,7 @@ namespace HoudiniEngineUnity
 	/// <param name="childNodeIDs">Array to store the child node IDs. If null, will create array of size count. If non-null, size must at least be count.</param>
 	/// <param name="count">Number of children in the composed list. Must match the count returned by ComposeChildNodeList</param>
 	/// <returns>True if successfully retrieved the child node list</returns>
-	public virtual bool GetComposedChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeId[] childNodeIDs, int count)
+	public virtual bool GetComposedChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeId[] childNodeIDs, int count, bool bLogError = true)
 	{
 	    return false;
 	}

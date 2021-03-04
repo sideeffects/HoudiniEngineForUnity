@@ -698,7 +698,7 @@ namespace HoudiniEngineUnity
 	    // Get all network nodes recursively
 	    // Getting all networks because TOP nework SOPs aren't considered being of TTOP network type, but SOP type
 	    int networkNodeCount = 0;
-	    if (!session.ComposeChildNodeList(assetId, (int)HAPI_NodeType.HAPI_NODETYPE_ANY, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK, true, ref networkNodeCount))
+	    if (!session.ComposeChildNodeList(assetId, (int)HAPI_NodeType.HAPI_NODETYPE_ANY, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK, true, ref networkNodeCount, false))
 	    {
 		return null;
 	    }
@@ -709,7 +709,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    HAPI_NodeId [] allNetworkNodeIds = new HAPI_NodeId[networkNodeCount];
-	    if (!session.GetComposedChildNodeList(assetId, allNetworkNodeIds, networkNodeCount))
+	    if (!session.GetComposedChildNodeList(assetId, allNetworkNodeIds, networkNodeCount, false))
 	    {
 		return null;
 	    }
@@ -718,7 +718,7 @@ namespace HoudiniEngineUnity
 	    int byPassedTOPNetNodeCount = 0;
 	    if (!session.ComposeChildNodeList(assetId,
 	        (int)HAPI_NodeType.HAPI_NODETYPE_ANY, (int)(HAPI_NodeFlags.HAPI_NODEFLAGS_NETWORK | HAPI_NodeFlags.HAPI_NODEFLAGS_BYPASS ),
-		true, ref byPassedTOPNetNodeCount))
+		true, ref byPassedTOPNetNodeCount, false))
 	    {
 		return allNetworkNodeIds;
 	    }
@@ -727,7 +727,7 @@ namespace HoudiniEngineUnity
 	    if (byPassedTOPNetNodeCount > 0)
 	    {
 	        HAPI_NodeId[] allBypassedTOPNetNodeIDs = new HAPI_NodeId[byPassedTOPNetNodeCount];
-	        if (!session.GetComposedChildNodeList(assetId, allBypassedTOPNetNodeIDs, byPassedTOPNetNodeCount))
+	        if (!session.GetComposedChildNodeList(assetId, allBypassedTOPNetNodeIDs, byPassedTOPNetNodeCount, false))
 		{
 		    return allNetworkNodeIds;
 		}
