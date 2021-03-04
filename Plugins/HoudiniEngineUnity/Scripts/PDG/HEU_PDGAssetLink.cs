@@ -162,6 +162,26 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	private void NotifyAssetCooked(HEU_CookedEventData cookedEventData)
+	{
+	    if (cookedEventData == null)
+	    {
+		return;
+	    }
+
+	    NotifyAssetCooked(cookedEventData.Asset, cookedEventData.CookSuccess, cookedEventData.OutputObjects);
+	}
+
+	private void NotifyAssetCooked(HEU_ReloadEventData reloadEventData)
+	{
+	    if (reloadEventData == null)
+	    {
+		return;
+	    }
+
+	    NotifyAssetCooked(reloadEventData.Asset, reloadEventData.CookSuccess, reloadEventData.OutputObjects);
+	}
+
 	/// <summary>
 	/// Reset all TOP network and node state.
 	/// Should be done after the linked HDA has rebuilt.
@@ -199,9 +219,13 @@ namespace HoudiniEngineUnity
 		// Removing then adding listener guarantees no duplicate entries
 		_heu._cookedEvent.RemoveListener(NotifyAssetCooked);
 		_heu._cookedEvent.AddListener(NotifyAssetCooked);
+		_heu._cookedDataEvent.RemoveListener(NotifyAssetCooked);
+		_heu._cookedDataEvent.AddListener(NotifyAssetCooked);
 
 		_heu._reloadEvent.RemoveListener(NotifyAssetCooked);
 		_heu._reloadEvent.AddListener(NotifyAssetCooked);
+		_heu._reloadDataEvent.RemoveListener(NotifyAssetCooked);
+		_heu._reloadDataEvent.AddListener(NotifyAssetCooked);
 
 		// Do a asynchronouse cook of the linked HDA so that we get its latest state
 		_heu.RequestCook(true, true, true, true);
