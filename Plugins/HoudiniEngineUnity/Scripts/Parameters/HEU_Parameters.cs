@@ -314,9 +314,6 @@ namespace HoudiniEngineUnity
 		    newParameter._labelName = HEU_SessionManager.GetString(parmInfo.labelSH, session);
 		    newParameter._help = HEU_SessionManager.GetString(parmInfo.helpSH, session);
 
-		    // Allow for %s placeholder
-		    newParameter._labelName = newParameter._labelName.Replace("%s", newParameter._name);
-
 		    // Set its value based on type
 		    switch (parmInfo.type)
 		    {
