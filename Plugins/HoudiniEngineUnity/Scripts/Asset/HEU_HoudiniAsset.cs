@@ -837,7 +837,7 @@ namespace HoudiniEngineUnity
 		SetCookStatus(AssetCookStatus.POSTLOAD, AssetCookResult.ERRORED);
 	    }
 
-	    if (_reloadEvent.GetPersistentEventCount() > 0 || _reloadDataEvent.GetPersistentEventCount() > 0)
+	    if (_reloadEvent != null || _reloadDataEvent != null)
 	    {
 		// Do callbacks regardless of success or failure as listeners might need to know
 		List<GameObject> outputObjects = new List<GameObject>();
@@ -848,13 +848,17 @@ namespace HoudiniEngineUnity
 
 	private void InvokeReloadEvent(bool bCookSuccess, List<GameObject> outputObjects)
 	{
-	    if (_reloadEvent.GetPersistentEventCount() > 0)
+	    if (_reloadEvent != null)
 	    {
-		Debug.LogWarning("ReloadEvent is obsolete and will be removed in the next Houdini version. Please use ReloadDataEvent instead.");
+		if (_reloadEvent.GetPersistentEventCount() > 0)
+		{
+		    Debug.LogWarning("ReloadEvent is obsolete and will be removed in the next Houdini version. Please use ReloadDataEvent instead.");
+		}
+
 		_reloadEvent.Invoke(this, bCookSuccess, outputObjects);
 	    }
 
-	    if (_reloadDataEvent.GetPersistentEventCount() > 0)
+	    if (_reloadDataEvent != null)
 	    {
 		_reloadDataEvent.Invoke(new HEU_ReloadEventData(this, bCookSuccess, outputObjects));
 	    }
@@ -1234,7 +1238,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	private void ExecutePostCookCallbacks()
 	{
-	    if (_cookedEvent.GetPersistentEventCount() > 0 || _cookedDataEvent.GetPersistentEventCount() > 0)
+	    if (_cookedEvent != null || _cookedDataEvent != null)
 	    {
 		List<GameObject> outputObjects = new List<GameObject>();
 		GetOutputGameObjects(outputObjects);
@@ -1246,13 +1250,16 @@ namespace HoudiniEngineUnity
 
 	private void InvokePostCookEvent(bool bCookSuccess, List<GameObject> outputObjects)
 	{
-	    if (_cookedEvent.GetPersistentEventCount() > 0)
+	    if (_cookedEvent != null)
 	    {
-		Debug.LogWarning("CookedEvent is obsolete and will be removed in the next Houdini version. Please use CookedDataEvent instead.");
+		if (_cookedEvent.GetPersistentEventCount() > 0)
+		{
+		    Debug.LogWarning("CookedEvent is obsolete and will be removed in the next Houdini version. Please use CookedDataEvent instead.");
+		}
 		_cookedEvent.Invoke(this, bCookSuccess, outputObjects);
 	    }
 
-	    if (_cookedDataEvent.GetPersistentEventCount() > 0)
+	    if (_cookedDataEvent != null)
 	    {
 		_cookedDataEvent.Invoke(new HEU_CookedEventData(this, bCookSuccess, outputObjects));
 	    }
@@ -2612,13 +2619,17 @@ namespace HoudiniEngineUnity
 
 	private void InvokeBakedEvent(bool bSuccess, List<GameObject> outputObjects, bool isNewBake)
 	{
-	    if (_bakedEvent.GetPersistentEventCount() > 0)
+	    if (_bakedEvent != null)
 	    {
-		Debug.LogWarning("BakedEvent is obsolete and will be removed in the next Houdini version. Please use BakedDataEvent instead.");
+		if (_bakedEvent.GetPersistentEventCount() > 0)
+		{
+		    Debug.LogWarning("BakedEvent is obsolete and will be removed in the next Houdini version. Please use BakedDataEvent instead.");
+		}
+
 		_bakedEvent.Invoke(this, bSuccess, outputObjects);
 	    }
 
-	    if (_bakedDataEvent.GetPersistentEventCount() > 0)
+	    if (_bakedDataEvent != null)
 	    {
 		_bakedDataEvent.Invoke(new HEU_BakedEventData(this, bSuccess, outputObjects, isNewBake));
 	    }
