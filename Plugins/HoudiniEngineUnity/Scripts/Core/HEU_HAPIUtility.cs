@@ -555,12 +555,15 @@ namespace HoudiniEngineUnity
 	    {
 		bResult = session.GetCookState(out statusCode);
 
-		string cookStatus = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_STATE, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
-		session.AppendCookLog(cookStatus);
+		if (HEU_PluginSettings.WriteCookLogs)
+		{
+		    string cookStatus = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_STATE, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
+		    session.AppendCookLog(cookStatus);
+		}
 	    }
 
 	    // Check cook results for any errors
-	    if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_COOK_ERRORS)
+	    if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_COOK_ERRORS && HEU_PluginSettings.WriteCookLogs)
 	    {
 		// We should be able to continue even with these errors, but at least notify user.
 		string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);

@@ -875,7 +875,7 @@ namespace HoudiniEngineUnity
 	{
 	    get
 	    {
-		bool enabled = true;
+		bool enabled = false;
 		HEU_PluginStorage.Instance.Get("HAPI_WriteCookLogs", out enabled, enabled);
 		return enabled;
 	    }
