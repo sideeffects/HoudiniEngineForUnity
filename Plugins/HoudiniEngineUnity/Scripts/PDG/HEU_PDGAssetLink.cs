@@ -221,13 +221,9 @@ namespace HoudiniEngineUnity
 		_linkState = LinkState.LINKING;
 
 		// Removing then adding listener guarantees no duplicate entries
-		_heu._cookedEvent.RemoveListener(NotifyAssetCooked);
-		_heu._cookedEvent.AddListener(NotifyAssetCooked);
 		_heu._cookedDataEvent.RemoveListener(NotifyAssetCooked);
 		_heu._cookedDataEvent.AddListener(NotifyAssetCooked);
 
-		_heu._reloadEvent.RemoveListener(NotifyAssetCooked);
-		_heu._reloadEvent.AddListener(NotifyAssetCooked);
 		_heu._reloadDataEvent.RemoveListener(NotifyAssetCooked);
 		_heu._reloadDataEvent.AddListener(NotifyAssetCooked);
 

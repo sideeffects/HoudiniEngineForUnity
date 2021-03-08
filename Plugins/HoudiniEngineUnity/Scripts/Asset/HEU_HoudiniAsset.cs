@@ -287,13 +287,6 @@ namespace HoudiniEngineUnity
 
 	// ASSET EVENTS -----------------------------------------------------------------------------------------------
 
-	// OBSOLETE, but don't want to annoy user with warning messages unless used
-	public ReloadEvent _reloadEvent = new ReloadEvent();
-	// OBSOLETE, but don't want to annoy user with warning messages unless used
-	public CookedEvent _cookedEvent = new CookedEvent();
-	// OBSOLETE, but don't want to annoy user with warning messages unless used
-	public BakedEvent _bakedEvent = new BakedEvent();
-
 	public HEU_ReloadDataEvent _reloadDataEvent = new HEU_ReloadDataEvent();
 	public HEU_CookedDataEvent _cookedDataEvent = new HEU_CookedDataEvent();
 	public HEU_BakedDataEvent _bakedDataEvent = new HEU_BakedDataEvent();
@@ -305,7 +298,7 @@ namespace HoudiniEngineUnity
 
 	// CONNECTIONS ------------------------------------------------------------------------------------------------
 
-	public CookedEvent _downstreamConnectionCookedEvent = new CookedEvent();
+	public HEU_CookedDataEvent _downstreamConnectionCookedEvent = new HEU_CookedDataEvent();
 
 	// HDA OPTIONS ------------------------------------------------------------------------------------------------
 
@@ -837,7 +830,7 @@ namespace HoudiniEngineUnity
 		SetCookStatus(AssetCookStatus.POSTLOAD, AssetCookResult.ERRORED);
 	    }
 
-	    if (_reloadEvent != null || _reloadDataEvent != null)
+	    if (_reloadDataEvent != null)
 	    {
 		// Do callbacks regardless of success or failure as listeners might need to know
 		List<GameObject> outputObjects = new List<GameObject>();
@@ -848,16 +841,6 @@ namespace HoudiniEngineUnity
 
 	private void InvokeReloadEvent(bool bCookSuccess, List<GameObject> outputObjects)
 	{
-	    if (_reloadEvent != null)
-	    {
-		if (_reloadEvent.GetPersistentEventCount() > 0)
-		{
-		    Debug.LogWarning("ReloadEvent is obsolete and will be removed in the next Houdini version. Please use ReloadDataEvent instead.");
-		}
-
-		_reloadEvent.Invoke(this, bCookSuccess, outputObjects);
-	    }
-
 	    if (_reloadDataEvent != null)
 	    {
 		_reloadDataEvent.Invoke(new HEU_ReloadEventData(this, bCookSuccess, outputObjects));
@@ -1238,7 +1221,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	private void ExecutePostCookCallbacks()
 	{
-	    if (_cookedEvent != null || _cookedDataEvent != null)
+	    if (_cookedDataEvent != null)
 	    {
 		List<GameObject> outputObjects = new List<GameObject>();
 		GetOutputGameObjects(outputObjects);
@@ -1250,15 +1233,6 @@ namespace HoudiniEngineUnity
 
 	private void InvokePostCookEvent(bool bCookSuccess, List<GameObject> outputObjects)
 	{
-	    if (_cookedEvent != null)
-	    {
-		if (_cookedEvent.GetPersistentEventCount() > 0)
-		{
-		    Debug.LogWarning("CookedEvent is obsolete and will be removed in the next Houdini version. Please use CookedDataEvent instead.");
-		}
-		_cookedEvent.Invoke(this, bCookSuccess, outputObjects);
-	    }
-
 	    if (_cookedDataEvent != null)
 	    {
 		_cookedDataEvent.Invoke(new HEU_CookedEventData(this, bCookSuccess, outputObjects));
@@ -1597,7 +1571,7 @@ namespace HoudiniEngineUnity
 	    GetOutputGameObjects(outputObjects);
 	    if (_downstreamConnectionCookedEvent != null && HEU_PluginSettings.CookingTriggersDownstreamCooks && _cookingTriggersDownCooks)
 	    {
-		_downstreamConnectionCookedEvent.Invoke(this, true, outputObjects);
+		_downstreamConnectionCookedEvent.Invoke(new HEU_CookedEventData(this, true, outputObjects));
 	    }
 
 	    SetCookStatus(AssetCookStatus.NONE, AssetCookResult.SUCCESS);
@@ -2619,16 +2593,6 @@ namespace HoudiniEngineUnity
 
 	private void InvokeBakedEvent(bool bSuccess, List<GameObject> outputObjects, bool isNewBake)
 	{
-	    if (_bakedEvent != null)
-	    {
-		if (_bakedEvent.GetPersistentEventCount() > 0)
-		{
-		    Debug.LogWarning("BakedEvent is obsolete and will be removed in the next Houdini version. Please use BakedDataEvent instead.");
-		}
-
-		_bakedEvent.Invoke(this, bSuccess, outputObjects);
-	    }
-
 	    if (_bakedDataEvent != null)
 	    {
 		_bakedDataEvent.Invoke(new HEU_BakedEventData(this, bSuccess, outputObjects, isNewBake));
@@ -3034,9 +2998,9 @@ namespace HoudiniEngineUnity
 	/// <param name="asset">The asset that cooked and invoking us</param>
 	/// <param name="bSuccess">Whether cook succeeded</param>
 	/// <param name="outputs">Output gameobjects</param>
-	public void NotifyUpstreamCooked(HEU_HoudiniAsset upstreamAsset, bool bSuccess, List<GameObject> outputs)
+	public void NotifyUpstreamCooked(HEU_CookedEventData Data)
 	{
-	    if (bSuccess)
+	    if (Data.CookSuccess)
 	    {
 		//Debug.LogFormat("NotifyUpstreamCooked from {0}", AssetName);
 		HEU_SessionBase session = GetAssetSession(true);
@@ -3061,14 +3025,14 @@ namespace HoudiniEngineUnity
 	    upstreamAsset.RemoveDownstreamConnection(this.NotifyUpstreamCooked);
 	}
 
-	private void AddDownstreamConnection(UnityEngine.Events.UnityAction<HEU_HoudiniAsset, bool, List<GameObject>> receiver)
+	private void AddDownstreamConnection(UnityEngine.Events.UnityAction<HEU_CookedEventData> receiver)
 	{
 	    // Doing remove first makes sure we don't have duplicate entries for the receiver
 	    _downstreamConnectionCookedEvent.RemoveListener(receiver);
 	    _downstreamConnectionCookedEvent.AddListener(receiver);
 	}
 
-	private void RemoveDownstreamConnection(UnityEngine.Events.UnityAction<HEU_HoudiniAsset, bool, List<GameObject>> receiver)
+	private void RemoveDownstreamConnection(UnityEngine.Events.UnityAction<HEU_CookedEventData> receiver)
 	{
 	    _downstreamConnectionCookedEvent.RemoveListener(receiver);
 	}
@@ -4462,9 +4426,6 @@ namespace HoudiniEngineUnity
 	    newAsset._toolsInfo = ScriptableObject.Instantiate(this._toolsInfo) as HEU_ToolsInfo;
 
 	    // Copy events
-	    newAsset._reloadEvent = this._reloadEvent;
-	    newAsset._cookedEvent = this._cookedEvent;
-	    newAsset._bakedEvent = this._bakedEvent;
 
 	    newAsset._reloadDataEvent = this._reloadDataEvent;
 	    newAsset._cookedDataEvent = this._cookedDataEvent;

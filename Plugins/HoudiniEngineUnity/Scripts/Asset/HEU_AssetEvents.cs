@@ -108,19 +108,6 @@ namespace HoudiniEngineUnity
     }
 
     /// <summary>
-    /// OBSOLETE, but don't want to annoy user with warning messages unless used
-    /// Callback when asset is reloaded.
-    /// <param name="HEU_HoudiniAsset">The asset that was reloaded.</param>
-    /// <param name="bool">Whether it was successful.</param>
-    /// <param name="GameObject">List of output gameobjects</param>
-    /// </summary>
-    [Serializable]
-    public class ReloadEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
-    {
-
-    }
-
-    /// <summary>
     /// Callback when asset is reloaded.
     /// <param name="ReloadEventData">The reload data.</param>
     /// </summary>
@@ -131,37 +118,11 @@ namespace HoudiniEngineUnity
     }
 
     /// <summary>
-    /// OBSOLETE, but don't want to annoy user with warning messages unless used
-    /// Callback when asset is cooked.
-    /// <param name="HEU_HoudiniAsset">The asset that was cooked.</param>
-    /// <param name="bool">Whether it was successful.</param>
-    /// <param name="GameObject">List of output gameobjects</param>
-    /// </summary>
-    [Serializable]
-    public class CookedEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
-    {
-
-    }
-
-    /// <summary>
     /// Callback when asset is cooked.
     /// <param name="CookedEventData">The reload data.</param>
     /// </summary>
     [Serializable]
     public class HEU_CookedDataEvent : UnityEvent<HEU_CookedEventData>
-    {
-
-    }
-
-    /// <summary>
-    /// OBSOLETE, but don't want to annoy user with warning messages unless used
-    /// Callback when asset is baked.
-    /// <param name="HEU_HoudiniAsset">The asset that was baked.</param>
-    /// <param name="bool">Whether it was successful.</param>
-    /// <param name="GameObject">List of output gameobjects</param>
-    /// </summary>
-    [Serializable]
-    public class BakedEvent : UnityEvent<HEU_HoudiniAsset, bool, List<GameObject>>
     {
 
     }

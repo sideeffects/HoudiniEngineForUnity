@@ -784,24 +784,15 @@ namespace HoudiniEngineUnity
 		    SerializedProperty reloadDataEvent = assetObject.FindProperty("_reloadDataEvent");
 		    EditorGUILayout.PropertyField(reloadDataEvent, new GUIContent("Rebuild Events"));
 
-		    SerializedProperty reloadEvent = assetObject.FindProperty("_reloadEvent");
-		    EditorGUILayout.PropertyField(reloadEvent, new GUIContent("Rebuild Events (OBSOLETE)"));
-
 		    HEU_EditorUI.DrawSeparator();
 
 		    SerializedProperty recookDataEvent = assetObject.FindProperty("_cookedDataEvent");
 		    EditorGUILayout.PropertyField(recookDataEvent, new GUIContent("Cooked Events"));
 
-		    SerializedProperty recookEvent = assetObject.FindProperty("_cookedEvent");
-		    EditorGUILayout.PropertyField(recookEvent, new GUIContent("Cooked Events (OBSOLETE)"));
-
 		    HEU_EditorUI.DrawSeparator();
 
 		    SerializedProperty bakedDataEvent = assetObject.FindProperty("_bakedDataEvent");
 		    EditorGUILayout.PropertyField(bakedDataEvent, new GUIContent("Baked Events"));
-
-		    SerializedProperty bakedEvent = assetObject.FindProperty("_bakedEvent");
-		    EditorGUILayout.PropertyField(bakedEvent, new GUIContent("Baked Events (OBSOLETE)"));
 
 		    HEU_EditorUI.DrawSeparator();
 
