@@ -1494,10 +1494,13 @@ namespace HoudiniEngineUnity
 	    session.GetNodeInfo(_assetID, ref _nodeInfo);
 	    session.GetAssetInfo(_assetID, ref _assetInfo);
 
-	    string nodeStatusAll = session.ComposeNodeCookResult(_assetID, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ALL);
-	    if (nodeStatusAll != "")
+	    if (HEU_PluginSettings.WriteCookLogs)
 	    {
-		session.AppendCookLog(nodeStatusAll);
+	 	string nodeStatusAll = session.ComposeNodeCookResult(_assetID, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ALL);
+	 	if (nodeStatusAll != "")
+	 	{
+		    session.AppendCookLog(nodeStatusAll);
+	 	}
 	    }
 
 	    string nodeStatusError = session.ComposeNodeCookResult(_assetID, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);

@@ -563,18 +563,26 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Check cook results for any errors
-	    if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_COOK_ERRORS && HEU_PluginSettings.WriteCookLogs)
+	    if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_COOK_ERRORS)
 	    {
 		// We should be able to continue even with these errors, but at least notify user.
 		string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);
 		Debug.LogWarning(string.Format("Houdini Engine: Cooking finished with some warnings for asset: {0}\n{1}", assetName, statusString));
-		session.AppendCookLog(statusString);
+		
+		if (HEU_PluginSettings.WriteCookLogs)
+		{
+		    session.AppendCookLog(statusString);
+		}
 	    }
 	    else if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_FATAL_ERRORS)
 	    {
 		string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
 		Debug.LogError(string.Format("Houdini Engine: Cooking failed for asset: {0}\n{1}", assetName, statusString));
-		session.AppendCookLog(statusString);
+		if (HEU_PluginSettings.WriteCookLogs)
+		{
+		    session.AppendCookLog(statusString);
+		}
+		
 		return false;
 	    }
 	    else
