@@ -1048,8 +1048,6 @@ namespace HoudiniEngineUnity
 	    // This is required in order to flag to Unity that the scene data has changed. Otherwise saving the scene does not work.
 	    HEU_EditorUtility.MarkSceneDirty();
 
-	    DoPostCookWork(session);
-
 	    SetCookStatus(AssetCookStatus.POSTLOAD, AssetCookResult.SUCCESS);
 
 	    // Finally load the saved preset and request another cook.
@@ -1161,6 +1159,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	private void DoPostCookWork(HEU_SessionBase session)
 	{
+	    UpdateTotalCookCount();
 	    foreach (HEU_ObjectNode objNode in _objectNodes)
 	    {
 		objNode.ProcessUnityScriptAttributes(session);
