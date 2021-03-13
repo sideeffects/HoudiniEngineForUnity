@@ -549,6 +549,8 @@ namespace HoudiniEngineUnity
 				}
 			    }
 
+			    terrainlayer.name = layer._layerName;
+
 			    if (bSetTerrainLayerProperties)
 			    {
 				if (!string.IsNullOrEmpty(layer._diffuseTexturePath))
@@ -591,7 +593,18 @@ namespace HoudiniEngineUnity
 				}
 				terrainlayer.tileSize = layer._tileSize;
 			    }
+
+			    // In order to retain the new TerrainLayer, it must be saved to the AssetDatabase.
+			    string layerFileNameWithExt = terrainlayer.name;
+			    if (!layerFileNameWithExt.EndsWith(HEU_Defines.HEU_EXT_TERRAINLAYER))
+			    {
+			    	layerFileNameWithExt += HEU_Defines.HEU_EXT_TERRAINLAYER;
+			    }
+
+			    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrainlayer, exportTerrainDataPath, null, layerFileNameWithExt, null);
+			
 			}
+
 			terrainData.terrainLayers = finalTerrainLayers.ToArray();
 		    }
 
