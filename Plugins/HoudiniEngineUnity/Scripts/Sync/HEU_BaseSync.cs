@@ -683,6 +683,10 @@ namespace HoudiniEngineUnity
 		    SetOutputVisiblity(terrainBuffers[t]);
 		}
 	    }
+
+#if UNITY_2018_3_OR_NEWER
+	    HEU_AssetDatabase.SaveAndRefreshDatabase();
+#endif
 	}
 
 	private void GenerateMesh(HAPI_NodeId cookNodeId, List<HEU_LoadBufferMesh> meshBuffers)
