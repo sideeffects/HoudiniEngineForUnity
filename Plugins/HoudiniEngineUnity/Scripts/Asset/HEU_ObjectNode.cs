@@ -617,29 +617,10 @@ namespace HoudiniEngineUnity
 			    // Object instancing via existing Unity object (path from point attribute)
 
 			    // Attribute owner type determines whether to use single instanced object (detail) or multiple (point)
-			    if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
+			    if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT ||
+			        unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
 			    {
 				parts[j].GenerateInstancesFromUnityAssetPathAttribute(session, unityInstanceAttrName);
-			    }
-			    else if (unityInstanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
-			    {
-				bool bInstanced = false;
-				int[] scriptAttr = new int[unityInstanceAttrInfo.count];
-				HEU_GeneralUtility.GetAttribute(session, _geoNodes[i].GeoID, parts[j].PartID, unityInstanceAttrName, ref unityInstanceAttrInfo, ref scriptAttr, session.GetAttributeStringData);
-				if (unityInstanceAttrInfo.exists)
-				{
-				    string assetPath = HEU_SessionManager.GetString(scriptAttr[0]);
-				    if (!string.IsNullOrEmpty(assetPath))
-				    {
-					parts[j].GenerateInstancesFromUnityAssetPath(session, assetPath, instancePrefixes);
-					bInstanced = true;
-				    }
-				}
-
-				if (!bInstanced)
-				{
-				    Debug.LogWarningFormat("Unable to get instanced object path from detail instance attribute!");
-				}
 			    }
 			    else
 			    {

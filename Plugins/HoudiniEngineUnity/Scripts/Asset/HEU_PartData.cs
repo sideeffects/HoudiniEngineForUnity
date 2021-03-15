@@ -782,7 +782,17 @@ namespace HoudiniEngineUnity
 
 	    string[] instancePathAttrValues = HEU_SessionManager.GetStringValuesFromStringIndices(instanceAttrID);
 
-	    Debug.AssertFormat(instanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, "Expected to parse {0} owner attribute but got {1} instead!", HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, instanceAttrInfo.owner);
+	    if (instanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL && instancePathAttrValues.Length > 0)
+	    {
+		string path = instancePathAttrValues[0];
+		instancePathAttrValues = new string[numInstances];
+		for (int i = 0; i < numInstances; i++)
+		{
+		    instancePathAttrValues[i] = path;
+		}
+	    }
+
+	    Debug.AssertFormat(instanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT || instanceAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL, "Expected to parse {0} owner attribute but got {1} instead!", HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, instanceAttrInfo.owner);
 	    Debug.AssertFormat(instancePathAttrValues.Length == numInstances, "Number of instances {0} does not match point attribute count {1} for part {2} of asset {3}",
 		    numInstances, instancePathAttrValues.Length, PartName, ParentAsset.AssetName);
 
@@ -947,83 +957,6 @@ namespace HoudiniEngineUnity
 	    if (tempGO != null)
 	    {
 		HEU_GeneralUtility.DestroyImmediate(tempGO, bRegisterUndo: false);
-	    }
-	}
-
-	/// <summary>
-	/// Generate instances from a single existing Unity asset.
-	/// </summary>
-	/// <param name="session"></param>
-	/// <param name="assetPath"></param>
-	public void GenerateInstancesFromUnityAssetPath(HEU_SessionBase session, string assetPath, string[] instancePrefixes)
-	{
-	    int numInstances = GetPartPointCount();
-	    if (numInstances <= 0)
-	    {
-		return;
-	    }
-
-	    HAPI_Transform[] instanceTransforms = new HAPI_Transform[numInstances];
-	    if (!HEU_GeneralUtility.GetArray3Arg(_geoID, _partID, HAPI_RSTOrder.HAPI_SRT, session.GetInstanceTransformsOnPart, instanceTransforms, 0, numInstances))
-	    {
-		return;
-	    }
-
-	    SetObjectInstancer(true);
-	    ObjectInstancesBeenGenerated = true;
-
-	    GameObject instancedAssetGameObject = null;
-
-	    HEU_ObjectInstanceInfo instanceInfo = GetObjectInstanceInfoWithObjectPath(assetPath);
-
-	    List<HEU_InstancedInput> validInstancedGameObjects = null;
-	    int instancedObjCount = 0;
-
-	    Vector3 rotationOffset = Vector3.zero;
-	    Vector3 scaleOffset = Vector3.one;
-
-	    if (instanceInfo != null && (instanceInfo._instancedInputs.Count > 0))
-	    {
-		validInstancedGameObjects = instanceInfo._instancedInputs;
-		instancedObjCount = validInstancedGameObjects.Count;
-	    }
-
-	    if (instancedObjCount == 0)
-	    {
-		HEU_AssetDatabase.ImportAsset(assetPath, HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
-		instancedAssetGameObject = HEU_AssetDatabase.LoadAssetAtPath(assetPath, typeof(GameObject)) as GameObject;
-	    }
-	    else
-	    {
-		// Object already instanced
-		return;
-	    }
-
-	    if (instancedAssetGameObject != null)
-	    {
-		for (int i = 0; i < numInstances; ++i)
-		{
-		    GameObject instancedGameObject;
-		    if (instancedAssetGameObject == null)
-		    {
-			// Get random override
-			int randomIndex = UnityEngine.Random.Range(0, instancedObjCount);
-			instancedGameObject = validInstancedGameObjects[randomIndex]._instancedGameObject;
-			rotationOffset = validInstancedGameObjects[randomIndex]._rotationOffset;
-			scaleOffset = validInstancedGameObjects[randomIndex]._scaleOffset;
-		    }
-		    else
-		    {
-			instancedGameObject = instancedAssetGameObject;
-		    }
-
-		    CreateNewInstanceFromObject(instancedGameObject, (i + 1), OutputGameObject.transform, ref instanceTransforms[i],
-			    HEU_Defines.HEU_INVALID_NODE_ID, assetPath, rotationOffset, scaleOffset, instancePrefixes, null);
-		}
-	    }
-	    else
-	    {
-		Debug.LogErrorFormat("Unable to load asset at {0} for instancing!", assetPath);
 	    }
 	}
 
