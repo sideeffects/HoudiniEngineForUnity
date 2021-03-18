@@ -82,6 +82,8 @@ namespace HoudiniEngineUnity
 
 	public bool IsAttribInstancer() { return _isAttribInstancer; }
 
+	public bool IsInstancerAnyType() { return IsPartInstancer() || IsObjectInstancer() || IsAttribInstancer(); }
+
 	[SerializeField]
 	private bool _isPartInstanced;
 
@@ -198,6 +200,8 @@ namespace HoudiniEngineUnity
 	    _objectInstanceInfos = new List<HEU_ObjectInstanceInfo>();
 
 	    _volumeLayerName = null;
+
+	    _generatedOutput.IsInstancer = IsInstancerAnyType();
 
 	    //Debug.LogFormat("PartData initialized with ID: {0} and name: {1}", partID, _partName);
 	}
@@ -1118,9 +1122,11 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+
 	/// <summary>
 	/// Copy relevant components from sourceGO to targetGO.
 	/// </summary>
+	/// <param name="partData">Part data that we're looking at.</param>
 	/// <param name="sourceGO">Source gameobject to copy from.</param>
 	/// <param name="targetGO">Target gameobject to copy to.</param>
 	/// <param name="assetName">Name of the asset.</param>
@@ -1131,13 +1137,11 @@ namespace HoudiniEngineUnity
 	/// <param name="assetDBObject">The asset database object to write out the persistent mesh data to. Could be null, in which case it might be created.</param>
 	/// <param name="assetObjectFileName">File name of the asset database object. This will be used to create new assetDBObject.</param>
 	/// <param name="lodTransformValues"> Data to sets the local transform of LOD after copy. Set to null if default </param>
-	private void CopyGameObjectComponents(GameObject sourceGO, GameObject targetGO, string assetName, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, bool bWriteMeshesToAssetDatabase,
+	private static void CopyGameObjectComponents(HEU_PartData partData, GameObject sourceGO, GameObject targetGO, string assetName, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, bool bWriteMeshesToAssetDatabase,
 		ref string bakedAssetPath, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bDeleteExistingComponents, bool bDontDeletePersistantResources,
 		List<TransformData> lodTransformValues)
 	{
 	    // Copy mesh, collider, material, and textures into its own directory in the Assets folder
-
-	    HEU_HoudiniAsset parentAsset = ParentAsset;
 
 	    // Handle LOD group. This should have child gameobjects whose components need to be parsed properly to make sure
 	    // the mesh and materials are properly copied.
@@ -1150,7 +1154,7 @@ namespace HoudiniEngineUnity
 		    targetLODGroup = targetGO.AddComponent<LODGroup>();
 		}
 
-		CopyChildGameObjects(sourceGO, targetGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
+		CopyChildGameObjects(partData, sourceGO, targetGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
 				ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, lodTransformValues != null);
 
 		LOD[] sourceLODs = sourceLODGroup.GetLODs();
@@ -1265,7 +1269,11 @@ namespace HoudiniEngineUnity
 		    targetMeshRenderer = HEU_EditorUtility.AddComponent<MeshRenderer>(targetGO, true) as MeshRenderer;
 		}
 
-		Material[] generatedMaterials = HEU_GeneratedOutput.GetGeneratedMaterialsForGameObject(_generatedOutput, sourceGO);
+		Material[] generatedMaterials = null;
+		if (partData != null)
+		{
+		    generatedMaterials = HEU_GeneratedOutput.GetGeneratedMaterialsForGameObject(partData._generatedOutput, sourceGO);
+		} 
 
 		Material[] materials = sourceMeshRenderer.sharedMaterials;
 		if (materials != null && materials.Length > 0)
@@ -1293,10 +1301,13 @@ namespace HoudiniEngineUnity
 			}
 
 			// If srcMaterial is a Unity material (not Houdini generated), then skip copying
-			HEU_MaterialData materialData = parentAsset.GetMaterialData(srcMaterial);
-			if (materialData != null && materialData.IsExistingMaterial())
+			if (partData != null)
 			{
-			    continue;
+			    HEU_MaterialData materialData = partData.ParentAsset.GetMaterialData(srcMaterial);
+			    if (materialData != null && materialData.IsExistingMaterial())
+			    {
+			        continue;
+			    }
 			}
 
 			// Check override material
@@ -1324,7 +1335,7 @@ namespace HoudiniEngineUnity
 			{
 			    // Material is not in Asset Database (probably default material). So create a copy of it in Asset Database.
 			    newMaterial = HEU_MaterialFactory.CopyMaterial(srcMaterial);
-			    HEU_MaterialFactory.WriteMaterialToAssetCache(newMaterial, bakedAssetPath, newMaterial.name);
+			    HEU_MaterialFactory.WriteMaterialToAssetCache(newMaterial, bakedAssetPath, newMaterial.name, bDeleteExistingComponents);
 			}
 
 			if (newMaterial != null)
@@ -1435,14 +1446,32 @@ namespace HoudiniEngineUnity
 		    */
 
 		    // We should get 5 groups matched: {full match}, Working, {asset name}, {geo name}, Terrain/Tile{index}
+		    // e.g.: "Assets/HoudiniEngineAssetCache/Working/simple_heightfield/heightfield_noise1/Terrain/Tile0/TerrainData.asset"
 		    if (match.Success && match.Groups.Count == 5)
 		    {
 			bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
 		    }
 		    else
-		    {	
+		    {
+
+			// pdg has a slightly different folder path:
+			// e.g. "Assets/HoudiniEngineAssetCache/Working/simple_PDG/PDGCache/Terrain/Terrain/Tile0/Terrain/TerrainData.asset"
+			 string pattern_pdg = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}(\w+){0}({1}{0}{2}[0-9]+){0}(\w+){0}TerrainData{3}",
+				    HEU_Platform.DirectorySeparatorStr,
+				    HEU_Defines.HEU_FOLDER_TERRAIN,
+				    HEU_Defines.HEU_FOLDER_TILE,
+				    HEU_Defines.HEU_EXT_ASSET);
+
+			Regex reg_pdg = new Regex(pattern_pdg);
+			Match match_pdg = reg_pdg.Match(sourceAssetPath);
+			if (match_pdg.Success)
+			{
+			    bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match_pdg.Groups[3].Value, match_pdg.Groups[5].Value);
+			}
+			else{
 			    string supposedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
-			    Debug.LogError("Invalid build path format: " +  supposedTerrainPath);
+			    Debug.LogErrorFormat("Invalid build path format\nSource: {0}\nPattern1: {1}\nPattern2: {2}", sourceAssetPath, pattern, pattern_pdg);
+			}
 		    }
 
 		    // We're going to copy the source terrain data asset file, then load the copy and assign to the target
@@ -1461,6 +1490,25 @@ namespace HoudiniEngineUnity
 			}
 			targetTerrainData.terrainLayers = tergetTerrainLayers;
 		    }
+
+		    Material srcMat = sourceTerrain.materialTemplate;
+		    if (srcMat != null)
+		    {
+			Material dstMat = HEU_MaterialFactory.CopyMaterial(srcMat);
+	        	#if UNITY_2019_2_OR_NEWER
+	        	    targetTerrain.materialTemplate = dstMat;
+			    HEU_MaterialFactory.WriteMaterialToAssetCache(dstMat, bakedTerrainPath, dstMat.name, bDeleteExistingComponents);
+	        	#else
+			    targetTerrain.materialType = sourceTerrain.materialType;
+	        	    targetTerrain.materialTemplate = dstMat;
+
+			    if (targetTerrain.materialType == Terrain.MaterialType.Custom)
+			    {
+				HEU_MaterialFactory.WriteMaterialToAssetCache(dstMat, bakedTerrainPath, dstMat.name, bDeleteExistingComponents);
+			    }
+	        	#endif
+		    }
+
 #endif
 
 		    targetTerrain.terrainData = targetTerrainData;
@@ -1515,7 +1563,7 @@ namespace HoudiniEngineUnity
 	/// <param name="assetObjectFileName">File name of the asset database object. This will be used to create new assetDBObject.</param>
 	/// <param name="bDeleteExistingComponents">True if should delete existing components to then re-add.</param>
 	/// <param name="bDontDeletePersistantResources">True if not to delete persisten file resources in the project.</param>
-	private void CopyChildGameObjects(GameObject sourceGO, GameObject targetGO, string assetName, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials,
+	private static void CopyChildGameObjects(HEU_PartData partData, GameObject sourceGO, GameObject targetGO, string assetName, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials,
 		bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bDeleteExistingComponents, bool bDontDeletePersistantResources,
 		bool bKeepPreviousTransformValues)
 	{
@@ -1557,7 +1605,7 @@ namespace HoudiniEngineUnity
 		}
 
 		// Copy component data
-		CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
+		CopyGameObjectComponents(partData, srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
 			ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, previousTransformValues);
 	    }
 
@@ -1614,24 +1662,21 @@ namespace HoudiniEngineUnity
 	/// <param name="assetObjectFileName">File name of the asset database object. This will be used to create new assetDBObject.</param>
 	/// <param name="bReconnectPrefabInstances">Reconnect prefab instances to its prefab parent.</param>
 	/// <param name="bKeepPreviousTransformValues">Keeps transform values of previous groups.</param>
-	public void BakePartToGameObject(GameObject targetGO, bool bDeleteExistingComponents, bool bDontDeletePersistantResources, bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bReconnectPrefabInstances, bool bKeepPreviousTransformValues)
+	public static void BakePartToGameObject(HEU_PartData partData, GameObject srcGO, GameObject targetGO, string assetName, bool bIsInstancer, bool bDeleteExistingComponents, bool bDontDeletePersistantResources, bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bReconnectPrefabInstances, bool bKeepPreviousTransformValues)
 	{
-	    GameObject outputGameObject = OutputGameObject;
-	    if (outputGameObject == null)
+	    if (srcGO == null)
 	    {
 		return;
 	    }
-	    else if (outputGameObject == targetGO)
+	    else if (srcGO == targetGO)
 	    {
 		Debug.LogError("Copy and target objects cannot be the same!");
 		return;
 	    }
 
-	    string assetName = ParentAsset.AssetName;
-
 	    Transform targetTransform = targetGO.transform;
 
-	    if (IsPartInstancer() || IsObjectInstancer() || IsAttribInstancer())
+	    if (bIsInstancer)
 	    {
 		// Instancer
 
@@ -1641,7 +1686,7 @@ namespace HoudiniEngineUnity
 		// Keeps track of unprocessed children. Any leftover will be destroyed.
 		List<GameObject> unprocessedTargetChildren = HEU_GeneralUtility.GetChildGameObjects(targetGO);
 
-		List<GameObject> srcChildGameObjects = HEU_GeneralUtility.GetChildGameObjects(outputGameObject);
+		List<GameObject> srcChildGameObjects = HEU_GeneralUtility.GetChildGameObjects(srcGO);
 		int numChildren = srcChildGameObjects.Count;
 		for (int i = 0; i < numChildren; ++i)
 		{
@@ -1711,7 +1756,7 @@ namespace HoudiniEngineUnity
 		    {
 			// Copy component data only if not a prefab instance. 
 			// Otherwise, copying prefab instances breaks the prefab connection and creates duplicates (e.g. instancing existing prefabs).
-			CopyGameObjectComponents(srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
+			CopyGameObjectComponents(partData, srcChildGO, targetChildGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
 				ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, previousTransformValues);
 		    }
 		    else
@@ -1751,10 +1796,32 @@ namespace HoudiniEngineUnity
 		}
 
 		// Copy component data
-		CopyGameObjectComponents(outputGameObject, targetGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
+		CopyGameObjectComponents(partData, srcGO, targetGO, assetName, sourceToTargetMeshMap, sourceToCopiedMaterials, bWriteMeshesToAssetDatabase, ref bakedAssetPath,
 			ref assetDBObject, assetObjectFileName, bDeleteExistingComponents, bDontDeletePersistantResources, previousTransformValues);
 
 	    }
+	}
+
+	/// <summary>
+	/// Bake this part out to the given targetGO. Existing components might be destroyed.
+	/// Supports baking of part and object instances.
+	/// </summary>
+	/// <param name="targetGO">Target gameobject to bake out to.</param>
+	/// <param name="bDeleteExistingComponents">Whether to destroy existing components on the targetGO.</param>
+	/// <param name="bDontDeletePersistantResources">Whether to delete persistant resources stored in the project.</param>
+	/// <param name="bWriteMeshesToAssetDatabase">Whether to store meshes to database. Required for prefabs.</param>
+	/// <param name="bakedAssetPath">Path to asset's database cache. Could be null in which case it will be filled.</param>
+	/// <param name="sourceToTargetMeshMap">Map of existing meshes to newly created meshes. This helps keep track of shared meshes that should be copied but still shared in new asset.</param>
+	/// <param name="sourceToCopiedMaterials">Map of existing materials with their new copied counterparts. Keeps track of which materials have been newly copied in order to reuse.</param>
+	/// <param name="assetDBObject">The asset database object to write out the persistent mesh data to. Could be null, in which case it might be created.</param>
+	/// <param name="assetObjectFileName">File name of the asset database object. This will be used to create new assetDBObject.</param>
+	/// <param name="bReconnectPrefabInstances">Reconnect prefab instances to its prefab parent.</param>
+	/// <param name="bKeepPreviousTransformValues">Keeps transform values of previous groups.</param>
+	public void BakePartToGameObject(GameObject targetGO, bool bDeleteExistingComponents, bool bDontDeletePersistantResources, bool bWriteMeshesToAssetDatabase, ref string bakedAssetPath, Dictionary<Mesh, Mesh> sourceToTargetMeshMap, Dictionary<Material, Material> sourceToCopiedMaterials, ref UnityEngine.Object assetDBObject, string assetObjectFileName, bool bReconnectPrefabInstances, bool bKeepPreviousTransformValues)
+	{
+
+	    bool isInstancer = IsInstancerAnyType();
+	    BakePartToGameObject(this, OutputGameObject, targetGO, ParentAsset.AssetName, isInstancer, bDeleteExistingComponents, bDontDeletePersistantResources, bWriteMeshesToAssetDatabase, ref bakedAssetPath, sourceToTargetMeshMap, sourceToCopiedMaterials, ref assetDBObject, assetObjectFileName, bReconnectPrefabInstances, bKeepPreviousTransformValues);
 	}
 
 	/// <summary>

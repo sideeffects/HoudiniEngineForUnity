@@ -792,7 +792,8 @@ namespace HoudiniEngineUnity
 	/// Otherwise uses type of asset to get subfolder name.</param>
 	/// <param name="assetFileName">The asset's file name</param>
 	/// <param name="type">The type of asset</param>
-	public static void CreateObjectInAssetCacheFolder(Object objectToCreate, string assetCacheRoot, string relativeFolderPath, string assetFileName, System.Type type)
+	/// <param name="bOverwriteExisting">Whether or not to overwrite if there is an existing file</param>
+	public static void CreateObjectInAssetCacheFolder(Object objectToCreate, string assetCacheRoot, string relativeFolderPath, string assetFileName, System.Type type, bool bOverwriteExisting)
 	{
 #if UNITY_EDITOR
 	    Debug.Assert(!string.IsNullOrEmpty(assetCacheRoot), "Must give valid assetCacheFolderPath to create object at");
@@ -829,9 +830,14 @@ namespace HoudiniEngineUnity
 	    HEU_AssetDatabase.CreatePathWithFolders(subFolderPath);
 
 	    // Add file name
-	    subFolderPath = HEU_Platform.BuildPath(subFolderPath, assetFileName);
+	    string finalAssetPath = HEU_Platform.BuildPath(subFolderPath, assetFileName);
 
-	    AssetDatabase.CreateAsset(objectToCreate, subFolderPath);
+	    if (HEU_Platform.DoesFileExist(finalAssetPath) && !bOverwriteExisting)
+	    {
+		finalAssetPath = AssetDatabase.GenerateUniqueAssetPath(finalAssetPath);
+	    }
+
+	    AssetDatabase.CreateAsset(objectToCreate, finalAssetPath);
 
 	    // Commented out AssetDatabase.Refresh() below because its slow and seems to be unnecessary.
 	    // Leaving it commented in case need to revisit due to problems with asset creation.
@@ -861,7 +867,7 @@ namespace HoudiniEngineUnity
 
 	    if (assetDBObject == null)
 	    {
-		HEU_AssetDatabase.CreateObjectInAssetCacheFolder(objectToAdd, exportRootPath, relativeFolderPath, assetObjectFileName, objectToAdd.GetType());
+		HEU_AssetDatabase.CreateObjectInAssetCacheFolder(objectToAdd, exportRootPath, relativeFolderPath, assetObjectFileName, objectToAdd.GetType(), bOverwriteExisting: true);
 		assetDBObject = objectToAdd;
 	    }
 	    else
@@ -1204,6 +1210,15 @@ namespace HoudiniEngineUnity
 #else
 	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return false;
+#endif
+	}
+
+	public static void SelectAssetAtPath(string path)
+	{
+#if UNITY_EDITOR
+	    Object obj = AssetDatabase.LoadAssetAtPath<Object>(path);
+	    
+	    Selection.activeObject = obj;
 #endif
 	}
 
