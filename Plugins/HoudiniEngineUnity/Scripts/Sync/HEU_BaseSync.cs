@@ -220,6 +220,38 @@ namespace HoudiniEngineUnity
 	    StartSync();
 	}
 
+	public virtual void Bake()
+	{
+	    if (_syncing)
+	    {
+		return;
+	    }
+
+	    string outputPath = HEU_AssetDatabase.CreateUniqueBakePath(this.gameObject.name);
+
+	    GameObject parentObj = new GameObject(this.gameObject.name);
+
+	    foreach (HEU_GeneratedOutput generatedOutput in _generatedOutputs)
+	    {
+		GameObject obj = new GameObject(generatedOutput._outputData._gameObject.name);
+
+		generatedOutput.WriteOutputToAssetCache(obj, outputPath, generatedOutput.IsInstancer);
+
+		obj.transform.parent = parentObj.transform;
+	    }
+
+	    string prefabPath = HEU_AssetDatabase.AppendPrefabPath(outputPath, parentObj.name);
+	    GameObject prefabGO = HEU_EditorUtility.SaveAsPrefabAsset(prefabPath, parentObj);
+	    if (prefabGO != null)
+	    {
+	    	HEU_EditorUtility.SelectObject(prefabGO);
+
+	    	Debug.LogFormat("Exported prefab to {0}", outputPath);
+	    }
+
+	    GameObject.DestroyImmediate(parentObj);
+	}
+
 	public virtual void Unload()
 	{
 	    if (_syncing)
@@ -399,7 +431,7 @@ namespace HoudiniEngineUnity
 			else
 			{
 			    string assetPathName = "TerrainData" + HEU_Defines.HEU_EXT_ASSET;
-			    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrain.terrainData, exportTerrainDataPath, null, assetPathName, typeof(TerrainData));
+			    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrain.terrainData, exportTerrainDataPath, null, assetPathName, typeof(TerrainData), true);
 			}
 
 		    }
@@ -601,7 +633,7 @@ namespace HoudiniEngineUnity
 			    	layerFileNameWithExt += HEU_Defines.HEU_EXT_TERRAINLAYER;
 			    }
 
-			    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrainlayer, exportTerrainDataPath, null, layerFileNameWithExt, null);
+			    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(terrainlayer, exportTerrainDataPath, null, layerFileNameWithExt, null, true);
 			
 			}
 
@@ -785,6 +817,8 @@ namespace HoudiniEngineUnity
 
 	    instancerBuffer._generatedOutput = new HEU_GeneratedOutput();
 	    instancerBuffer._generatedOutput._outputData._gameObject = instanceRootGO;
+
+	    instancerBuffer._generatedOutput.IsInstancer = true;
 	    _generatedOutputs.Add(instancerBuffer._generatedOutput);
 
 	    if (instancerBuffer._instanceNodeIDs != null && instancerBuffer._instanceNodeIDs.Length > 0)

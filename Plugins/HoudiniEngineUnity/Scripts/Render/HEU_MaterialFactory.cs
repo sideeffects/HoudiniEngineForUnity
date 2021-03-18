@@ -93,7 +93,7 @@ namespace HoudiniEngineUnity
 		if (bWriteToFile && !string.IsNullOrEmpty(assetCacheFolderPath))
 		{
 		    string materialFileName = materialName + HEU_Defines.HEU_EXT_MAT;
-		    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(material, assetCacheFolderPath, HEU_Defines.HEU_FOLDER_MATERIALS, materialFileName, typeof(Material));
+		    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(material, assetCacheFolderPath, HEU_Defines.HEU_FOLDER_MATERIALS, materialFileName, typeof(Material), bOverwriteExisting: true);
 		}
 	    }
 	    else
@@ -108,11 +108,10 @@ namespace HoudiniEngineUnity
 	    return GetNewMaterialWithShader(assetCacheFolderPath, HEU_PluginSettings.DefaultStandardShader, materialName, bWriteToFile);
 	}
 
-	public static void WriteMaterialToAssetCache(Material material, string assetCacheFolderPath, string materialName)
+	public static void WriteMaterialToAssetCache(Material material, string assetCacheFolderPath, string materialName, bool bOverwriteExisting)
 	{
 	    string materialFileName = materialName + HEU_Defines.HEU_EXT_MAT;
-	    //Debug.LogFormat("Writing material {0} out to {1}", materialFileName, assetCacheFolderPath);
-	    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(material, assetCacheFolderPath, HEU_Defines.HEU_FOLDER_MATERIALS, materialFileName, typeof(Material));
+	    HEU_AssetDatabase.CreateObjectInAssetCacheFolder(material, assetCacheFolderPath, HEU_Defines.HEU_FOLDER_MATERIALS, materialFileName, typeof(Material), bOverwriteExisting: bOverwriteExisting);
 	}
 
 	public static bool DoesMaterialExistInAssetCache(Material material)

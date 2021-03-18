@@ -46,6 +46,8 @@ namespace HoudiniEngineUnity
 
 	private GUIContent _statusSyncContent = new GUIContent("Syncing");
 
+	private GUIContent _bakeContent = new GUIContent("Bake", "Resync the contents of the geometry and place in the Bake folder.");
+
 	private GUIContent _unloadContent = new GUIContent("Unload", "Delete the file node and clean up all generated content.");
 	private GUIContent _eventMessageContent = new GUIContent("Log", "Status messages logged here.");
 
@@ -137,6 +139,22 @@ namespace HoudiniEngineUnity
 			    }
 			}
 		    }
+
+		    HEU_EditorUI.DrawSeparator();
+
+		    using (new EditorGUILayout.HorizontalScope())
+		    {
+			bool bLoaded = _geoSync.IsLoaded();
+
+			using (new EditorGUI.DisabledScope(!bLoaded))
+			{
+			    if (GUILayout.Button(_bakeContent))
+			    {
+				_geoSync.Bake();
+			    }
+			}
+		    }
+
 		}
 
 		if (_outputLogUIComponent != null &&_geoSync._log != null)

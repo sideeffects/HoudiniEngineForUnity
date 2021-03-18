@@ -42,6 +42,9 @@ namespace HoudiniEngineUnity
 	// List of child output datas (for LOD groups)
 	public List<HEU_GeneratedOutputData> _childOutputs = new List<HEU_GeneratedOutputData>();
 
+	private bool isInstancer = false;
+
+	public bool IsInstancer { get { return isInstancer; } set { isInstancer = value; } }
 
 	/// <summary>
 	/// Remove material overrides on given output, replacing
@@ -316,6 +319,38 @@ namespace HoudiniEngineUnity
 
 		destMeshRenderer.sharedMaterials = destAssignedMaterials;
 	    }
+	}
+
+	// Writes meshes and materials to the asset cache
+	// Note: It might be useful to merge with BakePartToGameObject in the future to include terrain automatically
+	public void WriteOutputToAssetCache(GameObject parentObject, string outputPath, bool bIsInstancer)
+	{
+	    BakeGameObjectComponents(_outputData._gameObject, parentObject, _outputData._gameObject.name, outputPath, bIsInstancer);
+	}
+
+	public static void BakeGameObjectComponents(GameObject sourceGO, GameObject targetGO, string assetName, string outputPath, bool bIsInstancer)
+	{
+	    UnityEngine.Object assetDBObject = null;
+	    Dictionary<Mesh, Mesh> sourceToTargetMeshMap = new Dictionary<Mesh, Mesh>();
+	    Dictionary<Material, Material> sourceToCopiedMaterials = new Dictionary<Material, Material>();
+	    string newAssetDBObjectFileName = HEU_AssetDatabase.AppendMeshesAssetFileName(assetName);
+
+	    HEU_PartData.BakePartToGameObject(
+		    partData: null,
+		    srcGO: sourceGO,
+		    targetGO: targetGO,
+		    assetName: assetName,
+		    bIsInstancer: bIsInstancer,
+		    bDeleteExistingComponents: false, // Materials might be overwritten if true
+		    bDontDeletePersistantResources: false,
+		    bWriteMeshesToAssetDatabase: true,
+		    bakedAssetPath: ref outputPath,
+		    sourceToTargetMeshMap,
+		    sourceToCopiedMaterials,
+		    assetDBObject: ref assetDBObject,
+		    assetObjectFileName: newAssetDBObjectFileName,
+		    bReconnectPrefabInstances: false,
+		    bKeepPreviousTransformValues: false ); 
 	}
     }
 
