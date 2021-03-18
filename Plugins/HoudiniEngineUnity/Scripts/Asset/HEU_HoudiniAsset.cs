@@ -119,6 +119,12 @@ namespace HoudiniEngineUnity
 
 	public bool LoadAssetFromMemory { get { return _loadAssetFromMemory; } set { _loadAssetFromMemory = value; } }
 
+	// If true, always overwrite the existing HDA file in a call to LoadAssetLibraryFromFile (Without showing dialog)
+	[SerializeField]
+	private bool _alwaysOverwriteOnLoad;
+
+	public bool AlwaysOverwriteOnLoad{ get { return _alwaysOverwriteOnLoad; } set { _alwaysOverwriteOnLoad = value; } }
+
 #pragma warning disable 0414
 	[SerializeField]
 	private UnityEngine.Object _assetFileObject;
@@ -1957,7 +1963,7 @@ namespace HoudiniEngineUnity
 	    bool bResult = false;
 	    if (!_loadAssetFromMemory)
 	    {
-		bResult = session.LoadAssetLibraryFromFile(validAssetPath, false, out libraryID);
+		bResult = session.LoadAssetLibraryFromFile(validAssetPath, _alwaysOverwriteOnLoad, out libraryID);
 	    }
 	    else
 	    {
@@ -1965,7 +1971,7 @@ namespace HoudiniEngineUnity
 		bResult = HEU_Platform.LoadFileIntoMemory(validAssetPath, out buffer);
 		if (bResult)
 		{
-		    bResult = session.LoadAssetLibraryFromMemory(buffer, false, out libraryID);
+		    bResult = session.LoadAssetLibraryFromMemory(buffer, _alwaysOverwriteOnLoad, out libraryID);
 		}
 	    }
 	    if (!bResult)

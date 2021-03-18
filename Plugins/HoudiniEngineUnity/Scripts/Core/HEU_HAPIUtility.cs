@@ -309,7 +309,8 @@ namespace HoudiniEngineUnity
 	/// <returns></returns>
 	public static GameObject InstantiateHDA(string filePath, Vector3 initialPosition, HEU_SessionBase session, 
 	    bool bBuildAsync, 
-	    bool bLoadFromMemory=false)
+	    bool bLoadFromMemory=false,
+	    bool bAlwaysOverwriteOnLoad = false)
 	{
 	    if (filePath == null || !DoesMappedPathExist(filePath))
 	    {
@@ -341,6 +342,7 @@ namespace HoudiniEngineUnity
 	    asset.SetupAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_HDA, filePath, rootGO, session);
 
 	    asset.LoadAssetFromMemory = bLoadFromMemory;
+	    asset.AlwaysOverwriteOnLoad = bAlwaysOverwriteOnLoad;
 
 	    // Build it in Houdini Engine
 	    asset.RequestReload(bBuildAsync);
