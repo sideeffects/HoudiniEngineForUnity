@@ -584,16 +584,23 @@ namespace HoudiniEngineUnity
 
 			    inputNode.ChangeInputType(session, HEU_InputNode.InputObjectType.UNITY_MESH);
 
-			    HEU_InputObjectInfo inputInfo = inputNode.AddInputEntryAtEnd(inputObject);
-			    inputInfo._useTransformOffset = false;
-			    inputNode.KeepWorldTransform = true;
-			    inputNode.PackGeometryBeforeMerging = false;
+			    HEU_InputObjectInfo inputInfo = inputNode.AddInputEntryAtEndMesh(inputObject);
+			    if (inputInfo != null)
+			    {
+				inputInfo._useTransformOffset = false;
+				inputNode.KeepWorldTransform = true;
+				inputNode.PackGeometryBeforeMerging = false;
 
-			    inputNode.RequiresUpload = true;
+				inputNode.RequiresUpload = true;
 
-			    asset.RequestCook(true, true, true, true);
+				asset.RequestCook(true, true, true, true);
 
-			    outputObjectsToSelect.Add(assetRoot.gameObject);
+				outputObjectsToSelect.Add(assetRoot.gameObject);
+			    }
+			    else
+			    {
+				Debug.LogErrorFormat("Invalid input format: {0}", inputObject.gameObject.name);
+			    }
 			}
 		    }
 		}
@@ -651,12 +658,19 @@ namespace HoudiniEngineUnity
 
 			inputNode.ChangeInputType(session, HEU_InputNode.InputObjectType.UNITY_MESH);
 
-			HEU_InputObjectInfo inputInfo = inputNode.AddInputEntryAtEnd(inputObject);
-			inputInfo._useTransformOffset = false;
-			inputNode.KeepWorldTransform = true;
-			inputNode.PackGeometryBeforeMerging = false;
+			HEU_InputObjectInfo inputInfo = inputNode.AddInputEntryAtEndMesh(inputObject);
+			if (inputInfo != null)
+			{
+			    inputInfo._useTransformOffset = false;
+			    inputNode.KeepWorldTransform = true;
+			    inputNode.PackGeometryBeforeMerging = false;
 
-			inputNode.RequiresUpload = true;
+			    inputNode.RequiresUpload = true;
+			}
+			else
+			{
+			    Debug.LogErrorFormat("Invalid input format: {0}", inputObject.gameObject.name);
+			}
 		    }
 
 		    asset.RequestCook(true, true, true, true);

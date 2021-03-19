@@ -265,7 +265,7 @@ namespace HoudiniEngineUnity
 	    return null;
 	}
 
-	public HEU_InputObjectInfo AddInputEntryAtEnd(GameObject newEntryGameObject)
+	public void AddInputEntryAtEnd(GameObject newEntryGameObject)
 	{
 	    if (_inputObjectType == InputObjectType.UNITY_MESH)
 	    {
@@ -275,6 +275,15 @@ namespace HoudiniEngineUnity
 	    {
 		InternalAddInputHDAAtEnd(newEntryGameObject);
 	    }
+	}
+
+	public HEU_InputObjectInfo AddInputEntryAtEndMesh(GameObject newEntryGameObject)
+	{
+	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    {
+		return InternalAddInputObjectAtEnd(newEntryGameObject);
+	    }
+
 	    return null;
 	}
 
