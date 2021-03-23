@@ -813,7 +813,7 @@ namespace HoudiniEngineUnity
 		    // Current material exists. Check if it has been overriden.
 		    if (i < numPreviousMaterials)
 		    {
-			if (currentMaterials[i] != previousMaterials[i])
+			if (currentMaterials[i] != null && currentMaterials[i] != previousMaterials[i])
 			{
 			    // Material has been overriden by user. Keep it.
 			    finalMaterialsList.Add(currentMaterials[i]);

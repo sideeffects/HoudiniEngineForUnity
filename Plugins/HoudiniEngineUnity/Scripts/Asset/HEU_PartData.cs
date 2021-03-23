@@ -1903,6 +1903,7 @@ namespace HoudiniEngineUnity
 			else
 			{
 			    // Set return state to false if no mesh and no colliders (i.e. nothing is generated)
+			    HEU_GeneralUtility.DestroyGeneratedComponents(_generatedOutput._outputData._gameObject);
 			    bResult = (geoCache._colliderInfos.Count > 0);
 			}
 
