@@ -1186,6 +1186,8 @@ namespace HoudiniEngineUnity
 
 		targetColliderMesh = null;
 		meshCollider.sharedMesh = null;
+
+		DestroyImmediate(meshCollider, true);
 	    }
 	}
 
