@@ -995,7 +995,10 @@ namespace HoudiniEngineUnity
 			    _parts[i].ObjectInstancesBeenGenerated = true;
 
 			    // Now populate scatter trees based on attributes on this part
-			    volumeCache.PopulateScatterTrees(session, GeoID, _parts[i].PartID, treeInstAttrInfo.count);
+			    foreach (HEU_VolumeCache cache in _volumeCaches)
+			    {
+			    	cache.PopulateScatterTrees(session, GeoID, _parts[i].PartID, treeInstAttrInfo.count);
+			    }
 			}
 		    }
 		}

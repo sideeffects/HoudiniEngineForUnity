@@ -845,6 +845,7 @@ namespace HoudiniEngineUnity
 	    List<TreePrototype> treePrototypes = new List<TreePrototype>();
 	    for (int i = 0; i < scatterTrees._treePrototypInfos.Count; ++i)
 	    {
+		Debug.Log("Tree path: " + scatterTrees._treePrototypInfos[i]._prefabPath);
 		prefabGO = HEU_AssetDatabase.LoadAssetAtPath(scatterTrees._treePrototypInfos[i]._prefabPath, typeof(GameObject)) as GameObject;
 		if (prefabGO != null)
 		{
@@ -877,6 +878,10 @@ namespace HoudiniEngineUnity
 		}
 
 		terrainData.SetTreeInstances(treeInstances, true);
+	    }
+	    else
+	    {
+		    Debug.Log("Failed to generate trees");
 	    }
 #endif
 	}
