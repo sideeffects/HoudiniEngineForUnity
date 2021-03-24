@@ -814,11 +814,11 @@ namespace HoudiniEngineUnity
 			}
 
 			// Look up TerrainData file path via attribute if user has set it
-			volumeBuffer._terrainDataPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeBuffer._id,
+			volumeBuffer._terrainDataPath = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, nodeID, volumeBuffer._id,
 				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 
 			// Look up TerrainData export file path via attribute if user has set it
-			volumeBuffer._terrainDataExportPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, nodeID, volumeBuffer._id,
+			volumeBuffer._terrainDataExportPath = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, nodeID, volumeBuffer._id,
 				HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_EXPORT_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 
 			// Load the TreePrototype buffers

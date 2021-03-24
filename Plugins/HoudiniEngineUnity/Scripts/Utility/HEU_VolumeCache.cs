@@ -612,11 +612,11 @@ namespace HoudiniEngineUnity
 	    Vector3 terrainOffsetPosition = Vector3.zero;
 
 	    // Look up TerrainData export file path via attribute if user has set it
-	    string userTerrainDataExportPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, _ownerNode.GeoID, heightLayer._part.PartID,
+	    string userTerrainDataExportPath = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, _ownerNode.GeoID, heightLayer._part.PartID,
 		    HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_EXPORT_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 
 	    // Look up TerrainData file via attribute if user has set it
-	    string terrainDataFile = HEU_GeneralUtility.GetAttributeStringValueSingle(session, _ownerNode.GeoID, heightLayer._part.PartID,
+	    string terrainDataFile = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, _ownerNode.GeoID, heightLayer._part.PartID,
 		    HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 	    if (!string.IsNullOrEmpty(terrainDataFile))
 	    {
