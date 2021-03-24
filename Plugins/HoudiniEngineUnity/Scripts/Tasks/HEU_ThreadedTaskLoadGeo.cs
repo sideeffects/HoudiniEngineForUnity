@@ -938,7 +938,10 @@ namespace HoudiniEngineUnity
 		    continue;
 		}
 
-		HEU_TerrainUtility.PopulateScatterTrees(session, nodeID, scatterInstancerParts[i].id, scatterInstancerParts[i].pointCount, ref volumeBuffer._scatterTrees);
+		foreach (HEU_LoadBufferVolume volume in volumeBuffers)
+		{
+		    HEU_TerrainUtility.PopulateScatterTrees(session, nodeID, scatterInstancerParts[i].id, scatterInstancerParts[i].pointCount, ref volume._scatterTrees);
+		}
 	    }
 
 	    return true;
