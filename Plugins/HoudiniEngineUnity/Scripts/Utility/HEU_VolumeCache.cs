@@ -488,8 +488,6 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_GeoNode geoNode = part.ParentGeoNode;
 
-	    Debug.Log("Update tile layer: " + this._tileIndex); 
-
 	    HAPI_VolumeInfo volumeInfo = new HAPI_VolumeInfo();
 	    bool bResult = session.GetVolumeInfo(geoNode.GeoID, part.PartID, ref volumeInfo);
 	    if (!bResult || volumeInfo.tupleSize != 1 || volumeInfo.zLength != 1 || volumeInfo.storage != HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
@@ -544,7 +542,6 @@ namespace HoudiniEngineUnity
 		List<HEU_TreePrototypeInfo> treePrototypeInfos = HEU_TerrainUtility.GetTreePrototypeInfosFromPart(session, geoNode.GeoID, part.PartID);
 		if (treePrototypeInfos != null)
 		{
-		    Debug.Log("Generate trees for: " + this._tileIndex); 
 		    if (_scatterTrees == null)
 		    {
 			_scatterTrees = new HEU_VolumeScatterTrees();
@@ -615,11 +612,11 @@ namespace HoudiniEngineUnity
 	    Vector3 terrainOffsetPosition = Vector3.zero;
 
 	    // Look up TerrainData export file path via attribute if user has set it
-	    string userTerrainDataExportPath = HEU_GeneralUtility.GetAttributeStringValueSingle(session, _ownerNode.GeoID, heightLayer._part.PartID,
+	    string userTerrainDataExportPath = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, _ownerNode.GeoID, heightLayer._part.PartID,
 		    HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_EXPORT_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 
 	    // Look up TerrainData file via attribute if user has set it
-	    string terrainDataFile = HEU_GeneralUtility.GetAttributeStringValueSingle(session, _ownerNode.GeoID, heightLayer._part.PartID,
+	    string terrainDataFile = HEU_GeneralUtility.GetAttributeStringValueSingleStrict(session, _ownerNode.GeoID, heightLayer._part.PartID,
 		    HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM);
 	    if (!string.IsNullOrEmpty(terrainDataFile))
 	    {
@@ -1130,7 +1127,7 @@ namespace HoudiniEngineUnity
 
 	public void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount)
 	{
-	    HEU_TerrainUtility.PopulateScatterTrees(session, geoID, partID, pointCount, _tileIndex, ref _scatterTrees);
+	    HEU_TerrainUtility.PopulateScatterTrees(session, geoID, partID, pointCount, ref _scatterTrees);
 	}
 
 	public void PopulateDetailPrototype(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
