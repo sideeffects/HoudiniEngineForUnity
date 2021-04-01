@@ -543,6 +543,27 @@ namespace HoudiniEngineUnity
 	    return bResult;
 	}
 
+	public static bool CookNodeInHoudiniWithOptions(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_CookOptions options, string assetName)
+	{
+	    bool bResult = session.CookNodeWithOptions(nodeID, options);
+	    if (bResult)
+	    {
+		return HEU_HAPIUtility.ProcessHoudiniCookStatus(session, assetName);
+	    }
+
+	    return bResult;
+	}
+
+	public static HAPI_CookOptions GetDefaultCookOptions(HEU_SessionBase session)
+	{
+		HAPI_CookOptions options = new HAPI_CookOptions();
+		HEU_SessionHAPI sessionHAPI = (HEU_SessionHAPI)session;
+		sessionHAPI.GetCookOptions(ref options);
+
+		return options;
+	}
+
+
 	/// <summary>
 	/// Waits until cooking has finished.
 	/// </summary>

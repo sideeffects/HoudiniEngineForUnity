@@ -805,7 +805,7 @@ namespace HoudiniEngineUnity
 	/// Returns default cook options for HAPI.
 	/// </summary>
 	/// <returns>Default cook options</returns>
-	private void GetCookOptions(ref HAPI_CookOptions cookOptions)
+	public void GetCookOptions(ref HAPI_CookOptions cookOptions)
 	{
 	    // In keeping consistency with other plugins, we don't support splitting by groups or attributes.
 	    // Though allowing it now behind an option.
@@ -1193,6 +1193,18 @@ namespace HoudiniEngineUnity
 
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
+
+	public override bool CookNodeWithOptions(HAPI_NodeId nodeID, HAPI_CookOptions options)
+	{
+
+	    //float cookTime = Time.realtimeSinceStartup;
+	    HAPI_Result result = HEU_HAPIImports.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref options);
+	    //Debug.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
+	    HandleStatusResult(result, "Cooking Node", false, true);
+
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 
 	/// <summary>
 	/// Rename an existing node.
@@ -1791,7 +1803,7 @@ namespace HoudiniEngineUnity
 	public override bool GetFaceCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] faceCounts, int start, int length)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
-	    HandleStatusResult(result, "Getting Face Counts", false, true);
+	    //HandleStatusResult(result, "Getting Face Counts", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
@@ -1851,6 +1863,20 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCurveCounts(ref _sessionData._HAPISession, nodeID, partID, counts, start, length);
 	    HandleStatusResult(result, "Getting Curve Counts", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetCurveOrders(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] orders, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCurveOrders(ref _sessionData._HAPISession, nodeID, partID, orders, start, length);
+	    HandleStatusResult(result, "Getting Curve Orders", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetCurveKnots(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] float[] knots, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCurveKnots(ref _sessionData._HAPISession, nodeID, partID, knots, start, length);
+	    HandleStatusResult(result, "Getting Curve Knots", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
@@ -1964,6 +1990,34 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_RevertGeo(ref _sessionData._HAPISession, nodeID);
 	    HandleStatusResult(result, "Revertting Geo", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_CurveInfo curveInfo)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveInfo(ref _sessionData._HAPISession, nodeID, partID, ref curveInfo);
+	    HandleStatusResult(result, "Setting Curve Info", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetCurveCounts(HAPI_NodeId nodeID, HAPI_PartId partID, int[] counts, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveCounts(ref _sessionData._HAPISession, nodeID, partID, counts, start, length);
+	    HandleStatusResult(result, "Setting Curve Counts", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetCurveOrders(HAPI_NodeId nodeID, HAPI_PartId partID, int[] orders, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveOrders(ref _sessionData._HAPISession, nodeID, partID, orders, start, length);
+	    HandleStatusResult(result, "Setting Curve Orders", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetCurveKnots(HAPI_NodeId nodeID, HAPI_PartId partID, float[] knots, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveKnots(ref _sessionData._HAPISession, nodeID, partID, knots, start, length);
+	    HandleStatusResult(result, "Setting Curve Knots", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 

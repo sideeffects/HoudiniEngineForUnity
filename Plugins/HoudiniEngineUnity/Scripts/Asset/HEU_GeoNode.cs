@@ -128,7 +128,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Destroy all generated data.
 	/// </summary>
-	public void DestroyAllData()
+	public void DestroyAllData(bool bIsRebuild = false)
 	{
 	    HEU_PartData.DestroyParts(_parts);
 
@@ -152,7 +152,7 @@ namespace HoudiniEngineUnity
 		{
 		    ParentAsset.RemoveCurve(_geoCurve);
 		}
-		_geoCurve.DestroyAllData();
+		_geoCurve.DestroyAllData(bIsRebuild);
 		HEU_GeneralUtility.DestroyImmediate(_geoCurve);
 		_geoCurve = null;
 	    }
@@ -618,6 +618,11 @@ namespace HoudiniEngineUnity
 	    // to at least set default values.
 	    HAPI_PartId partID = _geoInfo.partCount > 0 ? 0 : HEU_Defines.HEU_INVALID_NODE_ID;
 	    _geoCurve.UpdateCurve(session, partID);
+	    if (!bNewCurve)
+	    {
+	        _geoCurve.UpdateCurveInputForCustomAttributes(session, parentAsset);
+	    }
+
 	    _geoCurve.GenerateMesh(_geoCurve._targetGameObject);
 
 	    bool bIsVisible = IsVisible() && HEU_PluginSettings.Curves_ShowInSceneView;

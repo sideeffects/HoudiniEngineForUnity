@@ -174,6 +174,11 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private int _totalCookCount;
 
+	// Map of (Curve name) -> List of curve node data for saving scale/rotation values between rebuilds.
+	[SerializeField]
+	private Dictionary<string, List<CurveNodeData>> _savedCurveNodeData = new Dictionary<string, List<CurveNodeData>>();
+	public Dictionary<string, List<CurveNodeData>> SavedCurveNodeData { get { return _savedCurveNodeData; } }
+
 	// BUILD & COOK -----------------------------------------------------------------------------------------------
 
 	public enum AssetBuildAction
@@ -399,6 +404,16 @@ namespace HoudiniEngineUnity
 	private Vector3 _curveProjectDirection = Vector3.down;
 #pragma warning restore 0414
 
+	[SerializeField]
+	private bool _curveDisableScaleRotation = false;
+
+	public bool CurveDisableScaleRotation { get { return _curveDisableScaleRotation; } set { _curveDisableScaleRotation = value; } }
+
+	[SerializeField]
+	private bool _curveCookOnDrag = true;
+
+	public bool CurveCookOnDrag { get { return _curveCookOnDrag; } set { _curveCookOnDrag = value; } }
+
 	// INPUT NODES ------------------------------------------------------------------------------------------------
 
 	[SerializeField]
@@ -475,6 +490,7 @@ namespace HoudiniEngineUnity
 	    _sessionID = session.GetSessionData().SessionID;
 
 	    _totalCookCount = 0;
+	    _savedCurveNodeData.Clear();
 	}
 
 	/// <summary>
@@ -886,7 +902,7 @@ namespace HoudiniEngineUnity
 		_sessionID = HEU_SessionData.INVALID_SESSION_ID;
 	    }
 
-	    DeleteAllGeneratedData();
+	    DeleteAllGeneratedData(bIsRebuild: true);
 
 	    // Setting the session ID to the session that this asset will now be created in.
 	    _sessionID = session.GetSessionData().SessionID;
@@ -1744,7 +1760,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Delete generated data used by this asset.
 	/// </summary>
-	public void DeleteAllGeneratedData()
+	public void DeleteAllGeneratedData(bool bIsRebuild = false)
 	{
 	    if (_assetID != HEU_Defines.HEU_INVALID_NODE_ID)
 	    {
@@ -1759,7 +1775,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_objectNodes[i] != null)
 		    {
-			_objectNodes[i].DestroyAllData();
+			_objectNodes[i].DestroyAllData(bIsRebuild);
 			HEU_GeneralUtility.DestroyImmediate(_objectNodes[i]);
 		    }
 		}
@@ -2175,6 +2191,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (curve.IsEditable())
 		{
+		    curve.UpdateCurveInputForCustomAttributes(session, this);
 		    HEU_Parameters curveParameters = curve.Parameters;
 		    if (curveParameters != null)
 		    {
@@ -4405,6 +4422,8 @@ namespace HoudiniEngineUnity
 	    newAsset._curveDrawCollision = this._curveDrawCollision;
 	    newAsset._curveDrawColliders = new List<Collider>(this._curveDrawColliders);
 	    newAsset._curveDrawLayerMask = this._curveDrawLayerMask;
+	    newAsset._curveDisableScaleRotation = this._curveDisableScaleRotation;
+	    newAsset._curveCookOnDrag = this._curveCookOnDrag;
 
 	    // Upload parameter preset
 	    newAsset.UploadParameterPresetToHoudini(newAsset.GetAssetSession(false));

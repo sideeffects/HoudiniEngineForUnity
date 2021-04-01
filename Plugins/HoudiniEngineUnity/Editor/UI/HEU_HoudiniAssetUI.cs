@@ -102,6 +102,9 @@ namespace HoudiniEngineUnity
 
 	private static GUIContent _loadPresetButton = new GUIContent("Load HDA Preset", "Load a HDA preset file into this asset and cook it.");
 
+	private static GUIContent _useCurveScaleRotContent = new GUIContent("Disable Curve scale/rot", "Disables the usage of scale/rot attributes. Useful if the scale/rot attribute values are causing issues with your curve.");
+	private static GUIContent _cookCurveOnDragContent = new GUIContent("Cook Curve on Drag", "Cooks the cook while you are dragging the curve point. Useful if you need responsiveness over performance. Disable this option to improve performance.");
+	
 	//	LOGIC -----------------------------------------------------------------------------------------------------
 
 	private void OnEnable()
@@ -889,6 +892,22 @@ namespace HoudiniEngineUnity
 			    }
 			}
 
+
+			SerializedProperty useScaleRotProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveDisableScaleRotation");
+
+			bool oldUseScaleRotValue = useScaleRotProperty.boolValue;
+			useScaleRotProperty.boolValue = EditorGUILayout.Toggle(_useCurveScaleRotContent, useScaleRotProperty.boolValue);
+			if (useScaleRotProperty.boolValue != oldUseScaleRotValue)
+			{
+			    for (int i = 0; i < curves.Count; ++i)
+			    {
+			        curves[i].SetEditState(HEU_Curve.CurveEditState.REQUIRES_GENERATION);
+			    }
+			}
+
+			SerializedProperty curveCookOnDragProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveCookOnDrag");
+			curveCookOnDragProperty.boolValue = EditorGUILayout.Toggle(_cookCurveOnDragContent, curveCookOnDragProperty.boolValue);
+
 			EditorGUI.indentLevel--;
 
 			HEU_EditorUI.DrawSeparator();
@@ -958,7 +977,7 @@ namespace HoudiniEngineUnity
 		    (_curveEditor as HEU_CurveUI).UpdateSceneCurves(asset);
 
 		    bool bRequiresCook = !System.Array.TrueForAll(curvesArray, c => c.EditState != HEU_Curve.CurveEditState.REQUIRES_GENERATION);
-		    if (bRequiresCook)
+		    if (bRequiresCook && HEU_PluginSettings.CookingEnabled && asset.AutoCookOnParameterChange)
 		    {
 			_houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
 		    }

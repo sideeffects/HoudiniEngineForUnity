@@ -127,6 +127,9 @@ namespace HoudiniEngineUnity
 	public const string HAPI_ATTRIB_INSTANCE = "instance";
 	public const string HAPI_ATTRIB_ORIENT = "orient";
 
+	public const string HAPI_ATTRIB_SCALE = "scale";
+	public const string HAPI_ATTRIB_ROTATION = "rot";
+
 	public const string HAPI_UNGROUPED_GROUP_NAME = "__ungrouped_group";
 
 	// Handle types
@@ -256,9 +259,14 @@ namespace HoudiniEngineUnity
 	public const string MAT_OGL_DIFF_ATTR = "ogl_diff";
 	public const string MAT_OGL_SPEC_ATTR = "ogl_spec";
 
-	// Parameters
+	// Curve Parameters
 	public const string CURVE_COORDS_PARAM = "coords";
+	public const string CURVE_TYPE_PARAM = "type";
+	public const string CURVE_METHOD_PARAM = "method";
+	public const string CURVE_CLOSE_PARAM = "close";
+	public const string CURVE_REVERSE_PARAM = "reverse";
 
+	// Attribute store
 	public const string HENGINE_STORE_ATTR = "hengine_attr_store";
 
 	// Unity Attributes
