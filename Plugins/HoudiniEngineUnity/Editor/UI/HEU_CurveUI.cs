@@ -753,8 +753,8 @@ namespace HoudiniEngineUnity
 			if (selectedPoints.Count > 0)
 			{
 			    HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
-			    handleRotation = curve._curveNodeData[selectedPoints[0]].rotation;
-			    handleScale = curve._curveNodeData[selectedPoints[0]].scale;
+			    handleRotation = curve.CurveNodeData[selectedPoints[0]].rotation;
+			    handleScale = curve.CurveNodeData[selectedPoints[0]].scale;
 			}
 			}
 		    }

@@ -309,7 +309,8 @@ namespace HoudiniEngineUnity
 	/// <returns></returns>
 	public static GameObject InstantiateHDA(string filePath, Vector3 initialPosition, HEU_SessionBase session, 
 	    bool bBuildAsync, 
-	    bool bLoadFromMemory=false)
+	    bool bLoadFromMemory=false,
+	    GameObject rootGO = null)
 	{
 	    if (filePath == null || !DoesMappedPathExist(filePath))
 	    {
@@ -318,7 +319,15 @@ namespace HoudiniEngineUnity
 
 	    // This will be the root GameObject for the HDA. Adding HEU_HoudiniAssetRoot
 	    // allows to use a custom Inspector.
-	    GameObject rootGO = new GameObject(HEU_Defines.HEU_DEFAULT_ASSET_NAME);
+	    if (rootGO == null)
+	    {
+	        rootGO = new GameObject(HEU_Defines.HEU_DEFAULT_ASSET_NAME);
+	    }
+	    else
+	    {
+		rootGO.name = HEU_Defines.HEU_DEFAULT_ASSET_NAME;
+	    }
+
 	    HEU_HoudiniAssetRoot assetRoot = rootGO.AddComponent<HEU_HoudiniAssetRoot>();
 
 	    // Under the root, we'll add the HEU_HoudiniAsset onto another GameObject
@@ -613,7 +622,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-	public static GameObject CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType assetType, string rootName = "HoudiniAsset", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true)
+	public static GameObject CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType assetType, string rootName = "HoudiniAsset", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true, GameObject rootGO = null)
 	{
 	    if (session == null)
 	    {
@@ -627,11 +636,15 @@ namespace HoudiniEngineUnity
 
 	    // This will be the root GameObject for the HDA. Adding HEU_HoudiniAssetRoot
 	    // allows to use a custom Inspector.
-	    GameObject rootGO = new GameObject();
-	    HEU_HoudiniAssetRoot assetRoot = rootGO.AddComponent<HEU_HoudiniAssetRoot>();
+	    if (rootGO == null)
+	    {
+		rootGO = new GameObject();
+	    }
 
 	    // Set the game object's name to the asset's name
 	    rootGO.name = string.Format("{0}{1}", rootName, rootGO.GetInstanceID());
+	    HEU_HoudiniAssetRoot assetRoot = rootGO.AddComponent<HEU_HoudiniAssetRoot>();
+
 
 	    // Under the root, we'll add the HEU_HoudiniAsset onto another GameObject
 	    // This will be marked as EditorOnly to strip out for builds
@@ -672,18 +685,18 @@ namespace HoudiniEngineUnity
 	/// Creates a new Curve asset in scene, as well as in a Houdini session.
 	/// </summary>
 	/// <returns>A valid curve asset gameobject or null if failed.</returns>
-	public static GameObject CreateNewCurveAsset(string name = "HoudiniCurve", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true)
+	public static GameObject CreateNewCurveAsset(string name = "HoudiniCurve", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true, GameObject rootGO = null)
 	{
-	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE, name, parentTransform, session, bBuildAsync);
+	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE, name, parentTransform, session, bBuildAsync, rootGO);
 	}
 
 	/// <summary>
 	/// Creates a new input asset in scene, as well as in a Houdini session.
 	/// </summary>
 	/// <returns>A valid input asset gameobject or null if failed.</returns>
-	public static GameObject CreateNewInputAsset(string name = "HoudiniInput", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true)
+	public static GameObject CreateNewInputAsset(string name = "HoudiniInput", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true, GameObject rootGO = null)
 	{
-	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_INPUT, name, parentTransform, session, bBuildAsync);
+	    return CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_INPUT, name, parentTransform, session, bBuildAsync, rootGO);
 	}
 
 	/// <summary>

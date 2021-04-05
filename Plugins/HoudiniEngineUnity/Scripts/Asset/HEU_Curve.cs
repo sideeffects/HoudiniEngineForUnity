@@ -89,7 +89,9 @@ namespace HoudiniEngineUnity
 	public HAPI_NodeId GeoID { get { return _geoID; } }
 
 	[SerializeField]
-	public List<CurveNodeData> _curveNodeData = new List<CurveNodeData>(); // TODO; Set this back to private
+	private List<CurveNodeData> _curveNodeData = new List<CurveNodeData>();
+
+	public List<CurveNodeData> CurveNodeData { get { return _curveNodeData; }}
 
 	[SerializeField]
 	private Vector3[] _vertices;
@@ -150,6 +152,7 @@ namespace HoudiniEngineUnity
 	    LAYERMASK
 	}
 
+	[SerializeField]
 	private HEU_HoudiniAsset _parentAsset;
 
 	// LOGIC ------------------------------------------------------------------------------------------------------
@@ -469,6 +472,7 @@ namespace HoudiniEngineUnity
 		HAPI_CookOptions cookOptions = HEU_HAPIUtility.GetDefaultCookOptions(session);
 		cookOptions.maxVerticesPerPrimitive = -1;
 		cookOptions.refineCurveToLinear = false;
+
 		if (!HEU_HAPIUtility.CookNodeInHoudiniWithOptions(session, curveIdNode, cookOptions, CurveName))
 		{
 		    Debug.LogWarning("Unable to cook curve part!" + warningMessage);
@@ -749,6 +753,7 @@ namespace HoudiniEngineUnity
 		    }
 		}
 
+
 		if (bAddRotations)
 		{
 		    HAPI_AttributeInfo attributeInfoRotation = new HAPI_AttributeInfo();
@@ -775,6 +780,8 @@ namespace HoudiniEngineUnity
 		        curveRotations[i * 4 + 1] = rotQuat[1];
 		        curveRotations[i * 4 + 2] = rotQuat[2];
 		        curveRotations[i * 4 + 3] = rotQuat[3];
+
+
 		    }
 
 		    session.SetAttributeFloatData(curveIdNode, 0, HEU_Defines.HAPI_ATTRIB_ROTATION, ref attributeInfoRotation, curveRotations, 0, attributeInfoRotation.count);
@@ -1121,6 +1128,22 @@ namespace HoudiniEngineUnity
 	    {
 		_parameters.DownloadAsDefaultPresetData(session);
 	    }
+	}
+
+	public List<CurveNodeData> DuplicateCurveNodeData()
+	{
+	    List<CurveNodeData> curveNodes = new List<CurveNodeData>();
+	    foreach (CurveNodeData curveData in _curveNodeData)
+	    {
+		curveNodes.Add(new CurveNodeData(curveData));
+	    }
+
+	    return curveNodes;
+	}
+
+	public void SetCurveNodeData(List<CurveNodeData> curveNodeData)
+	{
+	    _curveNodeData = curveNodeData;
 	}
     }
 
