@@ -833,6 +833,8 @@ namespace HoudiniEngineUnity
 	    {
 		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.RELOAD));
 	    }
+
+	    ClearInvalidLists();
 		
 	    bool bResult = false;
 
@@ -1290,6 +1292,9 @@ namespace HoudiniEngineUnity
 		_preAssetEvent.Invoke(new HEU_PreAssetEventData(this, HEU_AssetEventType.COOK));
 	    }
 
+	    // Lists can be broken in Undo
+	    ClearInvalidLists();
+
 	    HEU_SessionBase session = GetAssetSession(true);
 	    if (session == null)
 	    {
@@ -1549,10 +1554,7 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    // Lists can be broken in Undo
-	    _objectNodes = _objectNodes.Filter((HEU_ObjectNode node) => node != null );
-	    _curves = _curves.Filter((HEU_Curve curve) => curve != null );
-	    _materialCache = _materialCache.Filter((HEU_MaterialData data) => data != null);
+
 
 
 	    // We will always regenerate parameters after cooking to make sure we're in sync.
@@ -1926,6 +1928,8 @@ namespace HoudiniEngineUnity
 
 		_parameters.UploadPresetData(session);
 	    }
+	    
+	    ClearInvalidCurves();
 
 	    List<HEU_Curve> curves = GetCurves();
 	    foreach (HEU_Curve curve in curves)
@@ -4430,6 +4434,14 @@ namespace HoudiniEngineUnity
 	    
 	    // See: HasBeenInstantiated()
 	    return this._objectNodes[0].ParentAsset;
+	}
+
+	private void ClearInvalidLists()
+	{
+	    // Lists can be broken in Undo
+	    _objectNodes = _objectNodes.Filter((HEU_ObjectNode node) => node != null );
+	    _curves = _curves.Filter((HEU_Curve curve) => curve != null );
+	    _materialCache = _materialCache.Filter((HEU_MaterialData data) => data != null);
 	}
 
 
