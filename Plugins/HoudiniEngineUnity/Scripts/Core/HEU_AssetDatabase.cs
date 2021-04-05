@@ -837,7 +837,14 @@ namespace HoudiniEngineUnity
 		finalAssetPath = AssetDatabase.GenerateUniqueAssetPath(finalAssetPath);
 	    }
 
-	    AssetDatabase.CreateAsset(objectToCreate, finalAssetPath);
+	    if (AssetDatabase.Contains(objectToCreate))
+	    {
+		AssetDatabase.SaveAssets();
+	    }
+	    else
+	    {
+	        AssetDatabase.CreateAsset(objectToCreate, finalAssetPath);
+	    }
 
 	    // Commented out AssetDatabase.Refresh() below because its slow and seems to be unnecessary.
 	    // Leaving it commented in case need to revisit due to problems with asset creation.
