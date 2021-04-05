@@ -255,6 +255,17 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public void OnSceneGUI()
 	{
+	
+	    if (_houdiniAsset == null)
+	    {
+		return;
+	    }
+
+	    if (!_houdiniAsset.IsAssetValid())
+	    {
+		return;
+	    }
+
 	    if ((Event.current.type == EventType.ValidateCommand && Event.current.commandName.Equals("UndoRedoPerformed")))
 	    {
 		Event.current.Use();
@@ -262,13 +273,11 @@ namespace HoudiniEngineUnity
 
 	    if ((Event.current.type == EventType.ExecuteCommand && Event.current.commandName.Equals("UndoRedoPerformed")))
 	    {
-		if (_houdiniAsset != null)
-		{
-		    // On Undo, need to check which parameters have changed in order to update and recook.
-		    _houdiniAsset.SyncInternalParametersForUndoCompare();
 
-		    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
-		}
+		// On Undo, need to check which parameters have changed in order to update and recook.
+		_houdiniAsset.SyncInternalParametersForUndoCompare();
+
+		_houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
 
 		// Force a repaint here to update the UI when Undo is invoked. Handles case where the Inspector window is
 		// no longer the focus. Without this the Inspector window still shows old value until user selects it.
@@ -821,6 +830,12 @@ namespace HoudiniEngineUnity
 
 	private void DrawCurvesSection(HEU_HoudiniAsset asset, SerializedObject assetObject)
 	{
+	    if (!asset.IsAssetValid())
+	    {
+		return;
+	    }
+
+
 	    if (asset.GetEditableCurveCount() <= 0)
 	    {
 		return;
@@ -962,7 +977,7 @@ namespace HoudiniEngineUnity
 
 	private void DrawSceneElements(HEU_HoudiniAsset asset)
 	{
-	    if (asset == null)
+	    if (asset == null || !asset.IsAssetValid())
 	    {
 		return;
 	    }

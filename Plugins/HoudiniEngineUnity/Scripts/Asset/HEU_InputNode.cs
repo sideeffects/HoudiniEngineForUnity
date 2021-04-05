@@ -532,7 +532,7 @@ namespace HoudiniEngineUnity
 
 	private void DisconnectConnectedMergeNode(HEU_SessionBase session)
 	{
-	    if (session != null)
+	    if (session != null && _parentAsset != null)
 	    {
 		//Debug.LogWarningFormat("Disconnecting Node Input for _nodeID={0} with type={1}", _nodeID, _inputNodeType);
 

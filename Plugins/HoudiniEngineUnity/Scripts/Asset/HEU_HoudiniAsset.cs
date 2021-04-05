@@ -1424,7 +1424,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (!_parameters.UploadValuesToHoudini(session, this, bCheckParamsChanged, bForceUploadInputs))
 		    {
-			Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}", AssetName);
+			Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}. Please rebuild this asset.", AssetName);
 		    }
 
 		    bParamsUpdated = true;
@@ -1543,6 +1543,17 @@ namespace HoudiniEngineUnity
 		Debug.LogErrorFormat(resultString);
 		return;
 	    }
+
+	    if (!IsAssetValid())
+	    {
+		return;
+	    }
+
+	    // Lists can be broken in Undo
+	    _objectNodes = _objectNodes.Filter((HEU_ObjectNode node) => node != null );
+	    _curves = _curves.Filter((HEU_Curve curve) => curve != null );
+	    _materialCache = _materialCache.Filter((HEU_MaterialData data) => data != null);
+
 
 	    // We will always regenerate parameters after cooking to make sure we're in sync.
 	    GenerateParameters(session);
@@ -3442,8 +3453,16 @@ namespace HoudiniEngineUnity
 	    return null;
 	}
 
+	// Curves can be invalid if destroyed by undo.
+	public void ClearInvalidCurves()
+	{
+	    _curves = _curves.Filter((HEU_Curve curve) => curve != null);
+	}
+
 	public int GetEditableCurveCount()
 	{
+	    ClearInvalidCurves();
+
 	    int count = 0;
 	    foreach (HEU_Curve curve in _curves)
 	    {
@@ -4287,7 +4306,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    HEU_SessionBase session = GetAssetSession(false);
-	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync())
+	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync() || !IsAssetValid())
 	    {
 		return false;
 	    }
