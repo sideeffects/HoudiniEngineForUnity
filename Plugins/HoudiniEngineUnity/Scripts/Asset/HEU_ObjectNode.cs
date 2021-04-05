@@ -153,13 +153,13 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Destroy all data.
 	/// </summary>
-	public void DestroyAllData()
+	public void DestroyAllData(bool bIsRebuild = false)
 	{
 	    if (_geoNodes != null)
 	    {
 		for (int i = 0; i < _geoNodes.Count; ++i)
 		{
-		    _geoNodes[i].DestroyAllData();
+		    _geoNodes[i].DestroyAllData(bIsRebuild);
 		    HEU_GeneralUtility.DestroyImmediate(_geoNodes[i]);
 		}
 		_geoNodes.Clear();

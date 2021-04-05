@@ -715,6 +715,11 @@ namespace HoudiniEngineUnity
 	    bool isDraggingPoints = false;
 	    bool wasDraggingPoints = false;
 
+	    bool cookWhileDragging = false;
+
+	    bool disableCurveScaleRot = false;
+
+
 	    // Draw the curve points
 	    EditModeDrawCurvePoints(currentEvent, eventType, ref numSelectedPoints, ref bounds, ref bInteractionOcurred);
 
@@ -723,54 +728,168 @@ namespace HoudiniEngineUnity
 	    if (numSelectedPoints > 0)
 	    {
 		// Drag selected points
-
-		Vector3 dragHandlePosition = bounds.center;
-
-		// Let Unity do the transform handle magic
-		Vector3 newPosition = Handles.PositionHandle(dragHandlePosition, Quaternion.identity);
+		Vector3 handleCenter = bounds.center;
 		isDraggingPoints = (EditorGUIUtility.hotControl != 0);
+		cookWhileDragging = asset.CurveCookOnDrag;
+		disableCurveScaleRot = asset.CurveDisableScaleRotation;
 
-		Vector3 deltaMove = newPosition - dragHandlePosition;
-		if (deltaMove.magnitude > 0)
+
+		// Use rotation for every handle type
+		// From what I can see, Unity just selects the first rotation captured.
+		Quaternion handleRotation = Quaternion.identity;
+
+		Vector3 handleScale = Vector3.one;
+
+		if (!disableCurveScaleRot)
 		{
-		    // User dragged point(s)
-		    // We update point value here, but defer parameter coords update until after we finished editing
-
 		    foreach (KeyValuePair<string, List<int>> curvePoints in _selectedCurvePoints)
 		    {
 			List<int> selectedPoints = curvePoints.Value;
 			if (selectedPoints.Count > 0)
 			{
 			    SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
-			    SerializedProperty curvePointsProperty = serializedCurve.FindProperty("_points");
+			    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
 
-			    foreach (int pointIndex in selectedPoints)
-			    {
-				SerializedProperty pointProperty = curvePointsProperty.GetArrayElementAtIndex(pointIndex);
-				Vector3 updatedPosition = pointProperty.vector3Value + deltaMove;
-
-				HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
-				if (curve != null)
-				{
-				    // Localize the movement vector to the curve point's transform,
-				    // since deltaMove is based on the transformed curve point,
-				    // and we're adding to the local curve point.
-				    Vector3 localDeltaMove = curve.GetInvertedTransformedDirection(deltaMove);
-				    updatedPosition = pointProperty.vector3Value + localDeltaMove;
-				}
-
-				pointProperty.vector3Value = updatedPosition;
-			    }
-
-			    // Setting to editing mode to flag that cooking needs to be deferred
-			    SetCurveState(HEU_Curve.CurveEditState.EDITING, serializedCurve);
-
-			    AddChangedSerializedObject(serializedCurve, updatedCurves);
+			if (selectedPoints.Count > 0)
+			{
+			    HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
+			    handleRotation = curve._curveNodeData[selectedPoints[0]].rotation;
+			    handleScale = curve._curveNodeData[selectedPoints[0]].scale;
+			}
 			}
 		    }
-
-		    bInteractionOcurred = true;
 		}
+
+		Tool currentTool = Tools.current;
+		if (disableCurveScaleRot)
+		{
+		    currentTool = Tool.Transform;
+		}
+		
+		switch (currentTool)
+		{
+		    case Tool.Rotate:
+			Quaternion newRotation = Handles.RotationHandle(handleRotation, handleCenter);
+			Quaternion deltaRotation = newRotation * Quaternion.Inverse(handleRotation);
+
+			if (!deltaRotation.ApproximatelyEquals(Quaternion.identity))
+			{
+			    foreach (KeyValuePair<string, List<int>> curvePoints in _selectedCurvePoints)
+			    {
+				List<int> selectedPoints = curvePoints.Value;
+				if (selectedPoints.Count > 0)
+				{
+				    SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
+				    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
+
+				    foreach (int pointIndex in selectedPoints)
+				    {
+					SerializedProperty curveNodeProperty = curveNodesProperty.GetArrayElementAtIndex(pointIndex);
+					SerializedProperty pointScaleProperty = curveNodeProperty.FindPropertyRelative("rotation");
+					Quaternion updatedQuaternion =  deltaRotation * pointScaleProperty.quaternionValue;
+					updatedQuaternion.Normalize();
+					pointScaleProperty.quaternionValue = updatedQuaternion;
+				    }
+
+				    // Setting to editing mode to flag that cooking needs to be deferred
+				    SetCurveState(HEU_Curve.CurveEditState.EDITING, serializedCurve);
+
+				    AddChangedSerializedObject(serializedCurve, updatedCurves);
+				}
+			    }
+			    bInteractionOcurred = true;
+			}
+
+		        break;
+		    case Tool.Scale:
+			float handleSize = HandleUtility.GetHandleSize(handleCenter);
+
+		        Vector3 newScale = Handles.ScaleHandle(handleScale, handleCenter, handleRotation, handleSize);
+
+			Vector3 deltaScale = newScale - handleScale;
+
+			if (deltaScale.magnitude > 0)
+			{
+			    foreach (KeyValuePair<string, List<int>> curvePoints in _selectedCurvePoints)
+			    {
+				List<int> selectedPoints = curvePoints.Value;
+				if (selectedPoints.Count > 0)
+				{
+				    SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
+				    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
+
+				    foreach (int pointIndex in selectedPoints)
+				    {
+					SerializedProperty curveNodeProperty = curveNodesProperty.GetArrayElementAtIndex(pointIndex);
+					SerializedProperty pointScaleProperty = curveNodeProperty.FindPropertyRelative(HEU_Defines.HAPI_ATTRIB_SCALE);
+					Vector3 updatedScale = pointScaleProperty.vector3Value + deltaScale;
+
+					HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
+					pointScaleProperty.vector3Value = updatedScale;
+				    }
+					
+				    // Setting to editing mode to flag that cooking needs to be deferred
+				    SetCurveState(HEU_Curve.CurveEditState.EDITING, serializedCurve);
+
+				    AddChangedSerializedObject(serializedCurve, updatedCurves);
+				}
+			    }
+			    bInteractionOcurred = true;
+			}
+
+		        break;
+		    default:
+			// Translation is the default because it is the most common.
+
+			// Let Unity do the transform handle magic
+			Vector3 newPosition = Handles.PositionHandle(handleCenter, handleRotation);
+
+			Vector3 deltaMove = newPosition - handleCenter;
+			if (deltaMove.magnitude > 0)
+			{
+			    // User dragged point(s)
+			    // We update point value here, but defer parameter coords update until after we finished editing
+
+			    foreach (KeyValuePair<string, List<int>> curvePoints in _selectedCurvePoints)
+			    {
+				List<int> selectedPoints = curvePoints.Value;
+				if (selectedPoints.Count > 0)
+				{
+				    SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
+				    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
+
+				    foreach (int pointIndex in selectedPoints)
+				    {
+					SerializedProperty curveNodeProperty = curveNodesProperty.GetArrayElementAtIndex(pointIndex);
+					SerializedProperty pointProperty = curveNodeProperty.FindPropertyRelative("position");
+					Vector3 updatedPosition = pointProperty.vector3Value + deltaMove;
+
+					HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
+					if (curve != null)
+					{
+					    // Localize the movement vector to the curve point's transform,
+					    // since deltaMove is based on the transformed curve point,
+					    // and we're adding to the local curve point.
+					    Vector3 localDeltaMove = curve.GetInvertedTransformedDirection(deltaMove);
+					    updatedPosition = pointProperty.vector3Value + localDeltaMove;
+					}
+
+					pointProperty.vector3Value = updatedPosition;
+				    }
+
+				    // Setting to editing mode to flag that cooking needs to be deferred
+				    SetCurveState(HEU_Curve.CurveEditState.EDITING, serializedCurve);
+
+				    AddChangedSerializedObject(serializedCurve, updatedCurves);
+				}
+			    }
+
+			    bInteractionOcurred = true;
+			}
+
+			break;
+		}
+
 
 		// After drag, process/cook each curve to update its state
 		foreach (HEU_Curve curve in _curves)
@@ -780,7 +899,7 @@ namespace HoudiniEngineUnity
 		    HEU_Curve.CurveEditState editState = (HEU_Curve.CurveEditState)stateProperty.intValue;
 
 		    // On mouse release, transition editing curve to generation state
-		    if (!isDraggingPoints)
+		    if (!isDraggingPoints || (isDraggingPoints && cookWhileDragging))
 		    {
 			if (editState == HEU_Curve.CurveEditState.EDITING)
 			{
@@ -1359,16 +1478,22 @@ namespace HoudiniEngineUnity
 		    SerializedProperty stringsProperty = parameterDataProperty.FindPropertyRelative("_stringValues");
 
 		    List<Vector3> points = new List<Vector3>();
-		    SerializedProperty curvePointsProperty = serializedCurve.FindProperty("_points");
-		    for (int j = 0; j < curvePointsProperty.arraySize; ++j)
+		    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
+
+		    for (int j = 0; j < curveNodesProperty.arraySize; ++j)
 		    {
-			points.Add(curvePointsProperty.GetArrayElementAtIndex(j).vector3Value);
+			SerializedProperty curveNodeProperty = curveNodesProperty.GetArrayElementAtIndex(j);
+			SerializedProperty pointProperty = curveNodeProperty.FindPropertyRelative("position");
+
+			points.Add(pointProperty.vector3Value);
 		    }
+
 		    stringsProperty.GetArrayElementAtIndex(0).stringValue = HEU_Curve.GetPointsString(points);
 
 		    break;
 		}
 	    }
+
 	    parameterObject.ApplyModifiedProperties();
 	}
 
@@ -1380,7 +1505,8 @@ namespace HoudiniEngineUnity
 		if (selectedPoints.Count > 0)
 		{
 		    SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
-		    SerializedProperty curvePointsProperty = serializedCurve.FindProperty("_points");
+		    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
+
 
 		    // Re-order point indices to delete from highest index to lowest, as otherwse
 		    // our indces get out of sync when deleting the lower indices first.
@@ -1390,9 +1516,9 @@ namespace HoudiniEngineUnity
 
 		    foreach (int pointIndex in sortedIndices)
 		    {
-			if (pointIndex >= 0 && pointIndex < curvePointsProperty.arraySize)
+			if (pointIndex >= 0 && pointIndex < curveNodesProperty.arraySize)
 			{
-			    curvePointsProperty.DeleteArrayElementAtIndex(pointIndex);
+			    curveNodesProperty.DeleteArrayElementAtIndex(pointIndex);
 			}
 		    }
 
@@ -1413,14 +1539,22 @@ namespace HoudiniEngineUnity
 	private void AddPoint(string curveName, int pointIndex, Vector3 newPointPosition, List<SerializedObject> updatedCurves)
 	{
 	    SerializedObject serializedCurve = GetOrCreateSerializedCurve(curveName);
-	    SerializedProperty curvePointsProperty = serializedCurve.FindProperty("_points");
-	    if (pointIndex >= 0 && pointIndex <= curvePointsProperty.arraySize)
+	    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
+	    if (pointIndex >= 0 && pointIndex <= curveNodesProperty.arraySize)
 	    {
 		HEU_Curve curve = GetCurve(curveName);
 		newPointPosition = curve.GetInvertedTransformedPosition(newPointPosition);
 
-		curvePointsProperty.InsertArrayElementAtIndex(pointIndex);
-		curvePointsProperty.GetArrayElementAtIndex(pointIndex).vector3Value = newPointPosition;
+		curveNodesProperty.InsertArrayElementAtIndex(pointIndex);
+		SerializedProperty curveNodeProperty = curveNodesProperty.GetArrayElementAtIndex(pointIndex);
+		SerializedProperty pointProperty = curveNodeProperty.FindPropertyRelative("position");
+		pointProperty.vector3Value = newPointPosition;
+
+		SerializedProperty rotationProperty = curveNodeProperty.FindPropertyRelative("rotation");
+		rotationProperty.quaternionValue = Quaternion.identity;
+
+		SerializedProperty scaleProperty = curveNodeProperty.FindPropertyRelative("scale");
+		scaleProperty.vector3Value = Vector3.one;
 
 		SerializedProperty editStateProperty = serializedCurve.FindProperty("_editState");
 		if (editStateProperty.intValue != (int)HEU_Curve.CurveEditState.EDITING)

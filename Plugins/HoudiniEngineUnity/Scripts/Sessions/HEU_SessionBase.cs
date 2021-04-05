@@ -631,6 +631,12 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+
+	public virtual bool CookNodeWithOptions(HAPI_NodeId nodeID, HAPI_CookOptions cookOptions)
+	{
+	    return false;
+	}
+
 	/// <summary>
 	/// Rename an existing node.
 	/// </summary>
@@ -1103,6 +1109,11 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public virtual bool GetFaceCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] faceCounts, int start, int length, bool bLogError)
+	{
+	    return false;
+	}
+
 	/// <summary>
 	/// Get the array containing the vertex-point associations where the ith element
 	/// in the array is the point index that the ith vertex associates with.
@@ -1151,6 +1162,17 @@ namespace HoudiniEngineUnity
 	{
 	    return false;
 	}
+
+	public virtual bool GetCurveOrders(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] orders, int start, int length)
+	{
+	    return false;
+	}
+
+	public virtual bool GetCurveKnots(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] float[] knots, int start, int length)
+	{
+	    return false;
+	}
+
 
 	// GEOMETRY SETTERS -------------------------------------------------------------------------------------------
 
@@ -1231,6 +1253,26 @@ namespace HoudiniEngineUnity
 	}
 
 	public virtual bool RevertGeo(HAPI_NodeId nodeID)
+	{
+	    return false;
+	}
+
+	public virtual bool SetCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_CurveInfo curveInfo)
+	{
+	    return false;
+	}
+
+	public virtual bool SetCurveCounts(HAPI_NodeId nodeID, HAPI_PartId partID, int[] counts, int start, int length)
+	{
+	    return false;
+	}
+
+	public virtual bool SetCurveOrders(HAPI_NodeId nodeID, HAPI_PartId partID, int[] orders, int start, int length)
+	{
+	    return false;
+	}
+
+	public virtual bool SetCurveKnots(HAPI_NodeId nodeID, HAPI_PartId partID, float[] knots, int start, int length)
 	{
 	    return false;
 	}
