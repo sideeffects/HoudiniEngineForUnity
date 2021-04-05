@@ -1803,7 +1803,14 @@ namespace HoudiniEngineUnity
 	public override bool GetFaceCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] faceCounts, int start, int length)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
-	    //HandleStatusResult(result, "Getting Face Counts", false, true);
+	    HandleStatusResult(result, "Getting Face Counts", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetFaceCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] faceCounts, int start, int length, bool bLogError)
+	{
+	    HAPI_Result result = HEU_HAPIImports.HAPI_GetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
+	    HandleStatusResult(result, "Getting Face Counts", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 

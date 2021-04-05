@@ -734,7 +734,7 @@ namespace HoudiniEngineUnity
 		if (partInfos.faceCount > 0)
 		{
 		    int[] faceCounts = new int[partInfos.faceCount];
-		    if (session.GetFaceCounts(curveIdNode, 0, faceCounts, 0, partInfos.faceCount))
+		    if (session.GetFaceCounts(curveIdNode, 0, faceCounts, 0, partInfos.faceCount, false))
 		    {
 		        session.SetFaceCount(curveIdNode, 0, faceCounts, 0, partInfos.faceCount);
 		    }
@@ -748,7 +748,6 @@ namespace HoudiniEngineUnity
 		        session.SetVertexList(curveIdNode, 0, vertexList, 0, partInfos.vertexCount);
 		    }
 		}
-
 
 		if (bAddRotations)
 		{

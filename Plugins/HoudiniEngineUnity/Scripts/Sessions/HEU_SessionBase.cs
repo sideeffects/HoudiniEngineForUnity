@@ -1109,6 +1109,11 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public virtual bool GetFaceCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] faceCounts, int start, int length, bool bLogError)
+	{
+	    return false;
+	}
+
 	/// <summary>
 	/// Get the array containing the vertex-point associations where the ith element
 	/// in the array is the point index that the ith vertex associates with.
