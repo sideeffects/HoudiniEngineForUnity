@@ -449,6 +449,14 @@ namespace HoudiniEngineUnity
 
 	public HEU_ToolsInfo ToolsInfo { get { return _toolsInfo; } }
 
+	// Enum to guess how Unity instantiated this object (because Unity doesn't provide instantiation callbacks)
+	private enum AssetInstantiationMethod
+	{
+	    DEFAULT,
+	    DUPLICATED,
+	    UNDO
+	};
+
 	// PROFILE ----------------------------------------------------------------------------------------------------
 
 #if HEU_PROFILER_ON
@@ -522,7 +530,8 @@ namespace HoudiniEngineUnity
 	    // We want to support Object.Instantiate, but ScriptableObjects cannot copy by value by 
 	    // default. So we simulate the "duplicate" function when we detect that this occurs
 	    // This would be a lot easier if Unity provided some sort of Instantiate() callback...
-	    if (this.HasBeenInstantiated())
+	    AssetInstantiationMethod instantiationMethod = this.GetInstantiationMethod();
+	    if (instantiationMethod == AssetInstantiationMethod.DUPLICATED)
 	    {
 		HEU_HoudiniAsset instantiatedAsset = this.GetInstantiatedObject();
 	    	this.ResetAndCopyInstantiatedProperties(instantiatedAsset);
@@ -3861,28 +3870,25 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Create a copy of this asset in the Scene and returns it.
 	/// </summary>
-	public GameObject DuplicateAsset()
+	public GameObject DuplicateAsset(GameObject newRootGameObject = null)
 	{
 	    string goName = _rootGameObject.name + "_copy";
-
-	    Debug.Log("Duplicating asset: " + goName);
 
 	    bool bBuildAsync = false;
 	    HEU_SessionBase session = GetAssetSession(true);
 	    Transform thisParentTransform = _rootGameObject.transform.parent;
 
-	    GameObject newRootGO = null;
 	    if (_assetType == HEU_AssetType.TYPE_HDA)
 	    {
-		newRootGO = HEU_HAPIUtility.InstantiateHDA(_assetPath, _rootGameObject.transform.position, session, bBuildAsync);
+		newRootGameObject = HEU_HAPIUtility.InstantiateHDA(_assetPath, _rootGameObject.transform.position, session, bBuildAsync, rootGO: newRootGameObject);
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_CURVE)
 	    {
-		newRootGO = HEU_HAPIUtility.CreateNewCurveAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync);
+		newRootGameObject = HEU_HAPIUtility.CreateNewCurveAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync, rootGO: newRootGameObject);
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_INPUT)
 	    {
-		newRootGO = HEU_HAPIUtility.CreateNewInputAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync);
+		newRootGameObject = HEU_HAPIUtility.CreateNewInputAsset(parentTransform: thisParentTransform, session: session, bBuildAsync: bBuildAsync, rootGO: newRootGameObject);
 	    }
 	    else
 	    {
@@ -3890,10 +3896,10 @@ namespace HoudiniEngineUnity
 		return null;
 	    }
 
-	    HEU_HoudiniAssetRoot newRoot = newRootGO.GetComponent<HEU_HoudiniAssetRoot>();
+	    HEU_HoudiniAssetRoot newRoot = newRootGameObject.GetComponent<HEU_HoudiniAssetRoot>();
 	    HEU_HoudiniAsset newAsset = newRoot._houdiniAsset;
 
-	    Transform newRootTransform = newRootGO.transform;
+	    Transform newRootTransform = newRootGameObject.transform;
 	    newRootTransform.parent = thisParentTransform;
 	    newRootTransform.localPosition = _rootGameObject.transform.localPosition;
 	    newRootTransform.localRotation = _rootGameObject.transform.localRotation;
@@ -3902,9 +3908,9 @@ namespace HoudiniEngineUnity
 	    this.CopyPropertiesTo(newAsset);
 
 	    // Select it
-	    HEU_EditorUtility.SelectObject(newRootGO);
+	    HEU_EditorUtility.SelectObject(newRootGameObject);
 
-	    return newRootGO;
+	    return newRootGameObject;
 	}
 
 	public HEU_ObjectNode GetObjectNodeByName(string objName)
@@ -4334,9 +4340,9 @@ namespace HoudiniEngineUnity
 	private void ResetAndCopyInstantiatedProperties(HEU_HoudiniAsset newAsset)
 	{
 	    InvalidateAsset();
-
 	    // Setup again to avoid null references
 	    SetupAsset(_assetType, _assetPath, _rootGameObject, GetAssetSession(true));
+
 
 	    // Destroy everything except the root object and this
 	    // This ensures that there are no dangling gameobjects from the instantiation
@@ -4346,41 +4352,49 @@ namespace HoudiniEngineUnity
 	    Transform[] gos = _rootGameObject.GetComponentsInChildren<Transform>();
 	    foreach (Transform trans in gos)
 	    {
-		if (trans != null && trans.gameObject != null && trans.gameObject != this.gameObject && trans.gameObject != _rootGameObject)
+		if (trans != null && trans.gameObject != null && trans.gameObject != _rootGameObject)
 		{
 		    DestroyImmediate(trans.gameObject);
 		}
 	    }
 
-	    HEU_SessionBase session = GetAssetSession(true);
-	    bool bBuildAsync = false;
-		
-	    // Populate asset with what we know
-	    this.SetupAsset(newAsset._assetType, newAsset._assetPath, this.transform.parent.gameObject, session);
+	    Component[] rootComponents = _rootGameObject.GetComponents<Component>();
+	    foreach (Component comp in rootComponents)
+	    {
+		if (comp.GetType() != typeof(Transform))
+		{
+		    DestroyImmediate(comp);
+		}
+	    }
 
-	    // Build it in Houdini Engine
-	    this.RequestReload(bBuildAsync);
+	    _rootGameObject.transform.position = Vector3.zero;
 
-	    newAsset.CopyPropertiesTo(this);
+	    newAsset.DuplicateAsset(_rootGameObject);
 	}
 
-	private bool HasBeenInstantiated()
+	private AssetInstantiationMethod GetInstantiationMethod()
 	{
 	    if (this._objectNodes == null)
 	    {
-	        return false;
+	        return AssetInstantiationMethod.DEFAULT;
 	    }
 	    // ScriptableObjects do not instanitate correctly. The only way I found
 	    // to check this is to check if _objectNodes[i].ParentAsset is our object
 	    foreach (HEU_ObjectNode objNode in this._objectNodes)
 	    {
+		if (objNode == null)
+		{
+		    // Corrupted gameObject. Likely due to undo. Do not duplicate.
+		    return AssetInstantiationMethod.UNDO;
+		}
+
 		if (objNode.ParentAsset != this)
 		{
-		    return true;
+		    return AssetInstantiationMethod.DUPLICATED;
 		}
 	    }
 
-	    return false;
+	    return AssetInstantiationMethod.DEFAULT;
 	}
 
 	private HEU_HoudiniAsset GetInstantiatedObject()
@@ -4390,7 +4404,7 @@ namespace HoudiniEngineUnity
 		return null;
 	    }
 
-	    if (!HasBeenInstantiated())
+	    if (GetInstantiationMethod() != AssetInstantiationMethod.DUPLICATED)
 	    {
  	        return null;
 	    }
@@ -4415,6 +4429,7 @@ namespace HoudiniEngineUnity
 		if (srcCurve != null)
 		{
 		    newAsset._curves[i].Parameters.SetPresetData(srcCurve.Parameters.GetPresetData());
+		    newAsset._curves[i].SetCurveNodeData(srcCurve.DuplicateCurveNodeData());
 		}
 	    }
 
