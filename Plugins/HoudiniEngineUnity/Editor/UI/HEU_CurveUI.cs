@@ -143,8 +143,6 @@ namespace HoudiniEngineUnity
 	private Rect _infoRect;
 
 
-	private bool _temporaryAddMode = false;
-
 	// UI LOGIC ---------------------------------------------------------------------------------------------------
 
 	private void OnEnable()
@@ -484,12 +482,6 @@ namespace HoudiniEngineUnity
 		    else if (currentEvent.keyCode == KeyCode.Escape || currentEvent.keyCode == KeyCode.Return || currentEvent.keyCode == KeyCode.KeypadEnter)
 		    {
 			SwitchToMode(HEU_Curve.Interaction.VIEW);
-			currentEvent.Use();
-		    }
-		    else if (currentEvent.keyCode == KeyCode.LeftShift && _temporaryAddMode)
-		    {
-			_temporaryAddMode = false;
-			SwitchToMode(HEU_Curve.Interaction.EDIT);
 			currentEvent.Use();
 		    }
 
@@ -1091,12 +1083,6 @@ namespace HoudiniEngineUnity
 		    {
 			_showInfo = !_showInfo;
 		    }
-		    else if (currentEvent.keyCode == KeyCode.LeftShift)
-		    {
-			_temporaryAddMode = true;
-			SwitchToMode(HEU_Curve.Interaction.ADD);
-			currentEvent.Use();
-		    }
 
 		    break;
 		}
@@ -1445,7 +1431,6 @@ namespace HoudiniEngineUnity
 			DrawHelpLineGridBox(string.Format("Hold {0} + Left Mouse", HEU_Defines.HEU_KEY_CTRL), "Grid snapping when moving points.");
 			DrawHelpLineGridBox("Backspace", "Delete selected points.");
 			DrawHelpLineGridBox("Space", "Add mode.");
-			DrawHelpLineGridBox("Shift", "Switch to add mode until released.");
 			DrawHelpLineGridBox("F", "Frame the selected nodes or the curve itself.");
 			DrawHelpLineGridBox("Esc / Enter", "View mode.");
 		    }
