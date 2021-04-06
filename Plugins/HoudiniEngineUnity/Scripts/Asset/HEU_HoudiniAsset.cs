@@ -536,6 +536,17 @@ namespace HoudiniEngineUnity
 		HEU_HoudiniAsset instantiatedAsset = this.GetInstantiatedObject();
 	    	this.ResetAndCopyInstantiatedProperties(instantiatedAsset);
 	    }
+	    else if (instantiationMethod == AssetInstantiationMethod.UNDO)
+	    {
+		Transform[] gos = _rootGameObject.GetComponentsInChildren<Transform>();
+		foreach (Transform trans in gos)
+		{
+		    if (trans != null && trans.gameObject != null && trans.gameObject != _rootGameObject && trans.gameObject != this.gameObject)
+		    {
+		        DestroyImmediate(trans.gameObject);
+		    }
+		}
+	    }
 
 	    // All assets are checked if valid in Houdini Engine session in Awake.
 	    // Awake is called at scene load / script compilation / play mode change.
@@ -1416,8 +1427,15 @@ namespace HoudiniEngineUnity
 	    // It might fail if the parameters have changed in the HDA since last loaded in Unity.
 	    if (_parameters != null && !_parameters.RequiresRegeneration && bUploadParameters)
 	    {
-		Debug.Assert(_assetID == _parameters._nodeID, HEU_Defines.HEU_NAME + ": Our parameter object must have our asset ID.\n"
-			+ "If this fails, something went wrong earlier and need to catch it!");
+
+		if (_assetID != _parameters._nodeID)
+		{
+		   // Parameters
+		    Debug.LogWarning(HEU_Defines.HEU_NAME + ": Our parameter object must have our asset ID.\n"
+			+ "If this fails, something went wrong earlier and need to catch it! Please try rebuilding!");
+		    _parameters.CleanUp();
+		    return false;
+		}
 
 		// Do parameter modifiers first. These change number of parameters (eg. multiparm).
 		// If there are no modifiers, we can upload any changes to the actual values.
