@@ -175,7 +175,73 @@ namespace HoudiniEngineUnity
 
 	    _showInfo = false;
 	    _showInfoRepaint = false;
+
+#if UNITY_2019_1_OR_NEWER
+	    SceneView.duringSceneGui += OnSceneGUIDelegate;
+#else
+	    SceneView.onSceneGUIDelegate += OnSceneGUIDelegate;
+#endif
 	}
+
+	private void OnSceneGUIDelegate(SceneView sceneView)
+	{
+	    if (Event.current.type == EventType.ExecuteCommand)
+	    {
+		if (Event.current.commandName == "FrameSelected")
+		{
+		    if (Selection.activeGameObject != null && _selectedCurvePoints != null && _selectedCurvePoints.Count > 0)
+		    {
+			// Get the center point
+			Vector3 handleCenter = Vector3.zero;
+			Bounds bounds = new Bounds();
+			int numPoints = 0;
+
+			HEU_HoudiniAsset parentAsset = null;
+			foreach (KeyValuePair<string, List<int>> curvePoints in _selectedCurvePoints)
+			{
+			    List<int> selectedPoints = curvePoints.Value;
+			    if (selectedPoints.Count > 0)
+			    {
+			        SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
+			        SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
+
+			        HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
+
+				parentAsset = curve.ParentAsset; // They should all be the same, so it shouldn't matter
+
+			        foreach (int selectedPoint in selectedPoints)
+			        {
+				    Vector3 pointPos = curve.GetTransformedPosition(curve.CurveNodeData[selectedPoint].position);
+				    if (numPoints == 0)
+				    {
+				        bounds = new Bounds(pointPos, Vector3.zero);
+				    }
+				    else
+				    {
+				        bounds.Encapsulate(pointPos);
+				    }
+
+				    numPoints++;
+			        }
+			    }
+			}
+
+			if (parentAsset != null && parentAsset.CurveFrameSelectedNodes)
+			{
+			    // Overwrite the existing command
+			    Event.current.commandName = "";
+			    Event.current.Use();
+
+			    handleCenter = bounds.center;
+
+			    float viewDistance = parentAsset.CurveFrameSelectedNodeDistance;
+			    sceneView.LookAt(handleCenter, sceneView.rotation, viewDistance);
+			}
+		    }
+		}
+	    }
+	}
+
 
 	/// <summary>
 	/// Callback when selection has changed.
@@ -217,6 +283,13 @@ namespace HoudiniEngineUnity
 
 	    _dragMouseDown = false;
 	    _cleanMouseDown = false;
+
+#if UNITY_2019_1_OR_NEWER
+	    SceneView.duringSceneGui -= OnSceneGUIDelegate;
+#else
+	    SceneView.onSceneGUIDelegate -= OnSceneGUIDelegate;
+#endif
+
 	}
 
 	/// <summary>
@@ -750,12 +823,9 @@ namespace HoudiniEngineUnity
 			    SerializedObject serializedCurve = GetOrCreateSerializedCurve(curvePoints.Key);
 			    SerializedProperty curveNodesProperty = serializedCurve.FindProperty("_curveNodeData");
 
-			if (selectedPoints.Count > 0)
-			{
 			    HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
 			    handleRotation = Quaternion.Euler(curve.CurveNodeData[selectedPoints[0]].rotation);
 			    handleScale = curve.CurveNodeData[selectedPoints[0]].scale;
-			}
 			}
 		    }
 		}
@@ -1013,7 +1083,7 @@ namespace HoudiniEngineUnity
 		    {
 			_showInfo = !_showInfo;
 		    }
-
+	
 		    break;
 		}
 		case EventType.Layout:
@@ -1361,6 +1431,7 @@ namespace HoudiniEngineUnity
 			DrawHelpLineGridBox(string.Format("Hold {0} + Left Mouse", HEU_Defines.HEU_KEY_CTRL), "Grid snapping when moving points.");
 			DrawHelpLineGridBox("Backspace", "Delete selected points.");
 			DrawHelpLineGridBox("Space", "Add mode.");
+			DrawHelpLineGridBox("F", "Frame the selected nodes or the curve itself.");
 			DrawHelpLineGridBox("Esc / Enter", "View mode.");
 		    }
 

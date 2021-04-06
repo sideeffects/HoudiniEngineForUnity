@@ -165,6 +165,8 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private HEU_HoudiniAsset _parentAsset;
 
+	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; }}
+
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
 	public static HEU_Curve CreateSetupCurve(HEU_HoudiniAsset parentAsset, bool isEditable, string curveName, HAPI_NodeId geoID, bool bGeoCurve)
