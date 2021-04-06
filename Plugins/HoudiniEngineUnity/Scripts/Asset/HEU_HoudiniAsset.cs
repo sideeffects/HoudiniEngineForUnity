@@ -1549,14 +1549,6 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    if (!IsAssetValid())
-	    {
-		return;
-	    }
-
-
-
-
 	    // We will always regenerate parameters after cooking to make sure we're in sync.
 	    GenerateParameters(session);
 
@@ -4310,7 +4302,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    HEU_SessionBase session = GetAssetSession(false);
-	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync() || !IsAssetValid())
+	    if (session == null || !session.IsSessionValid() || !session.IsSessionSync())
 	    {
 		return false;
 	    }
