@@ -790,8 +790,6 @@ namespace HoudiniEngineUnity
 		        curveRotations[i * 4 + 1] = rotQuat[1];
 		        curveRotations[i * 4 + 2] = rotQuat[2];
 		        curveRotations[i * 4 + 3] = rotQuat[3];
-
-
 		    }
 
 		    session.SetAttributeFloatData(curveIdNode, 0, HEU_Defines.HAPI_ATTRIB_ROTATION, ref attributeInfoRotation, curveRotations, 0, attributeInfoRotation.count);
@@ -918,7 +916,7 @@ namespace HoudiniEngineUnity
 	    {
 		CurveNodeData data = new CurveNodeData(positions[i]);
 
-		if (!_parentAsset.CurveDisableScaleRotation)
+		if (_parentAsset != null && !_parentAsset.CurveDisableScaleRotation)
 		{
 		    if (rotations.IsValidIndex(i))
 		    {
