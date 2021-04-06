@@ -925,6 +925,48 @@ namespace HoudiniEngineUnity
 
 			EditorGUI.indentLevel--;
 
+
+			List<SerializedObject> serializedCurves = new List<SerializedObject>();
+			for (int i = 0; i < curves.Count; i++)
+			{
+			    serializedCurves.Add(new SerializedObject(curves[i]));
+			}
+
+			bool bHasBeenModifiedInInspector = false;
+
+			for (int i = 0; i < serializedCurves.Count; i++)
+			{
+			    HEU_Curve curve = curves[i];
+
+			    SerializedObject serializedCurve = serializedCurves[i];
+			    EditorGUI.BeginChangeCheck();
+
+			    HEU_EditorUtility.EditorDrawSerializedProperty(serializedCurve, "_curveNodeData", label: curve.CurveName + " Data");
+
+			    if (EditorGUI.EndChangeCheck())
+			    {
+				curves[i].SetEditState(HEU_Curve.CurveEditState.REQUIRES_GENERATION);
+				serializedCurve.ApplyModifiedProperties();
+
+				bHasBeenModifiedInInspector = true;
+			    }
+			}
+
+			if (bHasBeenModifiedInInspector)
+			{
+			    if (asset.GetEditableCurveCount() > 0)
+			    {
+				HEU_Curve[] curvesArray = asset.GetCurves().ToArray();
+				Editor.CreateCachedEditor(curvesArray, null, ref _curveEditor);
+				(_curveEditor as HEU_CurveUI).RepaintCurves();
+
+				if (HEU_PluginSettings.CookingEnabled && asset.AutoCookOnParameterChange)
+				{
+				    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
+				}
+			    }
+			}
+
 			HEU_EditorUI.DrawSeparator();
 
 			for (int i = 0; i < curves.Count; ++i)

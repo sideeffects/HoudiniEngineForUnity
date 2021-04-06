@@ -41,8 +41,13 @@ namespace HoudiniEngineUnity
     [System.Serializable]
     public class CurveNodeData
     {
-	public Vector3 position = new Vector3();
-	public Quaternion rotation = Quaternion.identity;
+	[SerializeField]
+	public Vector3 position = Vector3.zero;
+
+	[SerializeField]
+	public Vector3 rotation = Vector3.zero;
+
+	[SerializeField]
 	public Vector3 scale = Vector3.one;
 
 	public CurveNodeData()
@@ -57,13 +62,13 @@ namespace HoudiniEngineUnity
 	public CurveNodeData(Vector3 position, Quaternion rotation)
 	{
 	    this.position = position;
-	    this.rotation = rotation;
+	    this.rotation = rotation.eulerAngles;
 	}
 
 	public CurveNodeData(Vector3 position, Quaternion rotation, Vector3 scale)
 	{ 
 	    this.position = position;
-	    this.rotation = rotation;
+	    this.rotation = rotation.eulerAngles;
 	    this.scale = scale;
 	}
 
@@ -72,6 +77,11 @@ namespace HoudiniEngineUnity
 	    this.position = other.position;
 	    this.rotation = other.rotation;
 	    this.scale = other.scale;
+	}
+
+	public Quaternion GetRotation()
+	{
+	    return Quaternion.Euler(this.rotation);
 	}
     };
 
@@ -386,7 +396,7 @@ namespace HoudiniEngineUnity
 		_curveNodeData.ForEach((CurveNodeData data) =>
 		{
 		    positions.Add(data.position);
-		    rotations.Add(data.rotation);
+		    rotations.Add(data.GetRotation());
 		    scales.Add(data.scale);
 		});
 
@@ -873,7 +883,7 @@ namespace HoudiniEngineUnity
 	    // We want to keep positions in sync with Houdini, but use our rotations/scales because
 	    // The number of them depend on the curve type
 	    List<Vector3> positions = new List<Vector3>();
-	    List<Quaternion> rotations = new List<Quaternion>();
+	    List<Vector3> rotations = new List<Vector3>();
 	    List<Vector3> scales = new List<Vector3>();
 
 	    _curveNodeData.ForEach((CurveNodeData data) =>

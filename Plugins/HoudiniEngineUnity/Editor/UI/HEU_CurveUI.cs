@@ -753,7 +753,7 @@ namespace HoudiniEngineUnity
 			if (selectedPoints.Count > 0)
 			{
 			    HEU_Curve curve = serializedCurve.targetObject as HEU_Curve;
-			    handleRotation = curve.CurveNodeData[selectedPoints[0]].rotation;
+			    handleRotation = Quaternion.Euler(curve.CurveNodeData[selectedPoints[0]].rotation);
 			    handleScale = curve.CurveNodeData[selectedPoints[0]].scale;
 			}
 			}
@@ -785,10 +785,11 @@ namespace HoudiniEngineUnity
 				    foreach (int pointIndex in selectedPoints)
 				    {
 					SerializedProperty curveNodeProperty = curveNodesProperty.GetArrayElementAtIndex(pointIndex);
-					SerializedProperty pointScaleProperty = curveNodeProperty.FindPropertyRelative("rotation");
-					Quaternion updatedQuaternion =  deltaRotation * pointScaleProperty.quaternionValue;
+					SerializedProperty pointRotationProperty = curveNodeProperty.FindPropertyRelative("rotation");
+					Quaternion rotation = Quaternion.Euler(pointRotationProperty.vector3Value);
+					Quaternion updatedQuaternion =  deltaRotation * rotation;
 					updatedQuaternion.Normalize();
-					pointScaleProperty.quaternionValue = updatedQuaternion;
+					pointRotationProperty.vector3Value = updatedQuaternion.eulerAngles;
 				    }
 
 				    // Setting to editing mode to flag that cooking needs to be deferred
@@ -1449,6 +1450,7 @@ namespace HoudiniEngineUnity
 	    if (newState == HEU_Curve.CurveEditState.REQUIRES_GENERATION)
 	    {
 		SyncCurvePointsToParameters(serializedCurve);
+		this.Repaint(); // Required to keep curve inspector in sync
 	    }
 
 	    // This allows to apply serialized changes
@@ -1551,7 +1553,7 @@ namespace HoudiniEngineUnity
 		pointProperty.vector3Value = newPointPosition;
 
 		SerializedProperty rotationProperty = curveNodeProperty.FindPropertyRelative("rotation");
-		rotationProperty.quaternionValue = Quaternion.identity;
+		rotationProperty.vector3Value = Vector3.zero;
 
 		SerializedProperty scaleProperty = curveNodeProperty.FindPropertyRelative("scale");
 		scaleProperty.vector3Value = Vector3.one;
@@ -1575,6 +1577,17 @@ namespace HoudiniEngineUnity
 	    if (!serializedList.Contains(serializedObject))
 	    {
 		serializedList.Add(serializedObject);
+	    }
+	}
+
+	public void RepaintCurves()
+	{
+	    foreach (HEU_Curve curve in _curves)
+	    {
+		// Draw the cooked curve using its vertices
+		DrawCurveUsingVertices(curve, _unselectedCurveColor);
+
+		DrawPointCaps(curve, _viewPointColor);
 	    }
 	}
     }
