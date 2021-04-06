@@ -104,6 +104,9 @@ namespace HoudiniEngineUnity
 
 	private static GUIContent _useCurveScaleRotContent = new GUIContent("Disable Curve scale/rot", "Disables the usage of scale/rot attributes. Useful if the scale/rot attribute values are causing issues with your curve.");
 	private static GUIContent _cookCurveOnDragContent = new GUIContent("Cook Curve on Drag", "Cooks the cook while you are dragging the curve point. Useful if you need responsiveness over performance. Disable this option to improve performance.");
+	private static GUIContent _curveFrameSelectedNodesContent = new GUIContent("Frame Selected Nodes Only", "Frames only the currently selected nodes when you press the F hotkey instead of the whole curve.");
+	private static GUIContent _curveFrameSelectedNodeDistanceContent = new GUIContent("Frame Selected Node Distance", "The distance between the selected node and the editor camera when you frame the selected node.");
+	
 	
 	//	LOGIC -----------------------------------------------------------------------------------------------------
 
@@ -855,17 +858,50 @@ namespace HoudiniEngineUnity
 		    showCurvesProperty.boolValue = HEU_EditorUI.DrawFoldOut(showCurvesProperty.boolValue, "CURVES");
 		    if (showCurvesProperty.boolValue)
 		    {
+			List<HEU_Curve> curves = asset.GetCurves();
+
 			SerializedProperty curveEditorProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveEditorEnabled");
 			if (curveEditorProperty != null)
 			{
 			    EditorGUILayout.PropertyField(curveEditorProperty);
 			}
 
+			HEU_EditorUI.DrawHeadingLabel("Curve Node Settings");
+
+			EditorGUI.indentLevel++;
+
+			SerializedProperty useScaleRotProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveDisableScaleRotation");
+
+			bool oldUseScaleRotValue = useScaleRotProperty.boolValue;
+			useScaleRotProperty.boolValue = EditorGUILayout.Toggle(_useCurveScaleRotContent, useScaleRotProperty.boolValue);
+			if (useScaleRotProperty.boolValue != oldUseScaleRotValue)
+			{
+			    for (int i = 0; i < curves.Count; ++i)
+			    {
+			        curves[i].SetEditState(HEU_Curve.CurveEditState.REQUIRES_GENERATION);
+			    }
+			}
+
+			SerializedProperty curveCookOnDragProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveCookOnDrag");
+			curveCookOnDragProperty.boolValue = EditorGUILayout.Toggle(_cookCurveOnDragContent, curveCookOnDragProperty.boolValue);
+
+			SerializedProperty curveFrameSelectedNodesProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveFrameSelectedNodes");
+			curveFrameSelectedNodesProperty.boolValue = EditorGUILayout.Toggle(_curveFrameSelectedNodesContent, curveFrameSelectedNodesProperty.boolValue);
+
+			EditorGUI.indentLevel++;
+			using (new EditorGUI.DisabledScope(!curveFrameSelectedNodesProperty.boolValue))
+			{
+			    HEU_EditorUtility.EditorDrawFloatProperty(assetObject, "_curveFrameSelectedNodeDistance", label: _curveFrameSelectedNodeDistanceContent.text, tooltip: _curveFrameSelectedNodeDistanceContent.tooltip);
+			}
+
+			EditorGUI.indentLevel--;
+
+			EditorGUI.indentLevel--;
+
 			HEU_EditorUI.DrawHeadingLabel("Collision Settings");
 			EditorGUI.indentLevel++;
 
 			string projectLabel = "Project Curves To ";
-			List<HEU_Curve> curves = asset.GetCurves();
 
 			SerializedProperty curveCollisionProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveDrawCollision");
 			if (curveCollisionProperty != null)
@@ -906,25 +942,11 @@ namespace HoudiniEngineUnity
 				}
 			    }
 			}
-
-
-			SerializedProperty useScaleRotProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveDisableScaleRotation");
-
-			bool oldUseScaleRotValue = useScaleRotProperty.boolValue;
-			useScaleRotProperty.boolValue = EditorGUILayout.Toggle(_useCurveScaleRotContent, useScaleRotProperty.boolValue);
-			if (useScaleRotProperty.boolValue != oldUseScaleRotValue)
-			{
-			    for (int i = 0; i < curves.Count; ++i)
-			    {
-			        curves[i].SetEditState(HEU_Curve.CurveEditState.REQUIRES_GENERATION);
-			    }
-			}
-
-			SerializedProperty curveCookOnDragProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveCookOnDrag");
-			curveCookOnDragProperty.boolValue = EditorGUILayout.Toggle(_cookCurveOnDragContent, curveCookOnDragProperty.boolValue);
-
 			EditorGUI.indentLevel--;
 
+			HEU_EditorUI.DrawHeadingLabel("Curve Data");
+
+			EditorGUI.indentLevel++;
 
 			List<SerializedObject> serializedCurves = new List<SerializedObject>();
 			for (int i = 0; i < curves.Count; i++)
@@ -966,6 +988,8 @@ namespace HoudiniEngineUnity
 				}
 			    }
 			}
+
+			EditorGUI.indentLevel--;
 
 			HEU_EditorUI.DrawSeparator();
 

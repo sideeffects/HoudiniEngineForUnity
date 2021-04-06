@@ -414,6 +414,14 @@ namespace HoudiniEngineUnity
 
 	public bool CurveCookOnDrag { get { return _curveCookOnDrag; } set { _curveCookOnDrag = value; } }
 
+	[SerializeField]
+	private bool _curveFrameSelectedNodes = true;
+	public bool CurveFrameSelectedNodes { get { return _curveFrameSelectedNodes; } set { _curveFrameSelectedNodes = value; } }
+
+	[SerializeField]
+	private float _curveFrameSelectedNodeDistance = 20f;
+	public float CurveFrameSelectedNodeDistance { get { return _curveFrameSelectedNodeDistance; } set { _curveFrameSelectedNodeDistance = value; } }
+
 	// INPUT NODES ------------------------------------------------------------------------------------------------
 
 	[SerializeField]
