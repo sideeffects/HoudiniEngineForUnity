@@ -1999,6 +1999,20 @@ namespace HoudiniEngineUnity
 		meshCollider.sharedMesh = srcMeshCollider.sharedMesh;
 	    }
 	}
+
+	public static float BiLerpf(float p00, float p10, float p01, float p11, float fracX, float fracY)
+	{
+	    return Mathf.Lerp(
+		    Mathf.Lerp(p00, p10, fracX),
+		    Mathf.Lerp(p01, p11, fracX),
+		    fracY
+	    );
+	}
+
+	public static float Fractionalf(float value)
+	{
+	    return value - Mathf.Floor(value);
+	}
     }
 
 

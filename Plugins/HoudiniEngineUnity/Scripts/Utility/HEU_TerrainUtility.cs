@@ -161,17 +161,7 @@ namespace HoudiniEngineUnity
 		}
 
 		terrainData.heightmapResolution = heightMapResolution;
-		int terrainResizedDelta = terrainData.heightmapResolution - heightMapResolution;
-		if (terrainResizedDelta < 0)
-		{
-		    Debug.LogWarningFormat("Note that Unity automatically resized terrain resolution to {0} from {1}. Use terrain size of power of two plus 1, and grid spacing of 2.", heightMapResolution, terrainData.heightmapResolution);
-		    heightMapResolution = terrainData.heightmapResolution;
-		}
-		else if (terrainResizedDelta > 0)
-		{
-		    Debug.LogErrorFormat("Unsupported terrain size. Use terrain size of power of two plus 1, and grid spacing of 2. Given size is {0} but Unity resized it to {1}.", heightMapResolution, terrainData.heightmapResolution);
-		    return false;
-		}
+
 
 		int mapWidth = volumeInfo.xLength;
 		int mapHeight = volumeInfo.yLength;
@@ -185,6 +175,18 @@ namespace HoudiniEngineUnity
 		float[] normalizedHeights = GetNormalizedHeightmapFromPartWithMinMax(session, geoID, partID,
 			volumeInfo.xLength, volumeInfo.yLength, ref minHeight, ref maxHeight, ref heightRange,
 			bUseHeightRangeOverride);
+
+		int terrainResizedDelta = terrainData.heightmapResolution - heightMapResolution;
+		if (terrainResizedDelta < 0)
+		{
+		    Debug.LogWarningFormat("Note that Unity automatically resized terrain resolution to {0} from {1}. Use terrain size of power of two plus 1, and grid spacing of 2.", heightMapResolution, terrainData.heightmapResolution);
+		    heightMapResolution = terrainData.heightmapResolution;
+		}
+		else if (terrainResizedDelta > 0)
+		{
+		    Debug.LogWarningFormat("Unsupported terrain size. Use terrain size of power of two plus 1, and grid spacing of 2. Given size is {0} but Unity resized it to {1}.", heightMapResolution, terrainData.heightmapResolution);
+		}
+
 		float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, heightMapResolution, normalizedHeights);
 
 		// The terrainData.baseMapResolution is not set here, but rather left to whatever default Unity uses
@@ -845,7 +847,6 @@ namespace HoudiniEngineUnity
 	    List<TreePrototype> treePrototypes = new List<TreePrototype>();
 	    for (int i = 0; i < scatterTrees._treePrototypInfos.Count; ++i)
 	    {
-		Debug.Log("Tree path: " + scatterTrees._treePrototypInfos[i]._prefabPath);
 		prefabGO = HEU_AssetDatabase.LoadAssetAtPath(scatterTrees._treePrototypInfos[i]._prefabPath, typeof(GameObject)) as GameObject;
 		if (prefabGO != null)
 		{
@@ -878,10 +879,6 @@ namespace HoudiniEngineUnity
 		}
 
 		terrainData.SetTreeInstances(treeInstances, true);
-	    }
-	    else
-	    {
-		    Debug.Log("Failed to generate trees");
 	    }
 #endif
 	}
@@ -1247,6 +1244,40 @@ namespace HoudiniEngineUnity
 	    }
 	    return "";
 	}
+	// Copied from HoudiniLandscapeTranslator::ResampleData
+	public static float[] ResampleData(float[] data, int oldWidth, int oldHeight, int newWidth, int newHeight)
+	{
+	    float[] result = new float[newWidth * newHeight];
+
+	    float xScale = (float)(oldWidth - 1) / (newWidth - 1);
+	    float yScale = (float)(oldHeight - 1) / (newHeight - 1);
+
+	    for (int y = 0; y < newHeight; y++)
+	    {
+		for (int x = 0; x < newWidth; x++)
+		{
+		    float oldY = y * yScale;
+		    float oldX = x * xScale;
+		    int x0 = Mathf.FloorToInt(oldX);
+		    int x1 = Mathf.Min(Mathf.FloorToInt(oldY) + 1, oldWidth - 1);
+		    int y0 = Mathf.FloorToInt(oldY);
+		    int y1 = Mathf.Min(Mathf.FloorToInt(oldY), oldHeight - 1);
+
+		    float original00 = data[y0 * oldWidth + x0];
+		    float original10 = data[y0 * oldWidth + x1];
+		    float original01 = data[y1 * oldWidth + x0];
+		    float original11 = data[y1 * oldWidth + x1];
+
+		    //float lerpedValue = Mathf.
+		    float lerpedValue = HEU_GeneralUtility.BiLerpf(original00, original10, original01, original11, HEU_GeneralUtility.Fractionalf(oldX), HEU_GeneralUtility.Fractionalf(oldY));
+		    result[y * newWidth + x] = lerpedValue;
+		}
+	    }
+
+	    return result;
+	}
+
+
     }
 
 }   // HoudiniEngineUnity
