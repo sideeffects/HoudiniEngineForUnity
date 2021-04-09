@@ -242,7 +242,7 @@ namespace HoudiniEngineUnity
 		    || idt._terrainData.heightmapResolution != volumeInfo.xLength
 		    || idt._terrainData.heightmapResolution != volumeInfo.yLength)
 	    {
-		Debug.LogWarning("Created heightfield in Houdini differs in voxel size from input terrain!");
+		Debug.LogWarning("Created heightfield in Houdini differs in voxel size from input terrain! Terrain may require resampling.");
 	    }
 
 	    // Update volume infos, and set it. This is required.
@@ -269,7 +269,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Now set the height data
-	    float[,] heights = idt._terrainData.GetHeights(0, 0, volumeInfo.xLength, volumeInfo.yLength);
+	    float[,] heights = idt._terrainData.GetHeights(0, 0, idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution);
 	    int sizeX = heights.GetLength(0);
 	    int sizeY = heights.GetLength(1);
 	    int totalSize = sizeX * sizeY;
@@ -285,6 +285,22 @@ namespace HoudiniEngineUnity
 
 		    heightsArr[i + j * sizeX] = h * idt._heightScale;
 		}
+	    }
+
+	    if (volumeInfo.xLength != volumeInfo.yLength)
+	    {
+		Debug.LogError("Error: Houdini heightmap must be square!");
+		return false;
+	    }
+
+	    if (idt._terrainData.heightmapResolution != volumeInfo.xLength)
+	    {
+		// Resize heightsArr to idt._terrainData.heightmapResolution
+		Debug.LogWarningFormat("Attempting to resize landscape from ({0}x{1}) to ({2}x{3})", idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution, volumeInfo.xLength, volumeInfo.xLength);
+		heightsArr = HEU_TerrainUtility.ResampleData(heightsArr, idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution, volumeInfo.xLength, volumeInfo.xLength);
+		sizeX = volumeInfo.xLength;
+		sizeY = volumeInfo.yLength;
+		totalSize = sizeX * sizeY;
 	    }
 
 	    // Set the base height layer
