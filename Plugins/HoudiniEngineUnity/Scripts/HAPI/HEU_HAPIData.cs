@@ -343,6 +343,7 @@ namespace HoudiniEngineUnity
 	HAPI_GROUPTYPE_INVALID = -1,
 	HAPI_GROUPTYPE_POINT,
 	HAPI_GROUPTYPE_PRIM,
+	HAPI_GROUPTYPE_EDGE,
 	HAPI_GROUPTYPE_MAX
     }
 
@@ -1243,6 +1244,7 @@ namespace HoudiniEngineUnity
 
 	public int pointGroupCount;
 	public int primitiveGroupCount;
+	int edgeGroupCount;
 
 	public int partCount;
     }
