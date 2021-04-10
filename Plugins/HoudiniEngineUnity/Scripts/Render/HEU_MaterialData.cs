@@ -78,6 +78,11 @@ namespace HoudiniEngineUnity
 	/// <param name="assetCacheFolderPath">Path to asset's cache folder</param>
 	public void UpdateMaterialFromHoudini(HAPI_MaterialInfo materialInfo, string assetCacheFolderPath)
 	{
+	    if (_material == null)
+	    {
+		return;
+	    }
+
 	    HEU_SessionBase session = HEU_SessionManager.GetOrCreateDefaultSession();
 
 	    HAPI_NodeInfo nodeInfo = new HAPI_NodeInfo();
