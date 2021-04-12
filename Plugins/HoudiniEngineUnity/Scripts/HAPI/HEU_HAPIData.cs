@@ -1039,7 +1039,7 @@ namespace HoudiniEngineUnity
 	public int childIndex;
 
 	public HAPI_ParmType type;
-	HAPI_PrmScriptType scriptType;
+	public HAPI_PrmScriptType scriptType;
 	public HAPI_StringHandle typeInfoSH;
 
 	public HAPI_Permissions permissions;

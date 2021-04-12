@@ -754,7 +754,7 @@ namespace HoudiniEngineUnity
 	    {
 		paramUICache._primaryValue.SetValue(parameterData._intValues);
 
-		if (parameterData._parmInfo.choiceCount > 0)
+		if (parameterData._parmInfo.choiceCount > 0 && parameterData._parmInfo.scriptType != HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
 		{
 		    paramUICache._secondaryValue.SetValue(parameterData._choiceValue, (choice) => parameterData._choiceValue = choice);
 		}
@@ -1050,7 +1050,7 @@ namespace HoudiniEngineUnity
 	    {
 		ArrayWrapper<int> intsValue = paramUICache._primaryValue.IntArrayValue;
 
-		if (parameterData._parmInfo.choiceCount > 0)
+		if (parameterData._parmInfo.choiceCount > 0 && parameterData._parmInfo.scriptType != HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
 		{
 		    // Drop-down choice list for INTs
 
@@ -1061,8 +1061,37 @@ namespace HoudiniEngineUnity
 		    // No need to check, just always updated with latest choiceProperty
 		    if (intsValue[0] != parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue])
 		    {
-			//Debug.LogFormat("Setting int property {0} from {1} to {2}", parameterData._labelName, intsProperty.GetArrayElementAtIndex(0).intValue, parameterData._choiceIntValues[choiceProperty.intValue]);
-			intsValue[0] = parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue];
+		    	//Debug.LogFormat("Setting int property {0} from {1} to {2}", parameterData._labelName, intsProperty.GetArrayElementAtIndex(0).intValue, parameterData._choiceIntValues[choiceProperty.intValue]);
+		    	intsValue[0] = parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue];
+		    }
+
+		}
+		else if (parameterData._parmInfo.choiceCount > 0 && parameterData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
+		{
+		    int currentValue = paramUICache._primaryValue.IntArrayValue[0];
+		    int newValue = 0;
+
+		    EditorGUILayout.BeginToggleGroup(parameterData._labelName, true);
+		    for (int i = 0; i < parameterData._parmInfo.choiceCount; i++)
+		    {
+		 	int andValue = (currentValue & (1 << i));
+		 	bool toggleOn = andValue > 0;
+
+		 	GUIContent labels = parameterData._choiceLabels[i];
+		 	toggleOn = EditorGUILayout.Toggle(labels, toggleOn);
+
+		 	if (toggleOn)
+		 	{
+		 	    newValue += (1 << i);
+		 	}
+		    }
+
+		    EditorGUILayout.EndToggleGroup();
+
+		    if (newValue != currentValue)
+		    {
+		        paramUICache._primaryValue.IntValue = newValue;
+		        intsValue[0] = newValue;
 		    }
 		}
 		else

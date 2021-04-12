@@ -199,6 +199,12 @@ namespace HoudiniEngineUnity
 	public static bool SetChoice(HEU_HoudiniAsset asset, string paramName, int setValue)
 	{
 	    HEU_ParameterData paramData = asset.Parameters.GetParameter(paramName);
+	    if (paramData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
+	    {
+		Debug.LogWarning("This should not be called with button strips");
+		return false;
+	    }
+
 	    if (paramData != null && paramData._parmInfo.choiceCount > 0 && setValue >= 0 && setValue < paramData._choiceIntValues.Length)
 	    {
 		paramData._intValues[0] = paramData._choiceIntValues[setValue];
@@ -215,6 +221,12 @@ namespace HoudiniEngineUnity
 	{
 	    outValue = 0;
 	    HEU_ParameterData paramData = asset.Parameters.GetParameter(paramName);
+	    if (paramData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
+	    {
+		Debug.LogWarning("This should not be called with button strips");
+		return false;
+	    }
+
 	    if (paramData != null && paramData._parmInfo.choiceCount > 0)
 	    {
 		outValue = paramData._intValues[0];

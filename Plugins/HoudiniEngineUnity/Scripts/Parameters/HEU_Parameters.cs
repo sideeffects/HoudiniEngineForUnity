@@ -322,7 +322,7 @@ namespace HoudiniEngineUnity
 			    newParameter._intValues = new int[parmInfo.size];
 			    Array.Copy(_paramInts, parmInfo.intValuesIndex, newParameter._intValues, 0, parmInfo.size);
 
-			    if (parmInfo.choiceCount > 0)
+			    if (parmInfo.choiceCount > 0 && parmInfo.scriptType != HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
 			    {
 				// Choice list for Int
 
@@ -346,6 +346,17 @@ namespace HoudiniEngineUnity
 				    {
 					newParameter._choiceValue = newParameter._choiceIntValues[c];
 				    }
+				}
+			    }
+			    else if (parmInfo.choiceCount > 0 && parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
+			    {
+				newParameter._choiceLabels = new GUIContent[parmInfo.choiceCount];
+
+				for (int c = 0; c < parmInfo.choiceCount; ++c)
+				{
+				    // Store the user friendly labels for each choice
+				    string labelStr = HEU_SessionManager.GetString(_paramChoices[parmInfo.choiceIndex + c].labelSH, session);
+				    newParameter._choiceLabels[c] = new GUIContent(labelStr);
 				}
 			    }
 
@@ -765,7 +776,7 @@ namespace HoudiniEngineUnity
 
 	public int GetChosenIndexFromChoiceList(HEU_ParameterData inChoiceParameter)
 	{
-	    Debug.Assert(inChoiceParameter._parmInfo.choiceCount > 0, "Expecting a Choice List!");
+	    Debug.Assert(inChoiceParameter._parmInfo.choiceCount > 0 && inChoiceParameter._parmInfo.scriptType != HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP, "Expecting a Choice List!");
 
 	    int numChoices = inChoiceParameter._choiceStringValues.Length;
 	    for (int i = 0; i < numChoices; ++i)
