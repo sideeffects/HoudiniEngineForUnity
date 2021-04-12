@@ -457,6 +457,11 @@ namespace HoudiniEngineUnity
 
 	public HEU_ToolsInfo ToolsInfo { get { return _toolsInfo; } }
 
+
+	[SerializeField, HideInInspector]
+	private HEU_AssetSerializedMetaData _serializedMetaData;
+	public HEU_AssetSerializedMetaData SerializedMetaData { get { return _serializedMetaData; } }
+
 	// Enum to guess how Unity instantiated this object (because Unity doesn't provide instantiation callbacks)
 	private enum AssetInstantiationMethod
 	{
@@ -535,6 +540,11 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 	    //Debug.Log("HEU_HoudiniAsset::Awake - " + AssetName);
 
+	    if (_serializedMetaData == null)
+	    {
+	        _serializedMetaData = ScriptableObject.CreateInstance<HEU_AssetSerializedMetaData>();
+	    }
+
 	    // We want to support Object.Instantiate, but ScriptableObjects cannot copy by value by 
 	    // default. So we simulate the "duplicate" function when we detect that this occurs
 	    // This would be a lot easier if Unity provided some sort of Instantiate() callback...
@@ -543,17 +553,6 @@ namespace HoudiniEngineUnity
 	    {
 		HEU_HoudiniAsset instantiatedAsset = this.GetInstantiatedObject();
 	    	this.ResetAndCopyInstantiatedProperties(instantiatedAsset);
-	    }
-	    else if (instantiationMethod == AssetInstantiationMethod.UNDO)
-	    {
-		Transform[] gos = _rootGameObject.GetComponentsInChildren<Transform>();
-		foreach (Transform trans in gos)
-		{
-		    if (trans != null && trans.gameObject != null && trans.gameObject != _rootGameObject && trans.gameObject != this.gameObject)
-		    {
-		        DestroyImmediate(trans.gameObject);
-		    }
-		}
 	    }
 
 	    // All assets are checked if valid in Houdini Engine session in Awake.
@@ -571,6 +570,23 @@ namespace HoudiniEngineUnity
 
 	    // Clear out the delegate because receiver might not exist on code refresh
 	    _refreshUIDelegate = null;
+
+	    if (_assetID !=  HEU_Defines.HEU_INVALID_NODE_ID && instantiationMethod == AssetInstantiationMethod.UNDO)
+	    {
+		Transform[] gos = _rootGameObject.GetComponentsInChildren<Transform>();
+		foreach (Transform trans in gos)
+		{
+		    if (trans != null && trans.gameObject != null && trans.gameObject != _rootGameObject && trans.gameObject != this.gameObject)
+		    {
+		        DestroyImmediate(trans.gameObject);
+		    }
+		}
+
+		this._serializedMetaData.SoftDeleted = false;
+
+		Debug.LogWarning("Undoing a deleted HDA may also remove its parameter undo stack.");
+		RequestReload(false);
+	    }
 #endif
 	}
 
@@ -4415,6 +4431,11 @@ namespace HoudiniEngineUnity
 
 	private AssetInstantiationMethod GetInstantiationMethod()
 	{
+	    if (this._serializedMetaData.SoftDeleted)
+	    {
+		return AssetInstantiationMethod.UNDO;
+	    }
+
 	    if (this._objectNodes == null)
 	    {
 	        return AssetInstantiationMethod.DEFAULT;
@@ -4636,6 +4657,29 @@ namespace HoudiniEngineUnity
 		    }
 		}
 	    }
+	}
+
+
+	public void SetSoftDeleted()
+	{
+	    if (_serializedMetaData == null)
+	    {
+	        _serializedMetaData = ScriptableObject.CreateInstance<HEU_AssetSerializedMetaData>();
+	    }
+	    
+	    this._serializedMetaData.SoftDeleted = true;
+
+	    
+	    // rot/scale values are lost when soft deleted!
+	    // I think it might work if I move it to _serializedMetaData, but I think it'll be most costly than what it's worth 
+	//    foreach (HEU_Curve curve in _curves)
+	//    {
+	//	if (this.SavedCurveNodeData != null && !this.CurveDisableScaleRotation)
+	//	{
+	//	    this.SavedCurveNodeData.Add(curve.CurveName, curve.CurveNodeData);
+	//	}
+	//    }
+	    
 	}
     }
 

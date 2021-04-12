@@ -269,6 +269,11 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
+	    if (_houdiniAsset.SerializedMetaData != null && _houdiniAsset.SerializedMetaData.SoftDeleted == true)
+	    {
+		return;
+	    }
+
 	    if ((Event.current.type == EventType.ValidateCommand && Event.current.commandName.Equals("UndoRedoPerformed")))
 	    {
 		Event.current.Use();

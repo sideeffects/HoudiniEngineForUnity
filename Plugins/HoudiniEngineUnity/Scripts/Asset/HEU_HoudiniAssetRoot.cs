@@ -65,7 +65,15 @@ namespace HoudiniEngineUnity
 		    _houdiniAsset.DeleteAssetCacheData(bRegisterUndo: true);
 		}
 
-		_houdiniAsset.DeleteAllGeneratedData();
+		if (Event.current != null && Event.current.commandName.Equals("SoftDelete"))
+		{
+		    // Don't delete data so that you can undo!
+		    _houdiniAsset.SetSoftDeleted();
+		}
+		else
+		{
+		    _houdiniAsset.DeleteAllGeneratedData(bIsRebuild: false);
+		}
 	    }
 	}
 
