@@ -37,5 +37,10 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private bool _softDeleted = false;
 	public bool SoftDeleted { get { return _softDeleted; } set { _softDeleted = value; } }
+
+	// Map of (Curve name) -> List of curve node data for saving scale/rotation values between rebuilds.
+	[SerializeField]
+	private Dictionary<string, List<CurveNodeData>> _savedCurveNodeData = new Dictionary<string, List<CurveNodeData>>();
+	public Dictionary<string, List<CurveNodeData>> SavedCurveNodeData { get { return _savedCurveNodeData; } }
     }
 }
