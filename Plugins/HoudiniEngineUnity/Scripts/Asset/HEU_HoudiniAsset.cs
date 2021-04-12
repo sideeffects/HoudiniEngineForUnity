@@ -174,10 +174,6 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private int _totalCookCount;
 
-	// Map of (Curve name) -> List of curve node data for saving scale/rotation values between rebuilds.
-	[SerializeField]
-	private Dictionary<string, List<CurveNodeData>> _savedCurveNodeData = new Dictionary<string, List<CurveNodeData>>();
-	public Dictionary<string, List<CurveNodeData>> SavedCurveNodeData { get { return _savedCurveNodeData; } }
 
 	// BUILD & COOK -----------------------------------------------------------------------------------------------
 
@@ -511,7 +507,12 @@ namespace HoudiniEngineUnity
 	    _sessionID = session.GetSessionData().SessionID;
 
 	    _totalCookCount = 0;
-	    _savedCurveNodeData.Clear();
+	    if (_serializedMetaData == null)
+	    {
+	        _serializedMetaData = ScriptableObject.CreateInstance<HEU_AssetSerializedMetaData>();
+	    }
+
+	     _serializedMetaData.SavedCurveNodeData.Clear();
 	}
 
 	/// <summary>
@@ -3483,7 +3484,7 @@ namespace HoudiniEngineUnity
 	{
 	    foreach (HEU_Curve curve in _curves)
 	    {
-		if (curve.CurveName.Equals(curveName))
+		if (curve != null && curve.CurveName.Equals(curveName))
 		{
 		    return curve;
 		}
@@ -4143,6 +4144,8 @@ namespace HoudiniEngineUnity
 		_parameters.SetPresetData(assetPreset._parameterPreset);
 	    }
 
+	     ClearInvalidCurves();
+
 	    int numCurves = assetPreset._curveNames.Count;
 	    for (int i = 0; i < numCurves; ++i)
 	    {
@@ -4672,13 +4675,13 @@ namespace HoudiniEngineUnity
 	    
 	    // rot/scale values are lost when soft deleted!
 	    // I think it might work if I move it to _serializedMetaData, but I think it'll be most costly than what it's worth 
-	//    foreach (HEU_Curve curve in _curves)
-	//    {
-	//	if (this.SavedCurveNodeData != null && !this.CurveDisableScaleRotation)
-	//	{
-	//	    this.SavedCurveNodeData.Add(curve.CurveName, curve.CurveNodeData);
-	//	}
-	//    }
+	    foreach (HEU_Curve curve in _curves)
+	    {
+		if (_serializedMetaData.SavedCurveNodeData != null && !this.CurveDisableScaleRotation)
+		{
+		    _serializedMetaData.SavedCurveNodeData.Add(curve.CurveName, curve.CurveNodeData);
+		}
+	    }
 	    
 	}
     }

@@ -179,10 +179,10 @@ namespace HoudiniEngineUnity
 	    newCurve._isGeoCurve = bGeoCurve;
 	    newCurve._parentAsset = parentAsset;
 
-	    if (parentAsset.SavedCurveNodeData != null && parentAsset.SavedCurveNodeData.ContainsKey(curveName) && !parentAsset.CurveDisableScaleRotation)
+	    if (parentAsset.SerializedMetaData != null && parentAsset.SerializedMetaData.SavedCurveNodeData != null && parentAsset.SerializedMetaData.SavedCurveNodeData.ContainsKey(curveName) && !parentAsset.CurveDisableScaleRotation)
 	    {
-		newCurve._curveNodeData = parentAsset.SavedCurveNodeData[curveName];
-		parentAsset.SavedCurveNodeData.Remove(curveName);
+		newCurve._curveNodeData = parentAsset.SerializedMetaData.SavedCurveNodeData[curveName];
+		parentAsset.SerializedMetaData.SavedCurveNodeData.Remove(curveName);
 	    }
 
 	    parentAsset.AddCurve(newCurve);
@@ -203,9 +203,9 @@ namespace HoudiniEngineUnity
 		_targetGameObject = null;
 	    }
 
-	    if (bIsRebuild && _parentAsset != null && _parentAsset.SavedCurveNodeData != null && !_parentAsset.CurveDisableScaleRotation)
+	    if (bIsRebuild && _parentAsset != null && _parentAsset.SerializedMetaData.SavedCurveNodeData != null && !_parentAsset.CurveDisableScaleRotation)
 	    {
-		_parentAsset.SavedCurveNodeData.Add(_curveName, _curveNodeData);
+		_parentAsset.SerializedMetaData.SavedCurveNodeData.Add(_curveName, _curveNodeData);
 	    }
 	}
 
