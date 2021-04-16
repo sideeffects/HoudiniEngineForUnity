@@ -43,7 +43,7 @@ namespace HoudiniEngineUnity
     /// Represents the Houdini Object node.
     /// Holds and manages geo nodes.
     /// </summary>
-    public class HEU_ObjectNode : ScriptableObject
+    public class HEU_ObjectNode : ScriptableObject, IEquivable<HEU_ObjectNode>
     {
 	//  DATA ------------------------------------------------------------------------------------------------------
 
@@ -749,6 +749,28 @@ namespace HoudiniEngineUnity
 	{
 	    return (!string.IsNullOrEmpty(_objName) ? ("ObjectNode: " + _objName) : base.ToString());
 	}
+
+	public bool IsEquivalentTo(HEU_ObjectNode other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_ObjectNode";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectInfo.ToTestObject(), other._objectInfo.ToTestObject(), ref bResult, header, "Object Info");
+	
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoNodes, other._geoNodes, ref bResult, header, "Geo Node");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectTransform.ToTestObject(), other._objectTransform.ToTestObject(), ref bResult, header, "Object transform");
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

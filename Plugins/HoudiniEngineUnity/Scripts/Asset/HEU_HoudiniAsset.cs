@@ -63,7 +63,7 @@ namespace HoudiniEngineUnity
     /// Can (and should) be excluded from builds & runtime.
     /// </summary>
     [ExecuteInEditMode] // OnEnable/OnDisable for registering for tick
-    public sealed class HEU_HoudiniAsset : MonoBehaviour
+    public sealed class HEU_HoudiniAsset : MonoBehaviour, IEquivable<HEU_HoudiniAsset>
     {
 	//	ASSET DATA ------------------------------------------------------------------------------------------------
 
@@ -364,6 +364,11 @@ namespace HoudiniEngineUnity
 
 	public bool BakeUpdateKeepPreviousTransformValues { get { return _bakeUpdateKeepPreviousTransformValues; } set { _bakeUpdateKeepPreviousTransformValues = value; } }
 
+	[SerializeField]
+	private bool _pauseCooking = false;
+	public bool PauseCooking { get { return _pauseCooking; } set { _pauseCooking = value; }}
+
+
 	// CURVES -----------------------------------------------------------------------------------------------------
 
 	// Toggle curve editing tool in Scene view
@@ -624,6 +629,11 @@ namespace HoudiniEngineUnity
 
 	private void OnDestroy()
 	{
+	    if (this.PauseCooking == true)
+	    {
+		return;
+	    }
+	    
 	    //Debug.Log("Asset:OnDestroy");
 #if HOUDINIENGINEUNITY_ENABLED
 	    HEU_AssetUpdater.RemoveAsset(this);
@@ -1338,6 +1348,11 @@ namespace HoudiniEngineUnity
 	    }
 
 	    if (!bSkipCookCheck && !HEU_PluginSettings.CookingEnabled)
+	    {
+		return false;
+	    }
+
+	    if (_pauseCooking)
 	    {
 		return false;
 	    }
@@ -4683,6 +4698,141 @@ namespace HoudiniEngineUnity
 		}
 	    }
 	    
+	}
+
+	// Equivalence function (Mostly for testing purposes) =======================================================================
+
+	public bool IsEquivalentTo(HEU_HoudiniAsset asset)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_HoudiniAsset";
+
+	    if (asset == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetInfo.ToTestObject(), asset._assetInfo.ToTestObject(), ref bResult, header, "Asset Info");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetType, asset._assetType, ref bResult, header, "Asset type");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._nodeInfo.ToTestObject(), asset._nodeInfo.ToTestObject(), ref bResult, header, "Node Info");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._assetName == asset._assetName, ref bResult, header, "Asset name");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetOpName, asset._assetOpName, ref bResult, header, "Asset op");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetHelp, asset._assetHelp, ref bResult, header, "_assetHelp");
+
+
+	    // TransformInputCount/GeoInputCount not necessary because it is a part of _assetInfo
+	    // assetId not necessary because doesn't  need to be equivalent
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetPath, asset.AssetPath, ref bResult, header, "Asset path");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._loadAssetFromMemory, asset._loadAssetFromMemory, ref bResult, header, "Load from memory");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._alwaysOverwriteOnLoad, asset._alwaysOverwriteOnLoad, ref bResult, header, "Always overwrite on load");
+
+	    // Ignore assetFileObject
+
+	    // Skip HandleCount
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectNodes, asset._objectNodes, ref bResult, "Object node", header);
+
+
+	    // Skip ownerGameObject, rootGameObject
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._materialCache, asset._materialCache, ref bResult, header, "Material cache");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parameters, asset._parameters, ref bResult, header, "Parameters");
+
+
+	    // Skip lastSyncedTransformMatrix
+
+	    // Skip asset folder cache
+	    //if (HEU_GeneralUtility.ShouldBeTested(this._assetCacheFolderPath, asset._assetCacheFolderPath, ref bResult, header, "_assetCacheFolderPath"))
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._assetCacheFolderPath == asset._assetCacheFolderPath, ref bResult, header, "Asset cache folder");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._subassetNames, asset._subassetNames, ref bResult, header, "_subassetNames");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._selectedSubassetIndex, asset._selectedSubassetIndex, ref bResult, header, "_selectedSubassetIndex");
+
+	    //if (this._savedAssetPreset != null || asset._savedAssetPreset != null)
+	     //   HEU_TestHelpers.AssertTrueLogEquivalent(this._savedAssetPreset.IsEquivalentTo(asset._savedAssetPreset), ref bResult, header, "Saved asset preset");
+
+	    //if (this._recookPreset != null || asset._recookPreset != null)
+	    //    HEU_TestHelpers.AssertTrueLogEquivalent(this._recookPreset.IsEquivalentTo(asset._recookPreset), ref bResult, header, "Recook preset");
+
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._totalCookCount, asset._totalCookCount, ref bResult, header, "Recook preset");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._requestBuildAction, asset._requestBuildAction, ref bResult, header, "Request build action");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._checkParameterChangeForCook, asset._checkParameterChangeForCook, ref bResult, header, "Check parameter change for cook");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._skipCookCheck, asset._skipCookCheck, ref bResult, header, "Skip cook check");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._uploadParameters, asset._uploadParameters, ref bResult, header, "Upload parameters");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._forceUploadInputs, asset._forceUploadInputs, ref bResult, header, "Force upload inputs");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._upstreamCookChanged, asset._upstreamCookChanged, ref bResult, header, "Upstream cook changed");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._cookStatus, asset._cookStatus, ref bResult, header, "Cook status");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._lastCookResult, asset._lastCookResult, ref bResult, header, "Last cook result");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._isCookingAssetReloaded, asset._isCookingAssetReloaded, ref bResult, header, "Is cooking asset reloaded");
+
+	    // Skip sessionId
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._uiLocked, asset._uiLocked, ref bResult, header, "UI locked");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showHDAOptions, asset._showHDAOptions, ref bResult, header, "Show HDA options");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showGenerateSection, asset._showGenerateSection, ref bResult, header, "Show generate section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showBakeSection, asset._showBakeSection, ref bResult, header, "Show bake section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showEventsSection, asset._showEventsSection, ref bResult, header, "Show events section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showCurvesSection, asset._showCurvesSection, ref bResult, header, "Show curves section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showInputNodesSection, asset._showInputNodesSection, ref bResult, header, "Show input nodes section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showToolsSection, asset._showToolsSection, ref bResult, header, "Show tools section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showTerrainSection, asset._showTerrainSection, ref bResult, header, "Show Terrain section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._instanceInputUIState, asset._instanceInputUIState, ref bResult, header, "Instance input UI state");
+
+	    // Skip events
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateUVs, asset._generateUVs, ref bResult, header, "Generate UVs");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateTangents, asset._generateTangents, ref bResult, header, "Generate Tangents");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateNormals, asset._generateNormals, ref bResult, header, "Generate Normals");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._pushTransformToHoudini, asset._pushTransformToHoudini, ref bResult, header, "Push Transform to Houdini");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._transformChangeTriggersCooks, asset._transformChangeTriggersCooks, ref bResult, header, "Transform changes triggers cooks");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._cookingTriggersDownCooks, asset._cookingTriggersDownCooks, ref bResult, header, "Cooking triggers down cooks");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._autoCookOnParameterChange, asset._autoCookOnParameterChange, ref bResult, header, "Auto cook on parameter change");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._ignoreNonDisplayNodes, asset._ignoreNonDisplayNodes, ref bResult, header, "Ignore non-display nodes");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateMeshUsingPoints, asset._generateMeshUsingPoints, ref bResult, header, "Generate mesh using points");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._useLODGroups, asset._useLODGroups, ref bResult, header, "Use LOD groups");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._splitGeosByGroup, asset._splitGeosByGroup, ref bResult, header, "Split geos by group");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._sessionSyncAutoCook, asset._sessionSyncAutoCook, ref bResult, header, "Session sync auto cook");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._bakeUpdateKeepPreviousTransformValues, asset._bakeUpdateKeepPreviousTransformValues, ref bResult, header, "Bake update keep previous transform values");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveEditorEnabled, asset._curveEditorEnabled, ref bResult, header, "Curve editor enabled");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curves, asset._curves, ref bResult, header, "Curves");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveDrawCollision, asset._curveDrawCollision, ref bResult, header, "Curve draw collision");
+
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveDrawLayerMask.ToTestObject(), asset._curveDrawLayerMask.ToTestObject(), ref bResult, header, "Curve draw layer mask");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveProjectMaxDistance, asset._curveProjectMaxDistance, ref bResult, header, "Curve Project max distance");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveProjectDirection, asset._curveProjectDirection, ref bResult, header, "Curve project direction");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveDisableScaleRotation, asset.CurveDisableScaleRotation, ref bResult, header, "Curve disable scale rotation");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveCookOnDrag, asset._curveCookOnDrag, ref bResult, header, "Curve cook on drag");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveFrameSelectedNodes, asset._curveFrameSelectedNodes, ref bResult, header, "Curve Frame selected nodes");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveFrameSelectedNodeDistance, asset._curveFrameSelectedNodeDistance, ref bResult, header, "Curve Frame selected nodes distance");
+	    
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputNodes, asset._inputNodes, ref bResult, header, "Input node:");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handles, asset._handles, ref bResult, header, "Handles node:");
+
+	    
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handlesEnabled, asset._handlesEnabled, ref bResult, header, "Handles enabled");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._volumeCaches, asset._volumeCaches, ref bResult, header, "Volume caches node:");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._attributeStores, asset._attributeStores, ref bResult, header, "Attribute stores:");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._editableNodesToolsEnabled, asset._editableNodesToolsEnabled, ref bResult, header, "_editableNodesToolsEnabled");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._toolsInfo, asset._toolsInfo, ref bResult, header, "_toolsInfo");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._serializedMetaData, asset._serializedMetaData, ref bResult, header, "_serializedMetaData");
+
+	    return bResult;
 	}
     }
 

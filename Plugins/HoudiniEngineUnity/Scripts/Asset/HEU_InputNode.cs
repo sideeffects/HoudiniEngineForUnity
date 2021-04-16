@@ -41,7 +41,7 @@ namespace HoudiniEngineUnity
     /// Currently only supports sending geometry upstream.
     /// Specify input data as file (eg. bgeo), HDA, and Unity gameobjects.
     /// </summary>
-    public class HEU_InputNode : ScriptableObject
+    public class HEU_InputNode : ScriptableObject, IEquivable<HEU_InputNode>
     {
 	// DATA -------------------------------------------------------------------------------------------------------
 
@@ -1102,6 +1102,40 @@ namespace HoudiniEngineUnity
 		}
 	    }
 	}
+
+	public bool IsEquivalentTo(HEU_InputNode other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_InputNode";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputNodeType, other._inputNodeType, ref bResult, header, "_inputNodeType");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._pendingInputObjectType, other._pendingInputObjectType, ref bResult, header, "_pendingInputObjectType");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputObjects.Count, other._inputObjects.Count, ref bResult, header, "_inputObjects.Count");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputObjects, other._inputObjects, ref bResult, header, "_inputObjects");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputAssetInfos, other._inputAssetInfos, ref bResult, header, "_inputAssetInfos");
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._inputIndex, other._inputIndex, ref bResult, header, "_inputIndex");
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._requiresCook, other._requiresCook, ref bResult, header, "_requiresCook");
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._requiresUpload, other._requiresUpload, ref bResult, header, "_requiresUpload");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputName, other._inputName, ref bResult, header, "_inputName");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._labelName, other._labelName, ref bResult, header, "_labelName");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paramName, other._paramName, ref bResult, header, "_paramName");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._keepWorldTransform, other._keepWorldTransform, ref bResult, header, "_keepWorldTransform");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._packGeometryBeforeMerging, other.PackGeometryBeforeMerging, ref bResult, header, "_packGeometryBeforeMerging");
+
+	    // Skip conneceted node id
+	    // Skip _inputObjectsConnectedAssetIds
+	    // Skip inputAsset/connectedINputAsset
+	    // Skip parent asset
+
+	    return bResult;
+	}
     }
 
     // Container for each input object in this node
@@ -1140,6 +1174,29 @@ namespace HoudiniEngineUnity
 	    destObject._scaleOffset = _scaleOffset;
 	    destObject._inputInterfaceType = _inputInterfaceType;
 	}
+
+	public bool IsEquivalentTo(HEU_InputObjectInfo other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_InputObjectInfo";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._syncdTransform, other._syncdTransform, ref bResult, header, "_syncedTransform");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._useTransformOffset, other._useTransformOffset, ref bResult, header, "_useTransformOffset");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._translateOffset, other._translateOffset, ref bResult, header, "_translateOffset");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._rotateOffset, other._rotateOffset, ref bResult, header, "_rotateOffset");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._scaleOffset, other._scaleOffset, ref bResult, header, "_scaleOffset");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputInterfaceType.Name, other._inputInterfaceType.Name, ref bResult, header, "_inputInterfaceType");
+	 
+	    return bResult;
+	}
+
     }
 
     [System.Serializable]
@@ -1161,6 +1218,26 @@ namespace HoudiniEngineUnity
 
 	    destInfo._connectedInputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 	}
+
+	public bool IsEquivalentTo(HEU_InputHDAInfo other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_InputHDAInfo";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._pendingGO, other._pendingGO, ref bResult, header, "_pendingGO");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._connectedGO, other._connectedGO, ref bResult, header, "_connectedGO");
+
+	    return bResult;
+	}
+
     }
 
     // UI cache container

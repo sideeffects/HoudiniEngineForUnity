@@ -52,7 +52,7 @@ namespace HoudiniEngineUnity
     /// queries in HEU_ParameterUI, as they are string-based.
     /// </summary>
     [System.Serializable]
-    public sealed class HEU_ParameterData
+    public sealed class HEU_ParameterData : IEquivable<HEU_ParameterData>
     {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Stored data
@@ -184,6 +184,57 @@ namespace HoudiniEngineUnity
 	public bool IsAssetPath()
 	{
 	    return _hasAssetPathTag;
+	}
+
+	public bool IsEquivalentTo(HEU_ParameterData other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_ParameterData";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._name, other._name, ref bResult, header, "_name");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._labelName, other._labelName, ref bResult, header, "_labelName");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._help, other._help, ref bResult, header, "_help");
+
+	    // Skip child parameter Ids values, but not count
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._childParameterIDs.Count, other._childParameterIDs.Count, ref bResult, header, "_childParameterIds");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._intValues, other._intValues, ref bResult, header, "_intValues");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._floatValues, other._floatValues, ref bResult, header, "_floatValues");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._stringValues, other._stringValues, ref bResult, header, "_stringValues");
+   
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._toggle, other._toggle, ref bResult, header, "_toggle");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._color, other._color, ref bResult, header, "_color");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._gradient.ToTestObject(), other._gradient.ToTestObject(), ref bResult, header, "_gradient");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._animCurve.ToTestObject(), other._animCurve.ToTestObject(), ref bResult, header, "_animCurve");
+
+	    // Skip choiceLabels 
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._choiceStringValues, other._choiceStringValues, ref bResult, header, "_choiceStringValues");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._choiceIntValues, other._choiceIntValues, ref bResult, header, "_choiceIntValues");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parmInfo.ToTestObject(), other._parmInfo.ToTestObject(), ref bResult, header, "_parmInfo");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showChildren, other._showChildren, ref bResult, header, "_showChildren");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._fileTypeInfo, other._fileTypeInfo, ref bResult, header, "_fileTypeInfo");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._folderListChildrenProcessed, other._folderListChildrenProcessed, ref bResult, header, "_folderListChildrenProcessed");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._tabSelectedIndex, other._tabSelectedIndex, ref bResult, header, "_tabSelectedIndex");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paramInputNode, other._paramInputNode, ref bResult, header, "_paramInputNode");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._hasAssetPathTag, other._hasAssetPathTag, ref bResult, header, "_hasAssetPathTag");
+
+	    return bResult;
 	}
     }
 

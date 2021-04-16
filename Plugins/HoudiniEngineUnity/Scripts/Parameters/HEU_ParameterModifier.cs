@@ -35,7 +35,7 @@ namespace HoudiniEngineUnity
     /// Currently used to modifier multiparms after the UI has drawn.
     /// </summary>
     [System.Serializable]
-    public class HEU_ParameterModifier
+    public class HEU_ParameterModifier : IEquivable<HEU_ParameterModifier>
     {
 	public int _parameterIndex;
 
@@ -69,6 +69,30 @@ namespace HoudiniEngineUnity
 
 	    return newModifier;
 	}
+
+	public bool IsEquivalentTo(HEU_ParameterModifier other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_ParameterModifier";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parameterIndex, other._parameterIndex, ref bResult, header, "_parameterIndex");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._action, other._action, ref bResult, header, "_action");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._instanceIndex, other._instanceIndex, ref bResult, header, "_instanceIndex");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._modifierValue, other._modifierValue, ref bResult, header, "_modifierValue");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._floatValue, other._floatValue, ref bResult, header, "_floatValue");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._intValue, other._intValue, ref bResult, header, "_intValue");
+	
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

@@ -46,7 +46,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Represents a Geometry (SOP) node.
     /// </summary>
-    public class HEU_GeoNode : ScriptableObject, ISerializationCallbackReceiver
+    public class HEU_GeoNode : ScriptableObject, ISerializationCallbackReceiver, IEquivable<HEU_GeoNode>
     {
 	//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -1061,6 +1061,39 @@ namespace HoudiniEngineUnity
 	{
 	    return (!string.IsNullOrEmpty(_geoName) ? ("GeoNode: " + _geoName) : base.ToString());
 	}
+
+
+	public bool IsEquivalentTo(HEU_GeoNode other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_GeoNode";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoInfo.ToTestObject(), other._geoInfo.ToTestObject(), ref bResult, header, "_geoInfo");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parts, other._parts, ref bResult, header, "_part");
+	    
+	    // SKip _containerObjectNode/parentAsset stuff
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoCurve, other._geoCurve, ref bResult, header, "_geoCurve");
+	
+	    // Skip volumCache
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._volumeCaches, other._volumeCaches, ref bResult, header, "_volumeCaches");
+	    
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

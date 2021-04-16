@@ -52,7 +52,7 @@ namespace HoudiniEngineUnity
     /// Represents a volume-based terrain layer
     /// </summary>
     [System.Serializable]
-    public class HEU_VolumeLayer
+    public class HEU_VolumeLayer : IEquivable<HEU_VolumeLayer>
     {
 	public string _layerName;
 	public HEU_PartData _part;
@@ -79,13 +79,42 @@ namespace HoudiniEngineUnity
 	public HFLayerType _layerType;
 
 	public HEU_DetailPrototype _detailPrototype;
+
+	public bool IsEquivalentTo(HEU_VolumeLayer other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_VolumeLayer";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._layerName, other._layerName, ref bResult, header, "_layerName");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._strength, other._strength, ref bResult, header, "_strength");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._uiExpanded, other._uiExpanded, ref bResult, header, "_uiExpanded");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._tile, other._tile, ref bResult, header, "_tile");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._xLength, other._xLength, ref bResult, header, "_xLength");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._yLength, other._yLength, ref bResult, header, "_yLength");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._terrainLayer.ToTestObject(), other._terrainLayer.ToTestObject(), ref bResult, header, "_terrainLayer");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._layerType, other._layerType, ref bResult, header, "_layerType");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._strength, other._strength, ref bResult, header, "_strength");
+
+
+	    return bResult;
+	}
+
     }
 
     /// <summary>
     /// Container for TreePrototypes and TreeInstances
     /// specified in a heightfield for a Unity terrain.
     /// </summary>
-    public class HEU_VolumeScatterTrees
+    public class HEU_VolumeScatterTrees : IEquivable<HEU_VolumeScatterTrees>
     {
 	// Data for creating TreePrototypes
 	public List<HEU_TreePrototypeInfo> _treePrototypInfos;
@@ -98,6 +127,32 @@ namespace HoudiniEngineUnity
 	public int[] _prototypeIndices;
 	public float[] _rotations;
 	public float[] _widthScales;
+
+	public bool IsEquivalentTo(HEU_VolumeScatterTrees other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_VolumeScatterTrees";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._treePrototypInfos, other._treePrototypInfos, ref bResult, header, "_treePrototyInfos");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._colors, other._colors, ref bResult, header, "_colors");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._heightScales, other._heightScales, ref bResult, header, "_heightScales");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._lightmapColors, other._lightmapColors, ref bResult, header, "_lightmapColors");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._positions, other._positions, ref bResult, header, "_positions");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._prototypeIndices, other._prototypeIndices, ref bResult, header, "_prototypeIndices");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._rotations, other._rotations, ref bResult, header, "_rotations");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._widthScales, other._widthScales, ref bResult, header, "_widthScales");
+
+	    return bResult;
+	}
+
     }
 
     /// <summary>
@@ -105,21 +160,62 @@ namespace HoudiniEngineUnity
     /// Since unable to load the prefab in a non-main thread,
     /// this holds the prefab path until we can load it.
     /// </summary>
-    public class HEU_TreePrototypeInfo
+    public class HEU_TreePrototypeInfo : IEquivable<HEU_TreePrototypeInfo>
     {
 	public string _prefabPath;
 	public float _bendfactor;
+
+	public bool IsEquivalentTo(HEU_TreePrototypeInfo other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_TreePrototypeInfo";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._prefabPath, other._prefabPath, ref bResult, header, "_prefabPath");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._bendfactor, other._bendfactor, ref bResult, header, "_bendfactor");
+
+	    return bResult;
+	}
+
     }
 
     /// <summary>
     /// Terrain detail properties
     /// </summary>
-    public class HEU_DetailProperties
+    public class HEU_DetailProperties : IEquivable<HEU_DetailProperties>
     {
 	public float _detailDistance = -1;
 	public float _detailDensity = -1;
 	public int _detailResolution;
 	public int _detailResolutionPerPatch = -1;
+
+	public bool IsEquivalentTo(HEU_DetailProperties other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_DetailProperties";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._detailDistance, other._detailDistance, ref bResult, header, "_detailDistance");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._detailDensity, other._detailDensity, ref bResult, header, "_detailDensity");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._detailResolution, other._detailResolution, ref bResult, header, "_detailResolution");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._detailResolutionPerPatch, other._detailResolutionPerPatch, ref bResult, header, "_detailResolutionPerPatch");
+
+	    return bResult;
+	}
+
     }
 
     /// <summary>
@@ -130,7 +226,7 @@ namespace HoudiniEngineUnity
     /// instead of assets directly, as well as to mitigate
     /// Unity changes with DetailPrototype.
     /// </summary>
-    public class HEU_DetailPrototype
+    public class HEU_DetailPrototype : IEquivable<HEU_DetailPrototype>
     {
 	public string _prototypePrefab;
 	public string _prototypeTexture;
@@ -161,12 +257,31 @@ namespace HoudiniEngineUnity
 	    _renderMode = (int)proto.renderMode;
 #endif
 	}
+
+	public bool IsEquivalentTo(HEU_DetailPrototype other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_DetailPrototype";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._prototypePrefab, other._prototypePrefab, ref bResult, header, "_prototypePrefab");
+
+	    return bResult;
+	}
+
     }
 
     /// <summary>
     /// Creates terrain out of volume parts.
     /// </summary>
-    public class HEU_VolumeCache : ScriptableObject
+    public class HEU_VolumeCache : ScriptableObject, IEquivable<HEU_VolumeCache>
     {
 	//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -1291,6 +1406,35 @@ namespace HoudiniEngineUnity
 	    }
 	    return texture;
 	}
+
+	public bool IsEquivalentTo(HEU_VolumeCache other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_VolumeCache";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._layers, other._layers, ref bResult, header, "_layers");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._tileIndex, other._tileIndex, ref bResult, header, "_tileIndex");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isDirty, other._isDirty, ref bResult, header, "_isDirty");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._objName, other._objName, ref bResult, header, "_objName");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._terrainData.ToTestObject(), other._terrainData.ToTestObject(), ref bResult, header, "_terrainData");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._scatterTrees, other._scatterTrees, ref bResult, header, "_scatterTrees");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._detailProperties, other._detailProperties, ref bResult, header, "_detailProperties");
+
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

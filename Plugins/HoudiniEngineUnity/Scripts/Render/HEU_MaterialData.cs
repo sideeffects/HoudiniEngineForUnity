@@ -39,7 +39,7 @@ namespace HoudiniEngineUnity
 
 
     // Wrapper around Unity's Material, with some helper functions.
-    public class HEU_MaterialData : ScriptableObject
+    public class HEU_MaterialData : ScriptableObject, IEquivable<HEU_MaterialData>
     {
 	// Actual Unity material
 	public Material _material;
@@ -222,6 +222,27 @@ namespace HoudiniEngineUnity
 		desiredFileFormatName = HEU_Defines.HAPI_PNG_FORMAT_NAME;
 	    }
 	    return desiredFileFormatName;
+	}
+
+	public bool IsEquivalentTo(HEU_MaterialData other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_MaterialData";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._material.ToTestObject(), other._material.ToTestObject(), ref bResult, header, "_material");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._materialSource, other._materialSource, ref bResult, header, "_materialSource");
+
+	    // Skip _materialKey
+	 
+	    return bResult;
 	}
 
     }

@@ -39,7 +39,7 @@ namespace HoudiniEngineUnity
     using HAPI_StringHandle = System.Int32;
 
     [System.Serializable]
-    public class CurveNodeData
+    public class CurveNodeData : IEquivable<CurveNodeData>
     {
 	[SerializeField]
 	public Vector3 position = Vector3.zero;
@@ -83,13 +83,33 @@ namespace HoudiniEngineUnity
 	{
 	    return Quaternion.Euler(this.rotation);
 	}
+
+	public bool IsEquivalentTo(CurveNodeData other)
+	{
+	    bool bResult = true;
+
+	    string header = "CurveNodeData";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this.position, other.position, ref bResult, header, "position");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this.rotation, other.rotation, ref bResult, header, "rotation");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this.scale, other.scale, ref bResult, header, "scale");
+
+	    return bResult;
+	    
+	}
     };
 
 
     /// <summary>
     /// Contains data and logic for curve node drawing and editing.
     /// </summary>
-    public class HEU_Curve : ScriptableObject
+    public class HEU_Curve : ScriptableObject, IEquivable<HEU_Curve>
     {
 	// DATA -------------------------------------------------------------------------------------------------------
 
@@ -1155,6 +1175,42 @@ namespace HoudiniEngineUnity
 	{
 	    _curveNodeData = curveNodeData;
 	}
+
+	public bool IsEquivalentTo(HEU_Curve other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_Curve";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveNodeData, other._curveNodeData, ref bResult, header, "_curveNodeData");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._vertices, other._vertices, ref bResult, header, "_vertices");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isEditable, other._isEditable, ref bResult, header, "_isEditable");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parameters, other._parameters , ref bResult, header, "_parameters");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._bUploadParameterPreset, other._bUploadParameterPreset, ref bResult, header, "_bUploadParamterPreset");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveName, other._curveName, ref bResult, header, "_curveName");
+	    
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._targetGameObject, other._targetGameObject, ref bResult, header, "_targetGameObject");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isGeoCurve, other._isGeoCurve, ref bResult, header, "_isGeoCurve");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._editState, other._editState, ref bResult, header, "_editState");
+
+	    // Skip HEU_HoudiniAsset
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

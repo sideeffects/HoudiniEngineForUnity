@@ -38,7 +38,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Represents an instanced object along with its list of instances.
     /// </summary>
-    public class HEU_ObjectInstanceInfo : ScriptableObject
+    public class HEU_ObjectInstanceInfo : ScriptableObject, IEquivable<HEU_ObjectInstanceInfo>
     {
 	// Instanced game objects. User can override these. Randomly assigned if more than 1.
 	public List<HEU_InstancedInput> _instancedInputs = new List<HEU_InstancedInput>();
@@ -54,17 +54,55 @@ namespace HoudiniEngineUnity
 
 	// Instances using the source instanced object
 	public List<GameObject> _instances = new List<GameObject>();
+
+	public bool IsEquivalentTo(HEU_ObjectInstanceInfo other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_ObjectInstanceInfo";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._instancedInputs, other._instancedInputs, ref bResult, header, "_instancedInputs");
+
+	    return bResult;
+	}
+
     }
 
     /// <summary>
     /// Container for an instanced object's input gameobject, and offsets.
     /// </summary>
     [System.Serializable]
-    public class HEU_InstancedInput
+    public class HEU_InstancedInput : IEquivable<HEU_InstancedInput>
     {
 	public GameObject _instancedGameObject;
 	public Vector3 _rotationOffset = Vector3.zero;
 	public Vector3 _scaleOffset = Vector3.one;
+
+	public bool IsEquivalentTo(HEU_InstancedInput other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_InstancedInput";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._instancedGameObject, other._instancedGameObject, ref bResult, header, "_instancedGameObject");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._rotationOffset, other._rotationOffset, ref bResult, header, "_rotationOffset");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._scaleOffset, other._scaleOffset, ref bResult, header, "_scaleOffset");
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

@@ -88,6 +88,7 @@ namespace HoudiniEngineUnity
     };
 
 
+
     /// <summary>
     /// General utility functions for the Houdini Engine plugin.
     /// </summary>
@@ -2013,62 +2014,9 @@ namespace HoudiniEngineUnity
 	{
 	    return value - Mathf.Floor(value);
 	}
-    }
 
+    };
 
-    public static class ArrayExtensions
-    {
-	/// <summary>
-	/// Set the given array with the given value for every element.
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="array"></param>
-	/// <param name="defaultValue"></param>
-	public static void Init<T>(this T[] array, T defaultValue)
-	{
-	    if (array != null)
-	    {
-		for (int i = 0; i < array.Length; i++)
-		{
-		    array[i] = defaultValue;
-		}
-	    }
-	}
-
-	/// <summary>
-	/// Set the given list with the given value for every element.
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="array"></param>
-	/// <param name="defaultValue"></param>
-	public static void Init<T>(this List<T> array, T defaultValue)
-	{
-	    if (array != null)
-	    {
-		for (int i = 0; i < array.Count; i++)
-		{
-		    array[i] = defaultValue;
-		}
-	    }
-	}
-
-	public static void CopyToWithResize<T>(this T[] srcArray, ref T[] destArray)
-	{
-	    if (srcArray == null)
-	    {
-		destArray = null;
-	    }
-	    else
-	    {
-		if (destArray == null || destArray.Length != srcArray.Length)
-		{
-		    destArray = new T[srcArray.Length];
-		}
-
-		Array.Copy(srcArray, destArray, srcArray.Length);
-	    }
-	}
-    }
 
     public class ReverseCompare : IComparer
     {
@@ -2078,4 +2026,5 @@ namespace HoudiniEngineUnity
 	}
     }
 
+ 
 }   // HoudiniEngineUnity

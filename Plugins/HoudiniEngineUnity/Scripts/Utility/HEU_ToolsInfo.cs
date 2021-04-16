@@ -35,7 +35,7 @@ namespace HoudiniEngineUnity
     using HAPI_PartId = System.Int32;
 
     [System.Serializable]
-    public class HEU_ToolsInfo : ScriptableObject
+    public class HEU_ToolsInfo : ScriptableObject, IEquivable<HEU_ToolsInfo>
     {
 	public float _paintBrushSize = 1f;
 
@@ -96,6 +96,57 @@ namespace HoudiniEngineUnity
 	}
 
 	public PaintMeshVisibility _paintMeshVisiblity = PaintMeshVisibility.AUTO;
+
+	public bool IsEquivalentTo(HEU_ToolsInfo other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_ToolsInfo";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paintBrushSize, other._paintBrushSize, ref bResult, header, "_paintBrushSize");
+
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paintBrushOpacity, other._paintBrushOpacity, ref bResult, header, "_paintBrushOpacity");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paintIntValue, other._paintIntValue, ref bResult, header, "_paintIntValue");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paintFloatValue, other._paintFloatValue, ref bResult, header, "_paintFloatValue");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paintStringValue, other._paintStringValue, ref bResult, header, "_paintStringValue");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._lastAttributeNodeName, other._lastAttributeNodeName, ref bResult, header, "_lastAttributeNodeName");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._lastAttributeName, other._lastAttributeName, ref bResult, header, "_lastAttributeName");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._brushHandleColor, other._brushHandleColor, ref bResult, header, "_brushHandleColor");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._affectedAreaPaintColor, other._affectedAreaPaintColor, ref bResult, header, "_affectedAreaPaintColor");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._liveUpdate, other._liveUpdate, ref bResult, header, "_liveUpdate");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isPainting, other._isPainting, ref bResult, header, "_isPainting");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._editPointBoxSize, other._editPointBoxSize, ref bResult, header, "_editPointBoxSize");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._editPointBoxUnselectedColor, other._editPointBoxUnselectedColor, ref bResult, header, "_editPointBoxUnselectedColor");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._editPointBoxSelectedColor, other._editPointBoxSelectedColor, ref bResult, header, "_editPointBoxSelectedColor");
+
+
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._recacheRequired, other._recacheRequired, ref bResult, header, "_recacheRequired");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paintMergeMode, other._paintMergeMode, ref bResult, header, "_paintMergeMode");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showOnlyEditGeometry, other._showOnlyEditGeometry, ref bResult, header, "_showOnlyEditGeometry");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._alwaysCookUpstream, other._alwaysCookUpstream, ref bResult, header, "_alwaysCookUpstream");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._paintMeshVisiblity, other._paintMeshVisiblity, ref bResult, header, "_paintMeshVisibility");
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

@@ -47,7 +47,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Represents a Part object containing mesh / geometry/ attribute data.
     /// </summary>
-    public class HEU_PartData : ScriptableObject
+    public class HEU_PartData : ScriptableObject, IEquivable<HEU_PartData>
     {
 	//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -2162,6 +2162,53 @@ namespace HoudiniEngineUnity
 	    part.DestroyAllData();
 	    HEU_GeneralUtility.DestroyImmediate(part);
 	}
+
+	public bool IsEquivalentTo(HEU_PartData other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_PartData";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    // Skip _partId, _objectNodeID, _geoId
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._partName, other._partName, ref bResult, header, "_partName");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._partType, other._partType, ref bResult, header, "_partType");
+
+	    // Skip HEU_GeoNode
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isAttribInstancer, other._isAttribInstancer, ref bResult, header, "_isAttribInstancer");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isPartInstanced, other._isPartInstanced, ref bResult, header, "_isPartInstanced");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._partPointCount, other._partPointCount, ref bResult, header, "_partPointCount");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isObjectInstancer, other._isObjectInstancer, ref bResult, header, "_isObjectInstancer");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectInstancesGenerated, other._objectInstancesGenerated, ref bResult, header, "_objectInstanceGenerated");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectInstanceInfos, other._objectInstanceInfos, ref bResult, header, "_objectInstanceInfo");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._terrainOffsetPosition, other._terrainOffsetPosition, ref bResult, header, "_terrainOffsetPosition");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isPartEditable, other._isPartEditable, ref bResult, header, "_isPartEditable");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._partOutputType, other._partOutputType, ref bResult, header, "_partOutputType");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curve, other._curve, ref bResult, header, "_curve");
+
+
+ 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._attributesStore, other._attributesStore, ref bResult, header, "_attributesStore");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._haveInstancesBeenGenerated, other._haveInstancesBeenGenerated, ref bResult, header, "_haveInstancesBeenGenerated");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._meshVertexCount, other._meshVertexCount, ref bResult, header, "_meshVertexCount");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generatedOutput, other._generatedOutput, ref bResult, header, "_generatedOutput");
+
+	    return bResult;
+	}
+
+
     }
 
 }   // HoudiniEngineUnity

@@ -1118,8 +1118,8 @@ namespace HoudiniEngineUnity
 	public int stringValuesIndex;
 	public int choiceIndex;
 
-	HAPI_NodeType inputNodeType;
-	HAPI_NodeFlags inputNodeFlag;
+	public HAPI_NodeType inputNodeType;
+	public HAPI_NodeFlags inputNodeFlag;
 
 	[MarshalAs(UnmanagedType.U1)]
 	public bool isChildOfMultiParm;
@@ -1244,7 +1244,7 @@ namespace HoudiniEngineUnity
 
 	public int pointGroupCount;
 	public int primitiveGroupCount;
-	int edgeGroupCount;
+	public int edgeGroupCount;
 
 	public int partCount;
     }

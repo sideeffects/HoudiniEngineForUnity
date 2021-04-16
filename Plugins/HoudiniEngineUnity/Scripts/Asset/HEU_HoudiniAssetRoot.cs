@@ -50,6 +50,12 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	void OnDestroy()
 	{
+
+	    if (_houdiniAsset != null && _houdiniAsset.PauseCooking == true)
+	    {
+		return;
+	    }
+
 	    // Destroy the asset from session or permanently. 
 	    // The following checks make sure to only delete if the scene is closing, 
 	    // or asset has been user deleted. 

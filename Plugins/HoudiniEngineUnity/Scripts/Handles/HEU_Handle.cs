@@ -40,7 +40,7 @@ namespace HoudiniEngineUnity
     /// Currently only supports transform (xform) handle.
     /// </summary>
     [System.Serializable]
-    public class HEU_Handle : ScriptableObject
+    public class HEU_Handle : ScriptableObject, IEquivable<HEU_Handle>
     {
 	public enum HEU_HandleType
 	{
@@ -466,6 +466,40 @@ namespace HoudiniEngineUnity
 	{
 	    return (rstOrder == HAPI_RSTOrder.HAPI_TSR || rstOrder == HAPI_RSTOrder.HAPI_STR || rstOrder == HAPI_RSTOrder.HAPI_SRT);
 	}
+
+	public bool IsEquivalentTo(HEU_Handle other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_Handle";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleName, other._handleName, ref bResult, header, "_handleName");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleType,other._handleType, ref bResult, header, "_handleType");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleIndex, other._handleIndex, ref bResult, header, "_handleIndex");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleParamTranslateBinding, other._handleParamTranslateBinding, ref bResult, header, "_handleParamTranslateBinding");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleParamRotateBinding, other._handleParamRotateBinding, ref bResult, header, "_handleParamRotateBinding");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleParamScaleBinding, other._handleParamScaleBinding, ref bResult, header, "_handleParamScaleBinding");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handlePosition, other._handlePosition, ref bResult, header, "_handlePosition");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleRotation, other._handleRotation, ref bResult, header, "_handleRotation");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handleScale, other._handleScale, ref bResult, header, "_handleScale");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._rstOrder, other._rstOrder, ref bResult, header, "_rstOrder");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._xyzOrder, other._xyzOrder, ref bResult, header, "_xyzOrder");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._convertedTransformEuler.ToTestObject(), other._convertedTransformEuler.ToTestObject(), ref bResult, header, "_convertedTransformEuler");
+	    
+
+	    // Skip _materialKey
+	 
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

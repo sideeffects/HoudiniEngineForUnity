@@ -31,7 +31,7 @@ using System.Collections;
 namespace HoudiniEngineUnity
 {
     [System.Serializable]
-    public sealed class HEU_AttributeData
+    public sealed class HEU_AttributeData : IEquivable<HEU_AttributeData>
     {
 	public HAPI_AttributeInfo _attributeInfo;
 
@@ -97,6 +97,34 @@ namespace HoudiniEngineUnity
 		System.Array.Resize<string>(ref destAttrData._stringValues, arraySize);
 		System.Array.Copy(this._stringValues, destAttrData._stringValues, arraySize);
 	    }
+	}
+
+	public bool IsEquivalentTo(HEU_AttributeData other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_AttributeData";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._attributeInfo.ToTestObject(), other._attributeInfo.ToTestObject(), ref bResult, header, "_attributeInfo");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._name, other._name, ref bResult, header, "_name");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._attributeType, other._attributeType, ref bResult, header, "_attributeType");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._intValues, other._intValues, ref bResult, header, "_intValues");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._floatValues, other._floatValues, ref bResult, header, "_floatValues");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._stringValues, other._stringValues, ref bResult, header, "_stringValues");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._attributeState, other._attributeState, ref bResult, header, "_attributeState");
+
+	    return bResult;
 	}
     }
 

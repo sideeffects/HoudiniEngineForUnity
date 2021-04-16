@@ -43,7 +43,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Holds all parameter data for an asset.
     /// </summary>
-    public class HEU_Parameters : ScriptableObject
+    public class HEU_Parameters : ScriptableObject, IEquivable<HEU_Parameters>
     {
 	//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -1326,6 +1326,51 @@ namespace HoudiniEngineUnity
 	    _presetData = _defaultPresetData;
 
 	    RequiresRegeneration = true;
+	}
+
+	public bool IsEquivalentTo(HEU_Parameters other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_Parameters";
+
+	    if (other == null)
+	    {
+		Debug.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._uiLabel, other._uiLabel, ref bResult, header, "_uiLabel");
+
+	    // Do not test raw parameter values as there can be intermediate / unsupported / unequal values for the same object
+	    // The main parameter check will be done in parameterList
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._paramInts, other._paramInts, ref bResult, header, "_paramInts");
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._paramFloats, other._paramFloats, ref bResult, header, "_paramFloats");
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._paramStrings, other._paramStrings, ref bResult, header, "_paramString");
+
+	    // Skip parmChoices
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parameterList, other._parameterList, ref bResult, header, "_parameterList");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parameterModifiers, other._parameterModifiers, ref bResult, header, "_parameterModifiers");
+
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._regenerateParameters, other._regenerateParameters, ref bResult, header, "_regenerateParameters");
+
+
+	    // Preset data doesn't seem to be the same for different components
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._presetData.IsEquivalentArray(other._presetData), ref bResult, header, "_presetData");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._defaultPresetData, other._defaultPresetData, ref bResult, header, "_defaultPresetData");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._validParameters, other._validParameters, ref bResult, header, "_validParameters");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showParameters, other._showParameters, ref bResult, header, "_showParameters");
+		
+
+	    // Skip _materialKey
+	 
+	    return bResult;
 	}
     }
 
