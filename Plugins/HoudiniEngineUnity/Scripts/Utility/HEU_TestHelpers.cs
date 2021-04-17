@@ -338,7 +338,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (a != null && b == null)
 	    {
-		Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		// Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
@@ -360,7 +360,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (a != null && b == null)
 	    {
-		Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		// Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
@@ -381,7 +381,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (a != null && b == null)
 	    {
-		Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		// Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
@@ -428,7 +428,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (a.Count != 0)
 		{
-		    Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		    // Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		}
 
 		return false;
@@ -460,7 +460,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (a.Length != 0)
 		{
-		    Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		    // Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		}
 		
 		return false;
@@ -483,11 +483,15 @@ namespace HoudiniEngineUnity
 
 	public static bool ShouldBeTested(string a, string b, ref bool bResult, string header = "", string subject = "")
 	{
+	    
 	    if (a == b)
 	    {
 		return false;
 	    }
-	    else if (string.IsNullOrEmpty(a) && string.IsNullOrEmpty(b))
+	    else if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
+	    {
+		return false;
+	    } else if (a != null && b != null && (a.Contains("C:/") || b.Contains("C:/"))) // ignore file paths
 	    {
 		return false;
 	    }
