@@ -1375,7 +1375,7 @@ namespace HoudiniEngineUnity
 	    HAPI_AttributeInfo tagAttrInfo = new HAPI_AttributeInfo();
 	    int[] tagAttr = new int[0];
 	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityTagAttributeName, ref tagAttrInfo, ref tagAttr, session.GetAttributeStringData);
-	    if (tagAttrInfo.exists)
+	    if (tagAttrInfo.exists && tagAttr.Length > 0)
 	    {
 		string tag = HEU_SessionManager.GetString(tagAttr[0]);
 		if (tag.Length > 0)
@@ -1405,7 +1405,7 @@ namespace HoudiniEngineUnity
 	    HAPI_AttributeInfo layerAttrInfo = new HAPI_AttributeInfo();
 	    int[] layerAttr = new int[0];
 	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityLayerAttributeName, ref layerAttrInfo, ref layerAttr, session.GetAttributeStringData);
-	    if (layerAttrInfo.exists)
+	    if (layerAttrInfo.exists && layerAttr.Length > 0)
 	    {
 		string layerStr = HEU_SessionManager.GetString(layerAttr[0]);
 		if (layerStr.Length > 0)

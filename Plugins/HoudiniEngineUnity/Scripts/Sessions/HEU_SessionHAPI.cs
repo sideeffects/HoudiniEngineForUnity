@@ -1556,10 +1556,10 @@ namespace HoudiniEngineUnity
 	/// <param name="nodeID">The SOP node ID</param>
 	/// <param name="geoInfo">Geo info to populate</param>
 	/// <returns>True if successfully queried the geo info</returns>
-	public override bool GetGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo)
+	public override bool GetGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo, bool bLogError = true)
 	{
 	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGeoInfo(ref _sessionData._HAPISession, nodeID, out geoInfo);
-	    HandleStatusResult(result, "Getting Geo Info", false, true);
+	    HandleStatusResult(result, "Getting Geo Info", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
