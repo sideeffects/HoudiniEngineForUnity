@@ -28,11 +28,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace HoudiniEngineUnity
 {
@@ -55,7 +57,9 @@ public enum HEU_PipelineType
     HDRP
 }
 
-[InitializeOnLoad]
+#if UNITY_EDITOR && HOUDINIENGINEUNITY_ENABLED
+    [InitializeOnLoad]
+#endif
 public class HEU_RenderingPipelineDefines
 {
 
@@ -154,18 +158,25 @@ public class HEU_RenderingPipelineDefines
  
     public static List<string> GetDefines()
     {
+
+#if UNITY_EDITOR
         var target = EditorUserBuildSettings.activeBuildTarget;
         var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(target);
         var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
         return defines.Split(';').ToList();
+#else
+        return new List<string>();
+#endif
     }
  
     public static void SetDefines(List<string> definesList)
     {
+#if UNITY_EDITOR
         var target = EditorUserBuildSettings.activeBuildTarget;
         var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(target);
         var defines = string.Join(";", definesList.ToArray());
         PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defines);
+#endif
     }
 }
 }

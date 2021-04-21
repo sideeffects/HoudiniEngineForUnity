@@ -565,8 +565,9 @@ namespace HoudiniEngineUnity
 	{
 		HAPI_CookOptions options = new HAPI_CookOptions();
 		HEU_SessionHAPI sessionHAPI = (HEU_SessionHAPI)session;
+	#if HOUDINIENGINEUNITY_ENABLED
 		sessionHAPI.GetCookOptions(ref options);
-
+	#endif
 		return options;
 	}
 
