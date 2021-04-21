@@ -1322,6 +1322,10 @@ namespace HoudiniEngineUnity
 
             UnityEngine.Rendering.GraphicsSettings graphicsSettings = 
 	        AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.GraphicsSettings>("ProjectSettings/GraphicsSettings.asset");
+	
+	    if (graphicsSettings == null)
+	        return;
+
 	    SerializedObject serializedObject = new SerializedObject(graphicsSettings);
 	    SerializedProperty arrayProp = serializedObject.FindProperty("m_AlwaysIncludedShaders");
 	    bool hasShader = false;

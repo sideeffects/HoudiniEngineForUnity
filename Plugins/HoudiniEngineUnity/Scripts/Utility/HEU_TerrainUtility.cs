@@ -53,9 +53,10 @@ namespace HoudiniEngineUnity
 	/// <param name="gameObject">The target GameObject containing the Terrain component</param>
 	/// <param name="terrainData">A valid TerrainData to use, or if empty, a new one is created and populated</param>
 	/// <param name="volumePositionOffset">Heightfield offset</param>
+	/// <param name="bakedMaterialPath">Folder path for caching material output</param>
 	/// <returns>True if successfully popupated the terrain</returns>
 	public static bool GenerateTerrainFromVolume(HEU_SessionBase session, ref HAPI_VolumeInfo volumeInfo, HAPI_NodeId geoID, HAPI_PartId partID,
-		GameObject gameObject, ref TerrainData terrainData, out Vector3 volumePositionOffset, ref Terrain terrain)
+		GameObject gameObject, ref TerrainData terrainData, out Vector3 volumePositionOffset, ref Terrain terrain, string bakedMaterialPath)
 	{
 	    volumePositionOffset = Vector3.zero;
 
@@ -132,7 +133,7 @@ namespace HoudiniEngineUnity
 		// Look up terrain material, if specified, on the height layer
 		string specifiedTerrainMaterialName = HEU_GeneralUtility.GetMaterialAttributeValueFromPart(session,
 			geoID, partID);
-		SetTerrainMaterial(terrain, specifiedTerrainMaterialName);
+		SetTerrainMaterial(terrain, specifiedTerrainMaterialName, bakedMaterialPath);
 
 #if !HEU_TERRAIN_COLLIDER_DISABLED
 		collider.terrainData = terrainData;
@@ -254,7 +255,7 @@ namespace HoudiniEngineUnity
 	/// Currently sets the default Terrain material from the plugin settings, if its valid.
 	/// </summary>
 	/// <param name="terrain">The terrain to set material for</param>
-	public static void SetTerrainMaterial(Terrain terrain, string specifiedMaterialName)
+	public static void SetTerrainMaterial(Terrain terrain, string specifiedMaterialName, string bakedMaterialPath = "")
 	{
 	    // Use material specified in Plugin settings.
 	    string terrainMaterialPath = string.IsNullOrEmpty(specifiedMaterialName) ? HEU_PluginSettings.DefaultTerrainMaterial :
@@ -278,12 +279,71 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-	        #if UNITY_2019_2_OR_NEWER
-		     terrain.materialTemplate = HEU_MaterialFactory.LoadUnityMaterial("Resources/unity_builtin_extra::name::Default-Terrain-Diffuse");
-		#endif
+		Material material = null;
+
+		// Create new material with the default shader
+		if (!string.IsNullOrEmpty(bakedMaterialPath))
+		{
+		    material = HEU_MaterialFactory.GetNewMaterialWithShader(bakedMaterialPath, GetDefaultTerrainShaderName(), terrain.gameObject.name + "-Material", false);
+		}
+
+		// Use the hardcoded paths as a last resort
+		if (material == null)
+		{
+		    string defaultTerrainMaterialPath = GetDefaultTerrainMaterialPath();
+		    material = HEU_MaterialFactory.LoadUnityMaterial(defaultTerrainMaterialPath);
+		}
+		
+	        if (material != null)
+	        {
+	            #if UNITY_2019_2_OR_NEWER
+	                terrain.materialTemplate = material;
+	            #else
+	                terrain.materialType = Terrain.MaterialType.Custom;
+	                terrain.materialTemplate = material;
+	            #endif
+	        } 
+	        else
+	        {
+	            Debug.LogWarning("Warning: Specified material does not exist!");
+	        }
 	    }
 
 	    // TODO: If none specified, guess based on Render settings?
+	}
+
+	public static string GetDefaultTerrainShaderName()
+	{
+	    HEU_PipelineType pipeline = HEU_RenderingPipelineDefines.GetPipeline();
+	    if (pipeline == HEU_PipelineType.HDRP)
+	    {
+		return HEU_Defines.DEFAULT_TERRAIN_SHADER_HDRP;
+	    }
+	    else if (pipeline == HEU_PipelineType.URP)
+	    {
+		return HEU_Defines.DEFAULT_TERRAIN_SHADER_URP;
+	    }
+	    else
+	    {
+		return HEU_Defines.DEFAULT_TERRAIN_SHADER;
+	    }
+	}
+
+	public static string GetDefaultTerrainMaterialPath()
+	{
+	    HEU_PipelineType pipeline = HEU_RenderingPipelineDefines.GetPipeline();
+	    if (pipeline == HEU_PipelineType.HDRP)
+	    {
+		return HEU_Defines.DEFAULT_TERRAIN_MATERIAL_PATH_HDRP;
+	    }
+	    else if (pipeline == HEU_PipelineType.URP)
+	    {
+		return HEU_Defines.DEFAULT_TERRAIN_MATERIAL_PATH_URP;
+	    }
+	    else
+	    {
+		return HEU_Defines.DEFAULT_TERRAIN_MATERIAL_PATH;
+	    }
 	}
 
 	/// <summary>

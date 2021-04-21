@@ -591,10 +591,22 @@ namespace HoudiniEngineUnity
 	    get
 	    {
 		string path = HEU_Defines.DEFAULT_STANDARD_SHADER;
+
+		HEU_PipelineType pipeline = HEU_RenderingPipelineDefines.GetPipeline();
+		if (pipeline == HEU_PipelineType.HDRP)
+		{
+		    path = HEU_Defines.DEFAULT_STANDARD_SHADER_HDRP;
+		}
+		else if (pipeline == HEU_PipelineType.URP)
+		{
+		    path = HEU_Defines.DEFAULT_STANDARD_SHADER_URP;
+		}
+
+		string ogPath = System.String.Copy(path);
 		HEU_PluginStorage.Instance.Get("HAPI_DefaultStandardShader", out path, path);
 
 		// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
-		if (path.Equals(HEU_Defines.DEFAULT_STANDARD_SHADER))
+		if (path.Equals(ogPath))
 		{
 		    path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
 		}
@@ -612,10 +624,22 @@ namespace HoudiniEngineUnity
 	    get
 	    {
 		string path = HEU_Defines.DEFAULT_VERTEXCOLOR_SHADER;
+
+		HEU_PipelineType pipeline = HEU_RenderingPipelineDefines.GetPipeline();
+		if (pipeline == HEU_PipelineType.HDRP)
+		{
+		    path = HEU_Defines.DEFAULT_VERTEXCOLOR_SHADER_HDRP;
+		}
+		else if (pipeline == HEU_PipelineType.URP)
+		{
+		    path = HEU_Defines.DEFAULT_VERTEXCOLOR_SHADER_URP;
+		}
+
+		string ogPath = System.String.Copy(path);
 		HEU_PluginStorage.Instance.Get("HAPI_DefaultVertexColorShader", out path, path);
 
 		// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
-		if (path.Equals(HEU_Defines.DEFAULT_VERTEXCOLOR_SHADER))
+		if (path.Equals(ogPath))
 		{
 		    path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
 		}
@@ -633,10 +657,21 @@ namespace HoudiniEngineUnity
 	    get
 	    {
 		string path = HEU_Defines.DEFAULT_TRANSPARENT_SHADER;
+		HEU_PipelineType pipeline = HEU_RenderingPipelineDefines.GetPipeline();
+		if (pipeline == HEU_PipelineType.HDRP)
+		{
+		    path = HEU_Defines.DEFAULT_TRANSPARENT_SHADER_HDRP;
+		}
+		else if (pipeline == HEU_PipelineType.URP)
+		{
+		    path = HEU_Defines.DEFAULT_TRANSPARENT_SHADER_URP;
+		}
+
+		string ogPath = System.String.Copy(path);
 		HEU_PluginStorage.Instance.Get("HAPI_DefaultTransparentShader", out path, path);
 
 		// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
-		if (path.Equals(HEU_Defines.DEFAULT_TRANSPARENT_SHADER))
+		if (path.Equals(ogPath))
 		{
 		    path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
 		}
@@ -654,10 +689,22 @@ namespace HoudiniEngineUnity
 	    get
 	    {
 		string path = HEU_Defines.DEFAULT_CURVE_SHADER;
+
+		HEU_PipelineType pipeline = HEU_RenderingPipelineDefines.GetPipeline();
+		if (pipeline == HEU_PipelineType.HDRP)
+		{
+		    path = HEU_Defines.DEFAULT_CURVE_SHADER_HDRP;
+		}
+		else if (pipeline == HEU_PipelineType.URP)
+		{
+		    path = HEU_Defines.DEFAULT_CURVE_SHADER_URP;
+		}
+
+		string ogPath = System.String.Copy(path);
 		HEU_PluginStorage.Instance.Get("HAPI_DefaultCurveShader", out path, path);
 
 		// To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
-		if (path.Equals(HEU_Defines.DEFAULT_CURVE_SHADER))
+		if (path.Equals(ogPath))
 		{
 		    path = HEU_Defines.HOUDINI_SHADER_PREFIX + path;
 		}
