@@ -742,6 +742,14 @@ namespace HoudiniEngineUnity
 		    HEU_GeneratedOutput generatedOutput = new HEU_GeneratedOutput();
 		    generatedOutput._outputData._gameObject = newGameObject;
 
+		    bool hasGeo = true;
+
+		    HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
+		    if (!session.GetGeoInfo(cookNodeId, ref geoInfo, false))
+		    {
+			hasGeo = false;
+		    }
+
 		    bool bResult = false;
 		    int numLODs = meshBuffers[m]._LODGroupMeshes != null ? meshBuffers[m]._LODGroupMeshes.Count : 0;
 		    if (numLODs > 1)
@@ -756,8 +764,12 @@ namespace HoudiniEngineUnity
 				meshBuffers[m]._geoCache, generatedOutput, meshBuffers[m]._defaultMaterialKey,
 				meshBuffers[m]._bGenerateUVs, meshBuffers[m]._bGenerateTangents, meshBuffers[m]._bGenerateNormals, meshBuffers[m]._bPartInstanced);
 
-			HEU_GeneralUtility.UpdateGeneratedAttributeStore(session, _cookNodeID, meshBuffers[m]._id,
-			    generatedOutput._outputData._gameObject);
+			if (hasGeo)
+			{
+				HEU_GeneralUtility.UpdateGeneratedAttributeStore(session, _cookNodeID, meshBuffers[m]._id,
+				    generatedOutput._outputData._gameObject);
+			}
+
 		    }
 		    else
 		    {
@@ -773,13 +785,16 @@ namespace HoudiniEngineUnity
 			_generatedOutputs.Add(generatedOutput);
 
 			SetOutputVisiblity(meshBuffers[m]);
+
+			if (hasGeo)
+			{
+			    ApplyAttributeModifiersOnGameObjectOutput(session, cookNodeId, partId, ref newGameObject);
+			}
 		    }
 		    else
 		    {
 			HEU_GeneratedOutput.DestroyGeneratedOutput(generatedOutput);
 		    }
-
-		    ApplyAttributeModifiersOnGameObjectOutput(session, cookNodeId, partId, ref newGameObject);
 		}
 	    }
 	}

@@ -921,7 +921,7 @@ namespace HoudiniEngineUnity
 	/// <param name="nodeID">The SOP node ID</param>
 	/// <param name="geoInfo">Geo info to populate</param>
 	/// <returns>True if successfully queried the geo info</returns>
-	public virtual bool GetGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo)
+	public virtual bool GetGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo, bool bLogError = true)
 	{
 	    return false;
 	}
