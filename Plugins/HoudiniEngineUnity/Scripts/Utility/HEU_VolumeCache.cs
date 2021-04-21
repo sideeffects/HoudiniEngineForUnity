@@ -766,9 +766,10 @@ namespace HoudiniEngineUnity
 	    Terrain terrain = null;
 
 	    // Generate the terrain and terrain data from the height layer. This applies height values.
+	    string bakedMaterialPath = HEU_Platform.BuildPath(houdiniAsset.GetValidAssetCacheFolderPath(), relativeFolderPath);
 	    bResult = HEU_TerrainUtility.GenerateTerrainFromVolume(session, ref heightVolumeInfo, heightLayer._part.ParentGeoNode.GeoID,
 		    heightLayer._part.PartID, heightLayer._part.OutputGameObject, ref terrainData, out terrainOffsetPosition,
-		    ref terrain);
+		    ref terrain, bakedMaterialPath);
 	    if (!bResult || terrainData == null)
 	    {
 		return;
