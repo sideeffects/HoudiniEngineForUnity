@@ -928,9 +928,23 @@ namespace HoudiniEngineUnity
 		}
 
 		// Normalize to 0 to 1 if above 1. Presume that the user was using 0 to 100 range.
+		// If there is an LOD above 1, then normalize it.
+		bool bShouldNormalizeLODs = false;
+		for (int i = 0; i < numLODs; i++)
+		{
+		    if (geoCache._LODTransitionValues[i] > 1f)
+		    {
+			bShouldNormalizeLODs = true;
+			break;
+		    }
+		}
+
 		for (int i = 0; i < numLODs; ++i)
 		{
-		    geoCache._LODTransitionValues[i] = geoCache._LODTransitionValues[i] > 1f ? geoCache._LODTransitionValues[i] / 100f : geoCache._LODTransitionValues[i];
+		    if (bShouldNormalizeLODs)
+		    {
+		        geoCache._LODTransitionValues[i] = geoCache._LODTransitionValues[i] / 100f;
+		    }
 		}
 
 		System.Array.Sort(geoCache._LODTransitionValues, (a, b) => b.CompareTo(a));
