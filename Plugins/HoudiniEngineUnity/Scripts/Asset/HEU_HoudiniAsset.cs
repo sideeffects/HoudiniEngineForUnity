@@ -4518,14 +4518,40 @@ namespace HoudiniEngineUnity
 	    newAsset.Parameters.SetPresetData(_parameters.GetPresetData());
 
 	    // Set parameter preset for curves
-	    int numCurves = newAsset._curves.Count;
-	    for (int i = 0; i < numCurves; ++i)
+	    // The curve names for the new asset might be different than that of the old one for reasons
+	    // We want to match it if possible, but if not, then just iterate list
+	    bool bGetCurveFromNames = true;
+	    bGetCurveFromNames &= this._curves.Count == newAsset._curves.Count;
+
+	    for (int i = 0; i < newAsset._curves.Count; i++)
 	    {
-		HEU_Curve srcCurve = GetCurve(newAsset._curves[i].CurveName);
-		if (srcCurve != null)
+		bGetCurveFromNames &= this._curves.Find((HEU_Curve curve) => curve.CurveName == newAsset._curves[i].CurveName) != null;
+	    }
+
+	    if (bGetCurveFromNames)
+	    {
+		int numCurves = newAsset._curves.Count;
+		for (int i = 0; i < numCurves; ++i)
 		{
-		    newAsset._curves[i].Parameters.SetPresetData(srcCurve.Parameters.GetPresetData());
-		    newAsset._curves[i].SetCurveNodeData(srcCurve.DuplicateCurveNodeData());
+		    HEU_Curve srcCurve = GetCurve(newAsset._curves[i].CurveName);
+		    if (srcCurve != null)
+		    {
+		        newAsset._curves[i].Parameters.SetPresetData(srcCurve.Parameters.GetPresetData());
+		        newAsset._curves[i].SetCurveNodeData(srcCurve.DuplicateCurveNodeData());
+		    }
+		}
+	    }
+	    else
+	    {
+		int numCurves = Mathf.Min(this._curves.Count, newAsset._curves.Count);
+		for (int i = 0; i < numCurves; i++)
+		{
+		    HEU_Curve srcCurve = this._curves[i];
+		    if (srcCurve != null)
+		    {
+		        newAsset._curves[i].Parameters.SetPresetData(srcCurve.Parameters.GetPresetData());
+		        newAsset._curves[i].SetCurveNodeData(srcCurve.DuplicateCurveNodeData());
+		    }
 		}
 	    }
 
@@ -4683,6 +4709,9 @@ namespace HoudiniEngineUnity
 		    }
 		}
 	    }
+
+
+	    newAsset.RequestCook(true, false, false, true);
 	}
 
 
