@@ -463,6 +463,9 @@ namespace HoudiniEngineUnity
 	private HEU_AssetSerializedMetaData _serializedMetaData;
 	public HEU_AssetSerializedMetaData SerializedMetaData { get { return _serializedMetaData; } }
 
+	private bool _pendingAutoCookOnMouseRelease;
+	public bool PendingAutoCookOnMouseRelease { get {  return _pendingAutoCookOnMouseRelease; } set { _pendingAutoCookOnMouseRelease = value; } }
+
 	// Enum to guess how Unity instantiated this object (because Unity doesn't provide instantiation callbacks)
 	private enum AssetInstantiationMethod
 	{
@@ -723,6 +726,11 @@ namespace HoudiniEngineUnity
 		    // Doing a Reload here to clear everything out after resetting the parameters.
 		    // Originally was doing a Recook but because it will keep stuff around (e.g. terrain), a full reset seems better.
 		    RequestReload(bAsync: true);
+		}
+		else if (_pendingAutoCookOnMouseRelease == true && (EditorGUIUtility.hotControl == 0))
+		{
+		    _pendingAutoCookOnMouseRelease = false;
+		    RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
 		}
 		else
 		{
