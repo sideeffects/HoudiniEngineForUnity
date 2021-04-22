@@ -107,6 +107,7 @@ namespace HoudiniEngineUnity
 	private static GUIContent _curveFrameSelectedNodesContent = new GUIContent("Frame Selected Nodes Only", "Frames only the currently selected nodes when you press the F hotkey instead of the whole curve.");
 	private static GUIContent _curveFrameSelectedNodeDistanceContent = new GUIContent("Frame Selected Node Distance", "The distance between the selected node and the editor camera when you frame the selected node.");
 	
+	private static HashSet<string> _delayAutoCookStrings = new HashSet<string>{"ColorPickerChanged", "CurveChanged", "GradientPickerChanged"};
 	
 	//	LOGIC -----------------------------------------------------------------------------------------------------
 
@@ -244,7 +245,21 @@ namespace HoudiniEngineUnity
 			// Do automatic cook if values have changed
 			if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && _houdiniAsset.DoesAssetRequireRecook())
 			{
-			    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
+
+			    // Often times, cooking while dragging mouse results in poor UX
+			    bool isDragging = (EditorGUIUtility.hotControl != 0);
+			    bool blockAutoCook =  _houdiniAsset.PendingAutoCookOnMouseRelease == true || (isDragging && Event.current != null && _delayAutoCookStrings.Contains(Event.current.commandName));
+
+			    if (blockAutoCook)
+			    {
+				_houdiniAsset.PendingAutoCookOnMouseRelease = true;
+			    }
+			    else
+			    {
+				_houdiniAsset.PendingAutoCookOnMouseRelease = false;
+				_houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
+			    }
+
 			}
 		    }
 		}
