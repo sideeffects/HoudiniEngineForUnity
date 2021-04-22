@@ -156,7 +156,7 @@ namespace HoudiniEngineUnity
 		    HEU_AssetDatabase.CreatePathWithFolders(assetCacheFolderPath);
 
 		    // We are defaulting to PNG here if no extension already set. This forces it to use PNG format below.
-		    if (!textureName.EndsWith(".png") && !textureName.EndsWith(".jpg"))
+		    if (!textureName.EndsWith(".png") && !textureName.EndsWith(".jpg") && !textureName.EndsWith(".tga") && !textureName.EndsWith(".exr"))
 		    {
 			textureName = textureName + ".png";
 		    }
@@ -167,6 +167,14 @@ namespace HoudiniEngineUnity
 		    if (textureName.EndsWith(".jpg"))
 		    {
 			encodedBytes = texture.EncodeToJPG();
+		    }
+		    else if (textureName.EndsWith(".tga"))
+		    {
+			encodedBytes = texture.EncodeToTGA();
+		    }
+		    else if (textureName.EndsWith(".exr"))
+		    {
+			encodedBytes = texture.EncodeToEXR();
 		    }
 		    else // Use PNG otherwise
 		    {
