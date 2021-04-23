@@ -4742,9 +4742,6 @@ namespace HoudiniEngineUnity
 		    }
 		}
 	    }
-
-
-	    newAsset.RequestCook(true, false, false, true);
 	}
 
 
