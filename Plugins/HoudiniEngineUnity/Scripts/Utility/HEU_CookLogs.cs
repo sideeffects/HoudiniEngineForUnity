@@ -122,6 +122,12 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 	
+	    if (GetFileSizeOfLogFile() > MaxLogSize)
+	    {
+		HEU_Logger.LogWarning("Deleting cook log file because it is taking too much space!");
+		DeleteCookingFile();
+	    }
+
 	    string filePath = GetCookLogFilePath();
 	    using (System.IO.StreamWriter writer = new System.IO.StreamWriter(filePath, true))
 	    {
@@ -133,11 +139,7 @@ namespace HoudiniEngineUnity
 		_lastLogStr = logStr;
 	    }
 
-	    if (GetFileSizeOfLogFile() > MaxLogSize)
-	    {
-		HEU_Logger.LogWarning("Deleting cook log file because it is taking too much space!");
-		DeleteCookingFile();
-	    }
+
 	}
 
 	public long GetFileSizeOfLogFile()
