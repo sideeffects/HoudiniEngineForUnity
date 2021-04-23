@@ -1317,7 +1317,10 @@ namespace HoudiniEngineUnity
 	{
 	    destCache.UIExpanded = UIExpanded;
 
-	    destCache._terrainData = Object.Instantiate(_terrainData);
+	    if (destCache._terrainData == null)
+	    {
+	        destCache._terrainData = Object.Instantiate(_terrainData);
+	    }
 
 	    if (_detailProperties != null)
 	    {
