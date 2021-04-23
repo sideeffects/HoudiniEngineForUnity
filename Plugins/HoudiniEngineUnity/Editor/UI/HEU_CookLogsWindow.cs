@@ -1,6 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 using System.Collections;
+using System.Text;
 
 namespace HoudiniEngineUnity
 {
@@ -9,7 +10,9 @@ namespace HoudiniEngineUnity
 
 	private HEU_OutputLogUIComponent _outputLogUIComponent = null;
 
-	private GUIContent _titleContent = new GUIContent("Cook Log", "Cook logs displayed here"); 
+	private GUIContent _titleContent = new GUIContent("Cook Log", "Cook logs displayed here");
+
+	private const float _bottomPadding = 75;
     
 	[MenuItem("HoudiniEngine/Cook Progress Logs")]
 	static void Init()
@@ -50,16 +53,21 @@ namespace HoudiniEngineUnity
 
 	    if (_outputLogUIComponent != null)
 	    {
-		float setHeight = this.position.size.y - 60;
+		float setHeight = this.position.size.y - _bottomPadding;
 		_outputLogUIComponent.SetHeight(setHeight);
-		_outputLogUIComponent.OnGUI(sessionBase.GetCookLogString());
+		_outputLogUIComponent.OnGUI(HEU_CookLogs.Instance.GetCookLogString());
+	    }
+
+
+	    if (GUILayout.Button("Delete Log File"))
+	    {
+		HEU_CookLogs.Instance.DeleteCookingFile();
 	    }
 	}
 
 	private void OnClearLog()
 	{
-	    HEU_SessionBase sessionBase = HEU_SessionManager.GetDefaultSession();
-	    sessionBase.ClearCookLog();
+	    HEU_CookLogs.Instance.ClearCookLog();
 	}
 
 	void OnInspectorUpdate()

@@ -591,7 +591,7 @@ namespace HoudiniEngineUnity
 		if (HEU_PluginSettings.WriteCookLogs)
 		{
 		    string cookStatus = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_STATE, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
-		    session.AppendCookLog(cookStatus);
+		    HEU_CookLogs.Instance.AppendCookLog(cookStatus);
 		}
 	    }
 
@@ -604,7 +604,7 @@ namespace HoudiniEngineUnity
 		
 		if (HEU_PluginSettings.WriteCookLogs)
 		{
-		    session.AppendCookLog(statusString);
+		    HEU_CookLogs.Instance.AppendCookLog(statusString);
 		}
 	    }
 	    else if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_FATAL_ERRORS)
@@ -613,7 +613,7 @@ namespace HoudiniEngineUnity
 		Debug.LogError(string.Format("Houdini Engine: Cooking failed for asset: {0}\n{1}", assetName, statusString));
 		if (HEU_PluginSettings.WriteCookLogs)
 		{
-		    session.AppendCookLog(statusString);
+		    HEU_CookLogs.Instance.AppendCookLog(statusString);
 		}
 		
 		return false;

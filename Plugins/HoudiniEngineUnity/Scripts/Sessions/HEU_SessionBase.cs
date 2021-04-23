@@ -102,39 +102,6 @@ namespace HoudiniEngineUnity
 	// Holds the last HAPI call result code
 	public HAPI_Result LastCallResultCode { get; set; }
 
-	private StringBuilder _cookLogs = new StringBuilder();
-	private int _currentCookLogCount = 0;
-	private const int MAX_COOK_LOG_COUNT = 9001;
-
-	public string GetCookLogString() { return _cookLogs.ToString(); }
-	public void AppendCookLog(string logStr) {
-	    if (!HEU_PluginSettings.WriteCookLogs)
-	    {
-		return;
-	    }
-
-	    if (_currentCookLogCount == MAX_COOK_LOG_COUNT)
-	    {
-		string cur = _cookLogs.ToString();
-		int newLine = cur.IndexOf('\n');
-		cur = cur.Substring(newLine);
-		_cookLogs.Remove(0, newLine+1);
-		_cookLogs.AppendLine(logStr);
-	    }
-	    else
-	    {
-		_cookLogs.AppendLine(logStr);
-	        _currentCookLogCount++;
-	    }
-	}
-
-	public void ClearCookLog()
-	{
-	    _cookLogs = new StringBuilder();
-	    _currentCookLogCount = 0;
-	}
-
-
 	// ASSET REGISTRATION -----------------------------------------------------------------------------------------------
 
 	// The following asset registration mechanism keeps track of HEU_HoudiniAsset 
