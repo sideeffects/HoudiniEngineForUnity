@@ -63,7 +63,7 @@ namespace HoudiniEngineUnity
     /// Can (and should) be excluded from builds & runtime.
     /// </summary>
     [ExecuteInEditMode] // OnEnable/OnDisable for registering for tick
-    public sealed class HEU_HoudiniAsset : MonoBehaviour
+    public sealed class HEU_HoudiniAsset : MonoBehaviour, IEquivable<HEU_HoudiniAsset>
     {
 	//	ASSET DATA ------------------------------------------------------------------------------------------------
 
@@ -118,6 +118,12 @@ namespace HoudiniEngineUnity
 	private bool _loadAssetFromMemory;
 
 	public bool LoadAssetFromMemory { get { return _loadAssetFromMemory; } set { _loadAssetFromMemory = value; } }
+
+	// If true, always overwrite the existing HDA file in a call to LoadAssetLibraryFromFile (Without showing dialog)
+	[SerializeField]
+	private bool _alwaysOverwriteOnLoad;
+
+	public bool AlwaysOverwriteOnLoad{ get { return _alwaysOverwriteOnLoad; } set { _alwaysOverwriteOnLoad = value; } }
 
 #pragma warning disable 0414
 	[SerializeField]
@@ -365,6 +371,11 @@ namespace HoudiniEngineUnity
 
 	public bool BakeUpdateKeepPreviousTransformValues { get { return _bakeUpdateKeepPreviousTransformValues; } set { _bakeUpdateKeepPreviousTransformValues = value; } }
 
+	[SerializeField]
+	private bool _pauseCooking = false;
+	public bool PauseCooking { get { return _pauseCooking; } set { _pauseCooking = value; }}
+
+
 	// CURVES -----------------------------------------------------------------------------------------------------
 
 	// Toggle curve editing tool in Scene view
@@ -543,7 +554,7 @@ namespace HoudiniEngineUnity
 	private void Awake()
 	{
 #if HOUDINIENGINEUNITY_ENABLED
-	    //Debug.Log("HEU_HoudiniAsset::Awake - " + AssetName);
+	    //HEU_Logger.Log("HEU_HoudiniAsset::Awake - " + AssetName);
 
 	    if (_serializedMetaData == null)
 	    {
@@ -589,7 +600,7 @@ namespace HoudiniEngineUnity
 
 		this._serializedMetaData.SoftDeleted = false;
 
-		Debug.LogWarning("Undoing a deleted HDA may also remove its parameter undo stack.");
+		HEU_Logger.LogWarning("Undoing a deleted HDA may also remove its parameter undo stack.");
 		RequestReload(false);
 	    }
 #endif
@@ -628,7 +639,12 @@ namespace HoudiniEngineUnity
 
 	private void OnDestroy()
 	{
-	    //Debug.Log("Asset:OnDestroy");
+	    if (this.PauseCooking == true)
+	    {
+		return;
+	    }
+	    
+	    //HEU_Logger.Log("Asset:OnDestroy");
 #if HOUDINIENGINEUNITY_ENABLED
 	    HEU_AssetUpdater.RemoveAsset(this);
 #endif
@@ -701,7 +717,7 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogError(HEU_Defines.HEU_NAME + ": Unable to Bake In Place due to HEU_HoudiniAssetRoot not found!");
+			HEU_Logger.LogError(HEU_Defines.HEU_NAME + ": Unable to Bake In Place due to HEU_HoudiniAssetRoot not found!");
 		    }
 		}
 		else if (_requestBuildAction == AssetBuildAction.DUPLICATE)
@@ -803,7 +819,7 @@ namespace HoudiniEngineUnity
 	public void RequestCook(bool bCheckParametersChanged, bool bAsync, bool bSkipCookCheck, bool bUploadParameters)
 	{
 #if HOUDINIENGINEUNITY_ENABLED
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Requesting Cook");
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Requesting Cook");
 
 	    if (bAsync)
 	    {
@@ -823,7 +839,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarning(HEU_Defines.HEU_NAME + ": Asset busy. Unable to start cooking!");
+		    HEU_Logger.LogWarning(HEU_Defines.HEU_NAME + ": Asset busy. Unable to start cooking!");
 		}
 	    }
 	    else
@@ -836,7 +852,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Houdini Engine: Asset busy (cook status: {0}). Unable to start cooking!", _cookStatus);
+		    HEU_Logger.LogWarningFormat(HEU_Defines.HEU_NAME + ": Houdini Engine: Asset busy (cook status: {0}). Unable to start cooking!", _cookStatus);
 		}
 	    }
 #endif
@@ -852,7 +868,7 @@ namespace HoudiniEngineUnity
 
 	public void ClearBuildRequest()
 	{
-	    //Debug.Log("ClearBuildRequest");
+	    //HEU_Logger.Log("ClearBuildRequest");
 	    _requestBuildAction = AssetBuildAction.NONE;
 	    _checkParameterChangeForCook = false;
 	    _skipCookCheck = false;
@@ -899,7 +915,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Rebuild error: " + ex.ToString());
+		HEU_Logger.LogErrorFormat("Rebuild error: " + ex.ToString());
 		bResult = false;
 	    }
 
@@ -1017,7 +1033,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (_selectedSubassetIndex < 0)
 		{
-		    Debug.LogFormat("Invalid subasset index {0}", _selectedSubassetIndex);
+		    HEU_Logger.LogFormat("Invalid subasset index {0}", _selectedSubassetIndex);
 		    return false;
 		}
 
@@ -1067,7 +1083,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Unsupported asset type {0}!", _assetType);
+		HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Unsupported asset type {0}!", _assetType);
 		return false;
 	    }
 
@@ -1084,7 +1100,7 @@ namespace HoudiniEngineUnity
 	    _assetOpName = HEU_SessionManager.GetString(_assetInfo.fullOpNameSH, session);
 	    _assetHelp = HEU_SessionManager.GetString(_assetInfo.helpTextSH, session);
 
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Asset Loaded - ID: " + _assetInfo.nodeId + "\n" +
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Asset Loaded - ID: " + _assetInfo.nodeId + "\n" +
 	    //					"    Full Name: " + _assetOpName + "\n" +
 	    //					"    Version: " + HEU_SessionManager.GetString(_assetInfo.versionSH, session) + "\n" +
 	    //					"    Unique Node Id: " + _nodeInfo.uniqueHoudiniNodeId + "\n" +
@@ -1112,7 +1128,7 @@ namespace HoudiniEngineUnity
 	    if (!CreateObjects(session))
 	    {
 		// Failed to create objects means that this asset is not valid
-		Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to create objects for asset {0}", _assetName);
+		HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to create objects for asset {0}", _assetName);
 		DeleteAllGeneratedData();
 		return false;
 	    }
@@ -1178,7 +1194,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogError("Recook error: " + ex.ToString());
+		HEU_Logger.LogError("Recook error: " + ex.ToString());
 		bStarted = false;
 	    }
 
@@ -1220,7 +1236,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogError("Recook error: " + ex.ToString());
+		HEU_Logger.LogError("Recook error: " + ex.ToString());
 		bStarted = false;
 	    }
 
@@ -1364,10 +1380,15 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
+	    if (_pauseCooking)
+	    {
+		return false;
+	    }
+
 	    // A recook is called when the asset has already been created previously.
 	    // We have to determine if the asset is in a valid state, upload its state,
 	    // then cook, and find out what has changed.
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Recooking " + AssetName);
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Recooking " + AssetName);
 
 	    bool bResult = false;
 	    _isCookingAssetReloaded = false;
@@ -1389,7 +1410,7 @@ namespace HoudiniEngineUnity
 		    // Asset ID isn't valid so do full rebuild
 		    if (!HasValidAssetPath())
 		    {
-			Debug.LogError(HEU_Defines.HEU_NAME + ": Recook failed: asset needs to be reloaded but does not have valid asset path. Recommend instantiating new asset.");
+			HEU_Logger.LogError(HEU_Defines.HEU_NAME + ": Recook failed: asset needs to be reloaded but does not have valid asset path. Recommend instantiating new asset.");
 			return false;
 		    }
 
@@ -1422,7 +1443,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Recook failed: unsupported asset type {0}!", _assetType);
+		    HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Recook failed: unsupported asset type {0}!", _assetType);
 		    return false;
 		}
 
@@ -1478,7 +1499,7 @@ namespace HoudiniEngineUnity
 		if (_assetID != _parameters._nodeID)
 		{
 		   // Parameters
-		    Debug.LogWarning(HEU_Defines.HEU_NAME + ": Our parameter object must have our asset ID.\n"
+		    HEU_Logger.LogWarning(HEU_Defines.HEU_NAME + ": Our parameter object must have our asset ID.\n"
 			+ "If this fails, something went wrong earlier and need to catch it! Please try rebuilding!");
 		    _parameters.CleanUp();
 		    return false;
@@ -1494,7 +1515,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (!_parameters.UploadValuesToHoudini(session, this, bCheckParamsChanged, bForceUploadInputs))
 		    {
-			Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}. Please rebuild this asset.", AssetName);
+			HEU_Logger.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}. Please rebuild this asset.", AssetName);
 		    }
 
 		    bParamsUpdated = true;
@@ -1538,7 +1559,7 @@ namespace HoudiniEngineUnity
 	    if (!bResult)
 	    {
 		// Cooking failed.
-		Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}!", AssetName);
+		HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}!", AssetName);
 		return false;
 	    }
 
@@ -1600,7 +1621,7 @@ namespace HoudiniEngineUnity
 	 	string nodeStatusAll = session.ComposeNodeCookResult(_assetID, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ALL);
 	 	if (nodeStatusAll != "")
 	 	{
-		    session.AppendCookLog(nodeStatusAll);
+		    HEU_CookLogs.Instance.AppendCookLog(nodeStatusAll);
 	 	}
 	    }
 
@@ -1610,7 +1631,7 @@ namespace HoudiniEngineUnity
 		SetCookStatus(AssetCookStatus.NONE, _lastCookResult = AssetCookResult.ERRORED);
 
 		string resultString = string.Format(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}! \n{1}", AssetName, nodeStatusError);
-		Debug.LogErrorFormat(resultString);
+		HEU_Logger.LogErrorFormat(resultString);
 		return;
 	    }
 
@@ -1620,8 +1641,8 @@ namespace HoudiniEngineUnity
 	    // Download & save the parameter preset
 	    DownloadParameterPresetFromHoudini(session);
 
-	    //Debug.LogFormat("Node Input Count: {0}", _nodeInfo.inputCount);
-	    //Debug.LogFormat("Asset Input Count: {0}", _assetInfo.geoInputCount);
+	    //HEU_Logger.LogFormat("Node Input Count: {0}", _nodeInfo.inputCount);
+	    //HEU_Logger.LogFormat("Asset Input Count: {0}", _assetInfo.geoInputCount);
 
 	    // Update the Houdini materials in use by this asset.
 	    // This should be done before update the objects as below.
@@ -1686,7 +1707,7 @@ namespace HoudiniEngineUnity
 	    }
 
 #if HEU_PROFILER_ON
-	    Debug.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
+	    HEU_Logger.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
 #endif
 	}
 
@@ -1707,7 +1728,7 @@ namespace HoudiniEngineUnity
 	    HEU_SessionBase session = GetAssetSession(false);
 	    if (session == null)
 	    {
-		Debug.LogWarning(HEU_Defines.HEU_NAME + ": No valid session for cooking!");
+		HEU_Logger.LogWarning(HEU_Defines.HEU_NAME + ": No valid session for cooking!");
 		SetCookStatus(AssetCookStatus.NONE, AssetCookResult.ERRORED);
 	    }
 	    else
@@ -1721,7 +1742,7 @@ namespace HoudiniEngineUnity
 		    if (HEU_PluginSettings.WriteCookLogs)
 		    {
 		        string cookStatus = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_STATE, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
-		        session.AppendCookLog(cookStatus);
+		        HEU_CookLogs.Instance.AppendCookLog(cookStatus);
 		    }
 
 		    if (bResult && (statusCode > HAPI_State.HAPI_STATE_MAX_READY_STATE))
@@ -1742,7 +1763,7 @@ namespace HoudiniEngineUnity
 		if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_FATAL_ERRORS)
 		{
 		    string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
-		    Debug.LogError(string.Format(HEU_Defines.HEU_NAME + ": Cooking failed for asset: {0}\n{1}", AssetName, statusString));
+		    HEU_Logger.LogError(string.Format(HEU_Defines.HEU_NAME + ": Cooking failed for asset: {0}\n{1}", AssetName, statusString));
 
 		    SetCookStatus(AssetCookStatus.NONE, AssetCookResult.ERRORED);
 		}
@@ -1752,11 +1773,11 @@ namespace HoudiniEngineUnity
 		    {
 			// We should be able to continue even with these errors, but at least notify user.
 			string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);
-			Debug.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Cooking finished with some errors for asset: {0}\n{1}", AssetName, statusString));
+			HEU_Logger.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Cooking finished with some errors for asset: {0}\n{1}", AssetName, statusString));
 		    }
 		    else
 		    {
-			//Debug.LogFormat(HEU_Defines.HEU_NAME + ": Cooking result {0} for asset: {1}", (HAPI_State)statusCode, AssetName);
+			//HEU_Logger.LogFormat(HEU_Defines.HEU_NAME + ": Cooking result {0} for asset: {1}", (HAPI_State)statusCode, AssetName);
 		    }
 
 		    SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.SUCCESS);
@@ -1769,7 +1790,7 @@ namespace HoudiniEngineUnity
 		    }
 		    catch (System.Exception ex)
 		    {
-			Debug.LogError("Recook error: " + ex.ToString());
+			HEU_Logger.LogError("Recook error: " + ex.ToString());
 			SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.ERRORED);
 		    }
 		}
@@ -1826,7 +1847,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (_assetID != HEU_Defines.HEU_INVALID_NODE_ID)
 	    {
-		//Debug.LogFormat(HEU_Defines.HEU_NAME + ": Deleting asset {0} in Houdini session.", _assetName);
+		//HEU_Logger.LogFormat(HEU_Defines.HEU_NAME + ": Deleting asset {0} in Houdini session.", _assetName);
 		HEU_SessionBase session = GetAssetSession(false);
 		if (session != null)
 		{
@@ -1899,7 +1920,7 @@ namespace HoudiniEngineUnity
 
 		for (int i = 0; i < tempNodes.Count; ++i)
 		{
-		    //Debug.LogFormat("Destroying input: {0}", tempNodes[i].InputName);
+		    //HEU_Logger.LogFormat("Destroying input: {0}", tempNodes[i].InputName);
 		    _inputNodes.Remove(tempNodes[i]);
 
 		    tempNodes[i].DestroyAllData(session);
@@ -1926,7 +1947,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	private void GenerateParameters(HEU_SessionBase session)
 	{
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Generating parameters!");
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Generating parameters!");
 
 #if HEU_PROFILER_ON
 	    float parameterGenStartTime = Time.realtimeSinceStartup;
@@ -1951,12 +1972,12 @@ namespace HoudiniEngineUnity
 	    bool bResult = _parameters.Initialize(session, _assetID, ref _nodeInfo, previousParamFolders, previousParamInputNodes, this);
 	    if (!bResult)
 	    {
-		Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Parameter generate failed for asset {0}.", AssetName);
+		HEU_Logger.LogWarningFormat(HEU_Defines.HEU_NAME + ": Parameter generate failed for asset {0}.", AssetName);
 		_parameters.CleanUp();
 	    }
 
 #if HEU_PROFILER_ON
-	    Debug.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
+	    HEU_Logger.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
 #endif
 	}
 
@@ -2019,7 +2040,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (_assetType != HEU_AssetType.TYPE_HDA)
 	    {
-		Debug.LogErrorFormat("Trying to build asset type: {0}. Expected type: {1}.", _assetType, HEU_AssetType.TYPE_HDA);
+		HEU_Logger.LogErrorFormat("Trying to build asset type: {0}. Expected type: {1}.", _assetType, HEU_AssetType.TYPE_HDA);
 		return false;
 	    }
 
@@ -2060,7 +2081,7 @@ namespace HoudiniEngineUnity
 	    bool bResult = false;
 	    if (!_loadAssetFromMemory)
 	    {
-		bResult = session.LoadAssetLibraryFromFile(validAssetPath, false, out libraryID);
+		bResult = session.LoadAssetLibraryFromFile(validAssetPath, _alwaysOverwriteOnLoad, out libraryID);
 	    }
 	    else
 	    {
@@ -2068,7 +2089,7 @@ namespace HoudiniEngineUnity
 		bResult = HEU_Platform.LoadFileIntoMemory(validAssetPath, out buffer);
 		if (bResult)
 		{
-		    bResult = session.LoadAssetLibraryFromMemory(buffer, false, out libraryID);
+		    bResult = session.LoadAssetLibraryFromMemory(buffer, _alwaysOverwriteOnLoad, out libraryID);
 		}
 	    }
 	    if (!bResult)
@@ -2080,7 +2101,7 @@ namespace HoudiniEngineUnity
 	    _assetPath = HEU_PluginStorage.Instance.ConvertRealPathToEnvKeyedPath(validAssetPath);
 	    if (!_assetPath.Equals(validAssetPath))
 	    {
-		Debug.LogFormat("Storing asset file path with environment mapping: {0}", _assetPath);
+		HEU_Logger.LogFormat("Storing asset file path with environment mapping: {0}", _assetPath);
 	    }
 
 	    int assetCount = 0;
@@ -2092,7 +2113,7 @@ namespace HoudiniEngineUnity
 
 	    if (assetCount <= 0)
 	    {
-		Debug.LogErrorFormat("Houdini Engine: Invalid Asset Count of {0}", assetCount);
+		HEU_Logger.LogErrorFormat("Houdini Engine: Invalid Asset Count of {0}", assetCount);
 		return false;
 	    }
 
@@ -2139,7 +2160,7 @@ namespace HoudiniEngineUnity
 
 	    if (subassetIndex < 0 || subassetIndex >= _subassetNames.Length)
 	    {
-		Debug.LogFormat("Invalid subasset index {0}", subassetIndex);
+		HEU_Logger.LogFormat("Invalid subasset index {0}", subassetIndex);
 		return false;
 	    }
 
@@ -2223,7 +2244,7 @@ namespace HoudiniEngineUnity
 		if (session.GetNodeInputName(_assetID, i, out tempNameHandle))
 		{
 		    string inputName = HEU_SessionManager.GetString(tempNameHandle, session);
-		    //Debug.Log("Found input: " + inputName);
+		    //HEU_Logger.Log("Found input: " + inputName);
 
 		    HEU_InputNode inputNode = GetAssetInputNode(inputName);
 		    if (inputNode != null)
@@ -2471,7 +2492,7 @@ namespace HoudiniEngineUnity
 
 		    if (numObjNodes > 1)
 		    {
-			Debug.LogWarning("Unable to match previous objects with new objects after cooking this asset. Might lose asset changes.");
+			HEU_Logger.LogWarning("Unable to match previous objects with new objects after cooking this asset. Might lose asset changes.");
 		    }
 		}
 	    }
@@ -2520,7 +2541,7 @@ namespace HoudiniEngineUnity
 		_objectNodes.Clear();
 	    }
 
-	    //Debug.LogFormat(HEU_Defines.HEU_NAME + ": Replacing {0} old objects with {1} new objects!", numObjNodes, newObjectNodes.Count);
+	    //HEU_Logger.LogFormat(HEU_Defines.HEU_NAME + ": Replacing {0} old objects with {1} new objects!", numObjNodes, newObjectNodes.Count);
 
 	    // Update to new list
 	    _objectNodes = newObjectNodes;
@@ -2671,7 +2692,7 @@ namespace HoudiniEngineUnity
 		    session.GetObjectTransform(objectID, AssetID, HAPI_RSTOrder.HAPI_SRT, ref hapiTransform);
 		    if (Mathf.Approximately(0f, hapiTransform.scale[0]) || Mathf.Approximately(0f, hapiTransform.scale[1]) || Mathf.Approximately(0f, hapiTransform.scale[2]))
 		    {
-			Debug.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Object id {0} for asset {1} has scale components with 0 values!", objectID, AssetName));
+			HEU_Logger.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Object id {0} for asset {1} has scale components with 0 values!", objectID, AssetName));
 		    }
 		    else
 		    {
@@ -2733,7 +2754,7 @@ namespace HoudiniEngineUnity
 
 	    if (_rootGameObject == null)
 	    {
-		Debug.LogErrorFormat("{0}: Unable to bake due to no HEU_HoudiniAssetRoot found!", HEU_Defines.HEU_NAME);
+		HEU_Logger.LogErrorFormat("{0}: Unable to bake due to no HEU_HoudiniAssetRoot found!", HEU_Defines.HEU_NAME);
 		return newRoot;
 	    }
 
@@ -2807,7 +2828,7 @@ namespace HoudiniEngineUnity
 
 	    if (numCreatedObjects == 0)
 	    {
-		Debug.LogFormat("Nothing to bake as no geometry available!");
+		HEU_Logger.LogFormat("Nothing to bake as no geometry available!");
 	    }
 
 	    return newRoot;
@@ -2857,7 +2878,7 @@ namespace HoudiniEngineUnity
 
 			InvokeBakedEvent(true, new List<GameObject>() { prefabGO }, true);
 
-			Debug.LogFormat("Exported prefab to {0}", bakedAssetPath);
+			HEU_Logger.LogFormat("Exported prefab to {0}", bakedAssetPath);
 		    }
 		    return prefabGO;
 		}
@@ -2906,13 +2927,13 @@ namespace HoudiniEngineUnity
 	{
 	    if (!HEU_EditorUtility.IsPrefabAsset(bakeTargetGO))
 	    {
-		Debug.LogErrorFormat("Unable to bake to existing prefab as specified object is not a prefab asset!");
+		HEU_Logger.LogErrorFormat("Unable to bake to existing prefab as specified object is not a prefab asset!");
 		return;
 	    }
 
 	    if (bakeTargetGO == this.gameObject || bakeTargetGO.GetComponent<HEU_HoudiniAssetRoot>() != null)
 	    {
-		Debug.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
+		HEU_Logger.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
 		return;
 	    }
 
@@ -2990,7 +3011,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (bakeTargetGO == this.gameObject || bakeTargetGO.GetComponent<HEU_HoudiniAssetRoot>() != null)
 	    {
-		Debug.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
+		HEU_Logger.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
 		return;
 	    }
 
@@ -3020,7 +3041,7 @@ namespace HoudiniEngineUnity
 	    GetClonableParts(clonableParts);
 	    if (clonableParts.Count == 0)
 	    {
-		Debug.LogFormat("Empty bake output. Not updating existing target gameobject as that would mean destroying the it.");
+		HEU_Logger.LogFormat("Empty bake output. Not updating existing target gameobject as that would mean destroying the it.");
 		return;
 	    }
 
@@ -3099,7 +3120,7 @@ namespace HoudiniEngineUnity
 		// Clean up any children that we haven't processed
 		if (unprocessedTargetChildren.Count > 0)
 		{
-		    Debug.LogWarningFormat("Bake target has more children than bake output. GameObjects with names ending in {0} will be destroyed!", HEU_Defines.HEU_BAKED_CLONE);
+		    HEU_Logger.LogWarningFormat("Bake target has more children than bake output. GameObjects with names ending in {0} will be destroyed!", HEU_Defines.HEU_BAKED_CLONE);
 
 		    // Clean up any children that we haven't processed
 		    HEU_GeneralUtility.DestroyBakedGameObjectsWithEndName(unprocessedTargetChildren, HEU_Defines.HEU_BAKED_CLONE);
@@ -3121,7 +3142,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (bSuccess)
 	    {
-		//Debug.LogFormat("NotifyUpstreamCooked from {0}", AssetName);
+		//HEU_Logger.LogFormat("NotifyUpstreamCooked from {0}", AssetName);
 		HEU_SessionBase session = GetAssetSession(true);
 
 		// Required for reverting and uploading local data for edit nodes
@@ -3227,7 +3248,7 @@ namespace HoudiniEngineUnity
 		session.GetObjectTransform(queryNodeID, -1, HAPI_RSTOrder.HAPI_SRT, ref hapiTransform);
 		if (Mathf.Approximately(0f, hapiTransform.scale[0]) || Mathf.Approximately(0f, hapiTransform.scale[1]) || Mathf.Approximately(0f, hapiTransform.scale[2]))
 		{
-		    Debug.LogWarningFormat("Asset id {0} with name {1} has scale components with 0 values!", AssetID, AssetName);
+		    HEU_Logger.LogWarningFormat("Asset id {0} with name {1} has scale components with 0 values!", AssetID, AssetName);
 		}
 
 		// Using root transform as that represents our asset in the world
@@ -3271,7 +3292,7 @@ namespace HoudiniEngineUnity
 		HAPI_TransformEuler transformEuler = HEU_HAPIUtility.GetHAPITransformFromMatrix(ref transformMatrix);
 		if (!session.SetObjectTransform(queryNodeID, ref transformEuler))
 		{
-		    Debug.LogWarningFormat("Unable to upload transform for asset id {0} with name {1}!", AssetID, AssetName);
+		    HEU_Logger.LogWarningFormat("Unable to upload transform for asset id {0} with name {1}!", AssetID, AssetName);
 		}
 		else
 		{
@@ -3327,7 +3348,7 @@ namespace HoudiniEngineUnity
 
 		session.GetMaterialInfo(materialData._materialKey, ref materialInfo, false);
 
-		//Debug.LogFormat("Material id={0}, exists={1}, changed={2}", materialData._materialID, materialInfo.exists, materialInfo.hasChanged);
+		//HEU_Logger.LogFormat("Material id={0}, exists={1}, changed={2}", materialData._materialID, materialInfo.exists, materialInfo.hasChanged);
 
 		if (materialInfo.exists)
 		{
@@ -3970,7 +3991,7 @@ namespace HoudiniEngineUnity
 
 	    if (_assetType == HEU_AssetType.TYPE_HDA)
 	    {
-		newRootGameObject = HEU_HAPIUtility.InstantiateHDA(_assetPath, _rootGameObject.transform.position, session, bBuildAsync, rootGO: newRootGameObject);
+		newRootGameObject = HEU_HAPIUtility.InstantiateHDA(_assetPath, _rootGameObject.transform.position, session, bBuildAsync, bAlwaysOverwriteOnLoad: false, rootGO: newRootGameObject);
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_CURVE)
 	    {
@@ -3982,7 +4003,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogErrorFormat("Unsupported asset type {0} for duplication.", _assetType);
+		HEU_Logger.LogErrorFormat("Unsupported asset type {0} for duplication.", _assetType);
 		return null;
 	    }
 
@@ -4160,12 +4181,12 @@ namespace HoudiniEngineUnity
 		string presetErrorMsg = string.Format("The saved asset OP name from preset file: '{0}'\ndiffers from this asset's OP name: '{1}'.\nMake sure you are using the correct preset file.", assetPreset._assetOPName, _assetOpName);
 		if (!HEU_EditorUtility.DisplayDialog("Preset Does Not Match", presetErrorMsg, "Continue Anyway", "Cancel"))
 		{
-		    Debug.LogWarningFormat("Unable to load preset due to mismatch of asset OP name!");
+		    HEU_Logger.LogWarningFormat("Unable to load preset due to mismatch of asset OP name!");
 		    return;
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Saved preset does not match asset OP name. User selected to continue to load the preset.");
+		    HEU_Logger.LogWarningFormat("Saved preset does not match asset OP name. User selected to continue to load the preset.");
 		}
 	    }
 
@@ -4190,7 +4211,7 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogWarningFormat("Curve with name {0} not found for loading its parameter preset!", assetPreset._curveNames[i]);
+			HEU_Logger.LogWarningFormat("Curve with name {0} not found for loading its parameter preset!", assetPreset._curveNames[i]);
 		    }
 		}
 	    }
@@ -4263,7 +4284,7 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-			    Debug.LogWarningFormat("Input node with name {0} not found! Unable to set input preset.", inputPreset._inputName);
+			    HEU_Logger.LogWarningFormat("Input node with name {0} not found! Unable to set input preset.", inputPreset._inputName);
 			}
 		    }
 		}
@@ -4313,21 +4334,21 @@ namespace HoudiniEngineUnity
 		    HEU_ObjectNode objNode = GetObjectNodeByName(volumeCachePreset._objName);
 		    if (objNode == null)
 		    {
-			Debug.LogWarningFormat("No object node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._objName);
+			HEU_Logger.LogWarningFormat("No object node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._objName);
 			continue;
 		    }
 
 		    HEU_GeoNode geoNode = objNode.GetGeoNode(volumeCachePreset._geoName);
 		    if (geoNode == null)
 		    {
-			Debug.LogWarningFormat("No geo node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._geoName);
+			HEU_Logger.LogWarningFormat("No geo node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._geoName);
 			continue;
 		    }
 
 		    HEU_VolumeCache volumeCache = geoNode.GetVolumeCacheByTileIndex(volumeCachePreset._tile);
 		    if (volumeCache == null)
 		    {
-			Debug.LogWarningFormat("Volume cache at tile {0} not found for geo node {1}. Unable to set heightfield preset.", volumeCachePreset._tile, volumeCachePreset._geoName);
+			HEU_Logger.LogWarningFormat("Volume cache at tile {0} not found for geo node {1}. Unable to set heightfield preset.", volumeCachePreset._tile, volumeCachePreset._geoName);
 			continue;
 		    }
 
@@ -4371,7 +4392,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public bool UpdateSessionSync()
 	{
-	    //Debug.Log("Time: " + Time.realtimeSinceStartup);
+	    //HEU_Logger.Log("Time: " + Time.realtimeSinceStartup);
 
 	    if (_requestBuildAction != AssetBuildAction.NONE || !HEU_PluginSettings.SessionSyncAutoCook || !SessionSyncAutoCook)
 	    {
@@ -4393,7 +4414,7 @@ namespace HoudiniEngineUnity
 
 	    if (bRequiresCook)
 	    {
-		//Debug.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
+		//HEU_Logger.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
 
 		// Disable parm and input uploading for the recook process
 		bool thisCheckParameterChangeForCook = false;
@@ -4747,6 +4768,141 @@ namespace HoudiniEngineUnity
 		}
 	    }
 	    
+	}
+
+	// Equivalence function (Mostly for testing purposes) =======================================================================
+
+	public bool IsEquivalentTo(HEU_HoudiniAsset asset)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_HoudiniAsset";
+
+	    if (asset == null)
+	    {
+		HEU_Logger.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetInfo.ToTestObject(), asset._assetInfo.ToTestObject(), ref bResult, header, "Asset Info");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetType, asset._assetType, ref bResult, header, "Asset type");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._nodeInfo.ToTestObject(), asset._nodeInfo.ToTestObject(), ref bResult, header, "Node Info");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._assetName == asset._assetName, ref bResult, header, "Asset name");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetOpName, asset._assetOpName, ref bResult, header, "Asset op");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetHelp, asset._assetHelp, ref bResult, header, "_assetHelp");
+
+
+	    // TransformInputCount/GeoInputCount not necessary because it is a part of _assetInfo
+	    // assetId not necessary because doesn't  need to be equivalent
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._assetPath, asset.AssetPath, ref bResult, header, "Asset path");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._loadAssetFromMemory, asset._loadAssetFromMemory, ref bResult, header, "Load from memory");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._alwaysOverwriteOnLoad, asset._alwaysOverwriteOnLoad, ref bResult, header, "Always overwrite on load");
+
+	    // Ignore assetFileObject
+
+	    // Skip HandleCount
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectNodes, asset._objectNodes, ref bResult, "Object node", header);
+
+
+	    // Skip ownerGameObject, rootGameObject
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._materialCache, asset._materialCache, ref bResult, header, "Material cache");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parameters, asset._parameters, ref bResult, header, "Parameters");
+
+
+	    // Skip lastSyncedTransformMatrix
+
+	    // Skip asset folder cache
+	    //if (HEU_GeneralUtility.ShouldBeTested(this._assetCacheFolderPath, asset._assetCacheFolderPath, ref bResult, header, "_assetCacheFolderPath"))
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._assetCacheFolderPath == asset._assetCacheFolderPath, ref bResult, header, "Asset cache folder");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._subassetNames, asset._subassetNames, ref bResult, header, "_subassetNames");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._selectedSubassetIndex, asset._selectedSubassetIndex, ref bResult, header, "_selectedSubassetIndex");
+
+	    //if (this._savedAssetPreset != null || asset._savedAssetPreset != null)
+	     //   HEU_TestHelpers.AssertTrueLogEquivalent(this._savedAssetPreset.IsEquivalentTo(asset._savedAssetPreset), ref bResult, header, "Saved asset preset");
+
+	    //if (this._recookPreset != null || asset._recookPreset != null)
+	    //    HEU_TestHelpers.AssertTrueLogEquivalent(this._recookPreset.IsEquivalentTo(asset._recookPreset), ref bResult, header, "Recook preset");
+
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._totalCookCount, asset._totalCookCount, ref bResult, header, "Recook preset");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._requestBuildAction, asset._requestBuildAction, ref bResult, header, "Request build action");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._checkParameterChangeForCook, asset._checkParameterChangeForCook, ref bResult, header, "Check parameter change for cook");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._skipCookCheck, asset._skipCookCheck, ref bResult, header, "Skip cook check");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._uploadParameters, asset._uploadParameters, ref bResult, header, "Upload parameters");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._forceUploadInputs, asset._forceUploadInputs, ref bResult, header, "Force upload inputs");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._upstreamCookChanged, asset._upstreamCookChanged, ref bResult, header, "Upstream cook changed");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._cookStatus, asset._cookStatus, ref bResult, header, "Cook status");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._lastCookResult, asset._lastCookResult, ref bResult, header, "Last cook result");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._isCookingAssetReloaded, asset._isCookingAssetReloaded, ref bResult, header, "Is cooking asset reloaded");
+
+	    // Skip sessionId
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._uiLocked, asset._uiLocked, ref bResult, header, "UI locked");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showHDAOptions, asset._showHDAOptions, ref bResult, header, "Show HDA options");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showGenerateSection, asset._showGenerateSection, ref bResult, header, "Show generate section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showBakeSection, asset._showBakeSection, ref bResult, header, "Show bake section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showEventsSection, asset._showEventsSection, ref bResult, header, "Show events section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showCurvesSection, asset._showCurvesSection, ref bResult, header, "Show curves section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showInputNodesSection, asset._showInputNodesSection, ref bResult, header, "Show input nodes section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showToolsSection, asset._showToolsSection, ref bResult, header, "Show tools section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._showTerrainSection, asset._showTerrainSection, ref bResult, header, "Show Terrain section");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._instanceInputUIState, asset._instanceInputUIState, ref bResult, header, "Instance input UI state");
+
+	    // Skip events
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateUVs, asset._generateUVs, ref bResult, header, "Generate UVs");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateTangents, asset._generateTangents, ref bResult, header, "Generate Tangents");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateNormals, asset._generateNormals, ref bResult, header, "Generate Normals");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._pushTransformToHoudini, asset._pushTransformToHoudini, ref bResult, header, "Push Transform to Houdini");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._transformChangeTriggersCooks, asset._transformChangeTriggersCooks, ref bResult, header, "Transform changes triggers cooks");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._cookingTriggersDownCooks, asset._cookingTriggersDownCooks, ref bResult, header, "Cooking triggers down cooks");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._autoCookOnParameterChange, asset._autoCookOnParameterChange, ref bResult, header, "Auto cook on parameter change");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._ignoreNonDisplayNodes, asset._ignoreNonDisplayNodes, ref bResult, header, "Ignore non-display nodes");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._generateMeshUsingPoints, asset._generateMeshUsingPoints, ref bResult, header, "Generate mesh using points");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._useLODGroups, asset._useLODGroups, ref bResult, header, "Use LOD groups");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._splitGeosByGroup, asset._splitGeosByGroup, ref bResult, header, "Split geos by group");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._sessionSyncAutoCook, asset._sessionSyncAutoCook, ref bResult, header, "Session sync auto cook");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._bakeUpdateKeepPreviousTransformValues, asset._bakeUpdateKeepPreviousTransformValues, ref bResult, header, "Bake update keep previous transform values");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveEditorEnabled, asset._curveEditorEnabled, ref bResult, header, "Curve editor enabled");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curves, asset._curves, ref bResult, header, "Curves");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveDrawCollision, asset._curveDrawCollision, ref bResult, header, "Curve draw collision");
+
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveDrawLayerMask.ToTestObject(), asset._curveDrawLayerMask.ToTestObject(), ref bResult, header, "Curve draw layer mask");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveProjectMaxDistance, asset._curveProjectMaxDistance, ref bResult, header, "Curve Project max distance");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveProjectDirection, asset._curveProjectDirection, ref bResult, header, "Curve project direction");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveDisableScaleRotation, asset.CurveDisableScaleRotation, ref bResult, header, "Curve disable scale rotation");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveCookOnDrag, asset._curveCookOnDrag, ref bResult, header, "Curve cook on drag");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveFrameSelectedNodes, asset._curveFrameSelectedNodes, ref bResult, header, "Curve Frame selected nodes");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveFrameSelectedNodeDistance, asset._curveFrameSelectedNodeDistance, ref bResult, header, "Curve Frame selected nodes distance");
+	    
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputNodes, asset._inputNodes, ref bResult, header, "Input node:");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handles, asset._handles, ref bResult, header, "Handles node:");
+
+	    
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._handlesEnabled, asset._handlesEnabled, ref bResult, header, "Handles enabled");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._volumeCaches, asset._volumeCaches, ref bResult, header, "Volume caches node:");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._attributeStores, asset._attributeStores, ref bResult, header, "Attribute stores:");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._editableNodesToolsEnabled, asset._editableNodesToolsEnabled, ref bResult, header, "_editableNodesToolsEnabled");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._toolsInfo, asset._toolsInfo, ref bResult, header, "_toolsInfo");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._serializedMetaData, asset._serializedMetaData, ref bResult, header, "_serializedMetaData");
+
+	    return bResult;
 	}
     }
 

@@ -127,7 +127,7 @@ namespace HoudiniEngineUnity
 
 	private static void EditorQuit()
 	{
-	    Debug.Log("Houdini Engine: Editor is closing. Closing all sessions and clearing cache.");
+	    HEU_Logger.Log("Houdini Engine: Editor is closing. Closing all sessions and clearing cache.");
 	    HEU_SessionManager.CloseAllSessions();
 	    HEU_PluginStorage.DeleteAllSavedSessionData();
 	}

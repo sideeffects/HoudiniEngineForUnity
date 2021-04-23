@@ -550,7 +550,7 @@ namespace HoudiniEngineUnity
 			Log("Connection errored!");
 			Log(ex.ToString());
 
-			Debug.Log(ex.ToString());
+			HEU_Logger.Log(ex.ToString());
 		    }
 		    finally
 		    {
@@ -761,11 +761,11 @@ namespace HoudiniEngineUnity
 			syncData._viewportHAPI = viewLocal;
 		    }
 
-		    //Debug.Log("Setting HAPI (from local)");
-		    //Debug.LogFormat("Pos: {0}, {1}, {2}", viewLocal.position[0], viewLocal.position[1], viewLocal.position[2]);
-		    //Debug.LogFormat("Rot: {0}, {1}, {2}, {3}", viewLocal.rotationQuaternion[0], 
+		    //HEU_Logger.Log("Setting HAPI (from local)");
+		    //HEU_Logger.LogFormat("Pos: {0}, {1}, {2}", viewLocal.position[0], viewLocal.position[1], viewLocal.position[2]);
+		    //HEU_Logger.LogFormat("Rot: {0}, {1}, {2}, {3}", viewLocal.rotationQuaternion[0], 
 			//viewLocal.rotationQuaternion[1], viewLocal.rotationQuaternion[2], viewLocal.rotationQuaternion[3]);
-		    //Debug.LogFormat("Dis: {0}, sceneView.camDist: {1}", viewLocal.offset, sceneView.cameraDistance);
+		    //HEU_Logger.LogFormat("Dis: {0}, sceneView.camDist: {1}", viewLocal.offset, sceneView.cameraDistance);
 		}
 	    }
 	}

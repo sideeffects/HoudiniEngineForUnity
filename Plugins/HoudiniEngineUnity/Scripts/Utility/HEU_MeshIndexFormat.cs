@@ -55,7 +55,7 @@ namespace HoudiniEngineUnity
 		// For vertex count larger than 16-bit, use 32-bit buffer
 		_indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 #else
-				Debug.LogErrorFormat("Vertex count {0} which is above Unity maximum of {1}.\nUse Unity 2017.3+ or reduce this in Houdini.",
+				HEU_Logger.LogErrorFormat("Vertex count {0} which is above Unity maximum of {1}.\nUse Unity 2017.3+ or reduce this in Houdini.",
 					vertexCount, maxVertexCount);
 #endif
 	    }

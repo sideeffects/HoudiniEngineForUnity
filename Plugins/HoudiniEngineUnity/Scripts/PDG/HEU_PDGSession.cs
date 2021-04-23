@@ -76,7 +76,7 @@ namespace HoudiniEngineUnity
 	    if (!_pdgAssets.Contains(asset))
 	    {
 		_pdgAssets.Add(asset);
-		//Debug.Log("Adding asset " + asset.AssetName + " with total " + _pdgAssets.Count);
+		//HEU_Logger.Log("Adding asset " + asset.AssetName + " with total " + _pdgAssets.Count);
 	    }
 #endif
 	}
@@ -208,7 +208,7 @@ namespace HoudiniEngineUnity
 	    {
 		_pdgContextIDs[i] = contextIDs[i];
 		//string cname = HEU_SessionManager.GetString(contextNames[i], session);
-		//Debug.LogFormat("PDG Context: {0} - {1}", HEU_SessionManager.GetString(cname, session), contextIDs[i]);
+		//HEU_Logger.LogFormat("PDG Context: {0} - {1}", HEU_SessionManager.GetString(cname, session), contextIDs[i]);
 	    }
 #endif
 	}
@@ -232,7 +232,7 @@ namespace HoudiniEngineUnity
 	    GetTOPAssetLinkAndNode(eventInfo.nodeId, out assetLink, out topNode);
 
 	    //string topNodeName = topNode != null ? string.Format("node={0}", topNode._nodeName) : string.Format("id={0}", eventInfo.nodeId);
-	    //Debug.LogFormat("PDG Event: {0}, type={1}, workitem={2}, curState={3}, lastState={4}", topNodeName, evType.ToString(), 
+	    //HEU_Logger.LogFormat("PDG Event: {0}, type={1}, workitem={2}, curState={3}, lastState={4}", topNodeName, evType.ToString(), 
 	    //	eventInfo.workitemId, currentState, lastState);
 
 	    if (assetLink == null || topNode == null || topNode._nodeID != eventInfo.nodeId)
@@ -316,7 +316,7 @@ namespace HoudiniEngineUnity
 		    }
 		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_DIRTY)
 		    {
-			//Debug.LogFormat("Dirty: id={0}", eventInfo.workitemId);
+			//HEU_Logger.LogFormat("Dirty: id={0}", eventInfo.workitemId);
 
 			ClearWorkItemResult(session, contextID, eventInfo, topNode);
 		    }
@@ -338,7 +338,7 @@ namespace HoudiniEngineUnity
 			    HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
 			    if (!session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
 			    {
-				Debug.LogErrorFormat("Failed to get work item {1} info for {0}", topNode._nodeName, eventInfo.workitemId);
+				HEU_Logger.LogErrorFormat("Failed to get work item {1} info for {0}", topNode._nodeName, eventInfo.workitemId);
 				return;
 			    }
 
@@ -348,7 +348,7 @@ namespace HoudiniEngineUnity
 				int resultCount = workItemInfo.numResults;
 				if (!session.GetWorkitemResultInfo(topNode._nodeID, eventInfo.workitemId, resultInfos, resultCount))
 				{
-				    Debug.LogErrorFormat("Failed to get work item {1} result info for {0}", topNode._nodeName, eventInfo.workitemId);
+				    HEU_Logger.LogErrorFormat("Failed to get work item {1} result info for {0}", topNode._nodeName, eventInfo.workitemId);
 				    return;
 				}
 
@@ -435,7 +435,7 @@ namespace HoudiniEngineUnity
 
 	private void NotifyTOPNodePDGStateClear(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
 	{
-	    //Debug.LogFormat("NotifyTOPNodePDGStateClear:: {0}", topNode._nodeName);
+	    //HEU_Logger.LogFormat("NotifyTOPNodePDGStateClear:: {0}", topNode._nodeName);
 	    topNode._pdgState = HEU_TOPNodeData.PDGState.NONE;
 	    topNode._workItemTally.ZeroAll();
 	    assetLink.RepaintUI();
@@ -492,7 +492,7 @@ namespace HoudiniEngineUnity
 	    // Log first error
 	    if (!_errored && bLogIt)
 	    {
-		Debug.LogError(msg);
+		HEU_Logger.LogError(msg);
 	    }
 
 	    _errored = true;
@@ -548,7 +548,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.CookPDG(topNetwork._nodeID, 0, 0))
 	    {
-		Debug.LogErrorFormat("Cook node failed!");
+		HEU_Logger.LogErrorFormat("Cook node failed!");
 	    }
 #endif
 	}

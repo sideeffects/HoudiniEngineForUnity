@@ -46,7 +46,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Represents a Geometry (SOP) node.
     /// </summary>
-    public class HEU_GeoNode : ScriptableObject, ISerializationCallbackReceiver
+    public class HEU_GeoNode : ScriptableObject, ISerializationCallbackReceiver, IEquivable<HEU_GeoNode>
     {
 	//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -182,7 +182,7 @@ namespace HoudiniEngineUnity
 	    _geoInfo = geoInfo;
 	    _geoName = HEU_SessionManager.GetString(_geoInfo.nameSH, session);
 
-	    //Debug.Log(string.Format("GeoNode initialized with ID={0}, name={1}, type={2}", GeoID, GeoName, geoInfo.type));
+	    //HEU_Logger.Log(string.Format("GeoNode initialized with ID={0}, name={1}, type={2}", GeoID, GeoName, geoInfo.type));
 	}
 
 	public bool DoesThisRequirePotentialCook()
@@ -232,14 +232,14 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    int numParts = _geoInfo.partCount;
-		    //Debug.Log("Number of parts: " + numParts);
-		    //Debug.LogFormat("GeoNode type {0}, isTemplated: {1}, isDisplayGeo: {2}, isEditable: {3}", _geoInfo.type, _geoInfo.isTemplated, _geoInfo.isDisplayGeo, _geoInfo.isEditable);
+		    //HEU_Logger.Log("Number of parts: " + numParts);
+		    //HEU_Logger.LogFormat("GeoNode type {0}, isTemplated: {1}, isDisplayGeo: {2}, isEditable: {3}", _geoInfo.type, _geoInfo.isTemplated, _geoInfo.isDisplayGeo, _geoInfo.isEditable);
 		    for (int i = 0; i < numParts; ++i)
 		    {
 			HAPI_PartInfo partInfo = new HAPI_PartInfo();
 			if (!session.GetPartInfo(GeoID, i, ref partInfo))
 			{
-			    Debug.LogErrorFormat("Unable to get PartInfo for geo node {0} and part {1}.", GeoID, i);
+			    HEU_Logger.LogErrorFormat("Unable to get PartInfo for geo node {0} and part {1}.", GeoID, i);
 			    continue;
 			}
 
@@ -258,7 +258,7 @@ namespace HoudiniEngineUnity
 
 			if (oldMatchedPart != null)
 			{
-			    //Debug.Log("Found matched part: " + oldMatchedPart.name);
+			    //HEU_Logger.Log("Found matched part: " + oldMatchedPart.name);
 
 			    // ProcessPart will clear out the object instances, so hence why
 			    // we keep a copy here, then restore after processing the parts.
@@ -329,7 +329,7 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_HoudiniAsset parentAsset = ParentAsset;
 	    bool bResult = true;
-	    //Debug.LogFormat("Part: name={0}, id={1}, type={2}, instanced={3}, instance count={4}, instance part count={5}", HEU_SessionManager.GetString(partInfo.nameSH, session), partID, partInfo.type, partInfo.isInstanced, partInfo.instanceCount, partInfo.instancedPartCount);
+	    //HEU_Logger.LogFormat("Part: name={0}, id={1}, type={2}, instanced={3}, instance count={4}, instance part count={5}", HEU_SessionManager.GetString(partInfo.nameSH, session), partID, partInfo.type, partInfo.isInstanced, partInfo.instanceCount, partInfo.instancedPartCount);
 
 #if HEU_PROFILER_ON
 			float processPartStartTime = Time.realtimeSinceStartup;
@@ -417,7 +417,7 @@ namespace HoudiniEngineUnity
 		    bResult = session.GetVolumeInfo(GeoID, partID, ref volumeInfo);
 		    if (!bResult)
 		    {
-			Debug.LogErrorFormat("Unable to get volume info for geo node {0} and part {1} ", GeoID, partID);
+			HEU_Logger.LogErrorFormat("Unable to get volume info for geo node {0} and part {1} ", GeoID, partID);
 		    }
 		    else
 		    {
@@ -439,7 +439,7 @@ namespace HoudiniEngineUnity
 			}
 		    }
 #else
-					Debug.LogWarningFormat("Terrain (heightfield volume) is not yet supported.");
+					HEU_Logger.LogWarningFormat("Terrain (heightfield volume) is not yet supported.");
 #endif
 		}
 		else if (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INSTANCER || isAttribInstancer)
@@ -482,7 +482,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Unsupported part type {0}", partInfo.type);
+		    HEU_Logger.LogWarningFormat("Unsupported part type {0}", partInfo.type);
 		}
 
 		if (partData != null)
@@ -508,7 +508,7 @@ namespace HoudiniEngineUnity
 	    }
 
 #if HEU_PROFILER_ON
-			Debug.LogFormat("PART PROCESS TIME:: NAME={0}, TIME={1}", HEU_SessionManager.GetString(partInfo.nameSH, session), (Time.realtimeSinceStartup - processPartStartTime));
+			HEU_Logger.LogFormat("PART PROCESS TIME:: NAME={0}, TIME={1}", HEU_SessionManager.GetString(partInfo.nameSH, session), (Time.realtimeSinceStartup - processPartStartTime));
 #endif
 	}
 
@@ -1061,6 +1061,39 @@ namespace HoudiniEngineUnity
 	{
 	    return (!string.IsNullOrEmpty(_geoName) ? ("GeoNode: " + _geoName) : base.ToString());
 	}
+
+
+	public bool IsEquivalentTo(HEU_GeoNode other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_GeoNode";
+
+	    if (other == null)
+	    {
+		HEU_Logger.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoInfo.ToTestObject(), other._geoInfo.ToTestObject(), ref bResult, header, "_geoInfo");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parts, other._parts, ref bResult, header, "_part");
+	    
+	    // SKip _containerObjectNode/parentAsset stuff
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoCurve, other._geoCurve, ref bResult, header, "_geoCurve");
+	
+	    // Skip volumCache
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._volumeCaches, other._volumeCaches, ref bResult, header, "_volumeCaches");
+	    
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

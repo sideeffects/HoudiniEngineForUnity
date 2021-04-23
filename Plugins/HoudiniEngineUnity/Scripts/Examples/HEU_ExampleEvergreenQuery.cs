@@ -68,7 +68,7 @@ public class HEU_ExampleEvergreenQuery
 	string evergreenFullPath = HEU_AssetDatabase.GetAssetFullPath(evergreenAssetPath);
 	if (string.IsNullOrEmpty(evergreenFullPath))
 	{
-	    Debug.LogErrorFormat("Unable to load Evergreen asset at path: {0}", evergreenAssetPath);
+	    HEU_Logger.LogErrorFormat("Unable to load Evergreen asset at path: {0}", evergreenAssetPath);
 	    return;
 	}
 
@@ -116,14 +116,14 @@ public class HEU_ExampleEvergreenQuery
 	HEU_HoudiniAssetRoot heuRoot = rootGO.GetComponent<HEU_HoudiniAssetRoot>();
 	if (heuRoot == null)
 	{
-	    Debug.LogWarningFormat("Unable to get the HEU_HoudiniAssetRoot from gameobject: {0}. Not a valid HDA.", rootGO.name);
+	    HEU_Logger.LogWarningFormat("Unable to get the HEU_HoudiniAssetRoot from gameobject: {0}. Not a valid HDA.", rootGO.name);
 	    return null;
 	}
 
 	// The HEU_HoudiniAssetRoot should have a reference to HEU_HoudiniAsset which is the main HEU asset script.
 	if (heuRoot._houdiniAsset == null)
 	{
-	    Debug.LogWarningFormat("Unable to get the HEU_HoudiniAsset in root gameobject: {0}. Not a valid HDA.", rootGO.name);
+	    HEU_Logger.LogWarningFormat("Unable to get the HEU_HoudiniAsset in root gameobject: {0}. Not a valid HDA.", rootGO.name);
 	    return null;
 	}
 
@@ -151,7 +151,7 @@ public class HEU_ExampleEvergreenQuery
 	List<HEU_ParameterData> parms = houdiniAsset.Parameters.GetParameters();
 	if (parms == null || parms.Count == 0)
 	{
-	    Debug.LogFormat("No parms found");
+	    HEU_Logger.LogFormat("No parms found");
 	    return;
 	}
 
@@ -178,7 +178,7 @@ public class HEU_ExampleEvergreenQuery
 		parmData._floatValues[0] = 1;
 	    }
 	}
-	Debug.Log("Parameters: \n" + sb.ToString());
+	HEU_Logger.Log("Parameters: \n" + sb.ToString());
 
 	// --------------------------------------------------------------------
 	// Examples to look up a parm via name, and set it.
@@ -205,7 +205,7 @@ public class HEU_ExampleEvergreenQuery
 	HEU_SessionBase session = houdiniAsset.GetAssetSession(true);
 	if (session == null || !session.IsSessionValid())
 	{
-	    Debug.LogWarningFormat("Invalid Houdini Engine session! Try restarting session.");
+	    HEU_Logger.LogWarningFormat("Invalid Houdini Engine session! Try restarting session.");
 	    return;
 	}
 
@@ -311,7 +311,7 @@ public class HEU_ExampleEvergreenQuery
 	    QueryPartAttributeByOwner(session, geoInfo.nodeId, i, HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, partInfo.pointAttributeCount, sb);
 	    QueryPartAttributeByOwner(session, geoInfo.nodeId, i, HAPI_AttributeOwner.HAPI_ATTROWNER_VERTEX, partInfo.vertexAttributeCount, sb);
 
-	    Debug.Log("Part: \n" + sb.ToString());
+	    HEU_Logger.Log("Part: \n" + sb.ToString());
 	}
     }
 
@@ -328,7 +328,7 @@ public class HEU_ExampleEvergreenQuery
     {
 	if (count == 0)
 	{
-	    Debug.LogFormat("No attributes with owner {0}", owner);
+	    HEU_Logger.LogFormat("No attributes with owner {0}", owner);
 	    return;
 	}
 
@@ -396,7 +396,7 @@ public class HEU_ExampleEvergreenQuery
 	HEU_SessionBase session = houdiniAsset.GetAssetSession(true);
 	if (session == null || !session.IsSessionValid())
 	{
-	    Debug.LogWarningFormat("Invalid Houdini Engine session! Try restarting session.");
+	    HEU_Logger.LogWarningFormat("Invalid Houdini Engine session! Try restarting session.");
 	    return;
 	}
 
@@ -406,23 +406,23 @@ public class HEU_ExampleEvergreenQuery
 	HEU_ObjectNode objNode = houdiniAsset.GetObjectNodeByName(objName);
 	if (objNode == null)
 	{
-	    Debug.LogWarningFormat("Object with name {0} not found in asset {1}!", objName, houdiniAsset.AssetName);
+	    HEU_Logger.LogWarningFormat("Object with name {0} not found in asset {1}!", objName, houdiniAsset.AssetName);
 	    return;
 	}
 
 	HEU_GeoNode geoNode = objNode.GetGeoNode(geoName);
 	if (geoNode == null)
 	{
-	    Debug.LogWarningFormat("Geometry with name {0} not found in object {1} in asset {2}!", geoNode.GeoName, objName, houdiniAsset.AssetName);
+	    HEU_Logger.LogWarningFormat("Geometry with name {0} not found in object {1} in asset {2}!", geoNode.GeoName, objName, houdiniAsset.AssetName);
 	}
 
 	HAPI_AttributeInfo attrInfo = new HAPI_AttributeInfo();
 	if (!HEU_GeneralUtility.GetAttributeInfo(session, geoNode.GeoID, partID, attrName, ref attrInfo) && attrInfo.exists)
 	{
-	    Debug.LogWarningFormat("Attribute {0} not found in asset.", attrName);
+	    HEU_Logger.LogWarningFormat("Attribute {0} not found in asset.", attrName);
 	}
 
-	Debug.LogFormat("Found attribute {0} on geo {1}", attrName, geoName);
+	HEU_Logger.LogFormat("Found attribute {0} on geo {1}", attrName, geoName);
 
 	// Now query the actual values on this attribute
 	QueryAttributeByStorageType(session, geoNode.GeoID, partID, ref attrInfo, attrName);

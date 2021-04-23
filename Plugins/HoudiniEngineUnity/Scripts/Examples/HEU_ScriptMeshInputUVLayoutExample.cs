@@ -82,13 +82,13 @@ public class HEU_ScriptMeshInputUVLayoutExample
 	HEU_SessionBase session = HEU_SessionManager.GetOrCreateDefaultSession();
 	if (session == null || !session.IsSessionValid())
 	{
-	    Debug.LogError("Failed to get Houdini Engine session. Unable to apply UV layout.");
+	    HEU_Logger.LogError("Failed to get Houdini Engine session. Unable to apply UV layout.");
 	    return;
 	}
 
 	if (gameObjects == null || gameObjects.Length == 0)
 	{
-	    Debug.LogError("No input objects found to apply UV layout.");
+	    HEU_Logger.LogError("No input objects found to apply UV layout.");
 	    return;
 	}
 
@@ -110,7 +110,7 @@ public class HEU_ScriptMeshInputUVLayoutExample
 	    HEU_InputInterfaceMesh.HEU_InputDataMeshes inputMeshes = inputMeshInterface.GenerateMeshDatasFromGameObject(currentGO);
 	    if (inputMeshes == null || inputMeshes._inputMeshes.Count == 0)
 	    {
-		Debug.LogWarningFormat("Failed to generate input mesh data for: {0}", currentGO.name);
+		HEU_Logger.LogWarningFormat("Failed to generate input mesh data for: {0}", currentGO.name);
 		continue;
 	    }
 
@@ -122,7 +122,7 @@ public class HEU_ScriptMeshInputUVLayoutExample
 	    session.CreateInputNode(out inputNodeID, inputName);
 	    if (inputNodeID == HEU_Defines.HEU_INVALID_NODE_ID || !HEU_HAPIUtility.IsNodeValidInHoudini(session, inputNodeID))
 	    {
-		Debug.LogErrorFormat("Failed to create new input node in Houdini session!");
+		HEU_Logger.LogErrorFormat("Failed to create new input node in Houdini session!");
 		break;
 	    }
 
@@ -137,7 +137,7 @@ public class HEU_ScriptMeshInputUVLayoutExample
 	    if (!session.CookNode(inputNodeID, false))
 	    {
 		session.DeleteNode(nodeInfo.parentId);
-		Debug.LogErrorFormat("New input node failed to cook!");
+		HEU_Logger.LogErrorFormat("New input node failed to cook!");
 		break;
 	    }
 
@@ -145,7 +145,7 @@ public class HEU_ScriptMeshInputUVLayoutExample
 	    if (!inputMeshInterface.UploadData(session, inputNodeID, inputMeshes))
 	    {
 		session.DeleteNode(nodeInfo.parentId);
-		Debug.LogErrorFormat("Failed to upload input mesh data");
+		HEU_Logger.LogErrorFormat("Failed to upload input mesh data");
 		break;
 	    }
 

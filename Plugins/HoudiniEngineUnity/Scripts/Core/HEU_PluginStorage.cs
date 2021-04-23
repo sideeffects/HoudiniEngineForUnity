@@ -404,7 +404,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Exception when trying to save settings file: {0}", ex.ToString());
+		HEU_Logger.LogErrorFormat("Exception when trying to save settings file: {0}", ex.ToString());
 		return false;
 	    }
 
@@ -432,7 +432,7 @@ namespace HoudiniEngineUnity
 		string line = reader.ReadLine();
 		if (string.IsNullOrEmpty(line) || !line.Equals(PluginSettingsLine1))
 		{
-		    Debug.LogWarningFormat("Unable to load Plugin settings file. {0} should have line 1: {1}", settingsFilePath, PluginSettingsLine1);
+		    HEU_Logger.LogWarningFormat("Unable to load Plugin settings file. {0} should have line 1: {1}", settingsFilePath, PluginSettingsLine1);
 		    return false;
 		}
 
@@ -440,7 +440,7 @@ namespace HoudiniEngineUnity
 		line = reader.ReadLine();
 		if (string.IsNullOrEmpty(line) || !line.StartsWith(PluginSettingsLine2))
 		{
-		    Debug.LogWarningFormat("Unable to load Plugin settings file. {0} should start line 2 with: {1}", settingsFilePath, PluginSettingsLine2);
+		    HEU_Logger.LogWarningFormat("Unable to load Plugin settings file. {0} should start line 2 with: {1}", settingsFilePath, PluginSettingsLine2);
 		    return false;
 		}
 
@@ -474,7 +474,7 @@ namespace HoudiniEngineUnity
 			    }
 			    catch (System.Exception ex)
 			    {
-				Debug.LogErrorFormat("Invalid data type found in settings: {0}. Exception: {1}", typeStr, ex.ToString());
+				HEU_Logger.LogErrorFormat("Invalid data type found in settings: {0}. Exception: {1}", typeStr, ex.ToString());
 			    }
 			}
 		    }
@@ -497,8 +497,8 @@ namespace HoudiniEngineUnity
 		string keyJson = UnityEditor.EditorPrefs.GetString(HEU_Defines.PLUGIN_STORE_KEYS);
 		string dataJson = UnityEditor.EditorPrefs.GetString(HEU_Defines.PLUGIN_STORE_DATA);
 
-		//Debug.Log("Load:: Keys: " + keyJson);
-		//Debug.Log("Load:: Data: " + dataJson);
+		//HEU_Logger.Log("Load:: Keys: " + keyJson);
+		//HEU_Logger.Log("Load:: Data: " + dataJson);
 
 		string[] keyList = GetJSONArray<string>(keyJson);
 		StoreData[] dataList = GetJSONArray<StoreData>(dataJson);
@@ -511,7 +511,7 @@ namespace HoudiniEngineUnity
 		    for (int i = 0; i < numKeys; ++i)
 		    {
 			_dataMap.Add(keyList[i], dataList[i]);
-			//Debug.Log(string.Format("{0} : {1}", keyList[i], dataList[i]._valueStr));
+			//HEU_Logger.Log(string.Format("{0} : {1}", keyList[i], dataList[i]._valueStr));
 		    }
 		}
 
@@ -627,7 +627,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Unable to deletion session file: {0}. Exception: {1}", path, ex.ToString());
+		HEU_Logger.LogErrorFormat("Unable to deletion session file: {0}. Exception: {1}", path, ex.ToString());
 	    }
 	    
 #endif

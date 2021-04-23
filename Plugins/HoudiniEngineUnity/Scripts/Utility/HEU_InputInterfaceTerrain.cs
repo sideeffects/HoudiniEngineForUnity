@@ -99,7 +99,7 @@ namespace HoudiniEngineUnity
 
 	    if (!HEU_HAPIUtility.IsNodeValidInHoudini(session, connectNodeID))
 	    {
-		Debug.LogError("Connection node is invalid.");
+		HEU_Logger.LogError("Connection node is invalid.");
 		return false;
 	    }
 
@@ -144,7 +144,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.CookNode(inputNodeID, false))
 	    {
-		Debug.LogError("New input node failed to cook!");
+		HEU_Logger.LogError("New input node failed to cook!");
 		return false;
 	    }
 
@@ -165,7 +165,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.CommitGeo(idt._maskNodeID))
 	    {
-		Debug.LogError("Failed to commit volume layer 'mask'");
+		HEU_Logger.LogError("Failed to commit volume layer 'mask'");
 		return false;
 	    }
 
@@ -207,13 +207,13 @@ namespace HoudiniEngineUnity
 		    || idt._maskNodeID == HEU_Defines.HEU_INVALID_NODE_ID
 		    || idt._mergeNodeID == HEU_Defines.HEU_INVALID_NODE_ID)
 	    {
-		Debug.LogError("Failed to create new heightfield node in Houdini session!");
+		HEU_Logger.LogError("Failed to create new heightfield node in Houdini session!");
 		return false;
 	    }
 
 	    if (!session.CookNode(idt._heightNodeID, false))
 	    {
-		Debug.LogError("New input node failed to cook!");
+		HEU_Logger.LogError("New input node failed to cook!");
 		return false;
 	    }
 
@@ -232,21 +232,21 @@ namespace HoudiniEngineUnity
 	    HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
 	    if (!session.GetGeoInfo(idt._heightNodeID, ref geoInfo))
 	    {
-		Debug.LogError("Unable to get geo info from heightfield node!");
+		HEU_Logger.LogError("Unable to get geo info from heightfield node!");
 		return false;
 	    }
 
 	    HAPI_PartInfo partInfo = new HAPI_PartInfo();
 	    if (!session.GetPartInfo(geoInfo.nodeId, 0, ref partInfo))
 	    {
-		Debug.LogError("Unable to get part info from heightfield node!");
+		HEU_Logger.LogError("Unable to get part info from heightfield node!");
 		return false;
 	    }
 
 	    volumeInfo = new HAPI_VolumeInfo();
 	    if (!session.GetVolumeInfo(idt._heightNodeID, 0, ref volumeInfo))
 	    {
-		Debug.LogError("Unable to get volume info from heightfield node!");
+		HEU_Logger.LogError("Unable to get volume info from heightfield node!");
 		return false;
 	    }
 
@@ -255,7 +255,7 @@ namespace HoudiniEngineUnity
 		    || idt._terrainData.heightmapResolution != volumeInfo.xLength
 		    || idt._terrainData.heightmapResolution != volumeInfo.yLength)
 	    {
-		Debug.LogWarning("Created heightfield in Houdini differs in voxel size from input terrain! Terrain may require resampling.");
+		HEU_Logger.LogWarning("Created heightfield in Houdini differs in voxel size from input terrain! Terrain may require resampling.");
 	    }
 
 	    // Update volume infos, and set it. This is required.
@@ -277,7 +277,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.SetVolumeInfo(idt._heightNodeID, partInfo.id, ref volumeInfo))
 	    {
-		Debug.LogError("Unable to set volume info on input heightfield node!");
+		HEU_Logger.LogError("Unable to set volume info on input heightfield node!");
 		return false;
 	    }
 
@@ -302,14 +302,14 @@ namespace HoudiniEngineUnity
 
 	    if (volumeInfo.xLength != volumeInfo.yLength)
 	    {
-		Debug.LogError("Error: Houdini heightmap must be square!");
+		HEU_Logger.LogError("Error: Houdini heightmap must be square!");
 		return false;
 	    }
 
 	    if (idt._terrainData.heightmapResolution != volumeInfo.xLength)
 	    {
 		// Resize heightsArr to idt._terrainData.heightmapResolution
-		Debug.LogWarningFormat("Attempting to resize landscape from ({0}x{1}) to ({2}x{3})", idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution, volumeInfo.xLength, volumeInfo.xLength);
+		HEU_Logger.LogWarningFormat("Attempting to resize landscape from ({0}x{1}) to ({2}x{3})", idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution, volumeInfo.xLength, volumeInfo.xLength);
 		heightsArr = HEU_TerrainUtility.ResampleData(heightsArr, idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution, volumeInfo.xLength, volumeInfo.xLength);
 		sizeX = volumeInfo.xLength;
 		sizeY = volumeInfo.yLength;
@@ -319,7 +319,7 @@ namespace HoudiniEngineUnity
 	    // Set the base height layer
 	    if (!session.SetHeightFieldData(idt._heightNodeID, 0, HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_HEIGHT, heightsArr, 0, totalSize))
 	    {
-		Debug.LogError("Unable to set height values on input heightfield node!");
+		HEU_Logger.LogError("Unable to set height values on input heightfield node!");
 		return false;
 	    }
 
@@ -329,7 +329,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.CommitGeo(idt._heightNodeID))
 	    {
-		Debug.LogError("Unable to commit geo on input heightfield node!");
+		HEU_Logger.LogError("Unable to commit geo on input heightfield node!");
 		return false;
 	    }
 
@@ -398,7 +398,7 @@ namespace HoudiniEngineUnity
 		{
 		    layerName = layerName.Remove(extIndex);
 		}
-		//Debug.Log("Processing terrain layer: " + layerName);
+		//HEU_Logger.Log("Processing terrain layer: " + layerName);
 
 		HAPI_NodeId alphaLayerID = HEU_Defines.HEU_INVALID_NODE_ID;
 
@@ -409,7 +409,7 @@ namespace HoudiniEngineUnity
 		}
 		else if (layerName.Equals(HEU_Defines.HAPI_HEIGHTFIELD_LAYERNAME_MASK))
 		{
-		    //Debug.Log("Mask layer found! Skipping creating the HF.");
+		    //HEU_Logger.Log("Mask layer found! Skipping creating the HF.");
 		    bMaskSet = true;
 		    bMaskLayer = true;
 		    alphaLayerID = idt._maskNodeID;
@@ -422,12 +422,12 @@ namespace HoudiniEngineUnity
 			    Mathf.RoundToInt(sizeX * idt._voxelSize), Mathf.RoundToInt(sizeY * idt._voxelSize), idt._voxelSize))
 		    {
 			bResult = false;
-			Debug.LogError("Failed to create input volume node for layer " + layerName);
+			HEU_Logger.LogError("Failed to create input volume node for layer " + layerName);
 			break;
 		    }
 		}
 
-		//Debug.Log("Uploading terrain layer: " + layerName);
+		//HEU_Logger.Log("Uploading terrain layer: " + layerName);
 
 		if (!SetHeightFieldData(session, alphaLayerID, 0, alphaMapsConverted[m], layerName, ref baseVolumeInfo))
 		{
@@ -442,7 +442,7 @@ namespace HoudiniEngineUnity
 		if (!session.CommitGeo(alphaLayerID))
 		{
 		    bResult = false;
-		    Debug.LogError("Failed to commit volume layer " + layerName);
+		    HEU_Logger.LogError("Failed to commit volume layer " + layerName);
 		    break;
 		}
 
@@ -452,7 +452,7 @@ namespace HoudiniEngineUnity
 		    if (!session.ConnectNodeInput(idt._mergeNodeID, inputLayerIndex + 1, alphaLayerID, 0))
 		    {
 			bResult = false;
-			Debug.LogError("Unable to connect new volume node for layer " + layerName);
+			HEU_Logger.LogError("Unable to connect new volume node for layer " + layerName);
 			break;
 		    }
 
@@ -506,14 +506,14 @@ namespace HoudiniEngineUnity
 
 	    if (!session.SetVolumeInfo(volumeNodeID, partInfo.id, ref volumeInfo))
 	    {
-		Debug.LogError("Unable to set volume info on input heightfield node!");
+		HEU_Logger.LogError("Unable to set volume info on input heightfield node!");
 		return false;
 	    }
 
 	    // Now set the height data
 	    if (!session.SetHeightFieldData(geoInfo.nodeId, partInfo.id, heightFieldName, heightValues, 0, heightValues.Length))
 	    {
-		Debug.LogErrorFormat("Unable to set `{0}` height values on input heightfield node!\n" +
+		HEU_Logger.LogErrorFormat("Unable to set `{0}` height values on input heightfield node!\n" +
 		    "Check your terrain sizes including Control Texture Resolution is less than the Heightmap Resolution.",
 		    heightFieldName);
 		return false;
@@ -548,14 +548,14 @@ namespace HoudiniEngineUnity
 
 	    if (!session.AddAttribute(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, ref attrInfo))
 	    {
-		Debug.LogError("Failed to add TerrainData file attribute to input heightfield.");
+		HEU_Logger.LogError("Failed to add TerrainData file attribute to input heightfield.");
 		return false;
 	    }
 
 	    string[] pathData = new string[] { assetPath };
 	    if (!session.SetAttributeStringData(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINDATA_FILE_ATTR, ref attrInfo, pathData, 0, 1))
 	    {
-		Debug.LogError("Failed to set TerrainData file name to input heightfield.");
+		HEU_Logger.LogError("Failed to set TerrainData file name to input heightfield.");
 		return false;
 	    }
 
@@ -589,14 +589,14 @@ namespace HoudiniEngineUnity
 
 	    if (!session.AddAttribute(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, ref attrInfo))
 	    {
-		Debug.LogError("Failed to add TerrainLayer file attribute to input heightfield.");
+		HEU_Logger.LogError("Failed to add TerrainLayer file attribute to input heightfield.");
 		return false;
 	    }
 
 	    string[] pathData = new string[] { assetPath };
 	    if (!session.SetAttributeStringData(geoNodeID, partID, HEU_Defines.DEFAULT_UNITY_HEIGHTFIELD_TERRAINLAYER_FILE_ATTR, ref attrInfo, pathData, 0, 1))
 	    {
-		Debug.LogError("Failed to set TerrainLayer file name to input heightfield");
+		HEU_Logger.LogError("Failed to set TerrainLayer file name to input heightfield");
 		return false;
 	    }
 
@@ -653,14 +653,14 @@ namespace HoudiniEngineUnity
 		string attrName = HEU_Defines.HEIGHTFIELD_TREEPROTOTYPE + i.ToString();
 		if (!session.AddAttribute(geoNodeID, partID, attrName, ref attrInfo))
 		{
-		    Debug.LogError("Failed to add TreePrototype string attribute to input heightfield.");
+		    HEU_Logger.LogError("Failed to add TreePrototype string attribute to input heightfield.");
 		    return;
 		}
 
 		string[] pathData = new string[] { string.Format("{0},{1}", prefabPath, bendFactor) };
 		if (!session.SetAttributeStringData(geoNodeID, partID, attrName, ref attrInfo, pathData, 0, 1))
 		{
-		    Debug.LogError("Failed to set TreePrototype string value to input heightfield.");
+		    HEU_Logger.LogError("Failed to set TreePrototype string value to input heightfield.");
 		    return;
 		}
 	    }
@@ -733,7 +733,7 @@ namespace HoudiniEngineUnity
 		Vector3 terrainSize = terrainData.size;
 		if (terrainSize.x != terrainSize.z)
 		{
-		    Debug.LogError("Only square sized terrains are supported for input! Change to square size and try again.");
+		    HEU_Logger.LogError("Only square sized terrains are supported for input! Change to square size and try again.");
 		    return null;
 		}
 

@@ -55,7 +55,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return Unwrapping.GeneratePerTriangleUV(meshSrc);
 #else
-			Debug.LogWarning("GeneratePerTriangle is unavailable at runtime!");
+			HEU_Logger.LogWarning("GeneratePerTriangle is unavailable at runtime!");
 			return null;
 #endif
 	}
@@ -67,7 +67,7 @@ namespace HoudiniEngineUnity
 	    UnwrapParam.SetDefaults(out param);
 	    Unwrapping.GenerateSecondaryUVSet(meshsrc, param);
 #else
-			Debug.LogWarning("GenerateSecondaryUVSet is unavailable at runtime!");
+			HEU_Logger.LogWarning("GenerateSecondaryUVSet is unavailable at runtime!");
 #endif
 	}
 
@@ -286,7 +286,7 @@ namespace HoudiniEngineUnity
 #if UNITY_2017_3_OR_NEWER
 		mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 #else
-				Debug.LogErrorFormat("Unable to generate mesh from points due to larger than supported geometry (> {0} vertices). Use Unity 2017.3+ for large geometry.", ushort.MaxValue);
+				HEU_Logger.LogErrorFormat("Unable to generate mesh from points due to larger than supported geometry (> {0} vertices). Use Unity 2017.3+ for large geometry.", ushort.MaxValue);
 				return mesh;
 #endif
 	    }

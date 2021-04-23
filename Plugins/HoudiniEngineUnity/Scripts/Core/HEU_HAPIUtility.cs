@@ -129,7 +129,7 @@ namespace HoudiniEngineUnity
 	    sb.AppendLine();
 	    sb.Append("System PATH: \n" + GetEnvironmentPath());
 
-	    Debug.Log(sb.ToString());
+	    HEU_Logger.Log(sb.ToString());
 
 	    return sb.ToString();
 #else
@@ -170,7 +170,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Unable to convert {0} in path {1} due to not getting valid Houdini path!", HEU_Defines.HEU_PATH_KEY_HFS, inPath);
+		    HEU_Logger.LogErrorFormat("Unable to convert {0} in path {1} due to not getting valid Houdini path!", HEU_Defines.HEU_PATH_KEY_HFS, inPath);
 		}
 	    }
 	    return inPath;
@@ -228,7 +228,7 @@ namespace HoudiniEngineUnity
 	/// <param name="message">String message to log</param>
 	public static void Log(string message)
 	{
-	    Debug.Log(message);
+	    HEU_Logger.Log(message);
 	}
 
 	/// <summary>
@@ -237,7 +237,7 @@ namespace HoudiniEngineUnity
 	/// <param name="message">String message to log</param>
 	public static void LogWarning(string message)
 	{
-	    Debug.LogWarning(message);
+	    HEU_Logger.LogWarning(message);
 	}
 
 	/// <summary>
@@ -246,7 +246,7 @@ namespace HoudiniEngineUnity
 	/// <param name="message">String message to log</param>
 	public static void LogError(string message)
 	{
-	    Debug.LogError(message);
+	    HEU_Logger.LogError(message);
 	}
 
 	/// <summary>
@@ -285,7 +285,7 @@ namespace HoudiniEngineUnity
 			string newPath = AssetDatabase.GUIDToAssetPath(guid);
 			if (newPath != null && newPath.Length > 0)
 			{
-			    Debug.Log(string.Format("Note: changing asset path for {0} to {1}.", assetName, newPath));
+			    HEU_Logger.Log(string.Format("Note: changing asset path for {0} to {1}.", assetName, newPath));
 			    return newPath;
 			}
 		    }
@@ -310,6 +310,7 @@ namespace HoudiniEngineUnity
 	public static GameObject InstantiateHDA(string filePath, Vector3 initialPosition, HEU_SessionBase session, 
 	    bool bBuildAsync, 
 	    bool bLoadFromMemory=false,
+	    bool bAlwaysOverwriteOnLoad = false,
 	    GameObject rootGO = null)
 	{
 	    if (filePath == null || !DoesMappedPathExist(filePath))
@@ -350,6 +351,7 @@ namespace HoudiniEngineUnity
 	    asset.SetupAsset(HEU_HoudiniAsset.HEU_AssetType.TYPE_HDA, filePath, rootGO, session);
 
 	    asset.LoadAssetFromMemory = bLoadFromMemory;
+	    asset.AlwaysOverwriteOnLoad = bAlwaysOverwriteOnLoad;
 
 	    // Build it in Houdini Engine
 	    asset.RequestReload(bBuildAsync);
@@ -357,7 +359,7 @@ namespace HoudiniEngineUnity
 	    // Apply Unity transform and possibly upload to Houdini Engine
 	    rootGO.transform.position = initialPosition;
 
-	    //Debug.LogFormat("{0}: Created new HDA asset from {1} of type {2}.", HEU_Defines.HEU_NAME, filePath, asset.AssetType);
+	    //HEU_Logger.LogFormat("{0}: Created new HDA asset from {1} of type {2}.", HEU_Defines.HEU_NAME, filePath, asset.AssetType);
 
 	    return rootGO;
 	}
@@ -526,7 +528,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.SetPartInfo(inputGeoInfo.nodeId, 0, ref newPart))
 	    {
-		Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to set partinfo for input node!");
+		HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to set partinfo for input node!");
 		return false;
 	    }
 
@@ -589,7 +591,7 @@ namespace HoudiniEngineUnity
 		if (HEU_PluginSettings.WriteCookLogs)
 		{
 		    string cookStatus = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_STATE, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
-		    session.AppendCookLog(cookStatus);
+		    HEU_CookLogs.Instance.AppendCookLog(cookStatus);
 		}
 	    }
 
@@ -598,27 +600,27 @@ namespace HoudiniEngineUnity
 	    {
 		// We should be able to continue even with these errors, but at least notify user.
 		string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);
-		Debug.LogWarning(string.Format("Houdini Engine: Cooking finished with some warnings for asset: {0}\n{1}", assetName, statusString));
+		HEU_Logger.LogWarning(string.Format("Houdini Engine: Cooking finished with some warnings for asset: {0}\n{1}", assetName, statusString));
 		
 		if (HEU_PluginSettings.WriteCookLogs)
 		{
-		    session.AppendCookLog(statusString);
+		    HEU_CookLogs.Instance.AppendCookLog(statusString);
 		}
 	    }
 	    else if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_FATAL_ERRORS)
 	    {
 		string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
-		Debug.LogError(string.Format("Houdini Engine: Cooking failed for asset: {0}\n{1}", assetName, statusString));
+		HEU_Logger.LogError(string.Format("Houdini Engine: Cooking failed for asset: {0}\n{1}", assetName, statusString));
 		if (HEU_PluginSettings.WriteCookLogs)
 		{
-		    session.AppendCookLog(statusString);
+		    HEU_CookLogs.Instance.AppendCookLog(statusString);
 		}
 		
 		return false;
 	    }
 	    else
 	    {
-		//Debug.LogFormat("Houdini Engine: Cooking result {0} for asset: {1}", (HAPI_State)statusCode, AssetName);
+		//HEU_Logger.LogFormat("Houdini Engine: Cooking result {0} for asset: {1}", (HAPI_State)statusCode, AssetName);
 	    }
 	    return true;
 	}
@@ -631,7 +633,7 @@ namespace HoudiniEngineUnity
 	    }
 	    if (!session.IsSessionValid())
 	    {
-		Debug.LogWarning("Invalid Houdini Engine session!");
+		HEU_Logger.LogWarning("Invalid Houdini Engine session!");
 		return null;
 	    }
 
@@ -721,7 +723,7 @@ namespace HoudiniEngineUnity
 	    }
 	    if (!session.IsSessionValid())
 	    {
-		Debug.LogWarning("Invalid Houdini Engine session!");
+		HEU_Logger.LogWarning("Invalid Houdini Engine session!");
 		return null;
 	    }
 
@@ -1188,7 +1190,7 @@ namespace HoudiniEngineUnity
 	    if (session.GetAttributeInfo(geoID, partID, attrName, owner, ref attributeInfo))
 	    {
 		return attributeInfo.exists;
-		//Debug.LogFormat("Attr {0} exists={1}, with count={2}, type={3}, storage={4}, tuple={5}", "Cd", colorAttrInfo.exists, colorAttrInfo.count, colorAttrInfo.typeInfo, colorAttrInfo.storage, colorAttrInfo.tupleSize);
+		//HEU_Logger.LogFormat("Attr {0} exists={1}, with count={2}, type={3}, storage={4}, tuple={5}", "Cd", colorAttrInfo.exists, colorAttrInfo.count, colorAttrInfo.typeInfo, colorAttrInfo.storage, colorAttrInfo.tupleSize);
 	    }
 	    return false;
 	}
@@ -1258,7 +1260,7 @@ namespace HoudiniEngineUnity
 	    {
 		// Setting above key tangent modes can throw error which aborts the entire UI
 		// drawing. Instead just print the error and let UI drawing continue.
-		Debug.LogError(ex);
+		HEU_Logger.LogError(ex);
 	    }
 #endif
 	}
@@ -1363,7 +1365,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Unsupported node type {0}", nodeInfo.type);
+		HEU_Logger.LogWarningFormat(HEU_Defines.HEU_NAME + ": Unsupported node type {0}", nodeInfo.type);
 		return false;
 	    }
 

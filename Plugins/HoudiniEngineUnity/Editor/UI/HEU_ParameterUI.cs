@@ -125,7 +125,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.INT_ARRAY)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    }
 
 
@@ -140,7 +140,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.FLOAT_ARRAY)
 		    {
-			Debug.LogError("Error: Field type incorrect!: " + _fieldType);
+			HEU_Logger.LogError("Error: Field type incorrect!: " + _fieldType);
 		    }
 
 		    return _floatArrayValue;
@@ -154,7 +154,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.STRING_ARRAY)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    }
 
 		    return _stringArrayValue;
@@ -168,7 +168,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.LIST_INT)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    }
 
 		    return _listIntValue;
@@ -183,7 +183,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.INPUT_NODE)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    }
 
 		    return _inputNodeValue;
@@ -201,7 +201,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.INT)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    } 
 
 		    return _intValue; 
@@ -231,7 +231,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.BOOL)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    } 
 
 		    return _boolValue; 
@@ -260,7 +260,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.COLOR)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    } 
 
 		    return _colorValue; 
@@ -290,7 +290,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.GRADIENT)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    }
 
 		    return _gradientValue;
@@ -322,7 +322,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (_fieldType != UIDataFieldType.ANIM_CURVE)
 		    {
-			Debug.LogError("Error: Field type incorrect!");
+			HEU_Logger.LogError("Error: Field type incorrect!");
 		    }
 
 		    return _animCurveValue;
@@ -473,7 +473,7 @@ namespace HoudiniEngineUnity
 		#endif
 		CacheProperties();
 		#if HEU_PROFILER_ON
-		Debug.Log("PARAMETER UI GENERATION TIME: " + (Time.realtimeSinceStartup - profileTime));
+		HEU_Logger.Log("PARAMETER UI GENERATION TIME: " + (Time.realtimeSinceStartup - profileTime));
 		#endif
 	    }
 
@@ -535,7 +535,7 @@ namespace HoudiniEngineUnity
 
 	private void CacheProperties()
 	{
-	    //Debug.Log("Cacheing Properties");
+	    //HEU_Logger.Log("Cacheing Properties");
 	    serializedObject.Update();
 
 	    // Flag that we've cached
@@ -702,7 +702,7 @@ namespace HoudiniEngineUnity
 	    HEU_ParameterUICache paramUICache = new HEU_ParameterUICache(_parameters);
 	    paramUICache._parameterData = parameterData;
 
-	    //Debug.LogFormat("Container: name={0}, type={1}, size={2}, chidlren={3}", parameterData._name, parameterData._parmInfo.type, parameterData._parmInfo.size, parameterData._childParameterIDs.Count);
+	    //HEU_Logger.LogFormat("Container: name={0}, type={1}, size={2}, chidlren={3}", parameterData._name, parameterData._parmInfo.type, parameterData._parmInfo.size, parameterData._childParameterIDs.Count);
 
 	    paramUICache._primaryValue.SetValue(parameterData._childParameterIDs);
 	    if (paramUICache._primaryValue.ListIntValue != null && paramUICache._primaryValue.ListIntValue.Count > 0)
@@ -1061,7 +1061,7 @@ namespace HoudiniEngineUnity
 		    // No need to check, just always updated with latest choiceProperty
 		    if (intsValue[0] != parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue])
 		    {
-		    	//Debug.LogFormat("Setting int property {0} from {1} to {2}", parameterData._labelName, intsProperty.GetArrayElementAtIndex(0).intValue, parameterData._choiceIntValues[choiceProperty.intValue]);
+		    	//HEU_Logger.LogFormat("Setting int property {0} from {1} to {2}", parameterData._labelName, intsProperty.GetArrayElementAtIndex(0).intValue, parameterData._choiceIntValues[choiceProperty.intValue]);
 		    	intsValue[0] = parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue];
 		    }
 
@@ -1312,7 +1312,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		//Debug.LogFormat("Param name={0}, type={1}, folderType={2}", parameterData._labelName, parameterData._parmInfo.type, parameterData._parmInfo.fo);
+		//HEU_Logger.LogFormat("Param name={0}, type={1}, folderType={2}", parameterData._labelName, parameterData._parmInfo.type, parameterData._parmInfo.fo);
 	    }
 	}
 
@@ -1555,7 +1555,7 @@ namespace HoudiniEngineUnity
 		    }
 		}
 		#else
-		Debug.LogError("Error: The Houdini Plugin requires Unity 2018.4 or newer");
+		HEU_Logger.LogError("Error: The Houdini Plugin requires Unity 2018.4 or newer");
 		#endif
 
 	    }
@@ -1696,7 +1696,7 @@ namespace HoudiniEngineUnity
 
 		if (numKeys != (paramUICache._childrenCache.Count / numParamsPerPoint))
 		{
-		    Debug.LogErrorFormat("Ramp parameter has mismatched number of points with UI (got {0}, expected {1}). Unable to update ramp.", (paramUICache._childrenCache.Count / numParamsPerPoint), numKeys);
+		    HEU_Logger.LogErrorFormat("Ramp parameter has mismatched number of points with UI (got {0}, expected {1}). Unable to update ramp.", (paramUICache._childrenCache.Count / numParamsPerPoint), numKeys);
 		    return;
 		}
 
@@ -1821,7 +1821,7 @@ namespace HoudiniEngineUnity
 
 		if (numKeys != (paramUICache._childrenCache.Count / numParamsPerPoint))
 		{
-		    Debug.LogErrorFormat("Ramp parameter has mismatched number of points with UI (got {0}, expected {1}). Unable to update ramp.", (paramUICache._childrenCache.Count / numParamsPerPoint), numKeys);
+		    HEU_Logger.LogErrorFormat("Ramp parameter has mismatched number of points with UI (got {0}, expected {1}). Unable to update ramp.", (paramUICache._childrenCache.Count / numParamsPerPoint), numKeys);
 		    return;
 		}
 

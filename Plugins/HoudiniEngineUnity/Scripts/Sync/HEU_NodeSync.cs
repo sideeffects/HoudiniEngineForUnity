@@ -100,7 +100,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    Debug.Log("Saving to " + filePath);
+	    HEU_Logger.Log("Saving to " + filePath);
 	    _nodeSaveFilePath = filePath;
 
 	    return session.SaveNodeToFile(_cookNodeID, filePath);
@@ -122,7 +122,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.CreateNode(parentNodeId, opName, nodeNabel, true, out newNodeID))
 	    {
-		Debug.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
+		HEU_Logger.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
 		return;
 	    }
 
@@ -152,7 +152,7 @@ namespace HoudiniEngineUnity
 		}
 		else if (nodeInfo.type != HAPI_NodeType.HAPI_NODETYPE_OBJ)
 		{
-		    Debug.LogErrorFormat("Unsupported node type {0}", nodeInfo.type);
+		    HEU_Logger.LogErrorFormat("Unsupported node type {0}", nodeInfo.type);
 		    return;
 		}
 	    }
@@ -213,7 +213,7 @@ namespace HoudiniEngineUnity
 		    true, out _totalCookCount);
 	    if (oldCount != _totalCookCount)
 	    {
-		//Debug.LogFormat("Resyncing due to cook count (old={0}, new={1})", oldCount, _totalCookCount);
+		//HEU_Logger.LogFormat("Resyncing due to cook count (old={0}, new={1})", oldCount, _totalCookCount);
 
 		if (_loadTask != null)
 		{

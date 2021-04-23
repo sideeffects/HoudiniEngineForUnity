@@ -64,7 +64,7 @@ namespace HoudiniEngineUnity
     {
 	private void Awake()
 	{
-	    //Debug.Log("Awake");
+	    //HEU_Logger.Log("Awake");
 
 	    HandleInitialLoad();
 	}
@@ -79,7 +79,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public void OnAfterDeserialize()
 	{
-	    //Debug.Log("OnAfterDeserialize");
+	    //HEU_Logger.Log("OnAfterDeserialize");
 
 	    HandleInitialLoad();
 	}
@@ -141,7 +141,7 @@ namespace HoudiniEngineUnity
 	/// <param name="generatedOutputs"></param>
 	private void NotifyAssetCooked(HEU_HoudiniAsset asset, bool bSuccess, List<GameObject> generatedOutputs)
 	{
-	    //Debug.LogFormat("NotifyAssetCooked: {0} - {1} - {2}", asset.AssetName, bSuccess, _linkState);
+	    //HEU_Logger.LogFormat("NotifyAssetCooked: {0} - {1} - {2}", asset.AssetName, bSuccess, _linkState);
 	    if (bSuccess)
 	    {
 		if (_linkState == LinkState.LINKED)
@@ -263,7 +263,7 @@ namespace HoudiniEngineUnity
 	    else
 	    {
 		_linkState = LinkState.ERROR_NOT_LINKED;
-		Debug.LogErrorFormat("Failed to populate TOP network info for asset {0}!", _assetName);
+		HEU_Logger.LogErrorFormat("Failed to populate TOP network info for asset {0}!", _assetName);
 	    }
 
 	    RepaintUI();
@@ -310,7 +310,7 @@ namespace HoudiniEngineUnity
 		}
 
 		string nodeName = HEU_SessionManager.GetString(topNodeInfo.nameSH, session);
-		//Debug.LogFormat("Top node: {0} - {1}", nodeName, topNodeInfo.type);
+		//HEU_Logger.LogFormat("Top node: {0} - {1}", nodeName, topNodeInfo.type);
 
 		// Skip any non TOP or SOP networks
 		if (topNodeInfo.type != HAPI_NodeType.HAPI_NODETYPE_TOP && topNodeInfo.type != HAPI_NodeType.HAPI_NODETYPE_SOP)
@@ -408,7 +408,7 @@ namespace HoudiniEngineUnity
 		}
 
 		string nodeName = HEU_SessionManager.GetString(childNodeInfo.nameSH, session);
-		//Debug.LogFormat("TOP Node: name={0}, type={1}", nodeName, childNodeInfo.type);
+		//HEU_Logger.LogFormat("TOP Node: name={0}, type={1}", nodeName, childNodeInfo.type);
 
 		TOPNodeTags tags = new TOPNodeTags();
 		if (useHEngineData)
@@ -633,7 +633,7 @@ namespace HoudiniEngineUnity
 					geoSync.Unload();
 				}
 
-				//Debug.LogFormat("Destroy result: " + result._generatedGOs[i].name);
+				//HEU_Logger.LogFormat("Destroy result: " + result._generatedGOs[i].name);
 				HEU_GeneralUtility.DestroyImmediate(result._generatedGOs[i]);
 				result._generatedGOs[i] = null;
 		    }
@@ -699,7 +699,7 @@ namespace HoudiniEngineUnity
 	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
 	    if (topNetwork != null)
 	    {
-		//Debug.Log("Cooking output!");
+		//HEU_Logger.Log("Cooking output!");
 
 		_workItemTally.ZeroAll();
 		ResetTOPNetworkWorkItemTally(topNetwork);
@@ -726,7 +726,7 @@ namespace HoudiniEngineUnity
 	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
 	    if (topNetwork != null)
 	    {
-		//Debug.Log("Cooking output!");
+		//HEU_Logger.Log("Cooking output!");
 
 		_workItemTally.ZeroAll();
 		ResetTOPNetworkWorkItemTally(topNetwork);
@@ -753,7 +753,7 @@ namespace HoudiniEngineUnity
 	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
 	    if (topNetwork != null)
 	    {
-		//Debug.Log("Cooking output!");
+		//HEU_Logger.Log("Cooking output!");
 
 		_workItemTally.ZeroAll();
 		ResetTOPNetworkWorkItemTally(topNetwork);
@@ -786,7 +786,7 @@ namespace HoudiniEngineUnity
 	    // Create HEU_GeoSync objects, set results, and sync it
 
 	    string workItemName = HEU_SessionManager.GetString(workItemInfo.nameSH, session);
-	    //Debug.LogFormat("Work item: {0}:: name={1}, results={2}", workItemInfo.index, workItemName, workItemInfo.numResults);
+	    //HEU_Logger.LogFormat("Work item: {0}:: name={1}, results={2}", workItemInfo.index, workItemName, workItemInfo.numResults);
 
 	    // Clear previously generated result
 	    ClearWorkItemResultByID(topNode, workItemID);
@@ -819,7 +819,7 @@ namespace HoudiniEngineUnity
 		string path = HEU_SessionManager.GetString(resultInfos[i].resultSH, session);
 
 
-		//Debug.LogFormat("Result for work item {0}: result={1}, tag={2}, path={3}", result._workItemIndex, i, tag, path);
+		//HEU_Logger.LogFormat("Result for work item {0}: result={1}, tag={2}, path={3}", result._workItemIndex, i, tag, path);
 
 		if (string.IsNullOrEmpty(tag) || !tag.StartsWith("file"))
 		{
@@ -990,7 +990,7 @@ namespace HoudiniEngineUnity
 	    if (numStrings > 0 && session.GetParamStringValue(topNodeID, "henginedata", 0, out henginedatash))
 	    {
 		string henginedatastr = HEU_SessionManager.GetString(henginedatash, session);
-		//Debug.Log("HEngine data: " + henginedatastr);
+		//HEU_Logger.Log("HEngine data: " + henginedatastr);
 
 		if (!string.IsNullOrEmpty(henginedatastr))
 		{

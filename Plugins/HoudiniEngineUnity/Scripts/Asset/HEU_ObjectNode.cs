@@ -43,7 +43,7 @@ namespace HoudiniEngineUnity
     /// Represents the Houdini Object node.
     /// Holds and manages geo nodes.
     /// </summary>
-    public class HEU_ObjectNode : ScriptableObject
+    public class HEU_ObjectNode : ScriptableObject, IEquivable<HEU_ObjectNode>
     {
 	//  DATA ------------------------------------------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ namespace HoudiniEngineUnity
 	    {
 		return;
 	    }
-	    //Debug.LogFormat("Found geoinfo with name {0} and id {1}", HEU_SessionManager.GetString(displayGeoInfo.nameSH, session), displayGeoInfo.nodeId);
+	    //HEU_Logger.LogFormat("Found geoinfo with name {0} and id {1}", HEU_SessionManager.GetString(displayGeoInfo.nameSH, session), displayGeoInfo.nodeId);
 	    geoInfos.Add(displayGeoInfo);
 
 	    // Get editable nodes, cook em, then create geo nodes for them
@@ -134,7 +134,7 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
-	    //Debug.LogFormat("Object id={5}, name={0}, isInstancer={1}, isInstanced={2}, instancePath={3}, instanceId={4}", 
+	    //HEU_Logger.LogFormat("Object id={5}, name={0}, isInstancer={1}, isInstanced={2}, instancePath={3}, instanceId={4}", 
 	    //	HEU_SessionManager.GetString(objectInfo.nameSH, session), objectInfo.isInstancer, objectInfo.isInstanced, 
 	    //	HEU_SessionManager.GetString(objectInfo.objectInstancePathSH, session), objectInfo.objectToInstanceId, objectInfo.nodeId);
 
@@ -224,7 +224,7 @@ namespace HoudiniEngineUnity
 	    if (_objectInfo.haveGeosChanged || bForceUpdate)
 	    {
 		// Indicates that the geometry nodes have changed
-		//Debug.Log("Geos have changed!");
+		//HEU_Logger.Log("Geos have changed!");
 
 		// Form a list of geo infos that are now present after cooking
 		List<HAPI_GeoInfo> postCookGeoInfos = new List<HAPI_GeoInfo>();
@@ -558,11 +558,11 @@ namespace HoudiniEngineUnity
 	{
 	    if (!IsInstancer())
 	    {
-		Debug.LogErrorFormat("Generate object instances called on a non-instancer object {0} for asset {1}!", ObjectName, ParentAsset.AssetName);
+		HEU_Logger.LogErrorFormat("Generate object instances called on a non-instancer object {0} for asset {1}!", ObjectName, ParentAsset.AssetName);
 		return;
 	    }
 
-	    //Debug.LogFormat("Generate Object Instances:: id={5}, name={0}, isInstancer={1}, isInstanced={2}, instancePath={3}, instanceId={4}", HEU_SessionManager.GetString(_objectInfo.nameSH, session), 
+	    //HEU_Logger.LogFormat("Generate Object Instances:: id={5}, name={0}, isInstancer={1}, isInstanced={2}, instancePath={3}, instanceId={4}", HEU_SessionManager.GetString(_objectInfo.nameSH, session), 
 	    //	_objectInfo.isInstancer, _objectInfo.isInstanced, HEU_SessionManager.GetString(_objectInfo.objectInstancePathSH, session), _objectInfo.objectToInstanceId, _objectInfo.nodeId);
 
 	    // Is this a Houdini attribute instancer?
@@ -635,7 +635,7 @@ namespace HoudiniEngineUnity
 
 			    if (_objectInfo.objectToInstanceId == HEU_Defines.HEU_INVALID_NODE_ID)
 			    {
-				Debug.LogAssertionFormat("Invalid object ID {0} used for object instancing. "
+				HEU_Logger.LogAssertionFormat("Invalid object ID {0} used for object instancing. "
 					+ "Make sure to turn on Full point instancing and set the correct Instance Object.", _objectInfo.objectToInstanceId);
 				continue;
 			    }
@@ -749,6 +749,28 @@ namespace HoudiniEngineUnity
 	{
 	    return (!string.IsNullOrEmpty(_objName) ? ("ObjectNode: " + _objName) : base.ToString());
 	}
+
+	public bool IsEquivalentTo(HEU_ObjectNode other)
+	{
+	    bool bResult = true;
+
+	    string header = "HEU_ObjectNode";
+
+	    if (other == null)
+	    {
+		HEU_Logger.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectInfo.ToTestObject(), other._objectInfo.ToTestObject(), ref bResult, header, "Object Info");
+	
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoNodes, other._geoNodes, ref bResult, header, "Geo Node");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._objectTransform.ToTestObject(), other._objectTransform.ToTestObject(), ref bResult, header, "Object transform");
+
+	    return bResult;
+	}
+
     }
 
 }   // HoudiniEngineUnity

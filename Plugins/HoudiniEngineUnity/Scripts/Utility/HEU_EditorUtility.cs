@@ -130,7 +130,7 @@ namespace HoudiniEngineUnity
 			return PrefabUtility.CreatePrefab(path, go);
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -178,7 +178,7 @@ namespace HoudiniEngineUnity
 		case HEU_ReplacePrefabOptions.Default: unityOptions = ReplacePrefabOptions.Default; break;
 		case HEU_ReplacePrefabOptions.ConnectToPrefab: unityOptions = ReplacePrefabOptions.ConnectToPrefab; break;
 		case HEU_ReplacePrefabOptions.ReplaceNameBased: unityOptions = ReplacePrefabOptions.ReplaceNameBased; break;
-		default: Debug.LogFormat("Unsupported replace prefab option: {0}", heuOptions); break;
+		default: HEU_Logger.LogFormat("Unsupported replace prefab option: {0}", heuOptions); break;
 	    }
 
 	    return PrefabUtility.ReplacePrefab(go, targetPrefab, unityOptions);
@@ -190,13 +190,13 @@ namespace HoudiniEngineUnity
 				case HEU_ReplacePrefabOptions.Default:			unityOptions = ReplacePrefabOptions.Default; break;
 				case HEU_ReplacePrefabOptions.ConnectToPrefab:	unityOptions = ReplacePrefabOptions.ConnectToPrefab; break;
 				case HEU_ReplacePrefabOptions.ReplaceNameBased: unityOptions = ReplacePrefabOptions.ReplaceNameBased; break;
-				default: Debug.LogFormat("Unsupported replace prefab option: {0}", heuOptions); break;
+				default: HEU_Logger.LogFormat("Unsupported replace prefab option: {0}", heuOptions); break;
 			}
 
 			return PrefabUtility.ReplacePrefab(go, targetPrefab, unityOptions);
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -218,7 +218,7 @@ namespace HoudiniEngineUnity
 			return PrefabUtility.GetPrefabParent(go) != null && PrefabUtility.GetPrefabObject(go) != null;
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return false;
 #endif
 	}
@@ -239,7 +239,7 @@ namespace HoudiniEngineUnity
 			return PrefabUtility.GetPrefabParent(go) == null && PrefabUtility.GetPrefabObject(go) != null;
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return false;
 #endif
 	}
@@ -291,7 +291,7 @@ namespace HoudiniEngineUnity
 			return PrefabUtility.GetPrefabParent(go) != null && PrefabUtility.GetPrefabObject(go) == null;
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return false;
 #endif
 	}
@@ -305,7 +305,7 @@ namespace HoudiniEngineUnity
 			return PrefabUtility.GetPrefabParent(go);
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -324,7 +324,7 @@ namespace HoudiniEngineUnity
 			return AssetDatabase.GetAssetPath(obj);
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -344,7 +344,7 @@ namespace HoudiniEngineUnity
 			PrefabUtility.DisconnectPrefabInstance(instance);
 #endif
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -353,7 +353,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return PrefabUtility.InstantiatePrefab(prefabOriginal);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -415,7 +415,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return EditorUtility.CollectDependencies(new Object[] { obj });
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -430,7 +430,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return EditorUtility.IsPersistent(obj);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return false;
 #endif
 	}
@@ -447,7 +447,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return GameObjectUtility.GetUniqueNameForSibling(parentTransform, name);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -464,7 +464,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    EditorUtility.DisplayProgressBar(title, info, progress);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -476,7 +476,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    EditorUtility.ClearProgressBar();
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -505,7 +505,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return EditorUtility.DisplayDialog(title, message, ok, cancel);
 #else
-			Debug.Log(string.Format("{0}: {1}", title, message));
+			HEU_Logger.Log(string.Format("{0}: {1}", title, message));
 			return true;
 #endif
 	}
@@ -523,7 +523,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return EditorUtility.DisplayDialog(string.Format("{0}: {1}", HEU_Defines.HEU_ERROR_TITLE, title), message, ok, cancel);
 #else
-			Debug.Log(string.Format("{0}: {1} - {2}", HEU_Defines.HEU_ERROR_TITLE, title, message));
+			HEU_Logger.Log(string.Format("{0}: {1} - {2}", HEU_Defines.HEU_ERROR_TITLE, title, message));
 			return true;
 #endif
 	}
@@ -546,7 +546,7 @@ namespace HoudiniEngineUnity
 	    if (foundProperty == null)
 	    {
 		string errorMsg = string.Format("Property {0} not found on Object {1}. Make sure class {1} has member variable {0}.", propertyName, serializedObject.targetObject.GetType().ToString());
-		Debug.LogAssertion(errorMsg);
+		HEU_Logger.LogAssertion(errorMsg);
 	    }
 	    return foundProperty;
 	}
@@ -1164,13 +1164,13 @@ namespace HoudiniEngineUnity
 
 	    if (string.IsNullOrEmpty(exportExt))
 	    {
-		Debug.LogErrorFormat("Export extension cannot be empty.");
+		HEU_Logger.LogErrorFormat("Export extension cannot be empty.");
 		return;
 	    }
 
 	    if (!HEU_Platform.DoesDirectoryExist(exportDir) && HEU_Platform.CreateDirectory(exportDir))
 	    {
-		Debug.LogErrorFormat("Error creating directory at {0}.", exportDir);
+		HEU_Logger.LogErrorFormat("Error creating directory at {0}.", exportDir);
 		return;
 	    }
 
@@ -1188,7 +1188,7 @@ namespace HoudiniEngineUnity
 
 		    if (string.IsNullOrEmpty(asset.AssetName))
 		    {
-			Debug.LogErrorFormat("Unable to export output of asset at {0} due to empty name.", asset.AssetPath);
+			HEU_Logger.LogErrorFormat("Unable to export output of asset at {0} due to empty name.", asset.AssetPath);
 			continue;
 		    }
 
@@ -1202,11 +1202,11 @@ namespace HoudiniEngineUnity
 
 			if (!session.SaveGeoToFile(outputGeoNodes[j].GeoID, exportPath))
 			{
-			    Debug.LogErrorFormat("Failed to export output geo of asset with path: {0}", exportPath);
+			    HEU_Logger.LogErrorFormat("Failed to export output geo of asset with path: {0}", exportPath);
 			}
 			else
 			{
-			    Debug.LogFormat("Exported output geo {0} of {1} at: {2}", outputGeoNodes[j].GeoName, asset.RootGameObject.name, exportPath);
+			    HEU_Logger.LogFormat("Exported output geo {0} of {1} at: {2}", outputGeoNodes[j].GeoName, asset.RootGameObject.name, exportPath);
 			}
 		    }
 		}
@@ -1219,7 +1219,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return EditorUtility.SaveFolderPanel(title, folder, defaultName);
 #else
-			Debug.LogWarning("Save to Folder is only supported in Editor mode.");
+			HEU_Logger.LogWarning("Save to Folder is only supported in Editor mode.");
 			return null;
 #endif
 	}
@@ -1230,7 +1230,7 @@ namespace HoudiniEngineUnity
 	    GameObject[] gos = Selection.gameObjects;
 	    if (gos == null || gos.Length == 0)
 	    {
-		Debug.Log("No gameobject selected!");
+		HEU_Logger.Log("No gameobject selected!");
 		return;
 	    }
 
@@ -1246,7 +1246,7 @@ namespace HoudiniEngineUnity
 			Mesh mesh = meshFilters[m].sharedMesh;
 			for (int i = 0; i < mesh.subMeshCount; i++)
 			{
-			    Debug.LogFormat("{0}'s submesh {1} has topology: {2}", meshFilters[m].gameObject.name, i, mesh.GetTopology(i));
+			    HEU_Logger.LogFormat("{0}'s submesh {1} has topology: {2}", meshFilters[m].gameObject.name, i, mesh.GetTopology(i));
 			}
 		    }
 		}

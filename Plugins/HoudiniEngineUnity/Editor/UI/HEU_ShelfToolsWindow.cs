@@ -319,7 +319,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (GUILayout.Button("Create"))
 		    {
-			//Debug.Log("Shelf name: " + _shelfName);
+			//HEU_Logger.Log("Shelf name: " + _shelfName);
 			HEU_ShelfTools.AddShelf(_shelfName, _shelfPath);
 			HEU_ShelfTools.SaveShelf();
 			HEU_ShelfTools.SetReloadShelves();

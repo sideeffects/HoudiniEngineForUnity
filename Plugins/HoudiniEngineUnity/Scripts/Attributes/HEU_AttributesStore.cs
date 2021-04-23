@@ -41,7 +41,7 @@ namespace HoudiniEngineUnity
     /// Addtionally contains attribute-editing tools data such
     /// as temporary mesh and collider.
     /// </summary>
-    public class HEU_AttributesStore : ScriptableObject
+    public class HEU_AttributesStore : ScriptableObject, IEquivable<HEU_AttributesStore>
     {
 	//	DATA ------------------------------------------------------------------------------------------------------
 
@@ -160,7 +160,7 @@ namespace HoudiniEngineUnity
 	    string[] pointAttributeNames = new string[attributePointCount];
 	    if (!session.GetAttributeNames(geoID, partInfo.id, HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, ref pointAttributeNames, attributePointCount))
 	    {
-		Debug.LogErrorFormat("Failed to sync attributes. Unable to retrieve attribute names.");
+		HEU_Logger.LogErrorFormat("Failed to sync attributes. Unable to retrieve attribute names.");
 		return;
 	    }
 
@@ -182,7 +182,7 @@ namespace HoudiniEngineUnity
 		    {
 			if (pointAttributeInfo.storage != HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
 			{
-			    Debug.LogErrorFormat("Expected float type for position attribute, but got {0}", pointAttributeInfo.storage);
+			    HEU_Logger.LogErrorFormat("Expected float type for position attribute, but got {0}", pointAttributeInfo.storage);
 			    return;
 			}
 
@@ -205,7 +205,7 @@ namespace HoudiniEngineUnity
 			// Attribute data not found. Create it.
 
 			attrData = CreateAttribute(pointAttributeName, ref pointAttributeInfo);
-			//Debug.LogFormat("Created attribute data: {0}", pointAttributeName);
+			//HEU_Logger.LogFormat("Created attribute data: {0}", pointAttributeName);
 		    }
 
 		    // Add to new list.
@@ -321,7 +321,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (!UploadAttributeViaMeshInput(session, _geoID, _partID))
 	    {
-		Debug.LogError("Unable to upload custom attribute edits!");
+		HEU_Logger.LogError("Unable to upload custom attribute edits!");
 	    }
 	}
 
@@ -542,7 +542,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.AddAttribute(geoID, partID, attributeData._name, ref newAttrInfo))
 	    {
-		Debug.LogErrorFormat("Failed to add attribute: {0}", attributeData._name);
+		HEU_Logger.LogErrorFormat("Failed to add attribute: {0}", attributeData._name);
 		return;
 	    }
 
@@ -1098,6 +1098,39 @@ namespace HoudiniEngineUnity
 	    {
 		return false;
 	    }
+	}
+
+	public bool IsEquivalentTo(HEU_AttributesStore other)
+	{
+
+	    bool bResult = true;
+
+	    string header = "HEU_AttributesStore";
+
+	    if (other == null)
+	    {
+		HEU_Logger.LogError(header + " Not equivalent");
+		return false;
+	    }
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._attributeDatas, other._attributeDatas, ref bResult, header, "_attributeDatas");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._hasColorAttribute, other._hasColorAttribute, ref bResult, header, "_hasColorAttribute");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._localMaterial.ToTestObject(), other._localMaterial.ToTestObject(), ref bResult, header, "_localMaterial");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._outputTransform.ToTestObject(), other._outputTransform.ToTestObject(), ref bResult, header, "_outputTransform");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._positionAttributeValues, other._positionAttributeValues, ref bResult, header, "_positionAttributeValues");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._vertexIndices, other._vertexIndices, ref bResult, header, "_vertexIndices");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._outputGameObject, other._outputGameObject, ref bResult, header, "_outputGameObject");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._outputMesh.ToTestObject(), other._outputMesh.ToTestObject(), ref bResult, header, "_outputMesh");
+	    
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._outputMaterials.ToTestObject(), other._outputMaterials.ToTestObject(), ref bResult, header, "_outputMaterials");
+
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._outputCollider.ToTestObject(), other._outputCollider.ToTestObject(), ref bResult, header, "_outputColliders");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._outputColliderMesh.ToTestObject(), other._outputColliderMesh.ToTestObject(), ref bResult, header, "_outputColliderMesh");
+
+	    return bResult;
 	}
     }
 

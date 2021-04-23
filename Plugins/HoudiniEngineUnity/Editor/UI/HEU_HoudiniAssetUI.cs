@@ -755,7 +755,7 @@ namespace HoudiniEngineUnity
 				    }
 				    else
 				    {
-					Debug.LogWarning("Unable to bake to null target at index " + i);
+					HEU_Logger.LogWarning("Unable to bake to null target at index " + i);
 				    }
 				}
 			    }
@@ -1110,7 +1110,7 @@ namespace HoudiniEngineUnity
 			bool bAttributesDirty = !System.Array.TrueForAll(attributesStoresArray, s => !s.AreAttributesDirty());
 			if (bAttributesDirty)
 			{
-			    //Debug.Log("Cook for attributes dirty!");
+			    //HEU_Logger.Log("Cook for attributes dirty!");
 			    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
 			}
 		    }

@@ -56,7 +56,7 @@ namespace HoudiniEngineUnity
 	    return rootPath;
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return ""; 
 #endif
 	}
@@ -162,7 +162,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return AssetDatabase.GetAssetPath(asset);
 #else
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -197,7 +197,7 @@ namespace HoudiniEngineUnity
 
 	    return assetPath;
 #else
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -297,7 +297,7 @@ namespace HoudiniEngineUnity
 	    }
 	    return null;
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null; 
 #endif
 	}
@@ -313,7 +313,7 @@ namespace HoudiniEngineUnity
 	    return AssetDatabase.GenerateUniqueAssetPath(path);
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -324,7 +324,7 @@ namespace HoudiniEngineUnity
 	    return AssetDatabase.GetAssetOrScenePath(inputObject);
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -359,7 +359,7 @@ namespace HoudiniEngineUnity
 	    string bakedPath = GetAssetBakedPath();
 	    return path.StartsWith(bakedPath);
 #else
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return false;
 #endif
 	}
@@ -380,7 +380,7 @@ namespace HoudiniEngineUnity
 	    string workingPath = GetAssetWorkingPath();
 	    return path.StartsWith(workingPath);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return false;
 #endif
 	}
@@ -397,7 +397,7 @@ namespace HoudiniEngineUnity
 	    string assetPath = GetAssetPath(asset);
 	    return HEU_AssetDatabase.IsPathInAssetCacheBakedFolder(assetPath);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return false;
 #endif
 	}
@@ -408,7 +408,7 @@ namespace HoudiniEngineUnity
 	    string assetPath = GetAssetPath(asset);
 	    return HEU_AssetDatabase.IsPathInAssetCacheWorkingFolder(assetPath);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return false;
 #endif
 	}
@@ -435,7 +435,7 @@ namespace HoudiniEngineUnity
 	    if (string.IsNullOrEmpty(fileName))
 	    {
 		fileName = "AssetCache";
-		Debug.LogWarningFormat("Unable to get file name from {0}. Using default value: {1}.", suggestedAssetPath, fileName);
+		HEU_Logger.LogWarningFormat("Unable to get file name from {0}. Using default value: {1}.", suggestedAssetPath, fileName);
 	    }
 
 	    string fullPath = HEU_Platform.BuildPath(assetWorkingPath, fileName);
@@ -446,14 +446,14 @@ namespace HoudiniEngineUnity
 	    CreatePathWithFolders(fullPath);
 	    if (!AssetDatabase.IsValidFolder(fullPath))
 	    {
-		Debug.LogErrorFormat("Unable to create a valid asset cache folder: {0}! Check directory permission or that enough space is available!", fullPath);
+		HEU_Logger.LogErrorFormat("Unable to create a valid asset cache folder: {0}! Check directory permission or that enough space is available!", fullPath);
 		fullPath = null;
 	    }
 
 	    return fullPath;
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -471,7 +471,7 @@ namespace HoudiniEngineUnity
 	    }
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -489,7 +489,7 @@ namespace HoudiniEngineUnity
 	    }
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -506,7 +506,7 @@ namespace HoudiniEngineUnity
 	    }
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -520,7 +520,7 @@ namespace HoudiniEngineUnity
 	    }
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -535,7 +535,7 @@ namespace HoudiniEngineUnity
 	    return AssetDatabase.Contains(assetObject);
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return false;
 #endif
 	}
@@ -546,7 +546,7 @@ namespace HoudiniEngineUnity
 	    return AssetDatabase.CopyAsset(path, newPath);
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return false;
 #endif
 	}
@@ -614,13 +614,13 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, newAssetPath);
+		    HEU_Logger.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, newAssetPath);
 		}
 	    }
 	    return null;
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -645,7 +645,7 @@ namespace HoudiniEngineUnity
 	    return null;
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -678,13 +678,13 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, fullCopyPath);
+		    HEU_Logger.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, fullCopyPath);
 		}
 	    }
 	    return null;
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -709,7 +709,7 @@ namespace HoudiniEngineUnity
 		string targetFileName = HEU_Platform.GetFileName(targetPath);
 		if (string.IsNullOrEmpty(targetFileName))
 		{
-		    Debug.LogErrorFormat("Copying asset failed. Destination path must end with a file name: {0}!", targetPath);
+		    HEU_Logger.LogErrorFormat("Copying asset failed. Destination path must end with a file name: {0}!", targetPath);
 		    return null;
 		}
 
@@ -722,13 +722,13 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, targetPath);
+		    HEU_Logger.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, targetPath);
 		}
 	    }
 	    return null;
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -757,7 +757,7 @@ namespace HoudiniEngineUnity
 		    fullCopyPath = GetUniqueAssetPath(fullCopyPath);
 		    if (HEU_Platform.DoesFileExist(fullCopyPath))
 		    {
-			Debug.LogErrorFormat("Failed to get unique path to make copy for {0} at {1}!", srcAssetPath, fullCopyPath);
+			HEU_Logger.LogErrorFormat("Failed to get unique path to make copy for {0} at {1}!", srcAssetPath, fullCopyPath);
 			return null;
 		    }
 		}
@@ -771,13 +771,13 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, fullCopyPath);
+		    HEU_Logger.LogErrorFormat("Failed to copy and load asset from {0} to {1}!", srcAssetPath, fullCopyPath);
 		}
 	    }
 	    return null;
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 			return null;
 #endif
 	}
@@ -851,7 +851,7 @@ namespace HoudiniEngineUnity
 	    //RefreshAssetDatabase();
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -860,7 +860,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    AssetDatabase.CreateAsset(asset, path);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -883,7 +883,7 @@ namespace HoudiniEngineUnity
 	    }
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -893,7 +893,7 @@ namespace HoudiniEngineUnity
 	    AssetDatabase.AddObjectToAsset(objectToAdd, assetObject);
 #else
 			// TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -941,7 +941,7 @@ namespace HoudiniEngineUnity
 	    return AssetDatabase.LoadAssetAtPath(assetPath, type);
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -975,7 +975,7 @@ namespace HoudiniEngineUnity
 	    return AssetDatabase.LoadAllAssetsAtPath(assetPath);
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -985,7 +985,7 @@ namespace HoudiniEngineUnity
 #if UNITY_EDITOR
 	    return AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
 #else
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -1029,12 +1029,12 @@ namespace HoudiniEngineUnity
 		case HEU_ImportAssetOptions.ImportRecursive: unityOptions = ImportAssetOptions.ImportRecursive; break;
 		case HEU_ImportAssetOptions.DontDownloadFromCacheServer: unityOptions = ImportAssetOptions.DontDownloadFromCacheServer; break;
 		case HEU_ImportAssetOptions.ForceUncompressedImport: unityOptions = ImportAssetOptions.ForceUncompressedImport; break;
-		default: Debug.LogWarningFormat("Unsupported import options: {0}", heuOptions); break;
+		default: HEU_Logger.LogWarningFormat("Unsupported import options: {0}", heuOptions); break;
 	    }
 
 	    AssetDatabase.ImportAsset(assetPath, unityOptions);
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -1052,7 +1052,7 @@ namespace HoudiniEngineUnity
 	    return workingPath;
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -1071,7 +1071,7 @@ namespace HoudiniEngineUnity
 	    return bakedPath;
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -1082,7 +1082,7 @@ namespace HoudiniEngineUnity
 	    return HEU_Platform.BuildPath(GetAssetBakedPath(), assetName);
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -1101,7 +1101,7 @@ namespace HoudiniEngineUnity
 	    return assetBakedPath;
 #else
 	    // TODO RUNTIME: AssetDatabase is not supported at runtime. Do we need to support this for runtime?
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return null;
 #endif
 	}
@@ -1134,14 +1134,14 @@ namespace HoudiniEngineUnity
 
 		if (!AssetDatabase.IsValidFolder(nextPath))
 		{
-		    //Debug.LogFormat("{0}: Creating folder: {1}/{2}", HEU_Defines.HEU_NAME, pathBuild, folder);
+		    //HEU_Logger.LogFormat("{0}: Creating folder: {1}/{2}", HEU_Defines.HEU_NAME, pathBuild, folder);
 		    AssetDatabase.CreateFolder(pathBuild, folder);
 		}
 
 		pathBuild = nextPath;
 	    }
 #else
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -1215,7 +1215,7 @@ namespace HoudiniEngineUnity
 	    string scenePath = GetAssetOrScenePath(go);
 	    return !string.IsNullOrEmpty(scenePath);
 #else
-	    Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+	    HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 	    return false;
 #endif
 	}
@@ -1232,11 +1232,11 @@ namespace HoudiniEngineUnity
 	public static void PrintDependencies(GameObject targetGO)
 	{
 #if UNITY_EDITOR
-	    Debug.Log("Print Dependcies: target: " + targetGO.name);
+	    HEU_Logger.Log("Print Dependcies: target: " + targetGO.name);
 	    UnityEngine.Object[] depends = HEU_EditorUtility.CollectDependencies(targetGO);
 	    foreach (UnityEngine.Object obj in depends)
 	    {
-		Debug.LogFormat("Dependent: name={0}, type={1}, path={2}, persist={3}, native={4}", obj.name, obj.GetType().ToString(), AssetDatabase.GetAssetOrScenePath(obj), EditorUtility.IsPersistent(obj),
+		HEU_Logger.LogFormat("Dependent: name={0}, type={1}, path={2}, persist={3}, native={4}", obj.name, obj.GetType().ToString(), AssetDatabase.GetAssetOrScenePath(obj), EditorUtility.IsPersistent(obj),
 			AssetDatabase.IsNativeAsset(obj));
 	    }
 #endif
