@@ -117,7 +117,7 @@ namespace HoudiniEngineUnity
 
 	public void CleanUp()
 	{
-	    //Debug.Log("Cleaning up parameters!");
+	    //HEU_Logger.Log("Cleaning up parameters!");
 
 	    // For input parameters, notify removal
 	    foreach (HEU_ParameterData paramData in _parameterList)
@@ -226,23 +226,23 @@ namespace HoudiniEngineUnity
 		    {
 			// This is part of a folder list, so mark as processed
 			currentFolderList._folderListChildrenProcessed++;
-			//Debug.LogFormat("Updating folder list children to {0} for {1}", currentFolderList._folderListChildrenProcessed, currentFolderList._name);
+			//HEU_Logger.LogFormat("Updating folder list children to {0} for {1}", currentFolderList._folderListChildrenProcessed, currentFolderList._name);
 
 			// Sanity check because folders must come right after the folder list
 			if (parmInfo.type != HAPI_ParmType.HAPI_PARMTYPE_FOLDER)
 			{
-			    Debug.LogErrorFormat("Expected {0} type but got {1} for parameter {2}", HAPI_ParmType.HAPI_PARMTYPE_FOLDER, parmInfo.type, HEU_SessionManager.GetString(parmInfo.nameSH, session));
+			    HEU_Logger.LogErrorFormat("Expected {0} type but got {1} for parameter {2}", HAPI_ParmType.HAPI_PARMTYPE_FOLDER, parmInfo.type, HEU_SessionManager.GetString(parmInfo.nameSH, session));
 			}
 		    }
 		}
 
 		if (parmInfo.id < 0 || parmInfo.childIndex < 0)
 		{
-		    Debug.LogWarningFormat("Corrupt parameter detected with name {0}. Skipping it.", HEU_SessionManager.GetString(parmInfo.nameSH, session));
+		    HEU_Logger.LogWarningFormat("Corrupt parameter detected with name {0}. Skipping it.", HEU_SessionManager.GetString(parmInfo.nameSH, session));
 		    continue;
 		}
 
-		//Debug.LogFormat("Param: name={0}, type={1}, size={2}, invisible={3}, parentID={4}, instanceNum={5}, childIndex={6}", 
+		//HEU_Logger.LogFormat("Param: name={0}, type={1}, size={2}, invisible={3}, parentID={4}, instanceNum={5}, childIndex={6}", 
 		//	HEU_SessionManager.GetString(parmInfo.nameSH, session), parmInfo.type, parmInfo.size, parmInfo.invisible, parmInfo.parentId,
 		//	parmInfo.instanceNum, parmInfo.childIndex);
 
@@ -270,7 +270,7 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogErrorFormat("Parent of parameter {0} not found!", parmInfo.id);
+			HEU_Logger.LogErrorFormat("Parent of parameter {0} not found!", parmInfo.id);
 			bSkipParam = true;
 		    }
 		}
@@ -364,12 +364,12 @@ namespace HoudiniEngineUnity
 			}
 			case HAPI_ParmType.HAPI_PARMTYPE_FLOAT:
 			{
-			    //Debug.LogFormat("Param: name:{0}, size:{1}", parmInfo.label, parmInfo.size);
+			    //HEU_Logger.LogFormat("Param: name:{0}, size:{1}", parmInfo.label, parmInfo.size);
 
 			    newParameter._floatValues = new float[parmInfo.size];
 			    Array.Copy(_paramFloats, parmInfo.floatValuesIndex, newParameter._floatValues, 0, parmInfo.size);
 
-			    //Debug.LogFormat("Param float with name {0}. Value = {1}", newParameter._name, newParameter._floatValues[parmInfo.size - 1]);
+			    //HEU_Logger.LogFormat("Param float with name {0}. Value = {1}", newParameter._name, newParameter._floatValues[parmInfo.size - 1]);
 
 			    break;
 			}
@@ -442,7 +442,7 @@ namespace HoudiniEngineUnity
 			    }
 			    else
 			    {
-				Debug.LogWarningFormat("Unsupported color parameter with label {0} and size {1}.", HEU_SessionManager.GetString(parmInfo.labelSH, session), parmInfo.size);
+				HEU_Logger.LogWarningFormat("Unsupported color parameter with label {0} and size {1}.", HEU_SessionManager.GetString(parmInfo.labelSH, session), parmInfo.size);
 			    }
 
 			    break;
@@ -477,7 +477,7 @@ namespace HoudiniEngineUnity
 
 			    // Note: adding / removing multiparm instance requires a complete rebuild of parameters, and UI refresh
 
-			    //Debug.LogFormat("MultiParm: id: {5}, # param per instance: {0}, # instances: {1}, start offset: {2}, childOfMutli: {3}, instanceNum: {4}",
+			    //HEU_Logger.LogFormat("MultiParm: id: {5}, # param per instance: {0}, # instances: {1}, start offset: {2}, childOfMutli: {3}, instanceNum: {4}",
 			    //	parmInfo.instanceLength, parmInfo.instanceCount, parmInfo.instanceStartOffset, parmInfo.isChildOfMultiParm, parmInfo.instanceNum,
 			    //	HEU_SessionManager.GetString(parmInfo.nameSH, session));
 
@@ -554,7 +554,7 @@ namespace HoudiniEngineUnity
 			}
 			default:
 			{
-			    Debug.Log("Unsupported parameter type: " + parmInfo.type);
+			    HEU_Logger.Log("Unsupported parameter type: " + parmInfo.type);
 			    break;
 			}
 		    }
@@ -572,7 +572,7 @@ namespace HoudiniEngineUnity
 		    {
 			// Folder is part of a folder list, in which case we add to the folder list as its child
 			currentFolderList._childParameterIDs.Add(listIndex);
-			//Debug.LogFormat("Adding child param {0} to folder list {1}", newParameter._name, currentFolderList._name);
+			//HEU_Logger.LogFormat("Adding child param {0} to folder list {1}", newParameter._name, currentFolderList._name);
 		    }
 		    else if (newParameter.ParentID == HEU_Defines.HEU_INVALID_NODE_ID)
 		    {
@@ -584,12 +584,12 @@ namespace HoudiniEngineUnity
 			// For mutliparams, the ParentID will be valid so we will add to its parent multiparm container
 
 			// Look up parent and add to it
-			//Debug.LogFormat("Child with Parent: name={0}, instance num={1}", HEU_SessionManager.GetString(parmInfo.nameSH, session), parmInfo.instanceNum);
+			//HEU_Logger.LogFormat("Child with Parent: name={0}, instance num={1}", HEU_SessionManager.GetString(parmInfo.nameSH, session), parmInfo.instanceNum);
 			HEU_ParameterData parentParameter = null;
 			if (parameterMap.TryGetValue(newParameter.ParentID, out parentParameter))
 			{
 			    // Store the list index of the current parameter into its parent's child list
-			    //Debug.LogFormat("Found parent id: {0}", HEU_SessionManager.GetString(parentParameter._parmInfo.nameSH, session));
+			    //HEU_Logger.LogFormat("Found parent id: {0}", HEU_SessionManager.GetString(parentParameter._parmInfo.nameSH, session));
 
 			    bool bInserted = false;
 			    int numChildren = parentParameter._childParameterIDs.Count;
@@ -612,7 +612,7 @@ namespace HoudiniEngineUnity
 			    if (!bInserted)
 			    {
 				parentParameter._childParameterIDs.Add(listIndex);
-				//Debug.LogFormat("Added child {0} to parent {1} with instance num {2} at index {3}",
+				//HEU_Logger.LogFormat("Added child {0} to parent {1} with instance num {2} at index {3}",
 				//	HEU_SessionManager.GetString(newParameter._parmInfo.nameSH, session),
 				//	HEU_SessionManager.GetString(parentParameter._parmInfo.nameSH, session),
 				//	newParameter._parmInfo.instanceNum, parentParameter._childParameterIDs.Count - 1);
@@ -620,7 +620,7 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-			    Debug.LogErrorFormat("Unable to find parent parameter with id {0}. It should have already been added to list!\n"
+			    HEU_Logger.LogErrorFormat("Unable to find parent parameter with id {0}. It should have already been added to list!\n"
 				    + "Parameter with id {0} and name {1} will not be showing up on UI.", newParameter.ParmID, newParameter._name);
 			    continue;
 			}
@@ -633,7 +633,7 @@ namespace HoudiniEngineUnity
 	    {
 		SetupRampParameter(ramp);
 	    }
-	    //Debug.Log("Param regenerated!");
+	    //HEU_Logger.Log("Param regenerated!");
 	    _recacheUI = true;
 
 	    _validParameters = true;
@@ -903,7 +903,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    //Debug.LogFormat("UploadValuesToHAPI(bDoCheck = {0})", bDoCheck);
+	    //HEU_Logger.LogFormat("UploadValuesToHAPI(bDoCheck = {0})", bDoCheck);
 
 	    // Check if parameters changed (unless bDoCheck is false).
 	    // Upload ints and floats are arrays.
@@ -927,7 +927,7 @@ namespace HoudiniEngineUnity
 		    {
 			if (!bDoCheck || !HEU_GeneralUtility.DoArrayElementsMatch(_paramInts, parameterData._parmInfo.intValuesIndex, parameterData._intValues, 0, parameterData.ParmSize))
 			{
-			    //Debug.LogFormat("Int changed from {0} to {1}", _paramInts[parameterData._parmInfo.intValuesIndex], parameterData._intValues[0]);
+			    //HEU_Logger.LogFormat("Int changed from {0} to {1}", _paramInts[parameterData._parmInfo.intValuesIndex], parameterData._intValues[0]);
 
 			    if (!session.SetParamIntValues(_nodeID, ref parameterData._intValues, parameterData._parmInfo.intValuesIndex, parameterData.ParmSize))
 			    {
@@ -942,7 +942,7 @@ namespace HoudiniEngineUnity
 		    {
 			if (!bDoCheck || !HEU_GeneralUtility.DoArrayElementsMatch(_paramFloats, parameterData._parmInfo.floatValuesIndex, parameterData._floatValues, 0, parameterData.ParmSize))
 			{
-			    //Debug.LogFormat("Float changed to from {0} to {1}", _paramFloats[parameterData._parmInfo.floatValuesIndex], parameterData._floatValues[0]);
+			    //HEU_Logger.LogFormat("Float changed to from {0} to {1}", _paramFloats[parameterData._parmInfo.floatValuesIndex], parameterData._floatValues[0]);
 
 			    if (!session.SetParamFloatValues(_nodeID, ref parameterData._floatValues, parameterData._parmInfo.floatValuesIndex, parameterData.ParmSize))
 			    {
@@ -961,7 +961,7 @@ namespace HoudiniEngineUnity
 		    {
 			if (!bDoCheck || !HEU_GeneralUtility.DoArrayElementsMatch(_paramStrings, parameterData._parmInfo.stringValuesIndex, parameterData._stringValues, 0, parameterData.ParmSize))
 			{
-			    //Debug.LogFormat("Updating string at {0} with value {1}", parameterData._parmInfo.stringValuesIndex, parameterData._stringValue);
+			    //HEU_Logger.LogFormat("Updating string at {0} with value {1}", parameterData._parmInfo.stringValuesIndex, parameterData._stringValue);
 
 			    // Update Houdini each string at a time
 			    int numStrings = parameterData.ParmSize;
@@ -1077,7 +1077,7 @@ namespace HoudiniEngineUnity
 
 	    foreach (HEU_ParameterModifier paramModifier in _parameterModifiers)
 	    {
-		//Debug.LogFormat("Processing modifier {0}", paramModifier._action);
+		//HEU_Logger.LogFormat("Processing modifier {0}", paramModifier._action);
 
 		HEU_ParameterData parameter = GetParameter(paramModifier._parameterIndex);
 		if (parameter == null)
@@ -1092,10 +1092,10 @@ namespace HoudiniEngineUnity
 		    for (int i = 0; i < parameter._parmInfo.instanceCount; ++i)
 		    {
 			int lastIndex = parameter._parmInfo.instanceCount - i;
-			//Debug.Log("CLEARING instance index " + lastIndex);
+			//HEU_Logger.Log("CLEARING instance index " + lastIndex);
 			if (!session.RemoveMultiParmInstance(_nodeID, parameter._parmInfo.id, lastIndex))
 			{
-			    Debug.LogWarningFormat("Unable to clear instances from MultiParm {0}", parameter._labelName);
+			    HEU_Logger.LogWarningFormat("Unable to clear instances from MultiParm {0}", parameter._labelName);
 			    break;
 			}
 		    }
@@ -1110,10 +1110,10 @@ namespace HoudiniEngineUnity
 		    for (int i = 0; i < paramModifier._modifierValue; ++i)
 		    {
 			int insertIndex = paramModifier._instanceIndex + i;
-			//Debug.Log("INSERTING instance index " + insertIndex);
+			//HEU_Logger.Log("INSERTING instance index " + insertIndex);
 			if (!session.InsertMultiparmInstance(_nodeID, parameter._parmInfo.id, insertIndex))
 			{
-			    Debug.LogWarningFormat("Unable to insert instance at {0} for MultiParm {1}", insertIndex, parameter._labelName);
+			    HEU_Logger.LogWarningFormat("Unable to insert instance at {0} for MultiParm {1}", insertIndex, parameter._labelName);
 			    break;
 			}
 		    }
@@ -1128,10 +1128,10 @@ namespace HoudiniEngineUnity
 		    for (int i = 0; i < paramModifier._modifierValue; ++i)
 		    {
 			int removeIndex = paramModifier._instanceIndex;
-			//Debug.Log("REMOVING instance index " + removeIndex);
+			//HEU_Logger.Log("REMOVING instance index " + removeIndex);
 			if (!session.RemoveMultiParmInstance(_nodeID, parameter._parmInfo.id, removeIndex))
 			{
-			    Debug.LogWarningFormat("Unable to remove instance at {0} for MultiParm {1}", removeIndex, parameter._labelName);
+			    HEU_Logger.LogWarningFormat("Unable to remove instance at {0} for MultiParm {1}", removeIndex, parameter._labelName);
 			    break;
 			}
 		    }
@@ -1154,7 +1154,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Unsupported parameter modifier: {0}", paramModifier._action);
+		    HEU_Logger.LogWarningFormat("Unsupported parameter modifier: {0}", paramModifier._action);
 		}
 	    }
 
@@ -1336,7 +1336,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 

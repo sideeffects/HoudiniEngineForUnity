@@ -197,7 +197,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Found invalid shelf with entry: {0}", shelfEntries[i]);
+		    HEU_Logger.LogWarningFormat("Found invalid shelf with entry: {0}", shelfEntries[i]);
 		    shelfEntries.RemoveAt(i);
 		    i--;
 		    bSaveShelf = true;
@@ -210,14 +210,14 @@ namespace HoudiniEngineUnity
 
 		if (!HEU_Platform.DoesPathExist(realShelfPath))
 		{
-		    Debug.LogWarningFormat("Shelf path does not exist: {0}", realShelfPath);
+		    HEU_Logger.LogWarningFormat("Shelf path does not exist: {0}", realShelfPath);
 		}
 		else
 		{
 		    bool bShelfLoaded = LoadToolsFromDirectory(realShelfPath, out shelf._tools);
 		    if (!bShelfLoaded)
 		    {
-			Debug.LogWarningFormat("Failed to load shelf {0} at path {1}", shelf._shelfName, realShelfPath);
+			HEU_Logger.LogWarningFormat("Failed to load shelf {0} at path {1}", shelf._shelfName, realShelfPath);
 		    }
 		}
 	    }
@@ -261,7 +261,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Parsing JSON files in directory caused exception: {0}", ex);
+		HEU_Logger.LogErrorFormat("Parsing JSON files in directory caused exception: {0}", ex);
 		return false;
 	    }
 
@@ -279,7 +279,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Exception while reading {0}: {1}", jsonFilePath, ex);
+		HEU_Logger.LogErrorFormat("Exception while reading {0}: {1}", jsonFilePath, ex);
 		return null;
 	    }
 
@@ -289,7 +289,7 @@ namespace HoudiniEngineUnity
 
 	public static HEU_ShelfToolData LoadToolFromJsonString(string json, string jsonFilePath)
 	{
-	    //Debug.Log("Loading json: " + jsonFilePath);
+	    //HEU_Logger.Log("Loading json: " + jsonFilePath);
 
 	    // Get environment variable for tool path
 	    string envValue = HEU_Platform.GetEnvironmentValue(HEU_Defines.HEU_PATH_KEY_TOOL);
@@ -335,7 +335,7 @@ namespace HoudiniEngineUnity
 		}
 		catch (System.Exception ex)
 		{
-		    Debug.LogErrorFormat("Exception when trying to parse shelf json file at path: {0}. Exception: {1}", jsonFilePath, ex.ToString());
+		    HEU_Logger.LogErrorFormat("Exception when trying to parse shelf json file at path: {0}. Exception: {1}", jsonFilePath, ex.ToString());
 		    return null;
 		}
 
@@ -367,7 +367,7 @@ namespace HoudiniEngineUnity
 			    {
 				if (string.IsNullOrEmpty(envValue))
 				{
-				    Debug.LogErrorFormat("Environment value {0} used but not set in environment.", HEU_Defines.HEU_PATH_KEY_TOOL);
+				    HEU_Logger.LogErrorFormat("Environment value {0} used but not set in environment.", HEU_Defines.HEU_PATH_KEY_TOOL);
 				}
 				else
 				{
@@ -383,7 +383,7 @@ namespace HoudiniEngineUnity
 			string realPath = HEU_PluginStorage.Instance.ConvertEnvKeyedPathToReal(toolData._assetPath);
 			if (!HEU_Platform.DoesFileExist(realPath))
 			{
-			    Debug.LogErrorFormat("Houdini Engine shelf tool at {0} does not exist!", realPath);
+			    HEU_Logger.LogErrorFormat("Houdini Engine shelf tool at {0} does not exist!", realPath);
 			    return null;
 			}
 
@@ -394,7 +394,7 @@ namespace HoudiniEngineUnity
 			    {
 				if (string.IsNullOrEmpty(envValue))
 				{
-				    Debug.LogErrorFormat("Environment value {0} used but not set in environment.", HEU_Defines.HEU_PATH_KEY_TOOL);
+				    HEU_Logger.LogErrorFormat("Environment value {0} used but not set in environment.", HEU_Defines.HEU_PATH_KEY_TOOL);
 				}
 				else
 				{
@@ -464,13 +464,13 @@ namespace HoudiniEngineUnity
 	{
 	    if (_currentSelectedShelf < 0 && _currentSelectedShelf >= _shelves.Count)
 	    {
-		Debug.LogWarning("Invalid shelf selected. Unable to apply tool.");
+		HEU_Logger.LogWarning("Invalid shelf selected. Unable to apply tool.");
 		return;
 	    }
 
 	    if (toolSlot < 0 || toolSlot >= _shelves[_currentSelectedShelf]._tools.Count)
 	    {
-		Debug.LogWarning("Invalid tool selected. Unable to apply tool.");
+		HEU_Logger.LogWarning("Invalid tool selected. Unable to apply tool.");
 		return;
 	    }
 
@@ -520,7 +520,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
+		HEU_Logger.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
 	    }
 	}
 
@@ -539,7 +539,7 @@ namespace HoudiniEngineUnity
 	    GameObject go = HEU_HAPIUtility.InstantiateHDA(toolPath, Vector3.zero, HEU_SessionManager.GetOrCreateDefaultSession(), false);
 	    if (go == null)
 	    {
-		Debug.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
+		HEU_Logger.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
 	    }
 	    else
 	    {
@@ -574,7 +574,7 @@ namespace HoudiniEngineUnity
 			List<HEU_InputNode> inputNodes = asset.GetInputNodes();
 			if (inputNodes == null || inputNodes.Count == 0)
 			{
-			    Debug.LogErrorFormat("Unable to assign input geometry due to no asset inputs on selected tool.");
+			    HEU_Logger.LogErrorFormat("Unable to assign input geometry due to no asset inputs on selected tool.");
 			}
 			else
 			{
@@ -599,14 +599,14 @@ namespace HoudiniEngineUnity
 			    }
 			    else
 			    {
-				Debug.LogErrorFormat("Invalid input format: {0}", inputObject.gameObject.name);
+				HEU_Logger.LogErrorFormat("Invalid input format: {0}", inputObject.gameObject.name);
 			    }
 			}
 		    }
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
+		    HEU_Logger.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
 		}
 	    }
 
@@ -623,7 +623,7 @@ namespace HoudiniEngineUnity
 	    GameObject go = HEU_HAPIUtility.InstantiateHDA(toolPath, Vector3.zero, HEU_SessionManager.GetOrCreateDefaultSession(), false);
 	    if (go == null)
 	    {
-		Debug.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
+		HEU_Logger.LogWarningFormat("Failed to instantiate tool: {0}", toolName);
 		return;
 	    }
 
@@ -638,7 +638,7 @@ namespace HoudiniEngineUnity
 		List<HEU_InputNode> inputNodes = asset.GetInputNodes();
 		if (inputNodes == null || inputNodes.Count == 0)
 		{
-		    Debug.LogErrorFormat("Unable to assign input geometry due to no asset inputs on selected tool.");
+		    HEU_Logger.LogErrorFormat("Unable to assign input geometry due to no asset inputs on selected tool.");
 		}
 		else
 		{
@@ -669,7 +669,7 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-			    Debug.LogErrorFormat("Invalid input format: {0}", inputObject.gameObject.name);
+			    HEU_Logger.LogErrorFormat("Invalid input format: {0}", inputObject.gameObject.name);
 			}
 		    }
 

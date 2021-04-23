@@ -547,7 +547,7 @@ namespace HoudiniEngineUnity
 	private void Awake()
 	{
 #if HOUDINIENGINEUNITY_ENABLED
-	    //Debug.Log("HEU_HoudiniAsset::Awake - " + AssetName);
+	    //HEU_Logger.Log("HEU_HoudiniAsset::Awake - " + AssetName);
 
 	    if (_serializedMetaData == null)
 	    {
@@ -593,7 +593,7 @@ namespace HoudiniEngineUnity
 
 		this._serializedMetaData.SoftDeleted = false;
 
-		Debug.LogWarning("Undoing a deleted HDA may also remove its parameter undo stack.");
+		HEU_Logger.LogWarning("Undoing a deleted HDA may also remove its parameter undo stack.");
 		RequestReload(false);
 	    }
 #endif
@@ -637,7 +637,7 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 	    
-	    //Debug.Log("Asset:OnDestroy");
+	    //HEU_Logger.Log("Asset:OnDestroy");
 #if HOUDINIENGINEUNITY_ENABLED
 	    HEU_AssetUpdater.RemoveAsset(this);
 #endif
@@ -710,7 +710,7 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogError(HEU_Defines.HEU_NAME + ": Unable to Bake In Place due to HEU_HoudiniAssetRoot not found!");
+			HEU_Logger.LogError(HEU_Defines.HEU_NAME + ": Unable to Bake In Place due to HEU_HoudiniAssetRoot not found!");
 		    }
 		}
 		else if (_requestBuildAction == AssetBuildAction.DUPLICATE)
@@ -812,7 +812,7 @@ namespace HoudiniEngineUnity
 	public void RequestCook(bool bCheckParametersChanged, bool bAsync, bool bSkipCookCheck, bool bUploadParameters)
 	{
 #if HOUDINIENGINEUNITY_ENABLED
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Requesting Cook");
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Requesting Cook");
 
 	    if (bAsync)
 	    {
@@ -832,7 +832,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarning(HEU_Defines.HEU_NAME + ": Asset busy. Unable to start cooking!");
+		    HEU_Logger.LogWarning(HEU_Defines.HEU_NAME + ": Asset busy. Unable to start cooking!");
 		}
 	    }
 	    else
@@ -845,7 +845,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Houdini Engine: Asset busy (cook status: {0}). Unable to start cooking!", _cookStatus);
+		    HEU_Logger.LogWarningFormat(HEU_Defines.HEU_NAME + ": Houdini Engine: Asset busy (cook status: {0}). Unable to start cooking!", _cookStatus);
 		}
 	    }
 #endif
@@ -861,7 +861,7 @@ namespace HoudiniEngineUnity
 
 	public void ClearBuildRequest()
 	{
-	    //Debug.Log("ClearBuildRequest");
+	    //HEU_Logger.Log("ClearBuildRequest");
 	    _requestBuildAction = AssetBuildAction.NONE;
 	    _checkParameterChangeForCook = false;
 	    _skipCookCheck = false;
@@ -908,7 +908,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Rebuild error: " + ex.ToString());
+		HEU_Logger.LogErrorFormat("Rebuild error: " + ex.ToString());
 		bResult = false;
 	    }
 
@@ -1016,7 +1016,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (_selectedSubassetIndex < 0)
 		{
-		    Debug.LogFormat("Invalid subasset index {0}", _selectedSubassetIndex);
+		    HEU_Logger.LogFormat("Invalid subasset index {0}", _selectedSubassetIndex);
 		    return false;
 		}
 
@@ -1066,7 +1066,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Unsupported asset type {0}!", _assetType);
+		HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Unsupported asset type {0}!", _assetType);
 		return false;
 	    }
 
@@ -1083,7 +1083,7 @@ namespace HoudiniEngineUnity
 	    _assetOpName = HEU_SessionManager.GetString(_assetInfo.fullOpNameSH, session);
 	    _assetHelp = HEU_SessionManager.GetString(_assetInfo.helpTextSH, session);
 
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Asset Loaded - ID: " + _assetInfo.nodeId + "\n" +
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Asset Loaded - ID: " + _assetInfo.nodeId + "\n" +
 	    //					"    Full Name: " + _assetOpName + "\n" +
 	    //					"    Version: " + HEU_SessionManager.GetString(_assetInfo.versionSH, session) + "\n" +
 	    //					"    Unique Node Id: " + _nodeInfo.uniqueHoudiniNodeId + "\n" +
@@ -1111,7 +1111,7 @@ namespace HoudiniEngineUnity
 	    if (!CreateObjects(session))
 	    {
 		// Failed to create objects means that this asset is not valid
-		Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to create objects for asset {0}", _assetName);
+		HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to create objects for asset {0}", _assetName);
 		DeleteAllGeneratedData();
 		return false;
 	    }
@@ -1183,7 +1183,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogError("Recook error: " + ex.ToString());
+		HEU_Logger.LogError("Recook error: " + ex.ToString());
 		bStarted = false;
 	    }
 
@@ -1225,7 +1225,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogError("Recook error: " + ex.ToString());
+		HEU_Logger.LogError("Recook error: " + ex.ToString());
 		bStarted = false;
 	    }
 
@@ -1368,7 +1368,7 @@ namespace HoudiniEngineUnity
 	    // A recook is called when the asset has already been created previously.
 	    // We have to determine if the asset is in a valid state, upload its state,
 	    // then cook, and find out what has changed.
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Recooking " + AssetName);
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Recooking " + AssetName);
 
 	    bool bResult = false;
 	    _isCookingAssetReloaded = false;
@@ -1390,7 +1390,7 @@ namespace HoudiniEngineUnity
 		    // Asset ID isn't valid so do full rebuild
 		    if (!HasValidAssetPath())
 		    {
-			Debug.LogError(HEU_Defines.HEU_NAME + ": Recook failed: asset needs to be reloaded but does not have valid asset path. Recommend instantiating new asset.");
+			HEU_Logger.LogError(HEU_Defines.HEU_NAME + ": Recook failed: asset needs to be reloaded but does not have valid asset path. Recommend instantiating new asset.");
 			return false;
 		    }
 
@@ -1423,7 +1423,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Recook failed: unsupported asset type {0}!", _assetType);
+		    HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Recook failed: unsupported asset type {0}!", _assetType);
 		    return false;
 		}
 
@@ -1479,7 +1479,7 @@ namespace HoudiniEngineUnity
 		if (_assetID != _parameters._nodeID)
 		{
 		   // Parameters
-		    Debug.LogWarning(HEU_Defines.HEU_NAME + ": Our parameter object must have our asset ID.\n"
+		    HEU_Logger.LogWarning(HEU_Defines.HEU_NAME + ": Our parameter object must have our asset ID.\n"
 			+ "If this fails, something went wrong earlier and need to catch it! Please try rebuilding!");
 		    _parameters.CleanUp();
 		    return false;
@@ -1495,7 +1495,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (!_parameters.UploadValuesToHoudini(session, this, bCheckParamsChanged, bForceUploadInputs))
 		    {
-			Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}. Please rebuild this asset.", AssetName);
+			HEU_Logger.LogWarningFormat(HEU_Defines.HEU_NAME + ": Failed to upload parameter changes to Houdini for asset {0}. Please rebuild this asset.", AssetName);
 		    }
 
 		    bParamsUpdated = true;
@@ -1539,7 +1539,7 @@ namespace HoudiniEngineUnity
 	    if (!bResult)
 	    {
 		// Cooking failed.
-		Debug.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}!", AssetName);
+		HEU_Logger.LogErrorFormat(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}!", AssetName);
 		return false;
 	    }
 
@@ -1611,7 +1611,7 @@ namespace HoudiniEngineUnity
 		SetCookStatus(AssetCookStatus.NONE, _lastCookResult = AssetCookResult.ERRORED);
 
 		string resultString = string.Format(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}! \n{1}", AssetName, nodeStatusError);
-		Debug.LogErrorFormat(resultString);
+		HEU_Logger.LogErrorFormat(resultString);
 		return;
 	    }
 
@@ -1621,8 +1621,8 @@ namespace HoudiniEngineUnity
 	    // Download & save the parameter preset
 	    DownloadParameterPresetFromHoudini(session);
 
-	    //Debug.LogFormat("Node Input Count: {0}", _nodeInfo.inputCount);
-	    //Debug.LogFormat("Asset Input Count: {0}", _assetInfo.geoInputCount);
+	    //HEU_Logger.LogFormat("Node Input Count: {0}", _nodeInfo.inputCount);
+	    //HEU_Logger.LogFormat("Asset Input Count: {0}", _assetInfo.geoInputCount);
 
 	    // Update the Houdini materials in use by this asset.
 	    // This should be done before update the objects as below.
@@ -1687,7 +1687,7 @@ namespace HoudiniEngineUnity
 	    }
 
 #if HEU_PROFILER_ON
-	    Debug.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
+	    HEU_Logger.LogFormat("RECOOK PROFILE:: TOTAL={0}, HAPI={1}, POST={2}", (Time.realtimeSinceStartup - _cookStartTime), (_hapiCookEndTime - _cookStartTime), (Time.realtimeSinceStartup - _postCookStartTime));
 #endif
 	}
 
@@ -1708,7 +1708,7 @@ namespace HoudiniEngineUnity
 	    HEU_SessionBase session = GetAssetSession(false);
 	    if (session == null)
 	    {
-		Debug.LogWarning(HEU_Defines.HEU_NAME + ": No valid session for cooking!");
+		HEU_Logger.LogWarning(HEU_Defines.HEU_NAME + ": No valid session for cooking!");
 		SetCookStatus(AssetCookStatus.NONE, AssetCookResult.ERRORED);
 	    }
 	    else
@@ -1743,7 +1743,7 @@ namespace HoudiniEngineUnity
 		if (statusCode == HAPI_State.HAPI_STATE_READY_WITH_FATAL_ERRORS)
 		{
 		    string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
-		    Debug.LogError(string.Format(HEU_Defines.HEU_NAME + ": Cooking failed for asset: {0}\n{1}", AssetName, statusString));
+		    HEU_Logger.LogError(string.Format(HEU_Defines.HEU_NAME + ": Cooking failed for asset: {0}\n{1}", AssetName, statusString));
 
 		    SetCookStatus(AssetCookStatus.NONE, AssetCookResult.ERRORED);
 		}
@@ -1753,11 +1753,11 @@ namespace HoudiniEngineUnity
 		    {
 			// We should be able to continue even with these errors, but at least notify user.
 			string statusString = session.GetStatusString(HAPI_StatusType.HAPI_STATUS_COOK_RESULT, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_WARNINGS);
-			Debug.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Cooking finished with some errors for asset: {0}\n{1}", AssetName, statusString));
+			HEU_Logger.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Cooking finished with some errors for asset: {0}\n{1}", AssetName, statusString));
 		    }
 		    else
 		    {
-			//Debug.LogFormat(HEU_Defines.HEU_NAME + ": Cooking result {0} for asset: {1}", (HAPI_State)statusCode, AssetName);
+			//HEU_Logger.LogFormat(HEU_Defines.HEU_NAME + ": Cooking result {0} for asset: {1}", (HAPI_State)statusCode, AssetName);
 		    }
 
 		    SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.SUCCESS);
@@ -1770,7 +1770,7 @@ namespace HoudiniEngineUnity
 		    }
 		    catch (System.Exception ex)
 		    {
-			Debug.LogError("Recook error: " + ex.ToString());
+			HEU_Logger.LogError("Recook error: " + ex.ToString());
 			SetCookStatus(AssetCookStatus.POSTCOOK, AssetCookResult.ERRORED);
 		    }
 		}
@@ -1827,7 +1827,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (_assetID != HEU_Defines.HEU_INVALID_NODE_ID)
 	    {
-		//Debug.LogFormat(HEU_Defines.HEU_NAME + ": Deleting asset {0} in Houdini session.", _assetName);
+		//HEU_Logger.LogFormat(HEU_Defines.HEU_NAME + ": Deleting asset {0} in Houdini session.", _assetName);
 		HEU_SessionBase session = GetAssetSession(false);
 		if (session != null)
 		{
@@ -1900,7 +1900,7 @@ namespace HoudiniEngineUnity
 
 		for (int i = 0; i < tempNodes.Count; ++i)
 		{
-		    //Debug.LogFormat("Destroying input: {0}", tempNodes[i].InputName);
+		    //HEU_Logger.LogFormat("Destroying input: {0}", tempNodes[i].InputName);
 		    _inputNodes.Remove(tempNodes[i]);
 
 		    tempNodes[i].DestroyAllData(session);
@@ -1927,7 +1927,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	private void GenerateParameters(HEU_SessionBase session)
 	{
-	    //Debug.Log(HEU_Defines.HEU_NAME + ": Generating parameters!");
+	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Generating parameters!");
 
 #if HEU_PROFILER_ON
 	    float parameterGenStartTime = Time.realtimeSinceStartup;
@@ -1952,12 +1952,12 @@ namespace HoudiniEngineUnity
 	    bool bResult = _parameters.Initialize(session, _assetID, ref _nodeInfo, previousParamFolders, previousParamInputNodes, this);
 	    if (!bResult)
 	    {
-		Debug.LogWarningFormat(HEU_Defines.HEU_NAME + ": Parameter generate failed for asset {0}.", AssetName);
+		HEU_Logger.LogWarningFormat(HEU_Defines.HEU_NAME + ": Parameter generate failed for asset {0}.", AssetName);
 		_parameters.CleanUp();
 	    }
 
 #if HEU_PROFILER_ON
-	    Debug.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
+	    HEU_Logger.LogFormat("PARAMETERS GENERATION TIME:: {0}", (Time.realtimeSinceStartup - parameterGenStartTime));
 #endif
 	}
 
@@ -2020,7 +2020,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (_assetType != HEU_AssetType.TYPE_HDA)
 	    {
-		Debug.LogErrorFormat("Trying to build asset type: {0}. Expected type: {1}.", _assetType, HEU_AssetType.TYPE_HDA);
+		HEU_Logger.LogErrorFormat("Trying to build asset type: {0}. Expected type: {1}.", _assetType, HEU_AssetType.TYPE_HDA);
 		return false;
 	    }
 
@@ -2081,7 +2081,7 @@ namespace HoudiniEngineUnity
 	    _assetPath = HEU_PluginStorage.Instance.ConvertRealPathToEnvKeyedPath(validAssetPath);
 	    if (!_assetPath.Equals(validAssetPath))
 	    {
-		Debug.LogFormat("Storing asset file path with environment mapping: {0}", _assetPath);
+		HEU_Logger.LogFormat("Storing asset file path with environment mapping: {0}", _assetPath);
 	    }
 
 	    int assetCount = 0;
@@ -2093,7 +2093,7 @@ namespace HoudiniEngineUnity
 
 	    if (assetCount <= 0)
 	    {
-		Debug.LogErrorFormat("Houdini Engine: Invalid Asset Count of {0}", assetCount);
+		HEU_Logger.LogErrorFormat("Houdini Engine: Invalid Asset Count of {0}", assetCount);
 		return false;
 	    }
 
@@ -2140,7 +2140,7 @@ namespace HoudiniEngineUnity
 
 	    if (subassetIndex < 0 || subassetIndex >= _subassetNames.Length)
 	    {
-		Debug.LogFormat("Invalid subasset index {0}", subassetIndex);
+		HEU_Logger.LogFormat("Invalid subasset index {0}", subassetIndex);
 		return false;
 	    }
 
@@ -2224,7 +2224,7 @@ namespace HoudiniEngineUnity
 		if (session.GetNodeInputName(_assetID, i, out tempNameHandle))
 		{
 		    string inputName = HEU_SessionManager.GetString(tempNameHandle, session);
-		    //Debug.Log("Found input: " + inputName);
+		    //HEU_Logger.Log("Found input: " + inputName);
 
 		    HEU_InputNode inputNode = GetAssetInputNode(inputName);
 		    if (inputNode != null)
@@ -2472,7 +2472,7 @@ namespace HoudiniEngineUnity
 
 		    if (numObjNodes > 1)
 		    {
-			Debug.LogWarning("Unable to match previous objects with new objects after cooking this asset. Might lose asset changes.");
+			HEU_Logger.LogWarning("Unable to match previous objects with new objects after cooking this asset. Might lose asset changes.");
 		    }
 		}
 	    }
@@ -2521,7 +2521,7 @@ namespace HoudiniEngineUnity
 		_objectNodes.Clear();
 	    }
 
-	    //Debug.LogFormat(HEU_Defines.HEU_NAME + ": Replacing {0} old objects with {1} new objects!", numObjNodes, newObjectNodes.Count);
+	    //HEU_Logger.LogFormat(HEU_Defines.HEU_NAME + ": Replacing {0} old objects with {1} new objects!", numObjNodes, newObjectNodes.Count);
 
 	    // Update to new list
 	    _objectNodes = newObjectNodes;
@@ -2672,7 +2672,7 @@ namespace HoudiniEngineUnity
 		    session.GetObjectTransform(objectID, AssetID, HAPI_RSTOrder.HAPI_SRT, ref hapiTransform);
 		    if (Mathf.Approximately(0f, hapiTransform.scale[0]) || Mathf.Approximately(0f, hapiTransform.scale[1]) || Mathf.Approximately(0f, hapiTransform.scale[2]))
 		    {
-			Debug.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Object id {0} for asset {1} has scale components with 0 values!", objectID, AssetName));
+			HEU_Logger.LogWarning(string.Format(HEU_Defines.HEU_NAME + ": Object id {0} for asset {1} has scale components with 0 values!", objectID, AssetName));
 		    }
 		    else
 		    {
@@ -2724,7 +2724,7 @@ namespace HoudiniEngineUnity
 
 	    if (_rootGameObject == null)
 	    {
-		Debug.LogErrorFormat("{0}: Unable to bake due to no HEU_HoudiniAssetRoot found!", HEU_Defines.HEU_NAME);
+		HEU_Logger.LogErrorFormat("{0}: Unable to bake due to no HEU_HoudiniAssetRoot found!", HEU_Defines.HEU_NAME);
 		return newRoot;
 	    }
 
@@ -2798,7 +2798,7 @@ namespace HoudiniEngineUnity
 
 	    if (numCreatedObjects == 0)
 	    {
-		Debug.LogFormat("Nothing to bake as no geometry available!");
+		HEU_Logger.LogFormat("Nothing to bake as no geometry available!");
 	    }
 
 	    return newRoot;
@@ -2848,7 +2848,7 @@ namespace HoudiniEngineUnity
 
 			InvokeBakedEvent(true, new List<GameObject>() { prefabGO }, true);
 
-			Debug.LogFormat("Exported prefab to {0}", bakedAssetPath);
+			HEU_Logger.LogFormat("Exported prefab to {0}", bakedAssetPath);
 		    }
 		    return prefabGO;
 		}
@@ -2897,13 +2897,13 @@ namespace HoudiniEngineUnity
 	{
 	    if (!HEU_EditorUtility.IsPrefabAsset(bakeTargetGO))
 	    {
-		Debug.LogErrorFormat("Unable to bake to existing prefab as specified object is not a prefab asset!");
+		HEU_Logger.LogErrorFormat("Unable to bake to existing prefab as specified object is not a prefab asset!");
 		return;
 	    }
 
 	    if (bakeTargetGO == this.gameObject || bakeTargetGO.GetComponent<HEU_HoudiniAssetRoot>() != null)
 	    {
-		Debug.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
+		HEU_Logger.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
 		return;
 	    }
 
@@ -2981,7 +2981,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (bakeTargetGO == this.gameObject || bakeTargetGO.GetComponent<HEU_HoudiniAssetRoot>() != null)
 	    {
-		Debug.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
+		HEU_Logger.LogErrorFormat("Baking to a HoudiniAssetRoot gameobject is not supported!");
 		return;
 	    }
 
@@ -3011,7 +3011,7 @@ namespace HoudiniEngineUnity
 	    GetClonableParts(clonableParts);
 	    if (clonableParts.Count == 0)
 	    {
-		Debug.LogFormat("Empty bake output. Not updating existing target gameobject as that would mean destroying the it.");
+		HEU_Logger.LogFormat("Empty bake output. Not updating existing target gameobject as that would mean destroying the it.");
 		return;
 	    }
 
@@ -3090,7 +3090,7 @@ namespace HoudiniEngineUnity
 		// Clean up any children that we haven't processed
 		if (unprocessedTargetChildren.Count > 0)
 		{
-		    Debug.LogWarningFormat("Bake target has more children than bake output. GameObjects with names ending in {0} will be destroyed!", HEU_Defines.HEU_BAKED_CLONE);
+		    HEU_Logger.LogWarningFormat("Bake target has more children than bake output. GameObjects with names ending in {0} will be destroyed!", HEU_Defines.HEU_BAKED_CLONE);
 
 		    // Clean up any children that we haven't processed
 		    HEU_GeneralUtility.DestroyBakedGameObjectsWithEndName(unprocessedTargetChildren, HEU_Defines.HEU_BAKED_CLONE);
@@ -3112,7 +3112,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (Data.CookSuccess)
 	    {
-		//Debug.LogFormat("NotifyUpstreamCooked from {0}", AssetName);
+		//HEU_Logger.LogFormat("NotifyUpstreamCooked from {0}", AssetName);
 		HEU_SessionBase session = GetAssetSession(true);
 
 		// Required for reverting and uploading local data for edit nodes
@@ -3218,7 +3218,7 @@ namespace HoudiniEngineUnity
 		session.GetObjectTransform(queryNodeID, -1, HAPI_RSTOrder.HAPI_SRT, ref hapiTransform);
 		if (Mathf.Approximately(0f, hapiTransform.scale[0]) || Mathf.Approximately(0f, hapiTransform.scale[1]) || Mathf.Approximately(0f, hapiTransform.scale[2]))
 		{
-		    Debug.LogWarningFormat("Asset id {0} with name {1} has scale components with 0 values!", AssetID, AssetName);
+		    HEU_Logger.LogWarningFormat("Asset id {0} with name {1} has scale components with 0 values!", AssetID, AssetName);
 		}
 
 		// Using root transform as that represents our asset in the world
@@ -3262,7 +3262,7 @@ namespace HoudiniEngineUnity
 		HAPI_TransformEuler transformEuler = HEU_HAPIUtility.GetHAPITransformFromMatrix(ref transformMatrix);
 		if (!session.SetObjectTransform(queryNodeID, ref transformEuler))
 		{
-		    Debug.LogWarningFormat("Unable to upload transform for asset id {0} with name {1}!", AssetID, AssetName);
+		    HEU_Logger.LogWarningFormat("Unable to upload transform for asset id {0} with name {1}!", AssetID, AssetName);
 		}
 		else
 		{
@@ -3318,7 +3318,7 @@ namespace HoudiniEngineUnity
 
 		session.GetMaterialInfo(materialData._materialKey, ref materialInfo, false);
 
-		//Debug.LogFormat("Material id={0}, exists={1}, changed={2}", materialData._materialID, materialInfo.exists, materialInfo.hasChanged);
+		//HEU_Logger.LogFormat("Material id={0}, exists={1}, changed={2}", materialData._materialID, materialInfo.exists, materialInfo.hasChanged);
 
 		if (materialInfo.exists)
 		{
@@ -3973,7 +3973,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogErrorFormat("Unsupported asset type {0} for duplication.", _assetType);
+		HEU_Logger.LogErrorFormat("Unsupported asset type {0} for duplication.", _assetType);
 		return null;
 	    }
 
@@ -4151,12 +4151,12 @@ namespace HoudiniEngineUnity
 		string presetErrorMsg = string.Format("The saved asset OP name from preset file: '{0}'\ndiffers from this asset's OP name: '{1}'.\nMake sure you are using the correct preset file.", assetPreset._assetOPName, _assetOpName);
 		if (!HEU_EditorUtility.DisplayDialog("Preset Does Not Match", presetErrorMsg, "Continue Anyway", "Cancel"))
 		{
-		    Debug.LogWarningFormat("Unable to load preset due to mismatch of asset OP name!");
+		    HEU_Logger.LogWarningFormat("Unable to load preset due to mismatch of asset OP name!");
 		    return;
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Saved preset does not match asset OP name. User selected to continue to load the preset.");
+		    HEU_Logger.LogWarningFormat("Saved preset does not match asset OP name. User selected to continue to load the preset.");
 		}
 	    }
 
@@ -4181,7 +4181,7 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogWarningFormat("Curve with name {0} not found for loading its parameter preset!", assetPreset._curveNames[i]);
+			HEU_Logger.LogWarningFormat("Curve with name {0} not found for loading its parameter preset!", assetPreset._curveNames[i]);
 		    }
 		}
 	    }
@@ -4254,7 +4254,7 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-			    Debug.LogWarningFormat("Input node with name {0} not found! Unable to set input preset.", inputPreset._inputName);
+			    HEU_Logger.LogWarningFormat("Input node with name {0} not found! Unable to set input preset.", inputPreset._inputName);
 			}
 		    }
 		}
@@ -4304,21 +4304,21 @@ namespace HoudiniEngineUnity
 		    HEU_ObjectNode objNode = GetObjectNodeByName(volumeCachePreset._objName);
 		    if (objNode == null)
 		    {
-			Debug.LogWarningFormat("No object node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._objName);
+			HEU_Logger.LogWarningFormat("No object node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._objName);
 			continue;
 		    }
 
 		    HEU_GeoNode geoNode = objNode.GetGeoNode(volumeCachePreset._geoName);
 		    if (geoNode == null)
 		    {
-			Debug.LogWarningFormat("No geo node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._geoName);
+			HEU_Logger.LogWarningFormat("No geo node with name: {0}. Unable to set heightfield preset.", volumeCachePreset._geoName);
 			continue;
 		    }
 
 		    HEU_VolumeCache volumeCache = geoNode.GetVolumeCacheByTileIndex(volumeCachePreset._tile);
 		    if (volumeCache == null)
 		    {
-			Debug.LogWarningFormat("Volume cache at tile {0} not found for geo node {1}. Unable to set heightfield preset.", volumeCachePreset._tile, volumeCachePreset._geoName);
+			HEU_Logger.LogWarningFormat("Volume cache at tile {0} not found for geo node {1}. Unable to set heightfield preset.", volumeCachePreset._tile, volumeCachePreset._geoName);
 			continue;
 		    }
 
@@ -4362,7 +4362,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public bool UpdateSessionSync()
 	{
-	    //Debug.Log("Time: " + Time.realtimeSinceStartup);
+	    //HEU_Logger.Log("Time: " + Time.realtimeSinceStartup);
 
 	    if (_requestBuildAction != AssetBuildAction.NONE || !HEU_PluginSettings.SessionSyncAutoCook || !SessionSyncAutoCook)
 	    {
@@ -4384,7 +4384,7 @@ namespace HoudiniEngineUnity
 
 	    if (bRequiresCook)
 	    {
-		//Debug.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
+		//HEU_Logger.LogFormat("Recooking asset because of cook count mismatch: current={0} != new={1}", oldCount, _totalCookCount);
 
 		// Disable parm and input uploading for the recook process
 		bool thisCheckParameterChangeForCook = false;
@@ -4747,7 +4747,7 @@ namespace HoudiniEngineUnity
 
 	    if (asset == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 

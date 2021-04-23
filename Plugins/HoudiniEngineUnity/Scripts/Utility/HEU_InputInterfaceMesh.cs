@@ -83,7 +83,7 @@ namespace HoudiniEngineUnity
 
 	    if (!HEU_HAPIUtility.IsNodeValidInHoudini(session, connectNodeID))
 	    {
-		Debug.LogError("Connection node is invalid.");
+		HEU_Logger.LogError("Connection node is invalid.");
 		return false;
 	    }
 
@@ -91,7 +91,7 @@ namespace HoudiniEngineUnity
 	    HEU_InputDataMeshes inputMeshes = GenerateMeshDatasFromGameObject(inputObject);
 	    if (inputMeshes == null || inputMeshes._inputMeshes == null || inputMeshes._inputMeshes.Count == 0)
 	    {
-		Debug.LogError("No valid meshes found on input objects.");
+		HEU_Logger.LogError("No valid meshes found on input objects.");
 		return false;
 	    }
 
@@ -100,7 +100,7 @@ namespace HoudiniEngineUnity
 	    session.CreateInputNode(out newNodeID, inputName);
 	    if (newNodeID == HEU_Defines.HEU_INVALID_NODE_ID || !HEU_HAPIUtility.IsNodeValidInHoudini(session, newNodeID))
 	    {
-		Debug.LogError("Failed to create new input node in Houdini session!");
+		HEU_Logger.LogError("Failed to create new input node in Houdini session!");
 		return false;
 	    }
 
@@ -108,7 +108,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.CookNode(inputNodeID, false))
 	    {
-		Debug.LogError("New input node failed to cook!");
+		HEU_Logger.LogError("New input node failed to cook!");
 		return false;
 	    }
 
@@ -156,7 +156,7 @@ namespace HoudiniEngineUnity
 	    HEU_InputDataMeshes inputDataMeshes = inputData as HEU_InputDataMeshes;
 	    if (inputDataMeshes == null)
 	    {
-		Debug.LogError("Expected HEU_InputDataMeshes type for inputData, but received unsupported type.");
+		HEU_Logger.LogError("Expected HEU_InputDataMeshes type for inputData, but received unsupported type.");
 		return false;
 	    }
 
@@ -343,7 +343,7 @@ namespace HoudiniEngineUnity
 	    partInfo.primitiveAttributeCount = 0;
 	    partInfo.detailAttributeCount = 0;
 
-	    //Debug.LogFormat("Faces: {0}; Vertices: {1}; Verts/Face: {2}", partInfo.faceCount, partInfo.vertexCount, numVertsPerFace);
+	    //HEU_Logger.LogFormat("Faces: {0}; Vertices: {1}; Verts/Face: {2}", partInfo.faceCount, partInfo.vertexCount, numVertsPerFace);
 
 	    if (normals != null && normals.Count > 0)
 	    {
@@ -393,7 +393,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.SetPartInfo(displayNodeID, 0, ref partInfo))
 	    {
-		Debug.LogError("Failed to set input part info. ");
+		HEU_Logger.LogError("Failed to set input part info. ");
 		return false;
 	    }
 
@@ -407,19 +407,19 @@ namespace HoudiniEngineUnity
 
 	    if (!HEU_GeneralUtility.SetArray2Arg(displayNodeID, 0, session.SetFaceCount, faceCounts, 0, partInfo.faceCount))
 	    {
-		Debug.LogError("Failed to set input geometry face counts.");
+		HEU_Logger.LogError("Failed to set input geometry face counts.");
 		return false;
 	    }
 
 	    if (!HEU_GeneralUtility.SetArray2Arg(displayNodeID, 0, session.SetVertexList, faceIndices, 0, partInfo.vertexCount))
 	    {
-		Debug.LogError("Failed to set input geometry indices.");
+		HEU_Logger.LogError("Failed to set input geometry indices.");
 		return false;
 	    }
 
 	    if (!HEU_InputMeshUtility.SetMeshPointAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_POSITION, 3, vertices.ToArray(), ref partInfo, true))
 	    {
-		Debug.LogError("Failed to set input geometry position.");
+		HEU_Logger.LogError("Failed to set input geometry position.");
 		return false;
 	    }
 
@@ -428,7 +428,7 @@ namespace HoudiniEngineUnity
 	    //if(normals != null && !SetMeshPointAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_NORMAL, 3, normals.ToArray(), ref partInfo, true))
 	    if (normals != null && !HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_NORMAL, 3, normals.ToArray(), vertIndices, ref partInfo, true))
 	    {
-		Debug.LogError("Failed to set input geometry normals.");
+		HEU_Logger.LogError("Failed to set input geometry normals.");
 		return false;
 	    }
 
@@ -440,7 +440,7 @@ namespace HoudiniEngineUnity
 		    string uvName = u == 0 ? HEU_Defines.HAPI_ATTRIB_UV : string.Format("{0}{1}", HEU_Defines.HAPI_ATTRIB_UV, u + 1);
 		    if (!HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, uvName, 3, uvs[u].ToArray(), vertIndices, ref partInfo, false))
 		    {
-			Debug.LogError("Failed to set input geometry UV" + u);
+			HEU_Logger.LogError("Failed to set input geometry UV" + u);
 			return false;
 		    }
 		}
@@ -462,14 +462,14 @@ namespace HoudiniEngineUnity
 		//if(!SetMeshPointAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_COLOR, 3, rgb, ref partInfo, false))
 		if (!HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_COLOR, 3, rgb, vertIndices, ref partInfo, false))
 		{
-		    Debug.LogError("Failed to set input geometry colors.");
+		    HEU_Logger.LogError("Failed to set input geometry colors.");
 		    return false;
 		}
 
 		//if(!SetMeshPointAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_ALPHA, 1, alpha, ref partInfo, false))
 		if (!HEU_InputMeshUtility.SetMeshVertexFloatAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_ALPHA, 1, alpha, vertIndices, ref partInfo))
 		{
-		    Debug.LogError("Failed to set input geometry color alpha.");
+		    HEU_Logger.LogError("Failed to set input geometry color alpha.");
 		    return false;
 		}
 	    }
@@ -525,13 +525,13 @@ namespace HoudiniEngineUnity
 
 		    if (!session.AddAttribute(displayNodeID, 0, HEU_PluginSettings.UnityMaterialAttribName, ref materialIDAttrInfo))
 		    {
-			Debug.LogError("Failed to add input geometry unity material name attribute.");
+			HEU_Logger.LogError("Failed to add input geometry unity material name attribute.");
 			return false;
 		    }
 
 		    if (!HEU_GeneralUtility.SetAttributeArray(displayNodeID, 0, HEU_PluginSettings.UnityMaterialAttribName, ref materialIDAttrInfo, materialIDs, session.SetAttributeStringData, partInfo.faceCount))
 		    {
-			Debug.LogError("Failed to set input geometry unity material name.");
+			HEU_Logger.LogError("Failed to set input geometry unity material name.");
 			return false;
 		    }
 		}
@@ -565,7 +565,7 @@ namespace HoudiniEngineUnity
 
 		if (!HEU_GeneralUtility.SetAttributeArray(displayNodeID, 0, HEU_PluginSettings.UnityInputMeshAttr, ref attrInfo, primitiveNameAttr, session.SetAttributeStringData, partInfo.faceCount))
 		{
-		    Debug.LogError("Failed to set input geometry unity mesh name.");
+		    HEU_Logger.LogError("Failed to set input geometry unity mesh name.");
 		    return false;
 		}
 	    }
@@ -603,13 +603,13 @@ namespace HoudiniEngineUnity
 
 		    if (!session.AddGroup(displayNodeID, 0, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, inputDataMeshes._inputMeshes[g]._meshName))
 		    {
-			Debug.LogError("Failed to add input geometry LOD group name.");
+			HEU_Logger.LogError("Failed to add input geometry LOD group name.");
 			return false;
 		    }
 
 		    if (!session.SetGroupMembership(displayNodeID, 0, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, inputDataMeshes._inputMeshes[g]._meshName, membership, 0, partInfo.faceCount))
 		    {
-			Debug.LogError("Failed to set input geometry LOD group name.");
+			HEU_Logger.LogError("Failed to set input geometry LOD group name.");
 			return false;
 		    }
 		}
@@ -754,7 +754,7 @@ namespace HoudiniEngineUnity
 	    {
 		meshData._meshPath = meshGameObject.name;
 	    }
-	    //Debug.Log("Mesh Path: " + meshData._meshPath);
+	    //HEU_Logger.Log("Mesh Path: " + meshData._meshPath);
 
 	    MeshRenderer meshRenderer = meshGameObject.GetComponent<MeshRenderer>();
 	    if (meshRenderer != null)

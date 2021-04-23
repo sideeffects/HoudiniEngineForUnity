@@ -120,7 +120,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.Log("Houdini Engine Session closed!");
+		HEU_Logger.Log("Houdini Engine Session closed!");
 	    }
 	}
 
@@ -128,7 +128,7 @@ namespace HoudiniEngineUnity
 	public static void CloseAllSessions()
 	{
 	    HEU_SessionManager.CloseAllSessions();
-	    Debug.Log("Houdini Engine Sessions closed!");
+	    HEU_Logger.Log("Houdini Engine Sessions closed!");
 	}
 
 	[MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/" + HEU_EditorStrings.RECONNECT_TO_SESSION, false, 60)]
@@ -141,7 +141,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.Log("Houdini Engine Session reconnected.");
+		HEU_Logger.Log("Houdini Engine Session reconnected.");
 	    }
 	}
 
@@ -161,7 +161,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.Log("Houdini Engine Session restarted.");
+		HEU_Logger.Log("Houdini Engine Session restarted.");
 	    }
 	}
 

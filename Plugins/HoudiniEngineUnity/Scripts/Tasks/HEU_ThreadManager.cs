@@ -104,7 +104,7 @@ namespace HoudiniEngineUnity
 	    foreach (HEU_ThreadedTask task in _pendingAdd)
 	    {
 		_tasks.Add(task);
-		//Debug.Log("Adding task: " + task.TaskName);
+		//HEU_Logger.Log("Adding task: " + task.TaskName);
 	    }
 	    _pendingAdd.Clear();
 
@@ -123,7 +123,7 @@ namespace HoudiniEngineUnity
 	    foreach (HEU_ThreadedTask task in _pendingRemove)
 	    {
 		_tasks.Remove(task);
-		//Debug.Log("Removing task: " + task.TaskName);
+		//HEU_Logger.Log("Removing task: " + task.TaskName);
 	    }
 	    _pendingRemove.Clear();
 	}
@@ -140,7 +140,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (_tasks.Contains(task) && !_pendingRemove.Contains(task))
 	    {
-		//Debug.Log("Remove task requested: " + task.TaskName);
+		//HEU_Logger.Log("Remove task requested: " + task.TaskName);
 		_pendingRemove.Add(task);
 	    }
 	}

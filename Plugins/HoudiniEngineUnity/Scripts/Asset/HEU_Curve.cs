@@ -92,7 +92,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 
@@ -426,7 +426,7 @@ namespace HoudiniEngineUnity
 
 	    	if (!session.RevertGeo(GeoID))
 		{
-		    Debug.LogWarning("Unable to revert Geo!" + warningMessage);
+		    HEU_Logger.LogWarning("Unable to revert Geo!" + warningMessage);
 		    return false;
 		}
 
@@ -437,7 +437,7 @@ namespace HoudiniEngineUnity
 		int curveTypeValue = typeParameter._intValues[0];
 		if (!session.SetParamIntValue(curveIdNode, HEU_Defines.CURVE_TYPE_PARAM, 0, curveTypeValue))
 		{
-		    Debug.LogWarning("Unable to get 'type' parameter"  + warningMessage);
+		    HEU_Logger.LogWarning("Unable to get 'type' parameter"  + warningMessage);
 		    return false;
 		}
 
@@ -445,7 +445,7 @@ namespace HoudiniEngineUnity
 		int curveMethodValue = methodParameter._intValues[0];
 		if (!session.SetParamIntValue(curveIdNode, HEU_Defines.CURVE_METHOD_PARAM, 0, curveMethodValue))
 		{
-		    Debug.LogWarning("Unable to get 'method' parameter"  + warningMessage);
+		    HEU_Logger.LogWarning("Unable to get 'method' parameter"  + warningMessage);
 		    return false;
 		}
 
@@ -453,7 +453,7 @@ namespace HoudiniEngineUnity
 		int curveCloseValue = System.Convert.ToInt32(closeParameter._toggle);
 		if (!session.SetParamIntValue(curveIdNode, HEU_Defines.CURVE_CLOSE_PARAM, 0, curveCloseValue))
 		{
-		    Debug.LogWarning("Unable to get 'close' parameter"  + warningMessage);
+		    HEU_Logger.LogWarning("Unable to get 'close' parameter"  + warningMessage);
 		    return false;
 		}
 
@@ -461,7 +461,7 @@ namespace HoudiniEngineUnity
 		int curveReverseValue = System.Convert.ToInt32(reverseParameter._toggle);
 		if (!session.SetParamIntValue(curveIdNode, HEU_Defines.CURVE_REVERSE_PARAM, 0, curveReverseValue))
 		{
-		    Debug.LogWarning("Unable to get 'reverse' parameter"  + warningMessage);
+		    HEU_Logger.LogWarning("Unable to get 'reverse' parameter"  + warningMessage);
 		    return false;
 		}
 
@@ -494,7 +494,7 @@ namespace HoudiniEngineUnity
 		int parmId = -1;
 		if (!session.GetParmIDFromName(curveIdNode, HEU_Defines.CURVE_COORDS_PARAM, out parmId))
 		{
-		    Debug.LogWarning("Unable to get curve 'coords' parameter." + warningMessage);
+		    HEU_Logger.LogWarning("Unable to get curve 'coords' parameter." + warningMessage);
 		    return false;
 		}
 
@@ -507,7 +507,7 @@ namespace HoudiniEngineUnity
 
 		if (!HEU_HAPIUtility.CookNodeInHoudiniWithOptions(session, curveIdNode, cookOptions, CurveName))
 		{
-		    Debug.LogWarning("Unable to cook curve part!" + warningMessage);
+		    HEU_Logger.LogWarning("Unable to cook curve part!" + warningMessage);
 		    return false;
 		}
 
@@ -655,12 +655,12 @@ namespace HoudiniEngineUnity
 
 		if (!bAddRotations)
 		{
-		    Debug.LogWarning("Point count malformed! Skipping adding rotations to curve");
+		    HEU_Logger.LogWarning("Point count malformed! Skipping adding rotations to curve");
 		}
 		
 		if (!bAddScales)
 		{
-		    Debug.LogWarning("Point count malformed! Skipping adding scales to curve");
+		    HEU_Logger.LogWarning("Point count malformed! Skipping adding scales to curve");
 		}
 
 
@@ -678,7 +678,7 @@ namespace HoudiniEngineUnity
 		// Sending the updated PartInfos
 		if (!session.SetPartInfo(curveIdNode, 0, ref partInfos))
 		{
-		    Debug.LogWarning("Unable to set part info!" + warningMessage);
+		    HEU_Logger.LogWarning("Unable to set part info!" + warningMessage);
 		    return false;
 		}
 
@@ -692,7 +692,7 @@ namespace HoudiniEngineUnity
 			string[] AttributeNamesSH = new string[nOwnerAttributeCount];
 			if (!session.GetAttributeNames(curveIdNode, 0, (HAPI_AttributeOwner)nOwner, ref AttributeNamesSH, nOwnerAttributeCount))
 			{
-			    Debug.LogWarning("Unable to get attribute names!" + warningMessage);
+			    HEU_Logger.LogWarning("Unable to get attribute names!" + warningMessage);
 			    return false;
 			}
 
@@ -730,7 +730,7 @@ namespace HoudiniEngineUnity
 				    session.SetAttributeStringData(curveIdNode, 0, attr_name, ref attr_info, stringData, 0, attr_info.count);
 				    break;
 				default:
-				    //=Debug.Log("Storage type: " + attr_info.storage + " " + attr_name);
+				    //=HEU_Logger.Log("Storage type: " + attr_info.storage + " " + attr_name);
 				    // primitive list doesn't matter
 				    break;
 			    }
@@ -881,7 +881,7 @@ namespace HoudiniEngineUnity
 	    bool bResult = _parameters.Initialize(session, _geoID, ref geoNodeInfo, null, null, parentAsset);
 	    if (!bResult)
 	    {
-		Debug.LogWarningFormat("Parameter generate failed for geo node {0}.", geoNodeInfo.id);
+		HEU_Logger.LogWarningFormat("Parameter generate failed for geo node {0}.", geoNodeInfo.id);
 		_parameters.CleanUp();
 		return;
 	    }
@@ -1185,7 +1185,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 

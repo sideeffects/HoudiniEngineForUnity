@@ -72,7 +72,7 @@ namespace HoudiniEngineUnity
 
 	    if (Type.GetType("Test_" + a.GetType().Name) != null)
 	    {
-		Debug.LogWarning("Warning: This type should have been wrapped!");
+		HEU_Logger.LogWarning("Warning: This type should have been wrapped!");
 	    }
 
 	    if (a.GetType() == typeof(float))
@@ -241,7 +241,7 @@ namespace HoudiniEngineUnity
 		    	bResult &= aF.ApproximatelyEquals(bF);
 			if (bResult == false)
 			{
-			    Debug.Log(aF + " " + bF);
+			    HEU_Logger.Log(aF + " " + bF);
 			}
 		    }
 		    else
@@ -324,7 +324,7 @@ namespace HoudiniEngineUnity
 		if (optional3 != "")
 		    errorStr += "| " + optional3;
 
-		Debug.LogError(errorStr);
+		HEU_Logger.LogError(errorStr);
 
 		result = false;
 	    }
@@ -338,12 +338,12 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (a != null && b == null)
 	    {
-		// Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		// HEU_Logger.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
 	    {
-		Debug.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
+		HEU_Logger.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
 		bResult = false;
 		return false;
 	    }
@@ -360,12 +360,12 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (a != null && b == null)
 	    {
-		// Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		// HEU_Logger.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
 	    {
-		Debug.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
+		HEU_Logger.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
 		bResult = false;
 		return false;
 	    }
@@ -381,12 +381,12 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (a != null && b == null)
 	    {
-		// Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		// HEU_Logger.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
 	    {
-		Debug.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
+		HEU_Logger.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
 		bResult = false;
 		return false;
 	    }
@@ -402,13 +402,13 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (!a.IsNull() && b.IsNull())
 	    {
-		// Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		// HEU_Logger.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		// Forgive and forget due to serialization difficulties
 		return false;
 	    }
 	    else if ((a.IsNull()) != (b.IsNull()))
 	    {
-		//Debug.LogError(header + ": " + subject + " One is null but the other is not: " + (a.IsNull()) + " " + (b.IsNull()));
+		//HEU_Logger.LogError(header + ": " + subject + " One is null but the other is not: " + (a.IsNull()) + " " + (b.IsNull()));
 		//bResult = false;
 		//return false;
 		// Forgive for now because sometimes Unity's asset serialization is weird
@@ -428,20 +428,20 @@ namespace HoudiniEngineUnity
 	    {
 		if (a.Count != 0)
 		{
-		    // Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		    // HEU_Logger.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		}
 
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
 	    {
-		Debug.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
+		HEU_Logger.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
 		bResult = false;
 		return false;
 	    }
 	    else if (a.Count != b.Count)
 	    {
-		Debug.LogError(header + ": " + subject + " List has incorrect size: " + a.Count + " " + b.Count);
+		HEU_Logger.LogError(header + ": " + subject + " List has incorrect size: " + a.Count + " " + b.Count);
 		bResult = false;
 		return false;
 	    }
@@ -460,20 +460,20 @@ namespace HoudiniEngineUnity
 	    {
 		if (a.Length != 0)
 		{
-		    // Debug.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
+		    // HEU_Logger.LogWarning(header + ": " + subject + " a is null but b is not. This is a sign that the test object needs to be updated! Skipping this test.");
 		}
 		
 		return false;
 	    }
 	    else if ((a == null) != (b == null))
 	    {
-		Debug.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
+		HEU_Logger.LogError(header + ": " + subject + " One is null but the other is not: " + (a == null) + " " + (b == null));
 		bResult = false;
 		return false;
 	    }
 	    else if (a.Length != b.Length)
 	    {
-		Debug.LogError(header + ": " + subject + " List has incorrect size: " + a.Length + " " + b.Length);
+		HEU_Logger.LogError(header + ": " + subject + " List has incorrect size: " + a.Length + " " + b.Length);
 		bResult = false;
 		return false;
 	    }

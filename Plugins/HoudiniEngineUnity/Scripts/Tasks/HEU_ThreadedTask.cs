@@ -60,7 +60,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogError("Thread already running!");
+		HEU_Logger.LogError("Thread already running!");
 	    }
 	}
 

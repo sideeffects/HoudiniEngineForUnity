@@ -247,7 +247,7 @@ namespace HoudiniEngineUnity
 		{
 		    _libPath = libPath.Replace("\\", "/");
 		    bFoundLib = true;
-		    //Debug.Log("Houdini Engine DLL found at: " + LibPath);
+		    //HEU_Logger.Log("Houdini Engine DLL found at: " + LibPath);
 		    break;
 		}
 	    }
@@ -271,7 +271,7 @@ namespace HoudiniEngineUnity
 	    if(!System.IO.Directory.Exists(appPath))
 	    {
 		    _lastErrorMsg = string.Format("Could not find Houdini Engine library at {0}", appPath);
-		    Debug.LogError(_lastErrorMsg);
+		    HEU_Logger.LogError(_lastErrorMsg);
 		    return;
 	    }
 
@@ -351,7 +351,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (Exception ex)
 	    {
-		Debug.LogErrorFormat("Getting files in directory {0} threw exception: {1}", folderPath, ex);
+		HEU_Logger.LogErrorFormat("Getting files in directory {0} threw exception: {1}", folderPath, ex);
 		return null;
 	    }
 	}
@@ -503,7 +503,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Unable to save session to file: {0}. Exception: {1}", text, ex.ToString());
+		HEU_Logger.LogErrorFormat("Unable to save session to file: {0}. Exception: {1}", text, ex.ToString());
 	    }
 	    return false;
 	}
@@ -519,7 +519,7 @@ namespace HoudiniEngineUnity
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Unable to load from file: {0}. Exception: {1}", path, ex.ToString());
+		HEU_Logger.LogErrorFormat("Unable to load from file: {0}. Exception: {1}", path, ex.ToString());
 	    }
 	    return "";
 	}
@@ -568,12 +568,12 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Failed to open (0}. File doesn't exist!", path);
+		    HEU_Logger.LogErrorFormat("Failed to open (0}. File doesn't exist!", path);
 		}
 	    }
 	    catch(Exception ex)
 	    {
-		Debug.LogErrorFormat("Failed to open (0}. Exception: {1}", path, ex.ToString());
+		HEU_Logger.LogErrorFormat("Failed to open (0}. Exception: {1}", path, ex.ToString());
 	    }
 	    return buffer != null;
 	}

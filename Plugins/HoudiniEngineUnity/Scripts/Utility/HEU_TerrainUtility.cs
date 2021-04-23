@@ -86,13 +86,13 @@ namespace HoudiniEngineUnity
 		float terrainSizeX = Mathf.Round((volumeInfo.xLength - 1) * gridSpacingX);
 		float terrainSizeY = Mathf.Round((volumeInfo.yLength - 1) * gridSpacingY);
 
-		//Debug.LogFormat("volumeInfo: {0}x{1}", volumeInfo.xLength, volumeInfo.yLength);
-		//Debug.LogFormat("GS = {0}x{1}, Size = {2}x{3}", gridSpacingX, gridSpacingY, terrainSizeX, terrainSizeY);
+		//HEU_Logger.LogFormat("volumeInfo: {0}x{1}", volumeInfo.xLength, volumeInfo.yLength);
+		//HEU_Logger.LogFormat("GS = {0}x{1}, Size = {2}x{3}", gridSpacingX, gridSpacingY, terrainSizeX, terrainSizeY);
 
-		//Debug.LogFormat("HeightField Pos:{0}, Scale:{1}", position, scale.ToString("{0.00}"));
-		//Debug.LogFormat("HeightField tileSize:{0}, xLength:{1}, yLength:{2}", volumeInfo.tileSize.ToString("{0.00}"), volumeInfo.xLength.ToString("{0.00}"), volumeInfo.yLength.ToString("{0.00}"));
-		//Debug.LogFormat("HeightField Terrain Size x:{0}, y:{1}", terrainSizeX.ToString("{0.00}"), terrainSizeY.ToString("{0.00}"));
-		//Debug.LogFormat("HeightField minX={0}, minY={1}, minZ={2}", volumeInfo.minX.ToString("{0.00}"), volumeInfo.minY.ToString("{0.00}"), volumeInfo.minZ.ToString("{0.00}"));
+		//HEU_Logger.LogFormat("HeightField Pos:{0}, Scale:{1}", position, scale.ToString("{0.00}"));
+		//HEU_Logger.LogFormat("HeightField tileSize:{0}, xLength:{1}, yLength:{2}", volumeInfo.tileSize.ToString("{0.00}"), volumeInfo.xLength.ToString("{0.00}"), volumeInfo.yLength.ToString("{0.00}"));
+		//HEU_Logger.LogFormat("HeightField Terrain Size x:{0}, y:{1}", terrainSizeX.ToString("{0.00}"), terrainSizeY.ToString("{0.00}"));
+		//HEU_Logger.LogFormat("HeightField minX={0}, minY={1}, minZ={2}", volumeInfo.minX.ToString("{0.00}"), volumeInfo.minY.ToString("{0.00}"), volumeInfo.minZ.ToString("{0.00}"));
 
 		bool bNewTerrain = false;
 		bool bNewTerrainData = false;
@@ -155,7 +155,7 @@ namespace HoudiniEngineUnity
 		const int UNITY_MINIMUM_HEIGHTMAP_RESOLUTION = 33;
 		if (heightMapResolution < UNITY_MINIMUM_HEIGHTMAP_RESOLUTION || heightMapResolution < UNITY_MINIMUM_HEIGHTMAP_RESOLUTION)
 		{
-		    Debug.LogWarningFormat("Unity Terrain has a minimum heightmap resolution of {0}. This HDA heightmap size is {1}x{2}."
+		    HEU_Logger.LogWarningFormat("Unity Terrain has a minimum heightmap resolution of {0}. This HDA heightmap size is {1}x{2}."
 			    + "\nPlease resample the heightmap resolution to a value higher than this.",
 			    UNITY_MINIMUM_HEIGHTMAP_RESOLUTION, heightMapResolution, heightMapResolution);
 		    return false;
@@ -180,12 +180,12 @@ namespace HoudiniEngineUnity
 		int terrainResizedDelta = terrainData.heightmapResolution - heightMapResolution;
 		if (terrainResizedDelta < 0)
 		{
-		    Debug.LogWarningFormat("Note that Unity automatically resized terrain resolution to {0} from {1}. Use terrain size of power of two plus 1, and grid spacing of 2.", heightMapResolution, terrainData.heightmapResolution);
+		    HEU_Logger.LogWarningFormat("Note that Unity automatically resized terrain resolution to {0} from {1}. Use terrain size of power of two plus 1, and grid spacing of 2.", heightMapResolution, terrainData.heightmapResolution);
 		    heightMapResolution = terrainData.heightmapResolution;
 		}
 		else if (terrainResizedDelta > 0)
 		{
-		    Debug.LogWarningFormat("Unsupported terrain size. Use terrain size of power of two plus 1, and grid spacing of 2. Given size is {0} but Unity resized it to {1}.", heightMapResolution, terrainData.heightmapResolution);
+		    HEU_Logger.LogWarningFormat("Unsupported terrain size. Use terrain size of power of two plus 1, and grid spacing of 2. Given size is {0} but Unity resized it to {1}.", heightMapResolution, terrainData.heightmapResolution);
 		}
 
 		float[,] unityHeights = ConvertHeightMapHoudiniToUnity(heightMapResolution, heightMapResolution, normalizedHeights);
@@ -223,10 +223,10 @@ namespace HoudiniEngineUnity
 		float xmin, xmax, zmin, zmax, ymin, ymax, xcenter, ycenter, zcenter;
 		session.GetVolumeBounds(geoID, partID, out xmin, out ymin, out zmin, out xmax, out ymax, out zmax, out xcenter,
 			out ycenter, out zcenter);
-		//Debug.LogFormat("xmin: {0}, xmax: {1}, ymin: {2}, ymax: {3}, zmin: {4}, zmax: {5}, xc: {6}, yc: {7}, zc: {8}",
+		//HEU_Logger.LogFormat("xmin: {0}, xmax: {1}, ymin: {2}, ymax: {3}, zmin: {4}, zmax: {5}, xc: {6}, yc: {7}, zc: {8}",
 		//	xmin, xmax, ymin, ymax, zmin, zmax, xcenter, ycenter, zcenter);
 
-		//Debug.LogFormat("heightMapResolution: {0}, mapWidth: {1}, mapHeight: {2}", heightMapResolution, mapWidth, mapHeight);
+		//HEU_Logger.LogFormat("heightMapResolution: {0}, mapWidth: {1}, mapHeight: {2}", heightMapResolution, mapWidth, mapHeight);
 
 		// Use y position from attribute if user has set it
 		float ypos = position.y + minHeight;
@@ -244,7 +244,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarning("Non-heightfield volume type not supported!");
+		HEU_Logger.LogWarning("Non-heightfield volume type not supported!");
 	    }
 
 	    return false;
@@ -274,7 +274,7 @@ namespace HoudiniEngineUnity
 	        } 
 	        else
 	        {
-	            Debug.LogWarning("Warning: Specified material does not exist!");
+	            HEU_Logger.LogWarning("Warning: Specified material does not exist!");
 	        }
 	    }
 	    else
@@ -305,7 +305,7 @@ namespace HoudiniEngineUnity
 	        } 
 	        else
 	        {
-	            Debug.LogWarning("Warning: Specified material does not exist!");
+	            HEU_Logger.LogWarning("Warning: Specified material does not exist!");
 	        }
 	    }
 
@@ -385,7 +385,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    heightRange = (maxHeight - minHeight);
-	    //Debug.LogFormat("HF min={0}, max={1}, range={2}", minHeight, maxHeight, heightRange);
+	    //HEU_Logger.LogFormat("HF min={0}, max={1}, range={2}", minHeight, maxHeight, heightRange);
 
 	    // Use the override height range if user has set via attribute
 	    bool bHeightRangeOverriden = false;
@@ -405,12 +405,12 @@ namespace HoudiniEngineUnity
 		heightRange = 1f;
 	    }
 
-	    //Debug.LogFormat("{0} : {1}", HEU_SessionManager.GetString(volumeInfo.nameSH, session), heightRange);
+	    //HEU_Logger.LogFormat("{0} : {1}", HEU_SessionManager.GetString(volumeInfo.nameSH, session), heightRange);
 
 	    const int UNITY_MAX_HEIGHT_RANGE = 65536;
 	    if (Mathf.RoundToInt(heightRange) > UNITY_MAX_HEIGHT_RANGE)
 	    {
-		Debug.LogWarningFormat("Unity Terrain has maximum height range of {0}. This HDA height range is {1}, so it will be maxed out at {0}.\nPlease resize to within valid range!",
+		HEU_Logger.LogWarningFormat("Unity Terrain has maximum height range of {0}. This HDA height range is {1}, so it will be maxed out at {0}.\nPlease resize to within valid range!",
 			UNITY_MAX_HEIGHT_RANGE, Mathf.RoundToInt(heightRange));
 		heightRange = UNITY_MAX_HEIGHT_RANGE;
 	    }
@@ -419,12 +419,12 @@ namespace HoudiniEngineUnity
 	    int paddingWidth = heightMapWidth - volumeXLength;
 	    int paddingLeft = Mathf.CeilToInt(paddingWidth * 0.5f);
 	    int paddingRight = heightMapWidth - paddingLeft;
-	    //Debug.LogFormat("Padding: Width={0}, Left={1}, Right={2}", paddingWidth, paddingLeft, paddingRight);
+	    //HEU_Logger.LogFormat("Padding: Width={0}, Left={1}, Right={2}", paddingWidth, paddingLeft, paddingRight);
 
 	    int paddingHeight = heightMapHeight - volumeYLength;
 	    int paddingTop = Mathf.CeilToInt(paddingHeight * 0.5f);
 	    int paddingBottom = heightMapHeight - paddingTop;
-	    //Debug.LogFormat("Padding: Height={0}, Top={1}, Bottom={2}", paddingHeight, paddingTop, paddingBottom);
+	    //HEU_Logger.LogFormat("Padding: Height={0}, Top={1}, Bottom={2}", paddingHeight, paddingTop, paddingBottom);
 
 	    // Normalize the height values into the range between 0 and 1, inclusive.
 	    float inverseHeightRange = 1f / heightRange;
@@ -498,7 +498,7 @@ namespace HoudiniEngineUnity
 	    // Unity requires square size
 	    if (volumeXLength != volumeYLength)
 	    {
-		Debug.LogErrorFormat("Detail layer size must be square. Got {0}x{1} instead. Unable to apply detail layer.",
+		HEU_Logger.LogErrorFormat("Detail layer size must be square. Got {0}x{1} instead. Unable to apply detail layer.",
 			volumeXLength, volumeYLength);
 		return null;
 	    }
@@ -778,7 +778,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Scatter instance index count for attribute {0} is not valid. Expected {1} but got {2}",
+		    HEU_Logger.LogWarningFormat("Scatter instance index count for attribute {0} is not valid. Expected {1} but got {2}",
 			    HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX, pointCount, (indices != null ? indices.Length : 0));
 		}
 	    }
@@ -789,7 +789,7 @@ namespace HoudiniEngineUnity
 	    float[] uvs = new float[0];
 	    if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_ATTRIB_UV, ref uvAttrInfo, ref uvs, session.GetAttributeFloatData))
 	    {
-		Debug.LogWarning("UVs for scatter instances not found or valid.");
+		HEU_Logger.LogWarning("UVs for scatter instances not found or valid.");
 	    }
 
 	    if (uvs != null && uvs.Length == (pointCount * uvAttrInfo.tupleSize))
@@ -915,7 +915,7 @@ namespace HoudiniEngineUnity
 		    prototype.bendFactor = scatterTrees._treePrototypInfos[i]._bendfactor;
 		    treePrototypes.Add(prototype);
 
-		    //Debug.LogFormat("Added Tree Prototype: {0} - {1}", scatterTrees._treePrototypInfos[i]._prefabPath, scatterTrees._treePrototypInfos[i]._bendfactor);
+		    //HEU_Logger.LogFormat("Added Tree Prototype: {0} - {1}", scatterTrees._treePrototypInfos[i]._prefabPath, scatterTrees._treePrototypInfos[i]._bendfactor);
 		}
 	    }
 	    terrainData.treePrototypes = treePrototypes.ToArray();
@@ -1134,7 +1134,7 @@ namespace HoudiniEngineUnity
 
 	    if (heuDetailPrototypes.Count != convertedDetailMaps.Count)
 	    {
-		Debug.LogError("Number of volume detail layers differs from converted detail maps. Unable to apply detail layers.");
+		HEU_Logger.LogError("Number of volume detail layers differs from converted detail maps. Unable to apply detail layers.");
 		return;
 	    }
 

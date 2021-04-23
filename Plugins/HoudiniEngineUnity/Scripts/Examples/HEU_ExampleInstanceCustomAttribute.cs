@@ -48,7 +48,7 @@ public class HEU_ExampleInstanceCustomAttribute : MonoBehaviour
 	HEU_OutputAttributesStore attrStore = gameObject.GetComponent<HEU_OutputAttributesStore>();
 	if (attrStore == null)
 	{
-	    Debug.LogWarning("No HEU_OutputAttributesStore component found!");
+	    HEU_Logger.LogWarning("No HEU_OutputAttributesStore component found!");
 	    return;
 	}
 
@@ -86,7 +86,7 @@ public class HEU_ExampleInstanceCustomAttribute : MonoBehaviour
 	// Starting at 1 to skip parent transform
 	for (int i = 1; i < numChildren; ++i)
 	{
-	    Debug.LogFormat("Instance {0}: name = {1}", i, childTrans[i].name);
+	    HEU_Logger.LogFormat("Instance {0}: name = {1}", i, childTrans[i].name);
 
 	    // Can use the name to match up indices
 	    string instanceName = "Instance" + i;
@@ -137,12 +137,12 @@ public class HEU_ExampleInstanceCustomAttribute : MonoBehaviour
 	    }
 	}
 
-	Debug.Log(sb.ToString());
+	HEU_Logger.Log(sb.ToString());
     }
 
     static void LogAttr(HEU_OutputAttribute outAttr)
     {
-	Debug.LogFormat("Found {0} attribute:", outAttr._name);
+	HEU_Logger.LogFormat("Found {0} attribute:", outAttr._name);
 
 	if (outAttr._intValues != null)
 	{

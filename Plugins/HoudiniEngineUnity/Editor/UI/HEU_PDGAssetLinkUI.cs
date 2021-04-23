@@ -582,17 +582,17 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
+			HEU_Logger.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
 		    }
 		}
 		else
 		{
-		    Debug.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
+		    HEU_Logger.LogError("Selected gameobject is not an instantiated HDA. Failed to create PDG Asset Link.");
 		}
 	    }
 	    else
 	    {
-		//Debug.LogError("Nothing selected. Select an instantiated HDA first.");
+		//HEU_Logger.LogError("Nothing selected. Select an instantiated HDA first.");
 		HEU_EditorUtility.DisplayErrorDialog("PDG Asset Link", "No HDA selected. You must select an instantiated HDA first.", "OK");
 	    }
 	}

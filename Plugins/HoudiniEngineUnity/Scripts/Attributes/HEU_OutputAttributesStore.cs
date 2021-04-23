@@ -51,7 +51,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (string.IsNullOrEmpty(attribute._name))
 	    {
-		Debug.LogWarningFormat("Unable to store attribute with empty name!", attribute._name);
+		HEU_Logger.LogWarningFormat("Unable to store attribute with empty name!", attribute._name);
 		return;
 	    }
 	    _attributes.Add(attribute._name, attribute);

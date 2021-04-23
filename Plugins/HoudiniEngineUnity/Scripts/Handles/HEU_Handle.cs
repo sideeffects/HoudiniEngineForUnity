@@ -152,7 +152,7 @@ namespace HoudiniEngineUnity
 		string parmName = HEU_SessionManager.GetString(handleBindingInfos[i].handleParmNameSH, session);
 
 		//string assetParmName = HEU_SessionManager.GetString(handleBindingInfos[i].assetParmNameSH, session);
-		//Debug.LogFormat("Handle {0} has parm {1} with asset parm {2} with asset parm id {3}", handleName, parmName, assetParmName, handleBindingInfos[i].assetParmId);
+		//HEU_Logger.LogFormat("Handle {0} has parm {1} with asset parm {2} with asset parm id {3}", handleName, parmName, assetParmName, handleBindingInfos[i].assetParmId);
 
 		if (parmName.Equals("tx") || parmName.Equals("ty") || parmName.Equals("tz"))
 		{
@@ -475,7 +475,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 

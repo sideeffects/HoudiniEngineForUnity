@@ -500,7 +500,7 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogWarningFormat("Plugin only supports 3 (triangles) or 4 (quads) max vertices values.");
+			HEU_Logger.LogWarningFormat("Plugin only supports 3 (triangles) or 4 (quads) max vertices values.");
 		    }
 		}
 	    }
@@ -519,7 +519,7 @@ namespace HoudiniEngineUnity
 		string oldValue = HEU_PluginSettings.DefaultTerrainMaterial;
 		if (_terrainMaterial == null && !string.IsNullOrEmpty(oldValue))
 		{
-		    //Debug.Log("Loading terrain material at: " + oldValue);
+		    //HEU_Logger.Log("Loading terrain material at: " + oldValue);
 		    _terrainMaterial = HEU_MaterialFactory.LoadUnityMaterial(oldValue);
 		}
 

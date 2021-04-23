@@ -89,7 +89,7 @@ namespace HoudiniEngineUnity
 	public static HEU_SessionBase CreateSessionFromType(System.Type type)
 	{
 #if !UNITY_5_6_OR_NEWER
-            Debug.LogError("Houdini Engine for Unity only supports Unity version 5.6.0 and newer!");
+            HEU_Logger.LogError("Houdini Engine for Unity only supports Unity version 5.6.0 and newer!");
 #elif HOUDINIENGINEUNITY_ENABLED
 	    if (type == null || type == typeof(HEU_SessionHAPI))
 	    {
@@ -208,7 +208,7 @@ namespace HoudiniEngineUnity
 		    }
 		    catch (System.Exception ex)
 		    {
-			Debug.LogWarningFormat("Loading session with ID {0} failed with {1}. Ignoring the session.", sessionData.SessionID, ex.ToString());
+			HEU_Logger.LogWarningFormat("Loading session with ID {0} failed with {1}. Ignoring the session.", sessionData.SessionID, ex.ToString());
 		    }
 		}
 	    }
@@ -415,7 +415,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (sessionEntry.GetSessionData() != null)
 		{
-		    Debug.Log(HEU_Defines.HEU_NAME + ": Closing session: " + sessionEntry.GetSessionData().SessionID);
+		    HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Closing session: " + sessionEntry.GetSessionData().SessionID);
 		}
 		sessionEntry.CloseSession();
 	    }
@@ -639,7 +639,7 @@ namespace HoudiniEngineUnity
 		if (bResult)
 		{
 		    // TODO
-		    Debug.LogWarning("This is currently not supported in the plugin!");
+		    HEU_Logger.LogWarning("This is currently not supported in the plugin!");
 		}
 	    }
 #else
@@ -799,7 +799,7 @@ namespace HoudiniEngineUnity
 		session.SetSessionErrorMsg("Unable to save session to .hip file at: " + HIPPath, true);
 		return false;
 	    }
-	    Debug.Log("Saved session to " + HIPPath);
+	    HEU_Logger.Log("Saved session to " + HIPPath);
 
 	    string HoudiniPath = HEU_PluginSettings.HoudiniDebugLaunchPath;
 

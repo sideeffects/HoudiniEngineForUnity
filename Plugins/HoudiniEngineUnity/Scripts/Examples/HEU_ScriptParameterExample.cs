@@ -58,7 +58,7 @@ public class HEU_ScriptParameterExample : MonoBehaviour
 
 	foreach (HEU_ParameterData parmData in parms)
 	{
-	    Debug.Log(parmData._labelName);
+	    HEU_Logger.Log(parmData._labelName);
 
 	    if (parmData._parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_BUTTON)
 	    {

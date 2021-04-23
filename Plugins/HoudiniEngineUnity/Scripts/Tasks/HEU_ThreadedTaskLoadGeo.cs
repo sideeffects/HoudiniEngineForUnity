@@ -128,7 +128,7 @@ namespace HoudiniEngineUnity
 	{
 	    _loadData._loadStatus = HEU_LoadData.LoadStatus.STARTED;
 
-	    //Debug.LogFormat("DoWork: Loading {0}", _filePath);
+	    //HEU_Logger.LogFormat("DoWork: Loading {0}", _filePath);
 
 	    if (_session == null || !_session.IsSessionValid())
 	    {
@@ -420,10 +420,10 @@ namespace HoudiniEngineUnity
 	    {
 		if (!_session.LoadAssetLibraryFromMemory(buffer, true, out libraryID))
 		{
-		    Debug.LogErrorFormat("Unable to load asset library.");
+		    HEU_Logger.LogErrorFormat("Unable to load asset library.");
 		    return false;
 		}
-		//Debug.Log("Loaded asset");
+		//HEU_Logger.Log("Loaded asset");
 
 		int assetCount = 0;
 		bResult = _session.GetAvailableAssetCount(libraryID, out assetCount);
@@ -452,7 +452,7 @@ namespace HoudiniEngineUnity
 		{
 		    return false;
 		}
-		//Debug.Log("Created asset node");
+		//HEU_Logger.Log("Created asset node");
 
 		_loadData._cookNodeID = newNodeID;
 	    }
@@ -474,7 +474,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    //Debug.LogFormat("GeoNode name:{0}, type: {1}, isTemplated: {2}, isDisplayGeo: {3}, isEditable: {4}, parts: {5}",
+	    //HEU_Logger.LogFormat("GeoNode name:{0}, type: {1}, isTemplated: {2}, isDisplayGeo: {3}, isEditable: {4}, parts: {5}",
 	    //	HEU_SessionManager.GetString(geoInfo.nameSH, _session),
 	    //	geoInfo.type, geoInfo.isTemplated,
 	    //	geoInfo.isDisplayGeo, geoInfo.isEditable, geoInfo.partCount);
@@ -490,7 +490,7 @@ namespace HoudiniEngineUnity
 			return false;
 		    }
 
-		    //Debug.LogFormat("Part {0} with name {1} and type {2}", i, HEU_SessionManager.GetString(partInfo.nameSH), partInfo.type);
+		    //HEU_Logger.LogFormat("Part {0} with name {1} and type {2}", i, HEU_SessionManager.GetString(partInfo.nameSH), partInfo.type);
 
 		    bool isAttribInstancer = false;
 		    bool isScatterInstancer = false;
@@ -558,7 +558,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	protected override void OnComplete()
 	{
-	    //Debug.LogFormat("OnCompete: Loaded {0}", _filePath);
+	    //HEU_Logger.LogFormat("OnCompete: Loaded {0}", _filePath);
 
 	    if (_ownerSync != null)
 	    {
@@ -568,7 +568,7 @@ namespace HoudiniEngineUnity
 
 	protected override void OnStopped()
 	{
-	    //Debug.LogFormat("OnStopped: Loaded {0}", _filePath);
+	    //HEU_Logger.LogFormat("OnStopped: Loaded {0}", _filePath);
 
 	    if (_ownerSync != null)
 	    {
@@ -696,7 +696,7 @@ namespace HoudiniEngineUnity
 
 		HFLayerType layerType = HEU_TerrainUtility.GetHeightfieldLayerType(session, nodeID, volumeParts[i].id, volumeName);
 
-		//Debug.LogFormat("Index: {0}, Part id: {1}, Part Name: {2}, Volume Name: {3}", i, volumeParts[i].id, HEU_SessionManager.GetString(volumeParts[i].nameSH), volumeName);
+		//HEU_Logger.LogFormat("Index: {0}, Part id: {1}, Part Name: {2}, Volume Name: {3}", i, volumeParts[i].id, HEU_SessionManager.GetString(volumeParts[i].nameSH), volumeName);
 
 		// Ignoring mask layer because it is Houdini-specific (same behaviour as regular HDA terrain generation)
 		if (layerType == HFLayerType.MASK)
@@ -869,7 +869,7 @@ namespace HoudiniEngineUnity
 	    foreach (HEU_LoadBufferVolume volumeBuffer in volumeBuffers)
 	    {
 		List<HEU_LoadBufferVolumeLayer> layers = volumeBuffer._splatLayers;
-		//Debug.LogFormat("Heightfield: tile={0}, layers={1}", tile._tileIndex, layers.Count);
+		//HEU_Logger.LogFormat("Heightfield: tile={0}, layers={1}", tile._tileIndex, layers.Count);
 
 		int heightMapWidth = volumeBuffer._heightMapWidth;
 		int heightMapHeight = volumeBuffer._heightMapHeight;

@@ -160,7 +160,7 @@ namespace HoudiniEngineUnity
 	    string[] pointAttributeNames = new string[attributePointCount];
 	    if (!session.GetAttributeNames(geoID, partInfo.id, HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, ref pointAttributeNames, attributePointCount))
 	    {
-		Debug.LogErrorFormat("Failed to sync attributes. Unable to retrieve attribute names.");
+		HEU_Logger.LogErrorFormat("Failed to sync attributes. Unable to retrieve attribute names.");
 		return;
 	    }
 
@@ -182,7 +182,7 @@ namespace HoudiniEngineUnity
 		    {
 			if (pointAttributeInfo.storage != HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
 			{
-			    Debug.LogErrorFormat("Expected float type for position attribute, but got {0}", pointAttributeInfo.storage);
+			    HEU_Logger.LogErrorFormat("Expected float type for position attribute, but got {0}", pointAttributeInfo.storage);
 			    return;
 			}
 
@@ -205,7 +205,7 @@ namespace HoudiniEngineUnity
 			// Attribute data not found. Create it.
 
 			attrData = CreateAttribute(pointAttributeName, ref pointAttributeInfo);
-			//Debug.LogFormat("Created attribute data: {0}", pointAttributeName);
+			//HEU_Logger.LogFormat("Created attribute data: {0}", pointAttributeName);
 		    }
 
 		    // Add to new list.
@@ -321,7 +321,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (!UploadAttributeViaMeshInput(session, _geoID, _partID))
 	    {
-		Debug.LogError("Unable to upload custom attribute edits!");
+		HEU_Logger.LogError("Unable to upload custom attribute edits!");
 	    }
 	}
 
@@ -542,7 +542,7 @@ namespace HoudiniEngineUnity
 
 	    if (!session.AddAttribute(geoID, partID, attributeData._name, ref newAttrInfo))
 	    {
-		Debug.LogErrorFormat("Failed to add attribute: {0}", attributeData._name);
+		HEU_Logger.LogErrorFormat("Failed to add attribute: {0}", attributeData._name);
 		return;
 	    }
 
@@ -1109,7 +1109,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 

@@ -246,7 +246,7 @@ namespace HoudiniEngineUnity
 	    {
 	    	HEU_EditorUtility.SelectObject(prefabGO);
 
-	    	Debug.LogFormat("Exported prefab to {0}", outputPath);
+	    	HEU_Logger.LogFormat("Exported prefab to {0}", outputPath);
 	    }
 
 	    GameObject.DestroyImmediate(parentObj);
@@ -399,7 +399,7 @@ namespace HoudiniEngineUnity
 			TerrainData sourceTerrainData = HEU_AssetDatabase.LoadAssetAtPath(terrainBuffers[t]._terrainDataPath, typeof(TerrainData)) as TerrainData;
 			if (sourceTerrainData == null)
 			{
-			    Debug.LogWarningFormat("TerrainData, set via attribute, not found at: {0}", terrainBuffers[t]._terrainDataPath);
+			    HEU_Logger.LogWarningFormat("TerrainData, set via attribute, not found at: {0}", terrainBuffers[t]._terrainDataPath);
 			}
 
 			if (bFullExportTerrainDataPath)
@@ -454,7 +454,7 @@ namespace HoudiniEngineUnity
 		    terrainData.heightmapResolution = heightMapSize;
 		    if (terrainData.heightmapResolution != heightMapSize)
 		    {
-			Debug.LogErrorFormat("Unsupported terrain size: {0}. Terrain resolution should be a power of 2 + 1.", heightMapSize);
+			HEU_Logger.LogErrorFormat("Unsupported terrain size: {0}. Terrain resolution should be a power of 2 + 1.", heightMapSize);
 			continue;
 		    }
 
@@ -521,7 +521,7 @@ namespace HoudiniEngineUnity
 				terrainlayer = HEU_AssetDatabase.LoadAssetAtPath(layer._layerPath, typeof(TerrainLayer)) as TerrainLayer;
 				if (terrainlayer == null)
 				{
-				    Debug.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", layer._layerPath);
+				    HEU_Logger.LogWarningFormat("TerrainLayer, set via attribute, not found at: {0}", layer._layerPath);
 				    continue;
 				}
 				else
@@ -565,7 +565,7 @@ namespace HoudiniEngineUnity
 				    }
 				    else
 				    {
-					Debug.LogErrorFormat("Unable to copy TerrainLayer '{0}' for generating Terrain. "
+					HEU_Logger.LogErrorFormat("Unable to copy TerrainLayer '{0}' for generating Terrain. "
 						+ "Using original TerrainLayer. Will not be able to set any TerrainLayer properties.", layer._layerName);
 					terrainlayer = prevTerrainLayer;
 					bSetTerrainLayerProperties = false;
@@ -871,7 +871,7 @@ namespace HoudiniEngineUnity
 		if (singleCollisionGO == null)
 		{
 		    // Continue on but log error
-		    Debug.LogErrorFormat("Collision asset at path {0} not found for instance {1}.", instancerBuffer._collisionAssetPaths[0], instancerBuffer._name);
+		    HEU_Logger.LogErrorFormat("Collision asset at path {0} not found for instance {1}.", instancerBuffer._collisionAssetPaths[0], instancerBuffer._name);
 		}
 	    }
 
@@ -881,7 +881,7 @@ namespace HoudiniEngineUnity
 		HEU_LoadBufferBase sourceBuffer = null;
 		if (!idBuffersMap.TryGetValue(instancerBuffer._instanceNodeIDs[i], out sourceBuffer) || sourceBuffer == null)
 		{
-		    Debug.LogErrorFormat("Part with id {0} is missing. Unable to setup instancer!", instancerBuffer._instanceNodeIDs[i]);
+		    HEU_Logger.LogErrorFormat("Part with id {0} is missing. Unable to setup instancer!", instancerBuffer._instanceNodeIDs[i]);
 		    return;
 		}
 
@@ -898,7 +898,7 @@ namespace HoudiniEngineUnity
 		GameObject sourceGameObject = sourceBuffer._generatedOutput._outputData._gameObject;
 		if (sourceGameObject == null)
 		{
-		    Debug.LogErrorFormat("Output gameobject is null for source {0}. Unable to instance for {1}.", sourceBuffer._name, instancerBuffer._name);
+		    HEU_Logger.LogErrorFormat("Output gameobject is null for source {0}. Unable to instance for {1}.", sourceBuffer._name, instancerBuffer._name);
 		    continue;
 		}
 
@@ -918,7 +918,7 @@ namespace HoudiniEngineUnity
 			collisionSrcGO = HEU_AssetDatabase.LoadAssetAtPath(instancerBuffer._collisionAssetPaths[i], typeof(GameObject)) as GameObject;
 			if (collisionSrcGO == null)
 			{
-			    Debug.LogErrorFormat("Unable to load collision asset at {0} for instancing!", instancerBuffer._collisionAssetPaths[i]);
+			    HEU_Logger.LogErrorFormat("Unable to load collision asset at {0} for instancing!", instancerBuffer._collisionAssetPaths[i]);
 			}
 			else
 			{
@@ -964,7 +964,7 @@ namespace HoudiniEngineUnity
 
 		if (singleAssetGO == null)
 		{
-		    Debug.LogErrorFormat("Asset at path {0} not found. Unable to create instances for {1}.", instancerBuffer._assetPaths[0], instancerBuffer._name);
+		    HEU_Logger.LogErrorFormat("Asset at path {0} not found. Unable to create instances for {1}.", instancerBuffer._assetPaths[0], instancerBuffer._name);
 		    return;
 		}
 	    }
@@ -981,7 +981,7 @@ namespace HoudiniEngineUnity
 		if (singleCollisionGO == null)
 		{
 		    // Continue on but log error
-		    Debug.LogErrorFormat("Collision asset at path {0} not found. Unable to create instances for {1}.", instancerBuffer._collisionAssetPaths[0], instancerBuffer._name);
+		    HEU_Logger.LogErrorFormat("Collision asset at path {0} not found. Unable to create instances for {1}.", instancerBuffer._collisionAssetPaths[0], instancerBuffer._name);
 		}
 	    }
 
@@ -1011,7 +1011,7 @@ namespace HoudiniEngineUnity
 
 			if (unitySrcGO == null)
 			{
-			    Debug.LogErrorFormat("Unable to load asset at {0} for instancing!", instancerBuffer._assetPaths[i]);
+			    HEU_Logger.LogErrorFormat("Unable to load asset at {0} for instancing!", instancerBuffer._assetPaths[i]);
 
 			    // Even though the source Unity object is not found, we should create an object instance info to track it
 			    if (tempGO == null)
@@ -1041,7 +1041,7 @@ namespace HoudiniEngineUnity
 			collisionSrcGO = HEU_AssetDatabase.LoadAssetAtPath(instancerBuffer._collisionAssetPaths[i], typeof(GameObject)) as GameObject;
 			if (collisionSrcGO == null)
 			{
-			    Debug.LogErrorFormat("Unable to load collision asset at {0} for instancing!", instancerBuffer._collisionAssetPaths[i]);
+			    HEU_Logger.LogErrorFormat("Unable to load collision asset at {0} for instancing!", instancerBuffer._collisionAssetPaths[i]);
 			}
 			else
 			{

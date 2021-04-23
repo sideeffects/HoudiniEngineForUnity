@@ -189,7 +189,7 @@ namespace HoudiniEngineUnity
 	    _sessionErrorMsg = msg;
 	    if (bLogError && LogErrorOverride)
 	    {
-		Debug.LogError(_sessionErrorMsg);
+		HEU_Logger.LogError(_sessionErrorMsg);
 	    }
 	}
 

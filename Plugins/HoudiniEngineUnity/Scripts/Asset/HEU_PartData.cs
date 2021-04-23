@@ -203,7 +203,7 @@ namespace HoudiniEngineUnity
 
 	    _generatedOutput.IsInstancer = IsInstancerAnyType();
 
-	    //Debug.LogFormat("PartData initialized with ID: {0} and name: {1}", partID, _partName);
+	    //HEU_Logger.LogFormat("PartData initialized with ID: {0} and name: {1}", partID, _partName);
 	}
 
 	public void SetGameObjectName(string partName)
@@ -502,7 +502,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (HaveInstancesBeenGenerated())
 	    {
-		Debug.LogWarningFormat("Part {0} has already had its instances generated!", name);
+		HEU_Logger.LogWarningFormat("Part {0} has already had its instances generated!", name);
 		return;
 	    }
 
@@ -512,18 +512,18 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    //Debug.LogFormat("Instancer: name={0}, instanced={1}, instance count={2}, instance part count={3}",
+	    //HEU_Logger.LogFormat("Instancer: name={0}, instanced={1}, instance count={2}, instance part count={3}",
 	    //	HEU_SessionManager.GetString(partInfo.nameSH, session), partInfo.isInstanced, partInfo.instanceCount, partInfo.instancedPartCount);
 
 	    if (!IsPartInstancer())
 	    {
-		Debug.LogErrorFormat("Generate Part Instances called on a non-instancer part {0} for asset {1}!", PartName, ParentAsset.AssetName);
+		HEU_Logger.LogErrorFormat("Generate Part Instances called on a non-instancer part {0} for asset {1}!", PartName, ParentAsset.AssetName);
 		return;
 	    }
 
 	    if (partInfo.instancedPartCount <= 0)
 	    {
-		Debug.LogErrorFormat("Invalid instanced part count: {0} for part {1} of asset {2}", partInfo.instancedPartCount, PartName, ParentAsset.AssetName);
+		HEU_Logger.LogErrorFormat("Invalid instanced part count: {0} for part {1} of asset {2}", partInfo.instancedPartCount, PartName, ParentAsset.AssetName);
 		return;
 	    }
 
@@ -561,7 +561,7 @@ namespace HoudiniEngineUnity
 		HEU_PartData partData = _geoNode.GetPartFromPartID(instanceNodeIDs[i]);
 		if (partData == null)
 		{
-		    Debug.LogWarningFormat("Part with id {0} is missing. Unable to generate instance!", instanceNodeIDs[i]);
+		    HEU_Logger.LogWarningFormat("Part with id {0} is missing. Unable to generate instance!", instanceNodeIDs[i]);
 		    return;
 		}
 
@@ -645,7 +645,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogWarningFormat("Instanced object with ID {0} not found. Unable to generate instances!", objectNodeID);
+		    HEU_Logger.LogWarningFormat("Instanced object with ID {0} not found. Unable to generate instances!", objectNodeID);
 		}
 	    }
 	}
@@ -743,7 +743,7 @@ namespace HoudiniEngineUnity
 		    HEU_ObjectNode instancedObjNode = ParentAsset.GetObjectWithID(instancedNodeIds[i]);
 		    if (instancedObjNode == null)
 		    {
-			Debug.LogErrorFormat("Object with ID {0} not found for instancing!", instancedNodeIds[i]);
+			HEU_Logger.LogErrorFormat("Object with ID {0} not found for instancing!", instancedNodeIds[i]);
 			continue;
 		    }
 
@@ -827,7 +827,7 @@ namespace HoudiniEngineUnity
 		if (singleCollisionGO == null)
 		{
 		    // Continue on but log error
-		    Debug.LogErrorFormat("Collision asset at path {0} not found for instance.", collisionAssetPaths[0]);
+		    HEU_Logger.LogErrorFormat("Collision asset at path {0} not found for instance.", collisionAssetPaths[0]);
 		}
 	    }
 
@@ -894,7 +894,7 @@ namespace HoudiniEngineUnity
 				    resPath = resPath.Substring(0, extIndex);
 				}
 
-				//Debug.Log("Resource path: " + resPath);
+				//HEU_Logger.Log("Resource path: " + resPath);
 				unitySrcGO = Resources.Load<GameObject>(resPath) as GameObject;
 			    }
 			}
@@ -912,7 +912,7 @@ namespace HoudiniEngineUnity
 
 			if (unitySrcGO == null)
 			{
-			    Debug.LogErrorFormat("Unable to load asset at {0} for instancing!", instancePathAttrValues[i]);
+			    HEU_Logger.LogErrorFormat("Unable to load asset at {0} for instancing!", instancePathAttrValues[i]);
 
 			    // Even though the source Unity object is not found, we should create an object instance info so
 			    // that it will be exposed in UI and user can override
@@ -944,7 +944,7 @@ namespace HoudiniEngineUnity
 			collisionSrcGO = HEU_AssetDatabase.LoadAssetAtPath(collisionAssetPaths[i], typeof(GameObject)) as GameObject;
 			if (collisionSrcGO == null)
 			{
-			    Debug.LogErrorFormat("Unable to load collision asset at {0} for instancing!", collisionAssetPaths[i]);
+			    HEU_Logger.LogErrorFormat("Unable to load collision asset at {0} for instancing!", collisionAssetPaths[i]);
 			}
 			else
 			{
@@ -1434,13 +1434,13 @@ namespace HoudiniEngineUnity
 		    Match match = reg.Match(sourceAssetPath);
 
 		    /* Leaving it in for debugging
-		    Debug.Log("Match: " + match.Success);
+		    HEU_Logger.Log("Match: " + match.Success);
 		    if (match.Success)
 		    {
 			    int numGroups = match.Groups.Count;
 			    for(int g = 0; g < numGroups; ++g)
 			    {
-				    Debug.LogFormat("Group: {0} - {1}", g, match.Groups[g].Value);
+				    HEU_Logger.LogFormat("Group: {0} - {1}", g, match.Groups[g].Value);
 			    }
 		    }
 		    */
@@ -1470,7 +1470,7 @@ namespace HoudiniEngineUnity
 			}
 			else{
 			    string supposedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
-			    Debug.LogErrorFormat("Invalid build path format\nSource: {0}\nPattern1: {1}\nPattern2: {2}", sourceAssetPath, pattern, pattern_pdg);
+			    HEU_Logger.LogErrorFormat("Invalid build path format\nSource: {0}\nPattern1: {1}\nPattern2: {2}", sourceAssetPath, pattern, pattern_pdg);
 			}
 		    }
 
@@ -1670,7 +1670,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (srcGO == targetGO)
 	    {
-		Debug.LogError("Copy and target objects cannot be the same!");
+		HEU_Logger.LogError("Copy and target objects cannot be the same!");
 		return;
 	    }
 
@@ -1725,7 +1725,7 @@ namespace HoudiniEngineUnity
 
 			if (targetChildGO == null)
 			{
-			    Debug.LogErrorFormat("Unable to create instance for: {0}", srcChildGO.name);
+			    HEU_Logger.LogErrorFormat("Unable to create instance for: {0}", srcChildGO.name);
 			    continue;
 			}
 
@@ -1859,7 +1859,7 @@ namespace HoudiniEngineUnity
 		    HEU_HoudiniAsset asset = ParentAsset;
 		    if (asset == null)
 		    {
-			Debug.LogErrorFormat("Asset not found. Unable to generate mesh for part {0}!", _partName);
+			HEU_Logger.LogErrorFormat("Asset not found. Unable to generate mesh for part {0}!", _partName);
 			return false;
 		    }
 
@@ -2172,7 +2172,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 

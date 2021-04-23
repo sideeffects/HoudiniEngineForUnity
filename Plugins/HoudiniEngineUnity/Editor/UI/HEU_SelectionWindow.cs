@@ -216,7 +216,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogErrorFormat("Unsupported type {0} for Selection Window.", type);
+		HEU_Logger.LogErrorFormat("Unsupported type {0} for Selection Window.", type);
 		return null;
 	    }
 	}

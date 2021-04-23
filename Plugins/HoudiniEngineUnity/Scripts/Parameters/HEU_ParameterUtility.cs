@@ -52,7 +52,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid toggle!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid toggle!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -67,7 +67,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid toggle!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid toggle!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -83,7 +83,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid int!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid int!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -98,7 +98,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid int!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid int!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -114,7 +114,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -130,7 +130,7 @@ namespace HoudiniEngineUnity
 	    else
 	    {
 		outValues = new float[0];
-		Debug.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -145,7 +145,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -160,7 +160,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid float!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -176,7 +176,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid string!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid string!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -191,7 +191,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid string!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid string!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -201,7 +201,7 @@ namespace HoudiniEngineUnity
 	    HEU_ParameterData paramData = asset.Parameters.GetParameter(paramName);
 	    if (paramData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
 	    {
-		Debug.LogWarning("This should not be called with button strips");
+		HEU_Logger.LogWarning("This should not be called with button strips");
 		return false;
 	    }
 
@@ -212,7 +212,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid choice!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid choice!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -223,7 +223,7 @@ namespace HoudiniEngineUnity
 	    HEU_ParameterData paramData = asset.Parameters.GetParameter(paramName);
 	    if (paramData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
 	    {
-		Debug.LogWarning("This should not be called with button strips");
+		HEU_Logger.LogWarning("This should not be called with button strips");
 		return false;
 	    }
 
@@ -234,7 +234,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid choice!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid choice!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -259,7 +259,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid input parameter!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid input parameter!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -275,7 +275,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid input parameter!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid input parameter!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -291,7 +291,7 @@ namespace HoudiniEngineUnity
 	    else
 	    {
 		getValue = Color.white;
-		Debug.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid color!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Query failed. Asset [{0}]'s Parameter [{1}] is not a valid color!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -306,7 +306,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid color!", asset.AssetName, paramName);
+		HEU_Logger.LogWarningFormat("{0}: Set failed. Asset [{0}]'s Parameter [{1}] is not a valid color!", asset.AssetName, paramName);
 		return false;
 	    }
 	}
@@ -368,7 +368,7 @@ namespace HoudiniEngineUnity
 
 	    if (parameters[parameterIndex].size < 3)
 	    {
-		Debug.LogError("Parameter size not large enough to be a Color3");
+		HEU_Logger.LogError("Parameter size not large enough to be a Color3");
 		return defaultValue;
 	    }
 

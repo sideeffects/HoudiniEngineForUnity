@@ -448,7 +448,7 @@ namespace HoudiniEngineUnity
 	    bResult = session.GetAttributeStringData(geoID, partID, name, ref info, data, 0, info.count);
 	    if (!bResult)
 	    {
-		Debug.LogErrorFormat("Failed to get string IDs for attribute {0}", name);
+		HEU_Logger.LogErrorFormat("Failed to get string IDs for attribute {0}", name);
 	    }
 	}
 
@@ -676,7 +676,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("Unsupported storage type {0} for storing attribute!", attrInfo.storage);
+		HEU_Logger.LogWarningFormat("Unsupported storage type {0} for storing attribute!", attrInfo.storage);
 	    }
 
 	    return outputAttr;
@@ -857,7 +857,7 @@ namespace HoudiniEngineUnity
 		}
 	    }
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	    return null;
 	}
@@ -887,7 +887,7 @@ namespace HoudiniEngineUnity
 		}
 	    }
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	    return null;
 	}
@@ -998,7 +998,7 @@ namespace HoudiniEngineUnity
 		UnityEngine.Object.DestroyImmediate(obj, bAllowDestroyingAssets);
 	    }
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	}
 
@@ -1075,7 +1075,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (transformData.Count != currentTransforms.Count)
 		    {
-		    	Debug.LogWarning("Newly baked object doesn't have the same child count as the old object! Transforms values will be applied based on index");
+		    	HEU_Logger.LogWarning("Newly baked object doesn't have the same child count as the old object! Transforms values will be applied based on index");
 		    }
 		    
 		    for (int i = 0; i < size; i++)
@@ -1362,7 +1362,7 @@ namespace HoudiniEngineUnity
 		}
 	    }
 #else
-			Debug.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
+			HEU_Logger.LogWarning(HEU_Defines.HEU_USERMSG_NONEDITOR_NOT_SUPPORTED);
 #endif
 	    return null;
 	}
@@ -1386,8 +1386,8 @@ namespace HoudiniEngineUnity
 		    }
 		    catch (Exception ex)
 		    {
-			Debug.LogWarning("Tag exception: " + ex.ToString());
-			Debug.LogWarningFormat("Unity tag '{0}' does not exist for current project. Add the tag in order to use it!", tag);
+			HEU_Logger.LogWarning("Tag exception: " + ex.ToString());
+			HEU_Logger.LogWarningFormat("Unity tag '{0}' does not exist for current project. Add the tag in order to use it!", tag);
 		    }
 		}
 	    }
@@ -1413,7 +1413,7 @@ namespace HoudiniEngineUnity
 		    int layer = LayerMask.NameToLayer(layerStr);
 		    if (layer < 0)
 		    {
-			Debug.LogWarningFormat("Unity layer '{0}' does not exist for current project. Add the layer in order to use it!", layerStr);
+			HEU_Logger.LogWarningFormat("Unity layer '{0}' does not exist for current project. Add the layer in order to use it!", layerStr);
 		    }
 		    else
 		    {
@@ -1486,7 +1486,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (attrInfo.owner != attrOwner)
 		{
-		    Debug.LogWarningFormat("Expected {0} attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.owner);
+		    HEU_Logger.LogWarningFormat("Expected {0} attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.owner);
 		}
 		else if (stringHandle.Length > 0)
 		{
@@ -1521,11 +1521,11 @@ namespace HoudiniEngineUnity
             {
                 if (attrInfo.owner != attrOwner)
                 {
-                    Debug.LogWarningFormat("Expected {0} attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.owner);
+                    HEU_Logger.LogWarningFormat("Expected {0} attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.owner);
                 }
                 else if (attrInfo.originalOwner != attrOwner)
                 {
-                    Debug.LogWarningFormat("Expected {0} original attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.originalOwner);
+                    HEU_Logger.LogWarningFormat("Expected {0} original attribute owner for attribute {1} but got {2}!", attrOwner, attrName, attrInfo.originalOwner);
                 }
                 else if (stringHandle.Length > 0)
                 {
@@ -1677,7 +1677,7 @@ namespace HoudiniEngineUnity
 		System.Type scriptType = HEU_GeneralUtility.GetSystemTypeByName(scriptTypeName);
 		if (scriptType == null)
 		{
-		    Debug.LogFormat("Script with name {0} not found! Unable to attach script from attribute: {1}. Expected format: {2}", scriptTypeName, scriptToAttach, expectedFormat);
+		    HEU_Logger.LogFormat("Script with name {0} not found! Unable to attach script from attribute: {1}. Expected format: {2}", scriptTypeName, scriptToAttach, expectedFormat);
 		    return;
 		}
 
@@ -1687,18 +1687,18 @@ namespace HoudiniEngineUnity
 		    component = gameObject.GetComponent(scriptType);
 		    if (component == null)
 		    {
-			Debug.LogFormat("Attaching script {0} to gameobject", scriptType);
+			HEU_Logger.LogFormat("Attaching script {0} to gameobject", scriptType);
 			component = gameObject.AddComponent(scriptType);
 			if (component == null)
 			{
-			    Debug.LogFormat("Unable to attach script component with type '{0}' from script attribute: {1}", scriptType.ToString(), scriptToAttach);
+			    HEU_Logger.LogFormat("Unable to attach script component with type '{0}' from script attribute: {1}", scriptType.ToString(), scriptToAttach);
 			    return;
 			}
 		    }
 		}
 		catch (System.ArgumentException ex)
 		{
-		    Debug.LogWarningFormat("Specified unity_script '{0}' does not derive from MonoBehaviour. Unable to attach script.\n{1}", scriptTypeName, ex.ToString());
+		    HEU_Logger.LogWarningFormat("Specified unity_script '{0}' does not derive from MonoBehaviour. Unable to attach script.\n{1}", scriptTypeName, ex.ToString());
 		    return;
 		}
 
@@ -1719,13 +1719,13 @@ namespace HoudiniEngineUnity
 		    {
 			// Get argument
 			string scriptArgument = scriptToAttach.Substring(functionColon + 1).Trim();
-			//Debug.LogFormat("Invoking script function {0} with argument {1}", scriptFunction, scriptArgument);
+			//HEU_Logger.LogFormat("Invoking script function {0} with argument {1}", scriptFunction, scriptArgument);
 			component.SendMessage(scriptFunction, scriptArgument, SendMessageOptions.DontRequireReceiver);
 		    }
 		    else
 		    {
 			// No argument
-			//Debug.LogFormat("Invoking script function {0}", scriptFunction);
+			//HEU_Logger.LogFormat("Invoking script function {0}", scriptFunction);
 			component.SendMessage(scriptFunction, SendMessageOptions.DontRequireReceiver);
 		    }
 		}
@@ -1768,7 +1768,7 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    // Commented out warning as it gets annoying, especially with "Curve" handles
-		    //Debug.LogWarningFormat("Asset {0} has unsupported Handle type {0} for handle {1}", assetName, handleName, handleTypeString);
+		    //HEU_Logger.LogWarningFormat("Asset {0} has unsupported Handle type {0} for handle {1}", assetName, handleName, handleTypeString);
 		    continue;
 		}
 
@@ -1791,7 +1791,7 @@ namespace HoudiniEngineUnity
 		if (bSuccess)
 		{
 		    newHandles.Add(newHandle);
-		    //Debug.LogFormat("Found handle {0} of type {1}", handleName, handleTypeString);
+		    //HEU_Logger.LogFormat("Found handle {0} of type {1}", handleName, handleTypeString);
 		}
 	    }
 
@@ -1854,7 +1854,7 @@ namespace HoudiniEngineUnity
 		}
 		catch (Exception ex)
 		{
-		    Debug.LogErrorFormat("Loading image at {0} triggered exception: {1}", filePath, ex);
+		    HEU_Logger.LogErrorFormat("Loading image at {0} triggered exception: {1}", filePath, ex);
 		}
 	    }
 	    return newTexture;
@@ -1940,7 +1940,7 @@ namespace HoudiniEngineUnity
 		if (string.IsNullOrEmpty(materialName))
 		{
 		    // Warn user of empty string, but add it anyway to our map so we don't keep trying to parse it
-		    //Debug.LogWarningFormat("Found empty material attribute value for terrain heightfield part.");
+		    //HEU_Logger.LogWarningFormat("Found empty material attribute value for terrain heightfield part.");
 		}
 	    }
 

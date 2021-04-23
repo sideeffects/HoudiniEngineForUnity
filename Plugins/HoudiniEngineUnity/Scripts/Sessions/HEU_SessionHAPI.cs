@@ -158,7 +158,7 @@ namespace HoudiniEngineUnity
 		    return false;
 		}
 
-		Debug.LogFormat("Houdini Engine: Created In-Process session with ID {0}.", _sessionData.SessionID);
+		HEU_Logger.LogFormat("Houdini Engine: Created In-Process session with ID {0}.", _sessionData.SessionID);
 
 		// Make sure API version matches with plugin version
 		if (!CheckVersionMatch())
@@ -303,7 +303,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    Debug.LogFormat("Houdini Engine: Created Socket session with ID {0}.", _sessionData.SessionID);
+	    HEU_Logger.LogFormat("Houdini Engine: Created Socket session with ID {0}.", _sessionData.SessionID);
 
 	    // Make sure API version matches with plugin version
 	    if (!CheckVersionMatch())
@@ -445,7 +445,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    Debug.LogFormat("Houdini Engine: Created Pipe session with ID {0}.", _sessionData.SessionID);
+	    HEU_Logger.LogFormat("Houdini Engine: Created Pipe session with ID {0}.", _sessionData.SessionID);
 
 	    // Make sure API version matches with plugin version
 	    if (!CheckVersionMatch())
@@ -1188,7 +1188,7 @@ namespace HoudiniEngineUnity
 	    cookOptions.splitGeosByGroup |= bSplitGeosByGroup;
 	    //float cookTime = Time.realtimeSinceStartup;
 	    HAPI_Result result = HEU_HAPIImports.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref cookOptions);
-	    //Debug.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
+	    //HEU_Logger.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
 	    HandleStatusResult(result, "Cooking Node", false, true);
 
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
@@ -1199,7 +1199,7 @@ namespace HoudiniEngineUnity
 
 	    //float cookTime = Time.realtimeSinceStartup;
 	    HAPI_Result result = HEU_HAPIImports.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref options);
-	    //Debug.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
+	    //HEU_Logger.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
 	    HandleStatusResult(result, "Cooking Node", false, true);
 
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);

@@ -81,7 +81,7 @@ namespace HoudiniEngineUnity
 			if (_inputInterfaces[i] != null && _inputInterfaces[i].Priority <= inputInterface.Priority)
 			{
 			    _inputInterfaces.Add(inputInterface);
-			    //Debug.LogFormat("Registered {0} at {1}. Total of {2}", inputInterface.GetType(), i, _inputInterfaces.Count);
+			    //HEU_Logger.LogFormat("Registered {0} at {1}. Total of {2}", inputInterface.GetType(), i, _inputInterfaces.Count);
 			    break;
 			}
 		    }
@@ -89,7 +89,7 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    _inputInterfaces.Add(inputInterface);
-		    //Debug.LogFormat("Registered {0} at {1}. Total of {2}", inputInterface.GetType(), _inputInterfaces.Count - 1, _inputInterfaces.Count);
+		    //HEU_Logger.LogFormat("Registered {0} at {1}. Total of {2}", inputInterface.GetType(), _inputInterfaces.Count - 1, _inputInterfaces.Count);
 		}
 	    }
 	}
@@ -189,7 +189,7 @@ namespace HoudiniEngineUnity
 	    // Create the merge SOP node that the input nodes are going to connect to.
 	    if (!session.CreateNode(-1, "SOP/merge", null, true, out connectMergeID))
 	    {
-		Debug.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
+		HEU_Logger.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
 		return false;
 	    }
 
@@ -209,14 +209,14 @@ namespace HoudiniEngineUnity
 		HEU_InputInterface inputInterface = GetInputInterface(inputObjects[i]);
 		if (inputInterface == null)
 		{
-		    Debug.LogWarningFormat("No input interface found for gameobject: {0}. Skipping upload!", inputObjects[i]._gameObject.name);
+		    HEU_Logger.LogWarningFormat("No input interface found for gameobject: {0}. Skipping upload!", inputObjects[i]._gameObject.name);
 		    continue;
 		}
 
 		bool bResult = inputInterface.CreateInputNodeWithDataUpload(session, connectMergeID, inputObjects[i]._gameObject, out newConnectInputID);
 		if (!bResult || newConnectInputID == HEU_Defines.HEU_INVALID_NODE_ID)
 		{
-		    Debug.LogError("Failed to upload input.");
+		    HEU_Logger.LogError("Failed to upload input.");
 		    continue;
 		}
 
@@ -224,7 +224,7 @@ namespace HoudiniEngineUnity
 
 		if (!session.ConnectNodeInput(connectMergeID, i, newConnectInputID))
 		{
-		    Debug.LogErrorFormat("Unable to connect input nodes!");
+		    HEU_Logger.LogErrorFormat("Unable to connect input nodes!");
 		    return false;
 		}
 
@@ -241,7 +241,7 @@ namespace HoudiniEngineUnity
 	    // Create the merge SOP node that the input nodes are going to connect to.
 	    if (!session.CreateNode(mergeParentID, "SOP/merge", null, true, out connectMergeID))
 	    {
-		Debug.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
+		HEU_Logger.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
 		return false;
 	    }
 
@@ -277,7 +277,7 @@ namespace HoudiniEngineUnity
 
 		if (!session.ConnectNodeInput(connectMergeID, i, inputAssetID))
 		{
-		    Debug.LogErrorFormat("Unable to connect input nodes!");
+		    HEU_Logger.LogErrorFormat("Unable to connect input nodes!");
 		    return false;
 		}
 

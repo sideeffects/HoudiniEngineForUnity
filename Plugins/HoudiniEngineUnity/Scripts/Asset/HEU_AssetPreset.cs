@@ -223,12 +223,12 @@ namespace HoudiniEngineUnity
 		}
 		catch (System.Exception ex)
 		{
-		    Debug.LogErrorFormat("Failed to save preset due to exception: " + ex.ToString());
+		    HEU_Logger.LogErrorFormat("Failed to save preset due to exception: " + ex.ToString());
 		}
 	    }
 	    else
 	    {
-		Debug.LogErrorFormat("Failed to save preset due to unable to retrieve the preset buffer!");
+		HEU_Logger.LogErrorFormat("Failed to save preset due to unable to retrieve the preset buffer!");
 	    }
 	}
 
@@ -266,17 +266,17 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-			Debug.LogErrorFormat("Unable to load preset. Specified file is not a saved HDA preset: {0}", filePath);
+			HEU_Logger.LogErrorFormat("Unable to load preset. Specified file is not a saved HDA preset: {0}", filePath);
 		    }
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Failed to load preset file {0}.", filePath);
+		    HEU_Logger.LogErrorFormat("Failed to load preset file {0}.", filePath);
 		}
 	    }
 	    catch (System.Exception ex)
 	    {
-		Debug.LogErrorFormat("Failed to load preset due to exception: " + ex.ToString());
+		HEU_Logger.LogErrorFormat("Failed to load preset due to exception: " + ex.ToString());
 	    }
 	}
     }

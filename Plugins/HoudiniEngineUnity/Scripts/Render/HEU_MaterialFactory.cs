@@ -58,7 +58,7 @@ namespace HoudiniEngineUnity
 	    return Shader.Find(shaderName);
 #else
 			// TODO RUNTIME: Shader.Find is not available in non-Editor mode, so need to figure out a replacement in runtime.
-			Debug.LogWarning("Houdini Engine is unable to load shaders in non-Editor mode!");
+			HEU_Logger.LogWarning("Houdini Engine is unable to load shaders in non-Editor mode!");
 			return null;
 #endif
 	}
@@ -69,7 +69,7 @@ namespace HoudiniEngineUnity
 	    return FindShader(shaderName);
 #else
 			// TODO RUNTIME: Shader.Find is not available in non-Editor mode, so need to figure out a replacement in runtime.
-			Debug.LogWarning("Houdini Engine is unable to load shaders in non-Editor mode!");
+			HEU_Logger.LogWarning("Houdini Engine is unable to load shaders in non-Editor mode!");
 			return null;
 #endif
 	}
@@ -98,7 +98,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("Shader with name {0} not found!", shaderName);
+		HEU_Logger.LogWarningFormat("Shader with name {0} not found!", shaderName);
 	    }
 	    return material;
 	}
@@ -124,7 +124,7 @@ namespace HoudiniEngineUnity
 	    // If the material is not part of the asset database then delete it
 	    if (material != null && !HEU_AssetDatabase.ContainsAsset(material))
 	    {
-		//Debug.LogFormat("Destroying non-asset material {0}", material.name);
+		//HEU_Logger.LogFormat("Destroying non-asset material {0}", material.name);
 		HEU_GeneralUtility.DestroyImmediate(material, false, bRegisterUndo: bRegisterUndo);
 	    }
 	}
@@ -136,7 +136,7 @@ namespace HoudiniEngineUnity
 
 	public static Texture2D RenderAndExtractImageToTexture(HEU_SessionBase session, HAPI_MaterialInfo materialInfo, HAPI_ParmId textureParmID, string textureName, string assetCacheFolderPath)
 	{
-	    //Debug.LogFormat("Rendering texture {0} with name {1} for material {2} at path {3}", textureParmID, textureName, materialInfo.nodeId, assetCacheFolderPath);
+	    //HEU_Logger.LogFormat("Rendering texture {0} with name {1} for material {2} at path {3}", textureParmID, textureName, materialInfo.nodeId, assetCacheFolderPath);
 
 	    Texture2D texture = null;
 
@@ -252,7 +252,7 @@ namespace HoudiniEngineUnity
 	    int colorDataSize = imageInfo.xRes * imageInfo.yRes;
 	    if (colorDataSize * 4 != imageData.Length)
 	    {
-		Debug.LogErrorFormat("Extracted image size does not match expected image info size."
+		HEU_Logger.LogErrorFormat("Extracted image size does not match expected image info size."
 			+ " Try using non-raw format for texture extraction.");
 		return textureResult;
 	    }
@@ -315,7 +315,7 @@ namespace HoudiniEngineUnity
 	    HEU_AssetDatabase.ImportAsset(assetRelativePath, HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
 
 	    textureResult = HEU_AssetDatabase.LoadAssetAtPath(assetRelativePath, typeof(Texture2D)) as Texture2D;
-	    //Debug.LogFormat("Loaded texture to file {0} with format {1}", writtenFilePath, textureResult != null ? textureResult.format.ToString() : "none");
+	    //HEU_Logger.LogFormat("Loaded texture to file {0} with format {1}", writtenFilePath, textureResult != null ? textureResult.format.ToString() : "none");
 
 	    return textureResult;
 	}
@@ -371,7 +371,7 @@ namespace HoudiniEngineUnity
 	{
 	    Material material = LoadUnityMaterial(materialPath);
 #if UNITY_2017_4_OR_NEWER || UNITY_2018_1_OR_NEWER
-	    Debug.LogErrorFormat("Houdini Engine for Unity does not support the new Substance plugin as of yet!");
+	    HEU_Logger.LogErrorFormat("Houdini Engine for Unity does not support the new Substance plugin as of yet!");
 #elif UNITY_EDITOR
 			if (material != null)
 			{
@@ -393,11 +393,11 @@ namespace HoudiniEngineUnity
 
 	    if (material != null)
 	    {
-		Debug.LogFormat("Loaded Substance material with name {0} from path {1}.", substanceName, materialPath);
+		HEU_Logger.LogFormat("Loaded Substance material with name {0} from path {1}.", substanceName, materialPath);
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("Failed to load Substance material with name {0} from path {1}.", substanceName, materialPath);
+		HEU_Logger.LogWarningFormat("Failed to load Substance material with name {0} from path {1}.", substanceName, materialPath);
 	    }
 
 	    return material;
@@ -407,7 +407,7 @@ namespace HoudiniEngineUnity
 	{
 	    Material material = LoadUnityMaterial(materialPath);
 #if UNITY_2017_4_OR_NEWER || UNITY_2018_1_OR_NEWER
-	    Debug.LogErrorFormat("Houdini Engine for Unity does not support the new Substance plugin as of yet!");
+	    HEU_Logger.LogErrorFormat("Houdini Engine for Unity does not support the new Substance plugin as of yet!");
 #elif UNITY_EDITOR
 			if (material != null)
 			{
@@ -422,11 +422,11 @@ namespace HoudiniEngineUnity
 #endif
 	    if (material != null)
 	    {
-		Debug.LogFormat("Loaded Substance material with index {0} from path {1}.", substanceMaterialIndex, materialPath);
+		HEU_Logger.LogFormat("Loaded Substance material with index {0} from path {1}.", substanceMaterialIndex, materialPath);
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("Failed to load Substance material with index {0} from path {1}.", substanceMaterialIndex, materialPath);
+		HEU_Logger.LogWarningFormat("Failed to load Substance material with index {0} from path {1}.", substanceMaterialIndex, materialPath);
 	    }
 
 	    return material;
@@ -547,11 +547,11 @@ namespace HoudiniEngineUnity
 		// We can't find the material in Unity, so notify user and use a default one which allows to at least get the geometry in.
 		if (string.IsNullOrEmpty(materialPath))
 		{
-		    Debug.LogWarningFormat("Empty material name found. Using default material.");
+		    HEU_Logger.LogWarningFormat("Empty material name found. Using default material.");
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Unable to find {0} material {1}. Using a default material instead. Please check material exists in project and reload asset!", sourceType, materialPath);
+		    HEU_Logger.LogErrorFormat("Unable to find {0} material {1}. Using a default material instead. Please check material exists in project and reload asset!", sourceType, materialPath);
 		}
 
 		// The materialKey helps uniquely identify this material for further look ups. But we also need to get a valid file name
@@ -628,7 +628,7 @@ namespace HoudiniEngineUnity
 	    materialData._material = HEU_MaterialFactory.CreateNewHoudiniStandardMaterial(assetCacheFolderPath, materialName, true);
 	    materialData._material.name = materialName;
 
-	    //Debug.LogFormat("New Material ID: {0} - {1}", materialID, materialName);
+	    //HEU_Logger.LogFormat("New Material ID: {0} - {1}", materialID, materialName);
 
 	    if (materialID != HEU_Defines.HEU_INVALID_NODE_ID)
 	    {
@@ -644,7 +644,7 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
-	    //Debug.LogFormat("Created new material with id={0} and name={1}", materialID, materialName);
+	    //HEU_Logger.LogFormat("Created new material with id={0} and name={1}", materialID, materialName);
 
 	    materialCache.Add(materialData);
 	    return materialData;
@@ -659,7 +659,7 @@ namespace HoudiniEngineUnity
 		{
 		    if (materialData._materialKey == HEU_Defines.HEU_INVALID_MATERIAL)
 		    {
-			Debug.LogWarningFormat("Invalid material key found! Recommend to reload HDA!");
+			HEU_Logger.LogWarningFormat("Invalid material key found! Recommend to reload HDA!");
 		    }
 		    else
 		    {

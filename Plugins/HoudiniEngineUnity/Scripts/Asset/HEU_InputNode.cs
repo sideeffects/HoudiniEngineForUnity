@@ -222,7 +222,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Insert index {0} out of range (number of items is {1})", index, _inputObjects.Count);
+		    HEU_Logger.LogErrorFormat("Insert index {0} out of range (number of items is {1})", index, _inputObjects.Count);
 		}
 	    }
 	    else if (_inputObjectType == InputObjectType.HDA)
@@ -233,7 +233,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Insert index {0} out of range (number of items is {1})", index, _inputAssetInfos.Count);
+		    HEU_Logger.LogErrorFormat("Insert index {0} out of range (number of items is {1})", index, _inputAssetInfos.Count);
 		}
 	    }
 	}
@@ -248,7 +248,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Get index {0} out of range (number of items is {1})", index, _inputObjects.Count);
+		    HEU_Logger.LogErrorFormat("Get index {0} out of range (number of items is {1})", index, _inputObjects.Count);
 		}
 	    }
 	    else if (_inputObjectType == InputObjectType.HDA)
@@ -259,7 +259,7 @@ namespace HoudiniEngineUnity
 		}
 		else
 		{
-		    Debug.LogErrorFormat("Get index {0} out of range (number of items is {1})", index, _inputAssetInfos.Count);
+		    HEU_Logger.LogErrorFormat("Get index {0} out of range (number of items is {1})", index, _inputAssetInfos.Count);
 		}
 	    }
 	    return null;
@@ -342,7 +342,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (_nodeID == HEU_Defines.HEU_INVALID_NODE_ID)
 	    {
-		Debug.LogErrorFormat("Input Node ID is invalid. Unable to upload input. Try recooking.");
+		HEU_Logger.LogErrorFormat("Input Node ID is invalid. Unable to upload input. Try recooking.");
 		return;
 	    }
 
@@ -416,13 +416,13 @@ namespace HoudiniEngineUnity
 
 		    if (!UploadObjectMergeTransformType(session))
 		    {
-			Debug.LogErrorFormat("Failed to upload object merge transform type!");
+			HEU_Logger.LogErrorFormat("Failed to upload object merge transform type!");
 			return;
 		    }
 
 		    if (!UploadObjectMergePackGeometry(session))
 		    {
-			Debug.LogErrorFormat("Failed to upload object merge pack geometry value!");
+			HEU_Logger.LogErrorFormat("Failed to upload object merge pack geometry value!");
 			return;
 		    }
 		}
@@ -447,13 +447,13 @@ namespace HoudiniEngineUnity
 
 		if (!UploadObjectMergeTransformType(session))
 		{
-		    Debug.LogErrorFormat("Failed to upload object merge transform type!");
+		    HEU_Logger.LogErrorFormat("Failed to upload object merge transform type!");
 		    return;
 		}
 
 		if (!UploadObjectMergePackGeometry(session))
 		{
-		    Debug.LogErrorFormat("Failed to upload object merge pack geometry value!");
+		    HEU_Logger.LogErrorFormat("Failed to upload object merge pack geometry value!");
 		    return;
 		}
 	    }
@@ -463,7 +463,7 @@ namespace HoudiniEngineUnity
 	    //}
 	    else
 	    {
-		Debug.LogErrorFormat("Unsupported input type {0}. Unable to upload input.", _inputObjectType);
+		HEU_Logger.LogErrorFormat("Unsupported input type {0}. Unable to upload input.", _inputObjectType);
 	    }
 
 	    RequiresUpload = false;
@@ -534,18 +534,18 @@ namespace HoudiniEngineUnity
 	{
 	    if (session != null && _parentAsset != null)
 	    {
-		//Debug.LogWarningFormat("Disconnecting Node Input for _nodeID={0} with type={1}", _nodeID, _inputNodeType);
+		//HEU_Logger.LogWarningFormat("Disconnecting Node Input for _nodeID={0} with type={1}", _nodeID, _inputNodeType);
 
 		if (_inputNodeType == InputNodeType.PARAMETER)
 		{
 		    HEU_ParameterData paramData = _parentAsset.Parameters.GetParameter(_paramName);
 		    if (paramData == null)
 		    {
-			Debug.LogErrorFormat("Unable to find parameter with name {0}!", _paramName);
+			HEU_Logger.LogErrorFormat("Unable to find parameter with name {0}!", _paramName);
 		    }
 		    else if (!session.SetParamStringValue(_nodeID, "", paramData.ParmID, 0))
 		    {
-			Debug.LogErrorFormat("Unable to clear object path parameter for input node!");
+			HEU_Logger.LogErrorFormat("Unable to clear object path parameter for input node!");
 		    }
 		}
 		else if (_nodeID != HEU_Defines.HEU_INVALID_NODE_ID)
@@ -586,23 +586,23 @@ namespace HoudiniEngineUnity
 	    {
 		if (string.IsNullOrEmpty(_paramName))
 		{
-		    Debug.LogErrorFormat("Invalid parameter name for input node of parameter type!");
+		    HEU_Logger.LogErrorFormat("Invalid parameter name for input node of parameter type!");
 		    return;
 		}
 
 		if (!session.SetParamNodeValue(_nodeID, _paramName, _connectedNodeID))
 		{
-		    Debug.LogErrorFormat("Unable to connect to input node!");
+		    HEU_Logger.LogErrorFormat("Unable to connect to input node!");
 		    return;
 		}
 
-		//Debug.LogFormat("Setting input connection for parameter {0} with {1} connecting to {2}", _paramName, _nodeID, _connectedNodeID);
+		//HEU_Logger.LogFormat("Setting input connection for parameter {0} with {1} connecting to {2}", _paramName, _nodeID, _connectedNodeID);
 	    }
 	    else
 	    {
 		if (!session.ConnectNodeInput(_nodeID, _inputIndex, _connectedNodeID))
 		{
-		    Debug.LogErrorFormat("Unable to connect to input node!");
+		    HEU_Logger.LogErrorFormat("Unable to connect to input node!");
 		    return;
 		}
 	    }
@@ -950,7 +950,7 @@ namespace HoudiniEngineUnity
 			    inputGO = HEU_AssetDatabase.LoadAssetAtPath(inputPreset._inputObjectPresets[i]._gameObjectName, typeof(GameObject)) as GameObject;
 			    if (inputGO == null)
 			    {
-				Debug.LogErrorFormat("Unable to find input at {0}", inputPreset._inputObjectPresets[i]._gameObjectName);
+				HEU_Logger.LogErrorFormat("Unable to find input at {0}", inputPreset._inputObjectPresets[i]._gameObjectName);
 			    }
 			}
 
@@ -966,7 +966,7 @@ namespace HoudiniEngineUnity
 			}
 			else
 			{
-			    Debug.LogWarningFormat("Gameobject with name {0} not found. Unable to set input object.", inputPreset._inputAssetName);
+			    HEU_Logger.LogWarningFormat("Gameobject with name {0} not found. Unable to set input object.", inputPreset._inputAssetName);
 			}
 		    }
 
@@ -1022,7 +1022,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		Debug.LogWarningFormat("HDA with gameobject name {0} not found. Unable to set input asset.", gameObjectName);
+		HEU_Logger.LogWarningFormat("HDA with gameobject name {0} not found. Unable to set input asset.", gameObjectName);
 	    }
 
 	    return false;
@@ -1111,7 +1111,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 
@@ -1183,7 +1183,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 
@@ -1227,7 +1227,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 

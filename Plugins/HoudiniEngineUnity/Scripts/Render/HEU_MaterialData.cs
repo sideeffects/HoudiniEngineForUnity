@@ -183,7 +183,7 @@ namespace HoudiniEngineUnity
 		textureFileName = textureFileName.Replace("?", "_");
 		textureFileName = textureFileName.Replace("/", "_");
 
-		//Debug.LogFormat("Texture File Name: {0}, {1}", paramStrValue, textureFileName);
+		//HEU_Logger.LogFormat("Texture File Name: {0}, {1}", paramStrValue, textureFileName);
 	    }
 
 	    return textureFileName;
@@ -232,7 +232,7 @@ namespace HoudiniEngineUnity
 
 	    if (other == null)
 	    {
-		Debug.LogError(header + " Not equivalent");
+		HEU_Logger.LogError(header + " Not equivalent");
 		return false;
 	    }
 
