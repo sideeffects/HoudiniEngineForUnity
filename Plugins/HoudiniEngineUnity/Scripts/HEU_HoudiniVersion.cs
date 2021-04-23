@@ -49,7 +49,7 @@ namespace HoudiniEngineUnity
                 public const int HOUDINI_ENGINE_MAJOR	= 4;
                 public const int HOUDINI_ENGINE_MINOR	= 1;
 
-                public const int HOUDINI_ENGINE_API		= 9;
+                public const int HOUDINI_ENGINE_API		= 10;
 
                 public const int UNITY_PLUGIN_VERSION	= 2;
 
