@@ -1204,7 +1204,14 @@ namespace HoudiniEngineUnity
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_COLOR)
 	    {
-		paramUICache._primaryValue.ColorValue = EditorGUILayout.ColorField(new GUIContent(parameterData._labelName, GetFormattedTooltip(parameterData)), paramUICache._primaryValue.ColorValue );
+		if (HEU_PluginSettings.UseHDRColor)
+		{
+		    paramUICache._primaryValue.ColorValue = EditorGUILayout.ColorField(new GUIContent(parameterData._labelName, GetFormattedTooltip(parameterData)), paramUICache._primaryValue.ColorValue, true, true, true );
+		}
+		else
+		{
+		    paramUICache._primaryValue.ColorValue = EditorGUILayout.ColorField(new GUIContent(parameterData._labelName, GetFormattedTooltip(parameterData)), paramUICache._primaryValue.ColorValue);
+		}
 	    }
 	    else if (parmType == HAPI_ParmType.HAPI_PARMTYPE_BUTTON)
 	    {
