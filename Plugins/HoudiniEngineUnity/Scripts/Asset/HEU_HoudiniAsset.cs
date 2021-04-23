@@ -3961,7 +3961,7 @@ namespace HoudiniEngineUnity
 
 	    if (_assetType == HEU_AssetType.TYPE_HDA)
 	    {
-		newRootGameObject = HEU_HAPIUtility.InstantiateHDA(_assetPath, _rootGameObject.transform.position, session, bBuildAsync, rootGO: newRootGameObject);
+		newRootGameObject = HEU_HAPIUtility.InstantiateHDA(_assetPath, _rootGameObject.transform.position, session, bBuildAsync, bAlwaysOverwriteOnLoad: false, rootGO: newRootGameObject);
 	    }
 	    else if (_assetType == HEU_AssetType.TYPE_CURVE)
 	    {
