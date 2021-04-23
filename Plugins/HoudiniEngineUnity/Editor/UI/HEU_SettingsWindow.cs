@@ -457,6 +457,17 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
+	    HEU_EditorUI.DrawSeparator();
+	    {
+		bool oldValue = HEU_PluginSettings.UseHDRColor;
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Use HDR Color");
+		if (newValue != oldValue)
+		{
+		    HEU_PluginSettings.UseHDRColor = newValue;
+		    bChanged = true;
+		}
+	    }
+
 	    return bChanged;
 	}
 
@@ -669,7 +680,16 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUI.DrawSeparator();
 	    {
 		Color oldValue = HEU_PluginSettings.LineColor;
-		Color newValue = EditorGUILayout.ColorField("Line Color", oldValue);
+		Color newValue;
+		if (HEU_PluginSettings.UseHDRColor)
+		{
+		    newValue = EditorGUILayout.ColorField(new GUIContent("Line Color", "Color of the line"), oldValue, true, true, true);
+		}
+		else
+		{
+		    newValue = EditorGUILayout.ColorField(new GUIContent("Line Color", "Color of the line"), oldValue);
+		}
+
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.LineColor = newValue;

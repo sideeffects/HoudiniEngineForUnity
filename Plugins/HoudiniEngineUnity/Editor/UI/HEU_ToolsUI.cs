@@ -756,7 +756,16 @@ namespace HoudiniEngineUnity
 			}
 		    }
 
-		    Color newColor = EditorGUILayout.ColorField(_paintColorLabel, color);
+		    Color newColor;
+		    if (HEU_PluginSettings.UseHDRColor)
+		    {
+			newColor = EditorGUILayout.ColorField(new GUIContent(_paintColorLabel, "Paint color"), color, true, true, true);
+		    }
+		    else
+		    {
+			newColor = EditorGUILayout.ColorField(new GUIContent(_paintColorLabel, "Paint color"), color);
+		    }
+		    
 		    if (color != newColor)
 		    {
 			if (selectedToolsValuesProperty.arraySize >= 3)

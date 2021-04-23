@@ -931,6 +931,20 @@ namespace HoudiniEngineUnity
 		HEU_PluginStorage.Instance.Set("HAPI_WriteCookLogs", value);
 	    }
 	}
+
+	public static bool UseHDRColor
+	{
+	    get
+	    {
+		bool enabled = true;
+		HEU_PluginStorage.Instance.Get("HAPI_UseHDRColor", out enabled, enabled);
+		return enabled;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_UseHDRColor", value);
+	    }
+	}
     }
 
 }   // HoudiniEngineUnity
