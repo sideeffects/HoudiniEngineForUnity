@@ -1336,7 +1336,7 @@ namespace HoudiniEngineUnity
 		    // Since this asset is an object type and has 0 object as children, we use the object itself
 
 		    objectInfos = new HAPI_ObjectInfo[1];
-		    if (!session.GetObjectInfo(nodeInfo.id, ref objectInfos[0]))
+		    if (!session.GetObjectInfo(assetID, ref objectInfos[0]))
 		    {
 			return false;
 		    }
@@ -1349,17 +1349,46 @@ namespace HoudiniEngineUnity
 		{
 		    // This object has children, so use GetComposedObjectList to get list of HAPI_ObjectInfos
 
-		    objectInfos = new HAPI_ObjectInfo[objectCount];
+		    int immediateSOP = 0;
+		    session.ComposeChildNodeList(nodeInfo.id, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_DISPLAY, false, ref immediateSOP);
+		    bool addSelf = immediateSOP > 0;
+
+		    if (!session.ComposeObjectList(assetID, out objectCount))
+		    {
+		        return false;
+		    }
+
+		    if (!addSelf)
+		    {
+		        objectInfos = new HAPI_ObjectInfo[objectCount];
+		        objectTransforms = new HAPI_Transform[objectCount];
+		    }
+		    else
+		    {
+			objectInfos = new HAPI_ObjectInfo[objectCount+1];
+			objectTransforms = new HAPI_Transform[objectCount+1];
+		    }
+
+		    if (addSelf && !session.GetObjectInfo(nodeInfo.id, ref objectInfos[objectCount]))
+		    {
+			return false;
+		    }
+
+
 		    if (!HEU_SessionManager.GetComposedObjectListMemorySafe(session, nodeInfo.parentId, objectInfos, 0, objectCount))
 		    {
 			return false;
 		    }
 
 		    // Now get the object transforms
-		    objectTransforms = new HAPI_Transform[objectCount];
 		    if (!HEU_SessionManager.GetComposedObjectTransformsMemorySafe(session, nodeInfo.parentId, HAPI_RSTOrder.HAPI_SRT, objectTransforms, 0, objectCount))
 		    {
 			return false;
+		    }
+
+		    if (addSelf)
+		    {
+		        objectTransforms[objectCount] = new HAPI_Transform(true);
 		    }
 		}
 	    }
