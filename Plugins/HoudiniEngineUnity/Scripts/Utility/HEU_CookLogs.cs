@@ -63,7 +63,7 @@ namespace HoudiniEngineUnity
 
 	public string GetCookLogString() { return _cookLogs.ToString(); }
 
-	public const long MaxLogSize = 5 * 1000 * 1000; // 5 MB
+	public const long MaxLogSize = 50 * 1000 * 1000; // 50 MB
 
 	public void AppendCookLog(string logStr) {
 	    if (!HEU_PluginSettings.WriteCookLogs)
@@ -112,7 +112,9 @@ namespace HoudiniEngineUnity
 	public void DeleteCookingFile()
 	{
 	    string filePath = HEU_CookLogs.Instance.GetCookLogFilePath();
-	    System.IO.File.Delete(filePath);
+	    FileInfo fi = new FileInfo(filePath);
+	    fi.Delete();
+	    fi.Refresh();
 	}
 
 	public void WriteToLogFile(string logStr, bool checkLastLogStr = true)
@@ -124,7 +126,7 @@ namespace HoudiniEngineUnity
 	
 	    if (GetFileSizeOfLogFile() > MaxLogSize)
 	    {
-		HEU_Logger.LogWarning("Deleting cook log file because it is taking too much space!");
+		Debug.LogWarning("Deleting cook log file because it is taking too much space!");
 		DeleteCookingFile();
 	    }
 
