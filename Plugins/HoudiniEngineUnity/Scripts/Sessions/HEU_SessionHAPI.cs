@@ -1494,10 +1494,7 @@ namespace HoudiniEngineUnity
 		    objectNodeID = nodeInfo.parentId;
 		}
 
-		//HAPI_Result result = HEU_HAPIImports.HAPI_ComposeObjectList(ref _sessionData._HAPISession, objectNodeID, "", out objectCount);
-		// 18.5 Change only: Temporarily disable HAPI_ComposeObjectList to HAPI_ComposeChildNodeList
-		// Defaults in 19 changes recursive to false
-		HAPI_Result result = HEU_HAPIImports.HAPI_ComposeChildNodeList(ref _sessionData._HAPISession, objectNodeID, (int)HAPI_NodeType.HAPI_NODETYPE_OBJ, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_OBJ_GEOMETRY, false, out objectCount);
+		HAPI_Result result = HEU_HAPIImports.HAPI_ComposeObjectList(ref _sessionData._HAPISession, objectNodeID, "", out objectCount);
 		HandleStatusResult(result, "Composing Object List", false, true);
 		return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	    }
