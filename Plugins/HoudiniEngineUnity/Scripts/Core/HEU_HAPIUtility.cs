@@ -1304,7 +1304,7 @@ namespace HoudiniEngineUnity
 	/// <param name="objectInfos">Array of retrieved object infos</param>
 	/// <param name="objectTransforms">Array of retrieved object transforms</param>
 	/// <returns>True if succesfully retrieved object infos and transforms</returns>
-	public static bool GetObjectInfos(HEU_SessionBase session, HAPI_NodeId assetID, ref HAPI_NodeInfo nodeInfo, out HAPI_ObjectInfo[] objectInfos, out HAPI_Transform[] objectTransforms)
+  	public static bool GetObjectInfos(HEU_SessionBase session, HAPI_NodeId assetID, ref HAPI_NodeInfo nodeInfo, out HAPI_ObjectInfo[] objectInfos, out HAPI_Transform[] objectTransforms)
 	{
 	    objectInfos = new HAPI_ObjectInfo[0];
 	    objectTransforms = new HAPI_Transform[0];
@@ -1326,7 +1326,16 @@ namespace HoudiniEngineUnity
 	    else if (nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_OBJ)
 	    {
 		int objectCount = 0;
+		/*
+		// We don't want recursive object nodes here!
+		// This messes things up with OBJ HDA t hat contains vellum/DOP networks
 		if (!session.ComposeObjectList(assetID, out objectCount))
+		{
+		    return false;
+		}
+		*/
+
+		if (!session.ComposeChildNodeList(assetID, (int)HAPI_NodeType.HAPI_NODETYPE_OBJ, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_OBJ_GEOMETRY, false, ref objectCount))
 		{
 		    return false;
 		}
@@ -1348,33 +1357,8 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    // This object has children, so use GetComposedObjectList to get list of HAPI_ObjectInfos
-
-		    int immediateSOP = 0;
-		    session.ComposeChildNodeList(nodeInfo.id, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_DISPLAY, false, ref immediateSOP);
-		    bool addSelf = immediateSOP > 0;
-
-		    if (!session.ComposeObjectList(assetID, out objectCount))
-		    {
-		        return false;
-		    }
-
-		    if (!addSelf)
-		    {
-		        objectInfos = new HAPI_ObjectInfo[objectCount];
-		        objectTransforms = new HAPI_Transform[objectCount];
-		    }
-		    else
-		    {
-			objectInfos = new HAPI_ObjectInfo[objectCount+1];
-			objectTransforms = new HAPI_Transform[objectCount+1];
-		    }
-
-		    if (addSelf && !session.GetObjectInfo(nodeInfo.id, ref objectInfos[objectCount]))
-		    {
-			return false;
-		    }
-
-
+		    objectInfos = new HAPI_ObjectInfo[objectCount+1];
+		    objectTransforms = new HAPI_Transform[objectCount+1];
 		    if (!HEU_SessionManager.GetComposedObjectListMemorySafe(session, nodeInfo.parentId, objectInfos, 0, objectCount))
 		    {
 			return false;
@@ -1386,10 +1370,12 @@ namespace HoudiniEngineUnity
 			return false;
 		    }
 
-		    if (addSelf)
+		    if (!session.GetObjectInfo(nodeInfo.id, ref objectInfos[objectCount]))
 		    {
-		        objectTransforms[objectCount] = new HAPI_Transform(true);
+			return false;
 		    }
+
+		    objectTransforms[objectCount] = new HAPI_Transform(true);
 		}
 	    }
 	    else
