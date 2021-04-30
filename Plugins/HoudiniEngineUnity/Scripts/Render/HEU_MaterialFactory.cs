@@ -244,7 +244,7 @@ namespace HoudiniEngineUnity
 
 	    // Extract image to buffer
 	    byte[] imageData = null;
-	    if (!session.ExtractImageToMemory(materialInfo.nodeId, HEU_HAPIConstants.HAPI_RAW_FORMAT_NAME, imagePlanes, out imageData))
+	    if (!session.ExtractImageToMemory(materialInfo.nodeId, HEU_Defines.HAPI_RAW_FORMAT_NAME, imagePlanes, out imageData))
 	    {
 		return textureResult;
 	    }

@@ -178,7 +178,7 @@ namespace HoudiniEngineUnity
 		HAPI_AttributeInfo pointAttributeInfo = new HAPI_AttributeInfo();
 		if (session.GetAttributeInfo(geoID, partInfo.id, pointAttributeName, HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, ref pointAttributeInfo))
 		{
-		    if (pointAttributeName.Equals(HEU_HAPIConstants.HAPI_ATTRIB_POSITION))
+		    if (pointAttributeName.Equals(HEU_Defines.HAPI_ATTRIB_POSITION))
 		    {
 			if (pointAttributeInfo.storage != HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
 			{
@@ -214,7 +214,7 @@ namespace HoudiniEngineUnity
 		    // Sync the attribute info to data.
 		    PopulateAttributeData(session, geoID, partInfo.id, attrData, ref pointAttributeInfo);
 
-		    if (pointAttributeName.Equals(HEU_HAPIConstants.HAPI_ATTRIB_COLOR) || pointAttributeInfo.typeInfo == HAPI_AttributeTypeInfo.HAPI_ATTRIBUTE_TYPE_COLOR)
+		    if (pointAttributeName.Equals(HEU_Defines.HAPI_ATTRIB_COLOR) || pointAttributeInfo.typeInfo == HAPI_AttributeTypeInfo.HAPI_ATTRIBUTE_TYPE_COLOR)
 		    {
 			_hasColorAttribute = true;
 		    }

@@ -195,7 +195,7 @@ namespace HoudiniEngineUnity
         public static void SetHapiClientName()
         {
             System.Environment.SetEnvironmentVariable(
-                HEU_HAPIConstants.HAPI_ENV_CLIENT_NAME, "unity");
+                HEU_Defines.HAPI_ENV_CLIENT_NAME, "unity");
         }
 
 	/// <summary>
