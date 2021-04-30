@@ -149,7 +149,7 @@ namespace HoudiniEngineUnity
 		// Start at failed since this is several steps. Once connected, we can set it as such.
 		ConnectionState = SessionConnectionState.FAILED_TO_CONNECT;
 
-		HAPI_Result result = HEU_HAPIImports.HAPI_CreateInProcessSession(out _sessionData._HAPISession);
+		HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateInProcessSession(out _sessionData._HAPISession);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
 		    SetSessionErrorMsg(string.Format("Unable to start in-process session.\n Make sure {0} exists.", HEU_Platform.LibPath), true);
@@ -255,7 +255,7 @@ namespace HoudiniEngineUnity
 		serverOptions.autoClose = autoClose;
 		serverOptions.timeoutMs = timeout;
 
-		result = HEU_HAPIImports.HAPI_StartThriftSocketServer(ref serverOptions, serverPort, out processID);
+		result = HEU_HAPIFunctions.HAPI_StartThriftSocketServer(ref serverOptions, serverPort, out processID);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
 		    bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
@@ -279,14 +279,14 @@ namespace HoudiniEngineUnity
                 assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
             }
 
-            HEU_HAPIImports.harcSetManagedHostLibrariesList(assemblyList);
+            HEU_HARCImports.harcSetManagedHostLibrariesList(assemblyList);
 
 	    _sessionData.ProcessID = processID;
 	    _sessionData.Port = serverPort;
 
 	    // Then create the session
 	    _sessionData._HAPISession.type = HAPI_SessionType.HAPI_SESSION_THRIFT;
-	    result = HEU_HAPIImports.HAPI_CreateThriftSocketSession(out _sessionData._HAPISession, hostName, serverPort);
+	    result = HEU_HAPIFunctions.HAPI_CreateThriftSocketSession(out _sessionData._HAPISession, hostName.AsByteArray(), serverPort);
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		string harsMsg = "";
@@ -398,7 +398,7 @@ namespace HoudiniEngineUnity
 		serverOptions.autoClose = autoClose;
 		serverOptions.timeoutMs = timeout;
 
-		result = HEU_HAPIImports.HAPI_StartThriftNamedPipeServer(ref serverOptions, pipeName, out processID);
+		result = HEU_HAPIFunctions.HAPI_StartThriftNamedPipeServer(ref serverOptions, pipeName.AsByteArray(), out processID);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
 		    bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
@@ -422,13 +422,13 @@ namespace HoudiniEngineUnity
                 assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
             }
 
-            HEU_HAPIImports.harcSetManagedHostLibrariesList(assemblyList);
+            HEU_HARCImports.harcSetManagedHostLibrariesList(assemblyList);
 
 	    _sessionData.ProcessID = processID;
 
 	    // Then create the pipe session
 	    _sessionData._HAPISession.type = HAPI_SessionType.HAPI_SESSION_THRIFT;
-	    result = HEU_HAPIImports.HAPI_CreateThriftNamedPipeSession(out _sessionData._HAPISession, pipeName);
+	    result = HEU_HAPIFunctions.HAPI_CreateThriftNamedPipeSession(out _sessionData._HAPISession, pipeName.AsByteArray());
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		string harsMsg = "";
@@ -515,14 +515,14 @@ namespace HoudiniEngineUnity
 			// TODO: revisit not calling HAPI_CleanUp for SessionSync
 			//if (!IsSessionSync())
 			{
-			    result = HEU_HAPIImports.HAPI_Cleanup(ref _sessionData._HAPISession);
+			    result = HEU_HAPIFunctions.HAPI_Cleanup(ref _sessionData._HAPISession);
 			    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 			    {
 				HandleStatusResult(result, "Clean Up Session", false, true);
 			    }
 			}
 
-			result = HEU_HAPIImports.HAPI_CloseSession(ref _sessionData._HAPISession);
+			result = HEU_HAPIFunctions.HAPI_CloseSession(ref _sessionData._HAPISession);
 			if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 			{
 			    string errorMsg = HEU_SessionManager.GetConnectionError(true);
@@ -648,7 +648,7 @@ namespace HoudiniEngineUnity
 	    {
 		try
 		{
-		    HAPI_Result result = HEU_HAPIImports.HAPI_IsSessionValid(ref _sessionData._HAPISession);
+		    HAPI_Result result = HEU_HAPIFunctions.HAPI_IsSessionValid(ref _sessionData._HAPISession);
 		    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 		}
 		// In most cases, this call fails due to HAPI libraries not found, so catch and handle gracefully
@@ -740,7 +740,7 @@ namespace HoudiniEngineUnity
 	    string DSOSearchPath = HEU_Platform.GetAllFoldersInPath(HEU_Defines.HEU_ENGINE_ASSETS + "/DSOs");
 	    string environmentFilePath = HEU_Platform.GetHoudiniEngineEnvironmentFilePathFull();
 
-	    HAPI_Result result = HEU_HAPIImports.HAPI_Initialize(ref sessionData._HAPISession, ref cookOptions, true, -1, environmentFilePath, HDASearchPath, DSOSearchPath, DSOSearchPath, DSOSearchPath);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_Initialize(ref sessionData._HAPISession, ref cookOptions, true, -1, environmentFilePath.AsByteArray(), HDASearchPath.AsByteArray(), DSOSearchPath.AsByteArray(), DSOSearchPath.AsByteArray(), DSOSearchPath.AsByteArray());
 	    if (result != HAPI_Result.HAPI_RESULT_ALREADY_INITIALIZED && result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		HandleStatusResult(result, "Session Initialize failed.", true, true);
@@ -834,7 +834,7 @@ namespace HoudiniEngineUnity
 	/// <param name="value">String value.</param>
 	public override void SetServerEnvString(string name, string value)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetServerEnvString(ref _sessionData._HAPISession, name, value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetServerEnvString(ref _sessionData._HAPISession, name.AsByteArray(), value.AsByteArray());
 	    HandleStatusResult(result, "Set Server Environment", true, true);
 	}
 
@@ -842,11 +842,11 @@ namespace HoudiniEngineUnity
 	{
 	    value = null;
 	    HAPI_StringHandle stringHandle;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetServerEnvString(ref _sessionData._HAPISession, name, out stringHandle);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetServerEnvString(ref _sessionData._HAPISession, name.AsByteArray(), out stringHandle);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		int bufferLength = 0;
-		result = HEU_HAPIImports.HAPI_GetStringBufLength(ref _sessionData._HAPISession, stringHandle, out bufferLength);
+		result = HEU_HAPIFunctions.HAPI_GetStringBufLength(ref _sessionData._HAPISession, stringHandle, out bufferLength);
 		if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
 		    if (bufferLength > 0)
@@ -865,7 +865,7 @@ namespace HoudiniEngineUnity
 
 	public override bool GetServerEnvVarCount(out int env_count)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetServerEnvVarCount(ref _sessionData._HAPISession, out env_count);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetServerEnvVarCount(ref _sessionData._HAPISession, out env_count);
 	    HandleStatusResult(result, "Get Server Environment Var Count", true, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -873,7 +873,7 @@ namespace HoudiniEngineUnity
 	public override bool GetCallResult(out HAPI_Result result)
 	{
 	    int resultID = 0;
-	    HAPI_Result statusResult = HEU_HAPIImports.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_CALL_RESULT, out resultID);
+	    HAPI_Result statusResult = HEU_HAPIFunctions.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_CALL_RESULT, out resultID);
 	    if (statusResult != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed!"));
@@ -886,7 +886,7 @@ namespace HoudiniEngineUnity
 	public override bool GetCookResult(out HAPI_Result result)
 	{
 	    int resultID = 0;
-	    HAPI_Result statusResult = HEU_HAPIImports.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_COOK_RESULT, out resultID);
+	    HAPI_Result statusResult = HEU_HAPIFunctions.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_COOK_RESULT, out resultID);
 	    if (statusResult != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed!"));
@@ -899,7 +899,7 @@ namespace HoudiniEngineUnity
 	public override bool GetCookState(out HAPI_State state)
 	{
 	    int stateID = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_COOK_STATE, out stateID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_COOK_STATE, out stateID);
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed!"));
@@ -918,7 +918,7 @@ namespace HoudiniEngineUnity
 	public override string GetStatusString(HAPI_StatusType statusType, HAPI_StatusVerbosity verbosity)
 	{
 	    int bufferLength = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetStatusStringBufLength(ref _sessionData._HAPISession, statusType, verbosity, out bufferLength);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetStatusStringBufLength(ref _sessionData._HAPISession, statusType, verbosity, out bufferLength);
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		return "Failed to get status string. Likely the session is invalid.";
@@ -929,14 +929,14 @@ namespace HoudiniEngineUnity
 		return "";
 	    }
 
-	    StringBuilder strBuilder = new StringBuilder(bufferLength);
-	    result = HEU_HAPIImports.HAPI_GetStatusString(ref _sessionData._HAPISession, statusType, strBuilder, bufferLength);
+	    byte[] bytes = new byte[bufferLength];
+	    result = HEU_HAPIFunctions.HAPI_GetStatusString(ref _sessionData._HAPISession, statusType, bytes, bufferLength);
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		return "Failed to get status string. Likely the session is invalid.";
 	    }
 
-	    return strBuilder.ToString();
+	    return bytes.AsString();
 	}
 
 	/// <summary>
@@ -948,7 +948,7 @@ namespace HoudiniEngineUnity
 	public override string ComposeNodeCookResult(HAPI_NodeId nodeId, HAPI_StatusVerbosity verbosity)
 	{
 	    int bufferLength = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ComposeNodeCookResult(ref _sessionData._HAPISession, nodeId, verbosity, out bufferLength);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ComposeNodeCookResult(ref _sessionData._HAPISession, nodeId, verbosity, out bufferLength);
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		return "";
@@ -959,15 +959,15 @@ namespace HoudiniEngineUnity
 		return "";
 	    }
 
-	    StringBuilder strBuilder = new StringBuilder(bufferLength);
-	    result = HEU_HAPIImports.HAPI_GetComposedNodeCookResult(ref _sessionData._HAPISession, strBuilder, bufferLength);
+	    byte[] bytes = new byte[bufferLength];
+	    result = HEU_HAPIFunctions.HAPI_GetComposedNodeCookResult(ref _sessionData._HAPISession, bytes, bufferLength);
 
 	    if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		return "";
 	    }
 
-	    return strBuilder.ToString();
+	    return bytes.AsString();
 	}
 
 	/// <summary>
@@ -978,7 +978,7 @@ namespace HoudiniEngineUnity
 	public override int GetEnvInt(HAPI_EnvIntType intType)
 	{
 	    int value;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetEnvInt(intType, out value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetEnvInt(intType, out value);
 	    HandleStatusResult(result, "Getting Environment Value", false, true);
 
 	    return value;
@@ -992,7 +992,7 @@ namespace HoudiniEngineUnity
 	public override int GetSessionEnvInt(HAPI_SessionEnvIntType intType, bool bLogError)
 	{
 	    int value;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetSessionEnvInt(ref _sessionData._HAPISession, intType, out value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetSessionEnvInt(ref _sessionData._HAPISession, intType, out value);
 	    HandleStatusResult(result, "Getting Session Environment Value", false, bLogError);
 
 	    return value;
@@ -1010,7 +1010,7 @@ namespace HoudiniEngineUnity
 	    // StringBuilder returns empty string when value has invalid utf8 characters, so doing
 	    // the conversion manuallly to atleast get part of the string that is valid.
 	    byte[] buffer = new byte[bufferLength];
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetString(ref _sessionData._HAPISession, stringHandle, buffer, buffer.Length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetString(ref _sessionData._HAPISession, stringHandle, buffer, buffer.Length);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		// Note the bufferLength - 1 to skip the null-terminator as the encoding adds its own
@@ -1029,7 +1029,7 @@ namespace HoudiniEngineUnity
 	public override int GetStringBufferLength(HAPI_StringHandle stringHandle)
 	{
 	    int bufferLength = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetStringBufLength(ref _sessionData._HAPISession, stringHandle, out bufferLength);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetStringBufLength(ref _sessionData._HAPISession, stringHandle, out bufferLength);
 	    HandleStatusResult(result, "Getting String Buffer Length", false, true);
 	    return bufferLength;
 	}
@@ -1043,7 +1043,7 @@ namespace HoudiniEngineUnity
 	public override HAPI_ErrorCodeBits CheckForSpecificErrors(HAPI_NodeId nodeID, HAPI_ErrorCodeBits errorsToCheck)
 	{
 	    HAPI_ErrorCodeBits errorsFound;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CheckForSpecificErrors(ref _sessionData._HAPISession, nodeID, errorsToCheck, out errorsFound);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CheckForSpecificErrors(ref _sessionData._HAPISession, nodeID, errorsToCheck, out errorsFound);
 	    HandleStatusResult(result, "Check For Specific Errors", false, true);
 	    return errorsFound;
 	}
@@ -1053,14 +1053,14 @@ namespace HoudiniEngineUnity
 	public override float GetTime()
 	{
 	    float time = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetTime(ref _sessionData._HAPISession, out time);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetTime(ref _sessionData._HAPISession, out time);
 	    HandleStatusResult(result, "Getting Time", false, true);
 	    return time;
 	}
 
 	public override bool SetTime(float time)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetTime(ref _sessionData._HAPISession, time);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetTime(ref _sessionData._HAPISession, time);
 	    HandleStatusResult(result, "Setting Time", false, true);
 	    return result == HAPI_Result.HAPI_RESULT_SUCCESS; ;
 	}
@@ -1068,14 +1068,14 @@ namespace HoudiniEngineUnity
 	public override bool GetUseHoudiniTime()
 	{
 	    bool enabled = false;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetUseHoudiniTime(ref _sessionData._HAPISession, ref enabled);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetUseHoudiniTime(ref _sessionData._HAPISession, out enabled);
 	    HandleStatusResult(result, "Getting Use Houdini Time", false, true);
 	    return enabled;
 	}
 
 	public override bool SetUseHoudiniTime(bool enable)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetUseHoudiniTime(ref _sessionData._HAPISession, enable);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetUseHoudiniTime(ref _sessionData._HAPISession, enable);
 	    HandleStatusResult(result, "Setting Use Houdini Time", false, true);
 	    return result == HAPI_Result.HAPI_RESULT_SUCCESS; ;
 	}
@@ -1099,7 +1099,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    libraryID = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadAssetLibraryFromFile(ref _sessionData._HAPISession, assetPath, bAllowOverwrite, out libraryID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_LoadAssetLibraryFromFile(ref _sessionData._HAPISession, assetPath.AsByteArray(), bAllowOverwrite, out libraryID);
 	    if (result == HAPI_Result.HAPI_RESULT_ASSET_DEF_ALREADY_LOADED)
 	    {
 		if (HEU_EditorUtility.DisplayDialog("Houdini Asset Definition Overwrite",
@@ -1107,7 +1107,7 @@ namespace HoudiniEngineUnity
 							"that have already been loaded from another asset library file.\n" +
 							"Would you like to overwrite them?", "Yes", "No"))
 		{
-		    result = HEU_HAPIImports.HAPI_LoadAssetLibraryFromFile(ref _sessionData._HAPISession, assetPath, true, out libraryID);
+		    result = HEU_HAPIFunctions.HAPI_LoadAssetLibraryFromFile(ref _sessionData._HAPISession, assetPath.AsByteArray(), true, out libraryID);
 		}
 	    }
 	    HandleStatusResult(result, "Loading Asset Library From File", false, true);
@@ -1130,7 +1130,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadAssetLibraryFromMemory(ref _sessionData._HAPISession, buffer, buffer.Length, bAllowOverwrite, out libraryID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_LoadAssetLibraryFromMemory(ref _sessionData._HAPISession, buffer, buffer.Length, bAllowOverwrite, out libraryID);
 	    if (result == HAPI_Result.HAPI_RESULT_ASSET_DEF_ALREADY_LOADED)
 	    {
 		if (HEU_EditorUtility.DisplayDialog("Houdini Asset Definition Overwrite",
@@ -1138,7 +1138,7 @@ namespace HoudiniEngineUnity
 							"that have already been loaded from another asset library file.\n" +
 							"Would you like to overwrite them?", "Yes", "No"))
 		{
-		    result = HEU_HAPIImports.HAPI_LoadAssetLibraryFromMemory(ref _sessionData._HAPISession, buffer, buffer.Length, true, out libraryID);
+		    result = HEU_HAPIFunctions.HAPI_LoadAssetLibraryFromMemory(ref _sessionData._HAPISession, buffer, buffer.Length, true, out libraryID);
 		}
 	    }
 	    HandleStatusResult(result, "Loading Asset Library From Memory", false, true);
@@ -1157,7 +1157,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully created a new node</returns>
 	public override bool CreateNode(HAPI_StringHandle parentNodeID, string operatorName, string nodeLabel, bool bCookOnCreation, out HAPI_NodeId newNodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CreateNode(ref _sessionData._HAPISession, parentNodeID, operatorName, nodeLabel, bCookOnCreation, out newNodeID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateNode(ref _sessionData._HAPISession, parentNodeID, operatorName.AsByteArray(), nodeLabel.AsByteArray(), bCookOnCreation, out newNodeID);
 	    HandleStatusResult(result, "Create Node", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1169,7 +1169,7 @@ namespace HoudiniEngineUnity
 	/// <param name="nodeID">Node to delete</param>
 	public override void DeleteNode(HAPI_NodeId nodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_DeleteNode(ref _sessionData._HAPISession, nodeID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_DeleteNode(ref _sessionData._HAPISession, nodeID);
 	    HandleStatusResult(result, "Delete Node", false, true);
 	}
 
@@ -1187,7 +1187,7 @@ namespace HoudiniEngineUnity
 	    cookOptions.cookTemplatedGeos = bCookTemplatedGeos;
 	    cookOptions.splitGeosByGroup |= bSplitGeosByGroup;
 	    //float cookTime = Time.realtimeSinceStartup;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref cookOptions);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref cookOptions);
 	    //HEU_Logger.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
 	    HandleStatusResult(result, "Cooking Node", false, true);
 
@@ -1198,7 +1198,7 @@ namespace HoudiniEngineUnity
 	{
 
 	    //float cookTime = Time.realtimeSinceStartup;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref options);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CookNode(ref _sessionData._HAPISession, nodeID, ref options);
 	    //HEU_Logger.Log("Cook time: " + (Time.realtimeSinceStartup - cookTime));
 	    HandleStatusResult(result, "Cooking Node", false, true);
 
@@ -1214,7 +1214,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successful</returns>
 	public override bool RenameNode(HAPI_NodeId nodeID, string newName)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_RenameNode(ref _sessionData._HAPISession, nodeID, newName);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_RenameNode(ref _sessionData._HAPISession, nodeID, newName.AsByteArray());
 	    HandleStatusResult(result, "Rename Node", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1229,7 +1229,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successful</returns>
 	public override bool ConnectNodeInput(HAPI_NodeId nodeID, int inputIndex, HAPI_NodeId nodeIDToConnect, int outputIndex = 0)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ConnectNodeInput(ref _sessionData._HAPISession, nodeID, inputIndex, nodeIDToConnect, outputIndex);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ConnectNodeInput(ref _sessionData._HAPISession, nodeID, inputIndex, nodeIDToConnect, outputIndex);
 	    HandleStatusResult(result, "Connect Node Input", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1243,7 +1243,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successful</returns>
 	public override bool DisconnectNodeInput(HAPI_NodeId nodeID, int inputIndex, bool bLogError)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_DisconnectNodeInput(ref _sessionData._HAPISession, nodeID, inputIndex);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_DisconnectNodeInput(ref _sessionData._HAPISession, nodeID, inputIndex);
 	    HandleStatusResult(result, "Disconnect Node Input", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1258,7 +1258,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the node</returns>
 	public override bool QueryNodeInput(HAPI_NodeId nodeID, int inputIndex, out HAPI_NodeId connectedNodeID, bool bLogError)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_QueryNodeInput(ref _sessionData._HAPISession, nodeID, inputIndex, out connectedNodeID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_QueryNodeInput(ref _sessionData._HAPISession, nodeID, inputIndex, out connectedNodeID);
 	    HandleStatusResult(result, "Query Node Input", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1273,7 +1273,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the node</returns>
 	public override bool GetNodeInputName(HAPI_NodeId nodeID, int inputIndex, out HAPI_StringHandle nodeNameIndex)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetNodeInputName(ref _sessionData._HAPISession, nodeID, inputIndex, out nodeNameIndex);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetNodeInputName(ref _sessionData._HAPISession, nodeID, inputIndex, out nodeNameIndex);
 	    HandleStatusResult(result, "Get Node Input Name", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1289,7 +1289,7 @@ namespace HoudiniEngineUnity
 	{
 	    assetCount = 0;
 
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAvailableAssetCount(ref _sessionData._HAPISession, libraryID, out assetCount);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAvailableAssetCount(ref _sessionData._HAPISession, libraryID, out assetCount);
 	    HandleStatusResult(result, "Get Asset Count", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1305,7 +1305,7 @@ namespace HoudiniEngineUnity
 	{
 	    Debug.Assert((assetNames != null && assetNames.Length >= assetCount), "Houdini Engine: Asset name array is not valid!");
 
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAvailableAssets(ref _sessionData._HAPISession, libraryID, assetNames, assetCount);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAvailableAssets(ref _sessionData._HAPISession, libraryID, assetNames, assetCount);
 	    HandleStatusResult(result, "Get Available Assets", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1318,7 +1318,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the asset info</returns>
 	public override bool GetAssetInfo(HAPI_NodeId nodeID, ref HAPI_AssetInfo assetInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAssetInfo(ref _sessionData._HAPISession, nodeID, ref assetInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAssetInfo(ref _sessionData._HAPISession, nodeID, out assetInfo);
 	    HandleStatusResult(result, "Getting Asset Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1332,7 +1332,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the node info</returns>
 	public override bool GetNodeInfo(HAPI_NodeId nodeID, ref HAPI_NodeInfo nodeInfo, bool bLogError = true)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetNodeInfo(ref _sessionData._HAPISession, nodeID, out nodeInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetNodeInfo(ref _sessionData._HAPISession, nodeID, out nodeInfo);
 	    HandleStatusResult(result, "Getting Node Info", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1349,7 +1349,7 @@ namespace HoudiniEngineUnity
 	    path = null;
 
 	    HAPI_StringHandle pathStringHandle;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetNodePath(ref _sessionData._HAPISession, nodeID, relativeNodeID, out pathStringHandle);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetNodePath(ref _sessionData._HAPISession, nodeID, relativeNodeID, out pathStringHandle);
 	    HandleStatusResult(result, "Getting Node Path", false, true);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
@@ -1369,7 +1369,7 @@ namespace HoudiniEngineUnity
 	{
 	    bool bValid = false;
 	    // Note that HAPI_IsNodeValid will always return HAPI_RESULT_SUCCESS
-	    HEU_HAPIImports.HAPI_IsNodeValid(ref _sessionData._HAPISession, nodeID, uniqueNodeID, ref bValid);
+	    HEU_HAPIFunctions.HAPI_IsNodeValid(ref _sessionData._HAPISession, nodeID, uniqueNodeID, out bValid);
 	    return bValid;
 	}
 
@@ -1384,7 +1384,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully composed the child node list</returns>
 	public override bool ComposeChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool bRecursive, ref int count, bool bLogError = true)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ComposeChildNodeList(ref _sessionData._HAPISession, parentNodeID, nodeTypeFilter, nodeFlagFilter, bRecursive, out count);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ComposeChildNodeList(ref _sessionData._HAPISession, parentNodeID, nodeTypeFilter, nodeFlagFilter, bRecursive, out count);
 	    HandleStatusResult(result, "Composing Child Node List", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1399,7 +1399,7 @@ namespace HoudiniEngineUnity
 	public override bool GetComposedChildNodeList(HAPI_NodeId parentNodeID, HAPI_NodeId[] childNodeIDs, int count, bool bLogError = true)
 	{
 	    Debug.Assert(childNodeIDs != null && childNodeIDs.Length == count, "Child node IDs array not set to correct size!");
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetComposedChildNodeList(ref _sessionData._HAPISession, parentNodeID, childNodeIDs, count);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetComposedChildNodeList(ref _sessionData._HAPISession, parentNodeID, childNodeIDs, count);
 	    HandleStatusResult(result, "Getting Child Node List", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1414,7 +1414,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfull</returns>
 	public override bool LoadHIPFile(string fileName, bool bCookOnLoad)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadHIPFile(ref _sessionData._HAPISession, fileName, bCookOnLoad);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_LoadHIPFile(ref _sessionData._HAPISession, fileName.AsByteArray(), bCookOnLoad);
 	    HandleStatusResult(result, "Loading HIP file", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1427,7 +1427,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfull</returns>
 	public override bool SaveHIPFile(string fileName, bool bLockNodes)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SaveHIPFile(ref _sessionData._HAPISession, fileName, bLockNodes);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SaveHIPFile(ref _sessionData._HAPISession, fileName.AsByteArray(), bLockNodes);
 	    HandleStatusResult(result, "Saving HIP file", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1442,7 +1442,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried object info</returns>
 	public override bool GetObjectInfo(HAPI_NodeId nodeID, ref HAPI_ObjectInfo objectInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetObjectInfo(ref _sessionData._HAPISession, nodeID, out objectInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetObjectInfo(ref _sessionData._HAPISession, nodeID, out objectInfo);
 	    HandleStatusResult(result, "Getting Object Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1457,7 +1457,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried transform info</returns>
 	public override bool GetObjectTransform(HAPI_NodeId nodeID, HAPI_NodeId relativeToNodeID, HAPI_RSTOrder rstOrder, ref HAPI_Transform hapiTransform)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetObjectTransform(ref _sessionData._HAPISession, nodeID, relativeToNodeID, rstOrder, out hapiTransform);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetObjectTransform(ref _sessionData._HAPISession, nodeID, relativeToNodeID, rstOrder, out hapiTransform);
 	    HandleStatusResult(result, "Getting Object's Transform Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1470,7 +1470,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully set the transform</returns>
 	public override bool SetObjectTransform(HAPI_NodeId nodeID, ref HAPI_TransformEuler hapiTransform)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetObjectTransform(ref _sessionData._HAPISession, nodeID, ref hapiTransform);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetObjectTransform(ref _sessionData._HAPISession, nodeID, ref hapiTransform);
 	    HandleStatusResult(result, "Setting Object's Transform Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1495,7 +1495,7 @@ namespace HoudiniEngineUnity
 		    objectNodeID = nodeInfo.parentId;
 		}
 
-		HAPI_Result result = HEU_HAPIImports.HAPI_ComposeObjectList(ref _sessionData._HAPISession, objectNodeID, "", out objectCount);
+		HAPI_Result result = HEU_HAPIFunctions.HAPI_ComposeObjectList(ref _sessionData._HAPISession, objectNodeID, "".AsByteArray(), out objectCount);
 		HandleStatusResult(result, "Composing Object List", false, true);
 		return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	    }
@@ -1512,7 +1512,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queuried the object list</returns>
 	public override bool GetComposedObjectList(HAPI_NodeId nodeID, [Out] HAPI_ObjectInfo[] objectInfos, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetComposedObjectList(ref _sessionData._HAPISession, nodeID, objectInfos, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetComposedObjectList(ref _sessionData._HAPISession, nodeID, objectInfos, start, length);
 	    HandleStatusResult(result, "Getting Composed Object List", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1528,7 +1528,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queuried the transform list</returns>
 	public override bool GetComposedObjectTransforms(HAPI_NodeId nodeID, HAPI_RSTOrder rstOrder, [Out] HAPI_Transform[] transforms, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetComposedObjectTransforms(ref _sessionData._HAPISession, nodeID, rstOrder, transforms, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetComposedObjectTransforms(ref _sessionData._HAPISession, nodeID, rstOrder, transforms, start, length);
 	    HandleStatusResult(result, "Getting Composed Object List", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1545,7 +1545,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the geo info</returns>
 	public override bool GetDisplayGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo, bool bLogError)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetDisplayGeoInfo(ref _sessionData._HAPISession, nodeID, out geoInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetDisplayGeoInfo(ref _sessionData._HAPISession, nodeID, out geoInfo);
 	    HandleStatusResult(result, "Getting Display Geo Info", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1558,7 +1558,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the geo info</returns>
 	public override bool GetGeoInfo(HAPI_NodeId nodeID, ref HAPI_GeoInfo geoInfo, bool bLogError = true)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGeoInfo(ref _sessionData._HAPISession, nodeID, out geoInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetGeoInfo(ref _sessionData._HAPISession, nodeID, out geoInfo);
 	    HandleStatusResult(result, "Getting Geo Info", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1572,7 +1572,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the part info</returns>
 	public override bool GetPartInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_PartInfo partInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetPartInfo(ref _sessionData._HAPISession, nodeID, partID, out partInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetPartInfo(ref _sessionData._HAPISession, nodeID, partID, out partInfo);
 	    HandleStatusResult(result, "Getting Part Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1588,7 +1588,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the attribute info</returns>
 	public override bool GetAttributeInfo(HAPI_NodeId nodeID, HAPI_PartId partID, string name, HAPI_AttributeOwner owner, ref HAPI_AttributeInfo attributeInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInfo(ref _sessionData._HAPISession, nodeID, partID, name, owner, ref attributeInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeInfo(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), owner, out attributeInfo);
 	    HandleStatusResult(result, "Getting Attribute Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1605,7 +1605,7 @@ namespace HoudiniEngineUnity
 	public override bool GetAttributeNames(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_AttributeOwner owner, ref string[] attributeNames, int count)
 	{
 	    HAPI_StringHandle[] attributeStringHandles = new HAPI_StringHandle[count];
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeNames(ref _sessionData._HAPISession, nodeID, partID, owner, attributeStringHandles, count);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeNames(ref _sessionData._HAPISession, nodeID, partID, owner, attributeStringHandles, count);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		Debug.AssertFormat(attributeNames != null && attributeNames.Length >= count, "attributeNames must be atleast {0} size!", count);
@@ -1631,7 +1631,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the atttribute string data</returns>
 	public override bool GetAttributeStringData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_StringHandle[] dataArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeStringData(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, dataArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeStringData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, dataArray, start, length);
 	    HandleStatusResult(result, "Getting Attribute String Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1649,14 +1649,14 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the atttribute float data</returns>
 	public override bool GetAttributeFloatData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] float[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeFloatData(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeFloatData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
 	    HandleStatusResult(result, "Getting Attribute Float Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetAttributeFloat64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] double[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeFloat64Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeFloat64Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
 	    HandleStatusResult(result, "Getting Attribute Float64 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1674,35 +1674,35 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the atttribute int data</returns>
 	public override bool GetAttributeIntData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] int[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeIntData(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeIntData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
 	    HandleStatusResult(result, "Getting Attribute Int Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetAttributeUInt8Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_UInt8[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeUInt8Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeUInt8Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
 	    HandleStatusResult(result, "Getting Attribute Int8 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetAttributeInt8Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int8[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInt8Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeInt8Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
 	    HandleStatusResult(result, "Getting Attribute Int8 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetAttributeInt16Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int16[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInt16Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeInt16Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
 	    HandleStatusResult(result, "Getting Attribute Int16 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetAttributeInt64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] HAPI_Int64[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetAttributeInt64Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attributeInfo, -1, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeInt64Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
 	    HandleStatusResult(result, "Getting Attribute Int64 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1717,7 +1717,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the group names</returns>
 	public override bool GetGroupNames(HAPI_NodeId nodeID, HAPI_GroupType groupType, ref HAPI_StringHandle[] names, int count)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGroupNames(ref _sessionData._HAPISession, nodeID, groupType, names, count);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetGroupNames(ref _sessionData._HAPISession, nodeID, groupType, names, count);
 	    HandleStatusResult(result, "Getting Group Names", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1736,56 +1736,56 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the group membership</returns>
 	public override bool GetGroupMembership(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName, ref bool membershipArrayAllEqual, [Out] int[] membershipArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGroupMembership(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName, ref membershipArrayAllEqual, membershipArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetGroupMembership(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName.AsByteArray(), out membershipArrayAllEqual, membershipArray, start, length);
 	    HandleStatusResult(result, "Getting Group Membership", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetGroupCountOnPackedInstancePart(HAPI_NodeId nodeID, HAPI_PartId partID, out int pointGroupCount, out int primitiveGroupCount)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGroupCountOnPackedInstancePart(ref _sessionData._HAPISession, nodeID, partID, out pointGroupCount, out primitiveGroupCount);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetGroupCountOnPackedInstancePart(ref _sessionData._HAPISession, nodeID, partID, out pointGroupCount, out primitiveGroupCount);
 	    HandleStatusResult(result, "Getting Group Count on Packed Instance Part", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetGroupNamesOnPackedInstancePart(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, ref HAPI_StringHandle[] groupNamesArray, int groupCount)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGroupNamesOnPackedInstancePart(ref _sessionData._HAPISession, nodeID, partID, groupType, groupNamesArray, groupCount);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetGroupNamesOnPackedInstancePart(ref _sessionData._HAPISession, nodeID, partID, groupType, groupNamesArray, groupCount);
 	    HandleStatusResult(result, "Getting Group Names on Packed Instance Part", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetGroupMembershipOnPackedInstancePart(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName, ref bool membershipArrayAllEqual, [Out] int[] membershipArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGroupMembershipOnPackedInstancePart(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName, ref membershipArrayAllEqual, membershipArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetGroupMembershipOnPackedInstancePart(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName.AsByteArray(), out membershipArrayAllEqual, membershipArray, start, length);
 	    HandleStatusResult(result, "Getting Group Membership on Packed Instance Part", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetInstancedPartIds(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] HAPI_PartId[] instancedPartsArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetInstancedPartIds(ref _sessionData._HAPISession, nodeID, partID, instancedPartsArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetInstancedPartIds(ref _sessionData._HAPISession, nodeID, partID, instancedPartsArray, start, length);
 	    HandleStatusResult(result, "Getting Instance Part Ids", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetInstancerPartTransforms(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_RSTOrder rstOrder, [Out] HAPI_Transform[] transformsArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetInstancerPartTransforms(ref _sessionData._HAPISession, nodeID, partID, rstOrder, transformsArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetInstancerPartTransforms(ref _sessionData._HAPISession, nodeID, partID, rstOrder, transformsArray, start, length);
 	    HandleStatusResult(result, "Getting Instance Part Transforms", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetInstanceTransformsOnPart(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_RSTOrder rstOrder, [Out] HAPI_Transform[] transformsArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetInstanceTransformsOnPart(ref _sessionData._HAPISession, nodeID, partID, rstOrder, transformsArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetInstanceTransformsOnPart(ref _sessionData._HAPISession, nodeID, partID, rstOrder, transformsArray, start, length);
 	    HandleStatusResult(result, "Getting Instance Transforms On Part", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetInstancedObjectIds(HAPI_NodeId nodeID, [Out] HAPI_NodeId[] instanced_node_id_array, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetInstancedObjectIds(ref _sessionData._HAPISession, nodeID, instanced_node_id_array, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetInstancedObjectIds(ref _sessionData._HAPISession, nodeID, instanced_node_id_array, start, length);
 	    HandleStatusResult(result, "Getting Instanced Object Ids", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1802,14 +1802,14 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the face counts</returns>
 	public override bool GetFaceCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] faceCounts, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
 	    HandleStatusResult(result, "Getting Face Counts", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetFaceCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] faceCounts, int start, int length, bool bLogError)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
 	    HandleStatusResult(result, "Getting Face Counts", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1826,7 +1826,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the vertex list</returns>
 	public override bool GetVertexList(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] vertexList, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetVertexList(ref _sessionData._HAPISession, nodeID, partID, vertexList, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetVertexList(ref _sessionData._HAPISession, nodeID, partID, vertexList, start, length);
 	    HandleStatusResult(result, "Getting Vertex List", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1840,7 +1840,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the box info</returns>
 	public override bool GetBoxInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_BoxInfo boxInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetBoxInfo(ref _sessionData._HAPISession, nodeID, partID, ref boxInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetBoxInfo(ref _sessionData._HAPISession, nodeID, partID, out boxInfo);
 	    HandleStatusResult(result, "Getting Box Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1854,35 +1854,35 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the sphere info</returns>
 	public override bool GetSphereInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_SphereInfo sphereInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetSphereInfo(ref _sessionData._HAPISession, nodeID, partID, ref sphereInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetSphereInfo(ref _sessionData._HAPISession, nodeID, partID, out sphereInfo);
 	    HandleStatusResult(result, "Getting Sphere Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_CurveInfo curveInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCurveInfo(ref _sessionData._HAPISession, nodeID, partID, ref curveInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetCurveInfo(ref _sessionData._HAPISession, nodeID, partID, out curveInfo);
 	    HandleStatusResult(result, "Getting Curve Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetCurveCounts(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] counts, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCurveCounts(ref _sessionData._HAPISession, nodeID, partID, counts, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetCurveCounts(ref _sessionData._HAPISession, nodeID, partID, counts, start, length);
 	    HandleStatusResult(result, "Getting Curve Counts", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetCurveOrders(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] int[] orders, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCurveOrders(ref _sessionData._HAPISession, nodeID, partID, orders, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetCurveOrders(ref _sessionData._HAPISession, nodeID, partID, orders, start, length);
 	    HandleStatusResult(result, "Getting Curve Orders", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetCurveKnots(HAPI_NodeId nodeID, HAPI_PartId partID, [Out] float[] knots, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCurveKnots(ref _sessionData._HAPISession, nodeID, partID, knots, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetCurveKnots(ref _sessionData._HAPISession, nodeID, partID, knots, start, length);
 	    HandleStatusResult(result, "Getting Curve Knots", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1891,21 +1891,21 @@ namespace HoudiniEngineUnity
 
 	public override bool SetPartInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_PartInfo partInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetPartInfo(ref _sessionData._HAPISession, nodeID, partID, ref partInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetPartInfo(ref _sessionData._HAPISession, nodeID, partID, ref partInfo);
 	    HandleStatusResult(result, "Setting Part Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetFaceCount(HAPI_NodeId nodeID, HAPI_PartId partID, int[] faceCounts, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetFaceCounts(ref _sessionData._HAPISession, nodeID, partID, faceCounts, start, length);
 	    HandleStatusResult(result, "Setting Face Count", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetVertexList(HAPI_NodeId nodeID, HAPI_PartId partID, int[] vertexList, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetVertexList(ref _sessionData._HAPISession, nodeID, partID, vertexList, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetVertexList(ref _sessionData._HAPISession, nodeID, partID, vertexList, start, length);
 	    HandleStatusResult(result, "Setting Vertex List", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1913,7 +1913,7 @@ namespace HoudiniEngineUnity
 	public override bool SetAttributeIntData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		int[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeIntData(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetAttributeIntData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, start, length);
 	    HandleStatusResult(result, "Setting Attribute Int Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1921,7 +1921,7 @@ namespace HoudiniEngineUnity
 	public override bool SetAttributeInt8Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		HAPI_Int8[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeInt8Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetAttributeInt8Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, start, length);
 	    HandleStatusResult(result, "Setting Attribute Int8 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1929,7 +1929,7 @@ namespace HoudiniEngineUnity
 	public override bool SetAttributeInt16Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		HAPI_Int16[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeInt16Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetAttributeInt16Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, start, length);
 	    HandleStatusResult(result, "Setting Attribute Int16 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1937,7 +1937,7 @@ namespace HoudiniEngineUnity
 	public override bool SetAttributeInt64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		HAPI_Int64[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeInt64Data(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetAttributeInt64Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, start, length);
 	    HandleStatusResult(result, "Setting Attribute Int64 Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1945,7 +1945,7 @@ namespace HoudiniEngineUnity
 	public override bool SetAttributeFloatData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		float[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeFloatData(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetAttributeFloatData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, start, length);
 	    HandleStatusResult(result, "Setting Attribute Float Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -1953,77 +1953,77 @@ namespace HoudiniEngineUnity
 	public override bool SetAttributeStringData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		string[] data, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetAttributeStringData(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo, data, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetAttributeStringData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, start, length);
 	    HandleStatusResult(result, "Setting Attribute String Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool AddAttribute(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_AddAttribute(ref _sessionData._HAPISession, nodeID, partID, name, ref attrInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_AddAttribute(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo);
 	    HandleStatusResult(result, "Adding Attribute Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool AddGroup(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_AddGroup(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_AddGroup(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName.AsByteArray());
 	    HandleStatusResult(result, "Adding Group", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool DeleteGroup(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_DeleteGroup(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_DeleteGroup(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName.AsByteArray());
 	    HandleStatusResult(result, "Deleting Group", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetGroupMembership(HAPI_NodeId nodeID, HAPI_PartId partID, HAPI_GroupType groupType, string groupName, [Out] int[] membershipArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetGroupMembership(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName, membershipArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetGroupMembership(ref _sessionData._HAPISession, nodeID, partID, groupType, groupName.AsByteArray(), membershipArray, start, length);
 	    HandleStatusResult(result, "Setting Group Membership", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool CommitGeo(HAPI_NodeId nodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CommitGeo(ref _sessionData._HAPISession, nodeID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CommitGeo(ref _sessionData._HAPISession, nodeID);
 	    HandleStatusResult(result, "Committing Geo", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool RevertGeo(HAPI_NodeId nodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_RevertGeo(ref _sessionData._HAPISession, nodeID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_RevertGeo(ref _sessionData._HAPISession, nodeID);
 	    HandleStatusResult(result, "Revertting Geo", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_CurveInfo curveInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveInfo(ref _sessionData._HAPISession, nodeID, partID, ref curveInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetCurveInfo(ref _sessionData._HAPISession, nodeID, partID, ref curveInfo);
 	    HandleStatusResult(result, "Setting Curve Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetCurveCounts(HAPI_NodeId nodeID, HAPI_PartId partID, int[] counts, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveCounts(ref _sessionData._HAPISession, nodeID, partID, counts, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetCurveCounts(ref _sessionData._HAPISession, nodeID, partID, counts, start, length);
 	    HandleStatusResult(result, "Setting Curve Counts", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetCurveOrders(HAPI_NodeId nodeID, HAPI_PartId partID, int[] orders, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveOrders(ref _sessionData._HAPISession, nodeID, partID, orders, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetCurveOrders(ref _sessionData._HAPISession, nodeID, partID, orders, start, length);
 	    HandleStatusResult(result, "Setting Curve Orders", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetCurveKnots(HAPI_NodeId nodeID, HAPI_PartId partID, float[] knots, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCurveKnots(ref _sessionData._HAPISession, nodeID, partID, knots, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetCurveKnots(ref _sessionData._HAPISession, nodeID, partID, knots, start, length);
 	    HandleStatusResult(result, "Setting Curve Knots", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2041,10 +2041,10 @@ namespace HoudiniEngineUnity
 	{
 	    bool areAllSame = false;
 	    HAPI_NodeId[] materialIDs = new HAPI_NodeId[1];
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetMaterialNodeIdsOnFaces(ref _sessionData._HAPISession, nodeID, partID, ref areAllSame, materialIDs, 0, 1);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetMaterialNodeIdsOnFaces(ref _sessionData._HAPISession, nodeID, partID, out areAllSame, materialIDs, 0, 1);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
-		result = HEU_HAPIImports.HAPI_GetMaterialInfo(ref _sessionData._HAPISession, materialIDs[0], out materialInfo);
+		result = HEU_HAPIFunctions.HAPI_GetMaterialInfo(ref _sessionData._HAPISession, materialIDs[0], out materialInfo);
 	    }
 
 	    HandleStatusResult(result, "Getting Material On Part", false, true);
@@ -2062,7 +2062,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully queried the materials</returns>
 	public override bool GetMaterialNodeIDsOnFaces(HAPI_NodeId nodeID, HAPI_PartId partID, ref bool bSingleFaceMaterial, [Out] HAPI_NodeId[] materialNodeIDs, int faceCount)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetMaterialNodeIdsOnFaces(ref _sessionData._HAPISession, nodeID, partID, ref bSingleFaceMaterial, materialNodeIDs, 0, faceCount);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetMaterialNodeIdsOnFaces(ref _sessionData._HAPISession, nodeID, partID, out bSingleFaceMaterial, materialNodeIDs, 0, faceCount);
 	    HandleStatusResult(result, "Getting Material Node IDs On Faces", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2075,35 +2075,35 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully returned the material info</returns>
 	public override bool GetMaterialInfo(HAPI_NodeId materialNodeID, ref HAPI_MaterialInfo materialInfo, bool bLogError)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetMaterialInfo(ref _sessionData._HAPISession, materialNodeID, out materialInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetMaterialInfo(ref _sessionData._HAPISession, materialNodeID, out materialInfo);
 	    HandleStatusResult(result, "Getting Material Info", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetImageInfo(HAPI_NodeId materialNodeID, ref HAPI_ImageInfo imageInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetImageInfo(ref _sessionData._HAPISession, materialNodeID, out imageInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetImageInfo(ref _sessionData._HAPISession, materialNodeID, out imageInfo);
 	    HandleStatusResult(result, "Getting Image Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetImageInfo(HAPI_NodeId materialNodeID, ref HAPI_ImageInfo imageInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetImageInfo(ref _sessionData._HAPISession, materialNodeID, ref imageInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetImageInfo(ref _sessionData._HAPISession, materialNodeID, ref imageInfo);
 	    HandleStatusResult(result, "Setting Image Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool RenderTextureToImage(HAPI_NodeId materialNodeID, HAPI_ParmId parmID, bool bLogError = true)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_RenderTextureToImage(ref _sessionData._HAPISession, materialNodeID, parmID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_RenderTextureToImage(ref _sessionData._HAPISession, materialNodeID, parmID);
 	    HandleStatusResult(result, "Rendering Texture To Image", false, bLogError);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool RenderCOPToImage(HAPI_NodeId copNodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_RenderCOPToImage(ref _sessionData._HAPISession, copNodeID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_RenderCOPToImage(ref _sessionData._HAPISession, copNodeID);
 	    HandleStatusResult(result, "Rendering COP To Image", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2111,11 +2111,11 @@ namespace HoudiniEngineUnity
 	public override bool ExtractImageToMemory(HAPI_NodeId nodeID, string fileFormat, string imagePlanes, out byte[] buffer)
 	{
 	    int bufferSize = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ExtractImageToMemory(ref _sessionData._HAPISession, nodeID, fileFormat, imagePlanes, out bufferSize);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ExtractImageToMemory(ref _sessionData._HAPISession, nodeID, fileFormat.AsByteArray(), imagePlanes.AsByteArray(), out bufferSize);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		buffer = new byte[bufferSize];
-		result = HEU_HAPIImports.HAPI_GetImageMemoryBuffer(ref _sessionData._HAPISession, nodeID, buffer, bufferSize);
+		result = HEU_HAPIFunctions.HAPI_GetImageMemoryBuffer(ref _sessionData._HAPISession, nodeID, buffer, bufferSize);
 	    }
 	    else
 	    {
@@ -2128,7 +2128,7 @@ namespace HoudiniEngineUnity
 
 	public override bool GetImagePlanes(HAPI_NodeId nodeID, [Out] HAPI_StringHandle[] imagePlanes, int numImagePlanes)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetImagePlanes(ref _sessionData._HAPISession, nodeID, imagePlanes, numImagePlanes);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetImagePlanes(ref _sessionData._HAPISession, nodeID, imagePlanes, numImagePlanes);
 	    HandleStatusResult(result, "Getting Image Planes", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2145,7 +2145,7 @@ namespace HoudiniEngineUnity
 	public override bool ExtractImageToFile(HAPI_NodeId nodeID, string fileFormat, string imagePlanes, string destinationFolderPath, out string destinationFilePath)
 	{
 	    int destinationFilePathSH = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ExtractImageToFile(ref _sessionData._HAPISession, nodeID, fileFormat, imagePlanes, destinationFolderPath, null, out destinationFilePathSH);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ExtractImageToFile(ref _sessionData._HAPISession, nodeID, fileFormat.AsByteArray(), imagePlanes.AsByteArray(), destinationFolderPath.AsByteArray(), null, out destinationFilePathSH);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		destinationFilePath = HEU_SessionManager.GetString(destinationFilePathSH);
@@ -2173,56 +2173,56 @@ namespace HoudiniEngineUnity
 	public override bool GetParams(HAPI_NodeId nodeID, [Out] HAPI_ParmInfo[] parmInfos, int start, int length)
 	{
 	    Debug.Assert(parmInfos != null && parmInfos.Length >= length, "Invalid HAPI_ParmInfo array passed in to retrieve parameters!");
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParameters(ref _sessionData._HAPISession, nodeID, parmInfos, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParameters(ref _sessionData._HAPISession, nodeID, parmInfos, start, length);
 	    HandleStatusResult(result, "Getting Parameters", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParmTagName(HAPI_NodeId nodeID, HAPI_ParmId parmID, int tagIndex, out HAPI_StringHandle tagName)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmTagName(ref _sessionData._HAPISession, nodeID, parmID, tagIndex, out tagName);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmTagName(ref _sessionData._HAPISession, nodeID, parmID, tagIndex, out tagName);
 	    HandleStatusResult(result, "Getting Parm Tag Name", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParmTagValue(HAPI_NodeId nodeID, HAPI_ParmId parmID, string tagName, out HAPI_StringHandle tagValue)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmTagValue(ref _sessionData._HAPISession, nodeID, parmID, tagName, out tagValue);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmTagValue(ref _sessionData._HAPISession, nodeID, parmID, tagName.AsByteArray(), out tagValue);
 	    HandleStatusResult(result, "Getting Parm Tag Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool ParmHasTag(HAPI_NodeId nodeID, HAPI_ParmId parmID, string tagName, ref bool hasTag)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ParmHasTag(ref _sessionData._HAPISession, nodeID, parmID, tagName, ref hasTag);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ParmHasTag(ref _sessionData._HAPISession, nodeID, parmID, tagName.AsByteArray(), out hasTag);
 	    HandleStatusResult(result, "Parm Has Tag", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParamIntValues(HAPI_NodeId nodeID, [Out] int[] values, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmIntValues(ref _sessionData._HAPISession, nodeID, values, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmIntValues(ref _sessionData._HAPISession, nodeID, values, start, length);
 	    HandleStatusResult(result, "Getting Param Int Values", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParamIntValue(HAPI_NodeId nodeID, string parmName, int index, out int value)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmIntValue(ref _sessionData._HAPISession, nodeID, parmName, index, out value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmIntValue(ref _sessionData._HAPISession, nodeID, parmName.AsByteArray(), index, out value);
 	    HandleStatusResult(result, "Getting Param Int Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParamFloatValues(HAPI_NodeId nodeID, [Out] float[] values, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmFloatValues(ref _sessionData._HAPISession, nodeID, values, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmFloatValues(ref _sessionData._HAPISession, nodeID, values, start, length);
 	    HandleStatusResult(result, "Getting Param Float Values", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParamFloatValue(HAPI_NodeId nodeID, string parmName, int index, out float value)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmFloatValue(ref _sessionData._HAPISession, nodeID, parmName, index, out value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmFloatValue(ref _sessionData._HAPISession, nodeID, parmName.AsByteArray(), index, out value);
 	    HandleStatusResult(result, "Getting Param Float Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2230,7 +2230,7 @@ namespace HoudiniEngineUnity
 	public override bool GetParamStringValues(HAPI_NodeId nodeID, [Out] HAPI_StringHandle[] values, int start, int length)
 	{
 	    const bool bEvaluate = true;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmStringValues(ref _sessionData._HAPISession, nodeID, bEvaluate, values, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmStringValues(ref _sessionData._HAPISession, nodeID, bEvaluate, values, start, length);
 	    HandleStatusResult(result, "Getting Param String Values", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2238,63 +2238,63 @@ namespace HoudiniEngineUnity
 	public override bool GetParamStringValue(HAPI_NodeId nodeID, string parmName, int index, out HAPI_StringHandle value)
 	{
 	    const bool bEvaluate = true;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmStringValue(ref _sessionData._HAPISession, nodeID, parmName, index, bEvaluate, out value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmStringValue(ref _sessionData._HAPISession, nodeID, parmName.AsByteArray(), index, bEvaluate, out value);
 	    HandleStatusResult(result, "Getting Param String Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParamNodeValue(HAPI_NodeId nodeID, string paramName, out int nodeValue)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmNodeValue(ref _sessionData._HAPISession, nodeID, paramName, out nodeValue);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmNodeValue(ref _sessionData._HAPISession, nodeID, paramName.AsByteArray(), out nodeValue);
 	    HandleStatusResult(result, "Getting Param Node Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParamChoiceValues(HAPI_NodeId nodeID, [Out] HAPI_ParmChoiceInfo[] values, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmChoiceLists(ref _sessionData._HAPISession, nodeID, values, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmChoiceLists(ref _sessionData._HAPISession, nodeID, values, start, length);
 	    HandleStatusResult(result, "Getting Param Choice Values", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetParamIntValues(HAPI_NodeId nodeID, ref int[] values, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetParmIntValues(ref _sessionData._HAPISession, nodeID, values, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetParmIntValues(ref _sessionData._HAPISession, nodeID, values, start, length);
 	    HandleStatusResult(result, "Setting Param Int Values", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetParamIntValue(HAPI_NodeId nodeID, string paramName, int index, int value)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetParmIntValue(ref _sessionData._HAPISession, nodeID, paramName, index, value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetParmIntValue(ref _sessionData._HAPISession, nodeID, paramName.AsByteArray(), index, value);
 	    HandleStatusResult(result, "Setting Param Int Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetParamFloatValues(HAPI_NodeId nodeID, ref float[] values, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetParmFloatValues(ref _sessionData._HAPISession, nodeID, values, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetParmFloatValues(ref _sessionData._HAPISession, nodeID, values, start, length);
 	    HandleStatusResult(result, "Setting Param Float Values", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetParamFloatValue(HAPI_NodeId nodeID, string paramName, int index, float value)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetParmFloatValue(ref _sessionData._HAPISession, nodeID, paramName, index, value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetParmFloatValue(ref _sessionData._HAPISession, nodeID, paramName.AsByteArray(), index, value);
 	    HandleStatusResult(result, "Setting Param Float Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetParamStringValue(HAPI_NodeId nodeID, string strValue, HAPI_ParmId parmID, int index)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetParmStringValue(ref _sessionData._HAPISession, nodeID, strValue, parmID, index);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetParmStringValue(ref _sessionData._HAPISession, nodeID, strValue.AsByteArray(), parmID, index);
 	    HandleStatusResult(result, "Setting Param String Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetParamStringValue(HAPI_NodeId nodeID, string parmName, string parmValue, int index)
 	{
-	    HAPI_NodeId parmID = HEU_Defines.HAPI_INVALID_PARM_ID;
+	    HAPI_NodeId parmID = HEU_HAPIConstants.HAPI_INVALID_PARM_ID;
 	    if (GetParmIDFromName(nodeID, parmName, out parmID))
 	    {
 		return SetParamStringValue(nodeID, parmValue, parmID, index);
@@ -2304,56 +2304,56 @@ namespace HoudiniEngineUnity
 
 	public override bool SetParamNodeValue(HAPI_NodeId nodeID, string paramName, HAPI_NodeId nodeValue)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetParmNodeValue(ref _sessionData._HAPISession, nodeID, paramName, nodeValue);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetParmNodeValue(ref _sessionData._HAPISession, nodeID, paramName.AsByteArray(), nodeValue);
 	    HandleStatusResult(result, "Setting Param Node Value", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool InsertMultiparmInstance(HAPI_NodeId nodeID, HAPI_ParmId parmID, int instancePosition)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_InsertMultiparmInstance(ref _sessionData._HAPISession, nodeID, parmID, instancePosition);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_InsertMultiparmInstance(ref _sessionData._HAPISession, nodeID, parmID, instancePosition);
 	    HandleStatusResult(result, "Inserting Multiparm Instance", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool RemoveMultiParmInstance(HAPI_NodeId nodeID, HAPI_ParmId parmID, int instancePosition)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_RemoveMultiparmInstance(ref _sessionData._HAPISession, nodeID, parmID, instancePosition);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_RemoveMultiparmInstance(ref _sessionData._HAPISession, nodeID, parmID, instancePosition);
 	    HandleStatusResult(result, "Removing MultiParm Instance", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParmWithTag(HAPI_NodeId nodeID, string tagName, ref HAPI_ParmId parmID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmWithTag(ref _sessionData._HAPISession, nodeID, tagName, ref parmID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmWithTag(ref _sessionData._HAPISession, nodeID, tagName.AsByteArray(), out parmID);
 	    HandleStatusResult(result, "Getting Parm With Tag", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool RevertParmToDefault(HAPI_NodeId nodeID, string parm_name, int index)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_RevertParmToDefault(ref _sessionData._HAPISession, nodeID, parm_name, index);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_RevertParmToDefault(ref _sessionData._HAPISession, nodeID, parm_name.AsByteArray(), index);
 	    HandleStatusResult(result, "Reverting Parm To Default", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool RevertParmToDefaults(HAPI_NodeId nodeID, string parm_name)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_RevertParmToDefaults(ref _sessionData._HAPISession, nodeID, parm_name);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_RevertParmToDefaults(ref _sessionData._HAPISession, nodeID, parm_name.AsByteArray());
 	    HandleStatusResult(result, "Reverting Parms To Defaults", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParmIDFromName(HAPI_NodeId nodeID, string parmName, out HAPI_ParmId parmID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmIdFromName(ref _sessionData._HAPISession, nodeID, parmName, out parmID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmIdFromName(ref _sessionData._HAPISession, nodeID, parmName.AsByteArray(), out parmID);
 	    HandleStatusResult(result, "Getting Parm ID from Name", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetParmStringValue(HAPI_NodeId nodeID, string parmName, int index, bool evaluate, out HAPI_StringHandle value)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetParmStringValue(ref _sessionData._HAPISession, nodeID, parmName, index, evaluate, out value);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetParmStringValue(ref _sessionData._HAPISession, nodeID, parmName.AsByteArray(), index, evaluate, out value);
 	    HandleStatusResult(result, "Getting String Value For Parm", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2362,7 +2362,7 @@ namespace HoudiniEngineUnity
 
 	public override bool CreateInputNode(out HAPI_NodeId nodeID, string name)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CreateInputNode(ref _sessionData._HAPISession, out nodeID, name);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateInputNode(ref _sessionData._HAPISession, out nodeID, name.AsByteArray());
 	    HandleStatusResult(result, "Creating Input Node", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2370,7 +2370,7 @@ namespace HoudiniEngineUnity
 	public override bool CreateHeightFieldInput(HAPI_NodeId parentNodeID, string name, int xSize, int ySize, float voxelSize, HAPI_HeightFieldSampling sampling,
 		out HAPI_NodeId heightfieldNodeID, out HAPI_NodeId heightNodeID, out HAPI_NodeId maskNodeID, out HAPI_NodeId mergeNodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CreateHeightFieldInput(ref _sessionData._HAPISession, parentNodeID, name, xSize, ySize, voxelSize, sampling,
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateHeightFieldInput(ref _sessionData._HAPISession, parentNodeID, name.AsByteArray(), xSize, ySize, voxelSize, sampling,
 		    out heightfieldNodeID, out heightNodeID, out maskNodeID, out mergeNodeID);
 	    HandleStatusResult(result, "Creating Heightfield Input Node", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
@@ -2378,7 +2378,7 @@ namespace HoudiniEngineUnity
 
 	public override bool CreateHeightfieldInputVolumeNode(HAPI_NodeId parentNodeID, out HAPI_NodeId newNodeID, string name, int xSize, int ySize, float voxelSize)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_CreateHeightfieldInputVolumeNode(ref _sessionData._HAPISession, parentNodeID, out newNodeID, name, xSize, ySize, voxelSize);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateHeightfieldInputVolumeNode(ref _sessionData._HAPISession, parentNodeID, out newNodeID, name.AsByteArray(), xSize, ySize, voxelSize);
 	    HandleStatusResult(result, "Creating Heightfield Input Volume Node", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2394,7 +2394,7 @@ namespace HoudiniEngineUnity
 	public override bool GetPreset(HAPI_NodeId nodeID, out byte[] presetData)
 	{
 	    int bufferLength = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetPresetBufLength(ref _sessionData._HAPISession, nodeID, HAPI_PresetType.HAPI_PRESETTYPE_BINARY, null, ref bufferLength);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetPresetBufLength(ref _sessionData._HAPISession, nodeID, HAPI_PresetType.HAPI_PRESETTYPE_BINARY, null, out bufferLength);
 	    HandleStatusResult(result, "Getting Preset Buffer Length", false, true);
 
 	    // If above query fails, then bufferLength is 0 and we'll return an empty array
@@ -2402,7 +2402,7 @@ namespace HoudiniEngineUnity
 
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
-		result = HEU_HAPIImports.HAPI_GetPreset(ref _sessionData._HAPISession, nodeID, presetData, bufferLength);
+		result = HEU_HAPIFunctions.HAPI_GetPreset(ref _sessionData._HAPISession, nodeID, presetData, bufferLength);
 		HandleStatusResult(result, "Getting Preset", false, true);
 	    }
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
@@ -2416,7 +2416,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if successfully set the preset</returns>
 	public override bool SetPreset(HAPI_NodeId nodeID, byte[] presetData)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetPreset(ref _sessionData._HAPISession, nodeID, HAPI_PresetType.HAPI_PRESETTYPE_BINARY, null, presetData, presetData.Length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetPreset(ref _sessionData._HAPISession, nodeID, HAPI_PresetType.HAPI_PRESETTYPE_BINARY, null, presetData, presetData.Length);
 	    HandleStatusResult(result, "Setting Preset", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2426,28 +2426,28 @@ namespace HoudiniEngineUnity
 
 	public override bool GetVolumeInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_VolumeInfo volumeInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetVolumeInfo(ref _sessionData._HAPISession, nodeID, partID, ref volumeInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetVolumeInfo(ref _sessionData._HAPISession, nodeID, partID, out volumeInfo);
 	    HandleStatusResult(result, "Getting Volume Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetHeightFieldData(HAPI_NodeId nodeID, HAPI_PartId partID, float[] valuesArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetHeightFieldData(ref _sessionData._HAPISession, nodeID, partID, valuesArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetHeightFieldData(ref _sessionData._HAPISession, nodeID, partID, valuesArray, start, length);
 	    HandleStatusResult(result, "Getting HeightField Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetVolumeInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_VolumeInfo volumeInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetVolumeInfo(ref _sessionData._HAPISession, nodeID, partID, ref volumeInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetVolumeInfo(ref _sessionData._HAPISession, nodeID, partID, ref volumeInfo);
 	    HandleStatusResult(result, "Setting VolumeInfo Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetVolumeTileFloatData(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_VolumeTileInfo tileInfo, float[] valuesArray, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetVolumeTileFloatData(ref _sessionData._HAPISession, nodeID, partID, ref tileInfo, valuesArray, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetVolumeTileFloatData(ref _sessionData._HAPISession, nodeID, partID, ref tileInfo, valuesArray, length);
 	    HandleStatusResult(result, "Setting VolumeInfo Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2455,7 +2455,7 @@ namespace HoudiniEngineUnity
 	public override bool GetVolumeBounds(HAPI_NodeId nodeID, HAPI_PartId partID, out float x_min, out float y_min, out float z_min,
 		out float x_max, out float y_max, out float z_max, out float x_center, out float y_center, out float z_center)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetVolumeBounds(ref _sessionData._HAPISession, nodeID, partID, out x_min, out y_min, out z_min,
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetVolumeBounds(ref _sessionData._HAPISession, nodeID, partID, out x_min, out y_min, out z_min,
 		    out x_max, out y_max, out z_max, out x_center, out y_center, out z_center);
 	    HandleStatusResult(result, "Getting Volume Bounds", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
@@ -2463,7 +2463,7 @@ namespace HoudiniEngineUnity
 
 	public override bool SetHeightFieldData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, float[] valuesArray, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetHeightFieldData(ref _sessionData._HAPISession, nodeID, partID, name, valuesArray, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetHeightFieldData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), valuesArray, start, length);
 	    HandleStatusResult(result, "Setting VolumeInfo Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2472,63 +2472,63 @@ namespace HoudiniEngineUnity
 
 	public override bool GetActiveCacheCount(out int activeCacheCount)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetActiveCacheCount(ref _sessionData._HAPISession, out activeCacheCount);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetActiveCacheCount(ref _sessionData._HAPISession, out activeCacheCount);
 	    HandleStatusResult(result, "Getting Active Cache Count", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetActiveCacheNames([Out] HAPI_StringHandle[] cacheNamesArray, int activeCacheCount)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetActiveCacheNames(ref _sessionData._HAPISession, cacheNamesArray, activeCacheCount);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetActiveCacheNames(ref _sessionData._HAPISession, cacheNamesArray, activeCacheCount);
 	    HandleStatusResult(result, "Getting Active Cache Names", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetCacheProperty(string cacheName, HAPI_CacheProperty cacheProperty, out int propertyValue)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetCacheProperty(ref _sessionData._HAPISession, cacheName, cacheProperty, out propertyValue);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetCacheProperty(ref _sessionData._HAPISession, cacheName.AsByteArray(), cacheProperty, out propertyValue);
 	    HandleStatusResult(result, "Getting Cache Property", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetCacheProperty(string cacheName, HAPI_CacheProperty cacheProperty, int propertyValue)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetCacheProperty(ref _sessionData._HAPISession, cacheName, cacheProperty, propertyValue);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetCacheProperty(ref _sessionData._HAPISession, cacheName.AsByteArray(), cacheProperty, propertyValue);
 	    HandleStatusResult(result, "Setting Cache Property", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SaveGeoToFile(HAPI_NodeId nodeID, string fileName)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SaveGeoToFile(ref _sessionData._HAPISession, nodeID, fileName);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SaveGeoToFile(ref _sessionData._HAPISession, nodeID, fileName.AsByteArray());
 	    HandleStatusResult(result, "Saving Geo File", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool LoadGeoFromFile(HAPI_NodeId nodeID, string file_name)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadGeoFromFile(ref _sessionData._HAPISession, nodeID, file_name);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_LoadGeoFromFile(ref _sessionData._HAPISession, nodeID, file_name.AsByteArray());
 	    HandleStatusResult(result, "Loading Geo From File", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SaveNodeToFile(HAPI_NodeId nodeID, string fileName)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SaveNodeToFile(ref _sessionData._HAPISession, nodeID, fileName);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SaveNodeToFile(ref _sessionData._HAPISession, nodeID, fileName.AsByteArray());
 	    HandleStatusResult(result, "Saving Node To File", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool LoadNodeFromFile(string file_name, HAPI_NodeId parentNodeID, string nodeLabel, bool cook_on_load, out HAPI_NodeId newNodeID)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_LoadNodeFromFile(ref _sessionData._HAPISession, file_name, parentNodeID, nodeLabel, cook_on_load, out newNodeID);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_LoadNodeFromFile(ref _sessionData._HAPISession, file_name.AsByteArray(), parentNodeID, nodeLabel.AsByteArray(), cook_on_load, out newNodeID);
 	    HandleStatusResult(result, "Loading Node From File", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetGeoSize(HAPI_NodeId nodeID, string format, out int size)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetGeoSize(ref _sessionData._HAPISession, nodeID, format, out size);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetGeoSize(ref _sessionData._HAPISession, nodeID, format.AsByteArray(), out size);
 	    HandleStatusResult(result, "Getting Geo Size", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2537,21 +2537,21 @@ namespace HoudiniEngineUnity
 
 	public override bool GetHandleInfo(HAPI_NodeId nodeID, [Out] HAPI_HandleInfo[] handleInfos, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetHandleInfo(ref _sessionData._HAPISession, nodeID, handleInfos, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetHandleInfo(ref _sessionData._HAPISession, nodeID, handleInfos, start, length);
 	    HandleStatusResult(result, "Getting Handle Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetHandleBindingInfo(HAPI_NodeId nodeID, int handleIndex, [Out] HAPI_HandleBindingInfo[] handleBindingInfos, int start, int length)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetHandleBindingInfo(ref _sessionData._HAPISession, nodeID, handleIndex, handleBindingInfos, start, length);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetHandleBindingInfo(ref _sessionData._HAPISession, nodeID, handleIndex, handleBindingInfos, start, length);
 	    HandleStatusResult(result, "Getting Handle Binding Info", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool ConvertTransform(ref HAPI_TransformEuler inTransform, HAPI_RSTOrder RSTOrder, HAPI_XYZOrder ROTOrder, out HAPI_TransformEuler outTransform)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ConvertTransform(ref _sessionData._HAPISession, ref inTransform, RSTOrder, ROTOrder, out outTransform);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ConvertTransform(ref _sessionData._HAPISession, ref inTransform, RSTOrder, ROTOrder, out outTransform);
 	    HandleStatusResult(result, "Converting Transform", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
@@ -2560,42 +2560,42 @@ namespace HoudiniEngineUnity
 
 	public override bool GetTotalCookCount(HAPI_NodeId nodeID, HAPI_NodeTypeBits nodeTypeFilter, HAPI_NodeFlagsBits nodeFlagFilter, bool includeChildren, out int count)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetTotalCookCount(ref _sessionData._HAPISession, nodeID, nodeTypeFilter, nodeFlagFilter, includeChildren, out count);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetTotalCookCount(ref _sessionData._HAPISession, nodeID, nodeTypeFilter, nodeFlagFilter, includeChildren, out count);
 	    HandleStatusResult(result, "Getting Total Cook Count", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetSessionSync(bool enable)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetSessionSync(ref _sessionData._HAPISession, enable);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetSessionSync(ref _sessionData._HAPISession, enable);
 	    HandleStatusResult(result, "Setting SessionSync", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetViewport(ref HAPI_Viewport viewport)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetViewport(ref _sessionData._HAPISession,  out viewport);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetViewport(ref _sessionData._HAPISession,  out viewport);
 	    HandleStatusResult(result, "Getting Viewport", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetViewport(ref HAPI_Viewport viewport)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetViewport(ref _sessionData._HAPISession, ref viewport);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetViewport(ref _sessionData._HAPISession, ref viewport);
 	    HandleStatusResult(result, "Setting Viewport", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool GetSessionSyncInfo(ref HAPI_SessionSyncInfo syncInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetSessionSyncInfo(ref _sessionData._HAPISession, out syncInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetSessionSyncInfo(ref _sessionData._HAPISession, out syncInfo);
 	    HandleStatusResult(result, "Getting SessionSyncInfo", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public override bool SetSessionSyncInfo(ref HAPI_SessionSyncInfo syncInfo)
 	{
-	    HAPI_Result result = HEU_HAPIImports.HAPI_SetSessionSyncInfo(ref _sessionData._HAPISession, ref syncInfo);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetSessionSyncInfo(ref _sessionData._HAPISession, ref syncInfo);
 	    HandleStatusResult(result, "Setting SessionSyncInfo", false, false);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
