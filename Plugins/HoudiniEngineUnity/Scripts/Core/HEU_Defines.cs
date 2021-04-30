@@ -95,81 +95,13 @@ namespace HoudiniEngineUnity
 
 	// Shared Constants -------------------------------------------------
 	//
-	// IMPORTANT: Changes to these constants will not change the behavior of the
-	// underlying Houdini Engine. These are here to serve as C# duplicates of the
-	// constants defined in the HAPI_Common.h C++ header. In fact, if you
-	// change any of these you will most likely break the Unity plugin.
-
-	public const int HAPI_POSITION_VECTOR_SIZE = 3;
-	public const int HAPI_SCALE_VECTOR_SIZE = 3;
-	public const int HAPI_SHEAR_VECTOR_SIZE = 3;
-	public const int HAPI_NORMAL_VECTOR_SIZE = 3;
-	public const int HAPI_QUATERNION_VECTOR_SIZE = 4;
-	public const int HAPI_EULER_VECTOR_SIZE = 3;
-	public const int HAPI_COLOR_VECTOR_SIZE = 4;
-	public const int HAPI_CV_VECTOR_SIZE = 4;
-
-	public const int HAPI_PRIM_MIN_VERTEX_COUNT = 1;
-	public const int HAPI_PRIM_MAX_VERTEX_COUNT = 16;
-
-	public const int HAPI_INVALID_PARM_ID = -1;
-
-	public const int HAPI_MAX_UVS = 8;
-
-	// Default Attributes' Names
-	public const string HAPI_ATTRIB_POSITION = "P";
-	public const string HAPI_ATTRIB_UV = "uv";
-	public const string HAPI_ATTRIB_NORMAL = "N";
-	public const string HAPI_ATTRIB_TANGENT = "tangentu";
-	public const string HAPI_ATTRIB_COLOR = "Cd";
-	public const string HAPI_ATTRIB_ALPHA = "Alpha";
-	public const string HAPI_ATTRIB_NAME = "name";
-	public const string HAPI_ATTRIB_INSTANCE = "instance";
+	// Similar to the auto-generated HEU_HAPIConstants, but Unity plugin might need some more
 	public const string HAPI_ATTRIB_ORIENT = "orient";
-
-	public const string HAPI_ATTRIB_SCALE = "scale";
 	public const string HAPI_ATTRIB_ROTATION = "rot";
-
-	public const string HAPI_UNGROUPED_GROUP_NAME = "__ungrouped_group";
-
-	// Handle types
+	public const string HAPI_ATTRIB_SCALE = "scale";
+	public const string HAPI_ATTRIB_ALPHA = "Alpha";
 	public const string HAPI_HANDLE_TRANSFORM = "xform";
-
-	// Common image file format names (to use with the material extract APIs).
-	// Note that you may still want to check if they are supported via
-	// HAPI_GetSupportedImageFileFormats() since all formats are loaded 
-	// dynamically by Houdini on-demand so just because these formats are defined
-	// here doesn't mean they are supported in your instance.
-	public const string HAPI_RAW_FORMAT_NAME = "HAPI_RAW"; // HAPI-only Raw Format
-	public const string HAPI_PNG_FORMAT_NAME = "PNG";
-	public const string HAPI_JPEG_FORMAT_NAME = "JPEG";
-	public const string HAPI_BMP_FORMAT_NAME = "Bitmap";
-	public const string HAPI_TIFF_FORMAT_NAME = "TIFF";
-	public const string HAPI_TGA_FORMAT_NAME = "Targa";
-
-	// Default image file format's name - used when the image generated and has
-	// no "original" file format and the user does not specify a format to
-	// convert to.
-	public const string HAPI_DEFAULT_IMAGE_FORMAT_NAME = HAPI_PNG_FORMAT_NAME;
-
-	/// Name of subnet OBJ node containing the global nodes.
-	public const string HAPI_GLOBAL_NODES_NODE_NAME = "GlobalNodes";
-
-	/// Environment variables.
-	public const string HAPI_ENV_HIP = "HIP";
-	public const string HAPI_ENV_JOB = "JOB";
-	public const string HAPI_ENV_CLIENT_NAME = "HAPI_CLIENT_NAME";
-
-	/// Common cache names. You can see these same cache names in the
-	/// Cache Manager window in Houdini (Windows > Cache Manager).
-	public const string HAPI_CACHE_COP_COOK = "COP Cook Cache";
-	public const string HAPI_CACHE_COP_FLIPBOOK = "COP Flipbook Cache";
-	public const string HAPI_CACHE_IMAGE = "Image Cache";
-	public const string HAPI_CACHE_OBJ = "Object Transform Cache";
-	public const string HAPI_CACHE_GL_TEXTURE = "OpenGL Texture Cache";
-	public const string HAPI_CACHE_GL_VERTEX = "OpenGL Vertex Cache";
-	public const string HAPI_CACHE_SOP = "SOP Cache";
-	public const string HAPI_CACHE_VEX = "VEX File Cache";
+	public const int HAPI_MAX_UVS = 8;
 
 	public const string HAPI_OBJMERGE_TRANSFORM_PARAM = "xformtype";
 	public const string HAPI_OBJMERGE_PACK_GEOMETRY = "pack";

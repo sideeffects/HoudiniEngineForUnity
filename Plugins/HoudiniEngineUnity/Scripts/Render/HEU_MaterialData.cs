@@ -214,12 +214,12 @@ namespace HoudiniEngineUnity
 
 	    string imageInfoFileFormat = HEU_SessionManager.GetString(imageInfo.imageFileFormatNameSH, session);
 
-	    if (!imageInfoFileFormat.Equals(HEU_Defines.HAPI_PNG_FORMAT_NAME)
-		    && !imageInfoFileFormat.Equals(HEU_Defines.HAPI_JPEG_FORMAT_NAME)
-		    && !imageInfoFileFormat.Equals(HEU_Defines.HAPI_BMP_FORMAT_NAME)
-		    && !imageInfoFileFormat.Equals(HEU_Defines.HAPI_TGA_FORMAT_NAME))
+	    if (!imageInfoFileFormat.Equals(HEU_HAPIConstants.HAPI_PNG_FORMAT_NAME)
+		    && !imageInfoFileFormat.Equals(HEU_HAPIConstants.HAPI_JPEG_FORMAT_NAME)
+		    && !imageInfoFileFormat.Equals(HEU_HAPIConstants.HAPI_BMP_FORMAT_NAME)
+		    && !imageInfoFileFormat.Equals(HEU_HAPIConstants.HAPI_TGA_FORMAT_NAME))
 	    {
-		desiredFileFormatName = HEU_Defines.HAPI_PNG_FORMAT_NAME;
+		desiredFileFormatName = HEU_HAPIConstants.HAPI_PNG_FORMAT_NAME;
 	    }
 	    return desiredFileFormatName;
 	}
