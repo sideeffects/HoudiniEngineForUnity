@@ -787,7 +787,7 @@ namespace HoudiniEngineUnity
 	    // Also getting other attributes for the TreeInstances, if they are set.
 	    HAPI_AttributeInfo uvAttrInfo = new HAPI_AttributeInfo();
 	    float[] uvs = new float[0];
-	    if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_ATTRIB_UV, ref uvAttrInfo, ref uvs, session.GetAttributeFloatData))
+	    if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_HAPIConstants.HAPI_ATTRIB_UV, ref uvAttrInfo, ref uvs, session.GetAttributeFloatData))
 	    {
 		HEU_Logger.LogWarning("UVs for scatter instances not found or valid.");
 	    }
@@ -812,7 +812,7 @@ namespace HoudiniEngineUnity
 		// Get color
 		HAPI_AttributeInfo colorAttrInfo = new HAPI_AttributeInfo();
 		float[] colors = new float[0];
-		HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_ATTRIB_COLOR, ref colorAttrInfo, ref colors, session.GetAttributeFloatData);
+		HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_HAPIConstants.HAPI_ATTRIB_COLOR, ref colorAttrInfo, ref colors, session.GetAttributeFloatData);
 
 		// Get lightmap color
 		HAPI_AttributeInfo lightmapColorAttrInfo = new HAPI_AttributeInfo();

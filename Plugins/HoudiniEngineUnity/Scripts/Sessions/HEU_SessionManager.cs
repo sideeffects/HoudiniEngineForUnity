@@ -563,7 +563,7 @@ namespace HoudiniEngineUnity
 	public static bool ClearConnectionError()
 	{
 #if HOUDINIENGINEUNITY_ENABLED
-	    HAPI_Result result = HEU_HAPIImports.HAPI_ClearConnectionError();
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_ClearConnectionError();
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 #else
 	    return true;
@@ -574,16 +574,17 @@ namespace HoudiniEngineUnity
 	{
 #if HOUDINIENGINEUNITY_ENABLED
 	    int bufferLength = 0;
-	    HAPI_Result result = HEU_HAPIImports.HAPI_GetConnectionErrorLength(out bufferLength);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetConnectionErrorLength(out bufferLength);
 	    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 	    {
 		if (bufferLength > 0)
 		{
-		    StringBuilder sb = new StringBuilder(bufferLength);
-		    result = HEU_HAPIImports.HAPI_GetConnectionError(sb, bufferLength, clear);
+		    byte[] bytes = new byte[bufferLength];
+
+		    result = HEU_HAPIFunctions.HAPI_GetConnectionError(bytes, bufferLength, clear);
 		    if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
 		    {
-			return sb.ToString();
+			return bytes.AsString();
 		    }
 		}
 		else
@@ -918,7 +919,7 @@ namespace HoudiniEngineUnity
 
 		    if (!isInstanced)
 		    {
-			groupCount = geoInfo.getGroupCountByType(groupType); ;
+			groupCount = geoInfo.getGroupCountByType(groupType);
 		    }
 		    else
 		    {

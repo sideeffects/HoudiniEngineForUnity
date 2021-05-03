@@ -201,13 +201,13 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_Defines.HAPI_ATTRIB_POSITION, 3, vertices, ref partInfo, true);
+	    bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, 3, vertices, ref partInfo, true);
 	    if (!bSuccess)
 	    {
 		return false;
 	    }
 
-	    bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_Defines.HAPI_ATTRIB_NORMAL, 3, normals, ref partInfo, true);
+	    bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_HAPIConstants.HAPI_ATTRIB_NORMAL, 3, normals, ref partInfo, true);
 	    if (!bSuccess)
 	    {
 		return false;
@@ -222,7 +222,7 @@ namespace HoudiniEngineUnity
 		    uvs3[i][1] = uvs[i][1];
 		    uvs3[i][2] = 0;
 		}
-		bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_Defines.HAPI_ATTRIB_UV, 3, uvs3, ref partInfo, false);
+		bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_HAPIConstants.HAPI_ATTRIB_UV, 3, uvs3, ref partInfo, false);
 		if (!bSuccess)
 		{
 		    return false;
@@ -242,7 +242,7 @@ namespace HoudiniEngineUnity
 		    alpha[i][0] = colors[i].a;
 		}
 
-		bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_Defines.HAPI_ATTRIB_COLOR, 3, rgb, ref partInfo, false);
+		bSuccess = HEU_InputMeshUtility.SetMeshPointAttribute(session, geoID, 0, HEU_HAPIConstants.HAPI_ATTRIB_COLOR, 3, rgb, ref partInfo, false);
 		if (!bSuccess)
 		{
 		    return false;

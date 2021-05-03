@@ -27,6 +27,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace HoudiniEngineUnity
@@ -97,7 +98,23 @@ namespace HoudiniEngineUnity
 	    return Mathf.Abs(self - other) <  epsilon;
 	}
 
+	public static byte[] AsByteArray(this string self)
+	{
+	    byte[] bytes = Encoding.UTF8.GetBytes(self + '\0');
+	    return bytes;
+	}
+
+	public static string AsString(this byte[] buffer)
+	{
+	    if (buffer == null)
+	    {
+		return "";
+	    }
+
+	    return System.Text.Encoding.UTF8.GetString(buffer, 0, buffer.Length - 1);
+	}
     }
+
 
     public static class ArrayExtensions
     {
@@ -181,13 +198,5 @@ namespace HoudiniEngineUnity
 	    return arr == null;
 	}
     }
-
-
-	// Equivalence extensions 
-
-
-
-
-
 
 }
