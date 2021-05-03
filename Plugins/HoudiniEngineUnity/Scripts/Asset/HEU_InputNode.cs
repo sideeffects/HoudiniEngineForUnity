@@ -711,7 +711,7 @@ namespace HoudiniEngineUnity
 
 	private bool UploadObjectMergePackGeometry(HEU_SessionBase session)
 	{
-	    if (_connectedNodeID == HEU_HAPIConstants.HAPI_INVALID_PARM_ID)
+	    if (_connectedNodeID == HEU_Defines.HAPI_INVALID_PARM_ID)
 	    {
 		return false;
 	    }
@@ -772,7 +772,7 @@ namespace HoudiniEngineUnity
 	public void UploadInputObjectTransforms(HEU_SessionBase session)
 	{
 	    // Only need to upload Mesh inputs, since HDA inputs don't upload transform
-	    if (_nodeID == HEU_HAPIConstants.HAPI_INVALID_PARM_ID || _inputObjectType != InputObjectType.UNITY_MESH)
+	    if (_nodeID == HEU_Defines.HAPI_INVALID_PARM_ID || _inputObjectType != InputObjectType.UNITY_MESH)
 	    {
 		return;
 	    }

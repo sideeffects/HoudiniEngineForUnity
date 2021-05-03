@@ -308,7 +308,7 @@ namespace HoudiniEngineUnity
 	{
 	    get
 	    {
-		string attrValue = HEU_HAPIConstants.HAPI_ATTRIB_INSTANCE;
+		string attrValue = HEU_Defines.HAPI_ATTRIB_INSTANCE;
 		HEU_PluginStorage.Instance.Get("HAPI_InstanceAttr", out attrValue, attrValue);
 		return attrValue;
 	    }

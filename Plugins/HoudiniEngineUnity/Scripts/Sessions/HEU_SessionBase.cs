@@ -1469,7 +1469,7 @@ namespace HoudiniEngineUnity
 
 	public virtual bool GetParmIDFromName(HAPI_NodeId nodeID, string parmName, out HAPI_ParmId parmID)
 	{
-	    parmID = HEU_HAPIConstants.HAPI_INVALID_PARM_ID;
+	    parmID = HEU_Defines.HAPI_INVALID_PARM_ID;
 	    return false;
 	}
 

@@ -417,7 +417,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    if (!HEU_InputMeshUtility.SetMeshPointAttribute(session, displayNodeID, 0, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, 3, vertices.ToArray(), ref partInfo, true))
+	    if (!HEU_InputMeshUtility.SetMeshPointAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_POSITION, 3, vertices.ToArray(), ref partInfo, true))
 	    {
 		HEU_Logger.LogError("Failed to set input geometry position.");
 		return false;
@@ -426,7 +426,7 @@ namespace HoudiniEngineUnity
 	    int[] vertIndices = vertIndexList.ToArray();
 
 	    //if(normals != null && !SetMeshPointAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_NORMAL, 3, normals.ToArray(), ref partInfo, true))
-	    if (normals != null && !HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, HEU_HAPIConstants.HAPI_ATTRIB_NORMAL, 3, normals.ToArray(), vertIndices, ref partInfo, true))
+	    if (normals != null && !HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_NORMAL, 3, normals.ToArray(), vertIndices, ref partInfo, true))
 	    {
 		HEU_Logger.LogError("Failed to set input geometry normals.");
 		return false;
@@ -437,7 +437,7 @@ namespace HoudiniEngineUnity
 		if (uvs[u].Count > 0)
 		{
 		    // Skip uv1 as its used internally. So it goes: uv, uv2, ..., uv8
-		    string uvName = u == 0 ? HEU_HAPIConstants.HAPI_ATTRIB_UV : string.Format("{0}{1}", HEU_HAPIConstants.HAPI_ATTRIB_UV, u + 1);
+		    string uvName = u == 0 ? HEU_Defines.HAPI_ATTRIB_UV : string.Format("{0}{1}", HEU_Defines.HAPI_ATTRIB_UV, u + 1);
 		    if (!HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, uvName, 3, uvs[u].ToArray(), vertIndices, ref partInfo, false))
 		    {
 			HEU_Logger.LogError("Failed to set input geometry UV" + u);
@@ -460,7 +460,7 @@ namespace HoudiniEngineUnity
 		}
 
 		//if(!SetMeshPointAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_COLOR, 3, rgb, ref partInfo, false))
-		if (!HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, HEU_HAPIConstants.HAPI_ATTRIB_COLOR, 3, rgb, vertIndices, ref partInfo, false))
+		if (!HEU_InputMeshUtility.SetMeshVertexAttribute(session, displayNodeID, 0, HEU_Defines.HAPI_ATTRIB_COLOR, 3, rgb, vertIndices, ref partInfo, false))
 		{
 		    HEU_Logger.LogError("Failed to set input geometry colors.");
 		    return false;

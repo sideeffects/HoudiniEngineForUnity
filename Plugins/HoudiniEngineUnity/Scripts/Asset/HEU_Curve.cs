@@ -304,7 +304,7 @@ namespace HoudiniEngineUnity
 		// but the curve is still valid, so we simply set to null vertices. This allows 
 		// user to add points later on.
 		HAPI_AttributeInfo posAttrInfo = new HAPI_AttributeInfo();
-		HEU_GeneralUtility.GetAttribute(session, _geoID, partID, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref posAttr, session.GetAttributeFloatData);
+		HEU_GeneralUtility.GetAttribute(session, _geoID, partID, HEU_Defines.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref posAttr, session.GetAttributeFloatData);
 		if (posAttrInfo.exists)
 		{
 		    vertexCount = posAttrInfo.count;

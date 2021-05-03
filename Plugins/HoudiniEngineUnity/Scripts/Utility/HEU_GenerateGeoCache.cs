@@ -359,7 +359,7 @@ namespace HoudiniEngineUnity
 	    // Get vertex position
 	    HAPI_AttributeInfo posAttrInfo = new HAPI_AttributeInfo();
 	    _posAttr = new float[0];
-	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref _posAttr, session.GetAttributeFloatData);
+	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_Defines.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref _posAttr, session.GetAttributeFloatData);
 	    if (!posAttrInfo.exists)
 	    {
 		return false;
@@ -377,7 +377,7 @@ namespace HoudiniEngineUnity
 	    {
 		_uvsAttrInfo[i] = new HAPI_AttributeInfo();
 		_uvsAttr[i] = new float[0];
-		string uvName = i == 0 ? HEU_HAPIConstants.HAPI_ATTRIB_UV : HEU_HAPIConstants.HAPI_ATTRIB_UV + (i + 1);
+		string uvName = i == 0 ? HEU_Defines.HAPI_ATTRIB_UV : HEU_Defines.HAPI_ATTRIB_UV + (i + 1);
 
 		if (!HEU_GeneralUtility.GetAttributeInfo(session, GeoID, PartID, uvName, ref _uvsAttrInfo[i]) || !_uvsAttrInfo[i].exists)
 		{
@@ -453,12 +453,12 @@ namespace HoudiniEngineUnity
 	    // Get normal attributes
 	    _normalAttrInfo = new HAPI_AttributeInfo();
 	    _normalAttr = new float[0];
-	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_HAPIConstants.HAPI_ATTRIB_NORMAL, ref _normalAttrInfo, ref _normalAttr, session.GetAttributeFloatData);
+	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_Defines.HAPI_ATTRIB_NORMAL, ref _normalAttrInfo, ref _normalAttr, session.GetAttributeFloatData);
 
 	    // Get colour attributes
 	    _colorAttrInfo = new HAPI_AttributeInfo();
 	    _colorAttr = new float[0];
-	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_HAPIConstants.HAPI_ATTRIB_COLOR, ref _colorAttrInfo, ref _colorAttr, session.GetAttributeFloatData);
+	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_Defines.HAPI_ATTRIB_COLOR, ref _colorAttrInfo, ref _colorAttr, session.GetAttributeFloatData);
 
 	    // Get alpha attributes
 	    _alphaAttrInfo = new HAPI_AttributeInfo();
@@ -468,7 +468,7 @@ namespace HoudiniEngineUnity
 	    // Get tangent attributes
 	    _tangentAttrInfo = new HAPI_AttributeInfo();
 	    _tangentAttr = new float[0];
-	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_HAPIConstants.HAPI_ATTRIB_TANGENT, ref _tangentAttrInfo, ref _tangentAttr, session.GetAttributeFloatData);
+	    HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_Defines.HAPI_ATTRIB_TANGENT, ref _tangentAttrInfo, ref _tangentAttr, session.GetAttributeFloatData);
 
 	    // Warn user since we are splitting points by attributes, might prevent some attrributes
 	    // to be transferred over properly
