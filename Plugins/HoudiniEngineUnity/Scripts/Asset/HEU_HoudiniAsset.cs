@@ -1878,6 +1878,16 @@ namespace HoudiniEngineUnity
 	    CleanUpInputNodes();
 
 	    CleanUpHandles();
+
+	    // Delete children objects just in case.
+	    Transform[] transforms = this.GetComponentsInChildren<Transform>();
+	    foreach (Transform trans in transforms)
+	    {
+		if (trans != this.transform)
+		{
+		    DestroyImmediate(trans.gameObject);
+		}
+	    }
 	}
 
 	private void CleanUpInputNodes()
@@ -4169,6 +4179,8 @@ namespace HoudiniEngineUnity
 
 	     ClearInvalidCurves();
 
+	    bool failedFindingCurves = false; 
+
 	    int numCurves = assetPreset._curveNames.Count;
 	    for (int i = 0; i < numCurves; ++i)
 	    {
@@ -4181,7 +4193,28 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
+			failedFindingCurves = true;
+			break;
+		    }
+		}
+	    }
+
+	    // Do a second pass in case the curve names changed.
+	    if (failedFindingCurves)
+	    {
+		for (int i = 0; i < numCurves; ++i)
+		{
+		    if (i >= _curves.Count)
+		    {
 			HEU_Logger.LogWarningFormat("Curve with name {0} not found for loading its parameter preset!", assetPreset._curveNames[i]);
+		    }
+		    else
+		    {
+			HEU_Curve curve = _curves[i];
+			if (curve != null)
+			{
+			    curve.SetCurveParameterPreset(session, this, assetPreset._curvePresets[i]);
+			}
 		    }
 		}
 	    }
