@@ -214,6 +214,16 @@ namespace HoudiniEngineUnity
 		HEU_HoudiniAssetRoot heuRoot = obj as HEU_HoudiniAssetRoot;
 		return heuRoot.gameObject;
 	    }
+	    else if (type == typeof(Terrain))
+	    {
+		Terrain terrain = obj as Terrain;
+		return terrain.gameObject;
+	    }
+	    else if (type == typeof(HEU_BoundingVolume))
+	    {
+		HEU_BoundingVolume volume = obj as HEU_BoundingVolume;
+		return volume.gameObject;
+	    }
 	    else
 	    {
 		HEU_Logger.LogErrorFormat("Unsupported type {0} for Selection Window.", type);

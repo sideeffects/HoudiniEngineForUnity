@@ -218,7 +218,9 @@ namespace HoudiniEngineUnity
 		    if (this._intValueCallback != null)
 		    {
 		        this._intValueCallback(value);
+		        EditorUtility.SetDirty(_parameters);
 		    }
+
 	        }
 	    }
 
@@ -248,7 +250,9 @@ namespace HoudiniEngineUnity
 		    if (this._boolValueCallback != null)
 		    {
 		        this._boolValueCallback(value);
+		        EditorUtility.SetDirty(_parameters);
 		    }
+
 
 	        }
 	    }
@@ -277,6 +281,7 @@ namespace HoudiniEngineUnity
 		    if (this._colorValueCallback != null)
 		    {
 		        this._colorValueCallback(value);
+			EditorUtility.SetDirty(_parameters);
 		    }
 	        }
 	    }
@@ -309,6 +314,7 @@ namespace HoudiniEngineUnity
 		    if (this._gradientValueCallback != null)
 		    {
 		        this._gradientValueCallback(value);
+			EditorUtility.SetDirty(_parameters);
 		    }
 	        }
 	    }
@@ -340,6 +346,7 @@ namespace HoudiniEngineUnity
 		    if (this._animCurveValueCallback != null)
 		    {
 		        this._animCurveValueCallback(value);
+			EditorUtility.SetDirty(_parameters);
 		    }
 	        }
 	    }

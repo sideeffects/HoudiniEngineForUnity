@@ -97,8 +97,12 @@ namespace HoudiniEngineUnity
 
 	    //GUIStyle boldLabelStyle = new GUIStyle(EditorStyles.boldLabel);
 	    //boldLabelStyle.alignment = TextAnchor.UpperLeft;
+	    const string inputTypeTooltip = @"Input type of the object. 
 
-	    GUIContent inputTypeLabel = new GUIContent("Input Type");
+The HDA type can accept any object with a HEU_HoudiniAssetRoot component. (Including curves)
+
+The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVolumes).";
+	    GUIContent inputTypeLabel = new GUIContent("Input Type", inputTypeTooltip);
 
 	    GUIContent translateLabel = new GUIContent("    Translate");
 	    GUIContent rotateLabel = new GUIContent("    Rotate");
@@ -133,7 +137,7 @@ namespace HoudiniEngineUnity
 		EditorGUILayout.PropertyField(inputNode._uiCache._keepWorldTransformProperty);
 		EditorGUILayout.PropertyField(inputNode._uiCache._packBeforeMergeProperty);
 
-		if (inputObjectType == HEU_InputNode.InputObjectType.HDA)
+		if (HEU_InputNode.GetInternalObjectType(inputObjectType) == HEU_InputNode.InternalObjectType.HDA)
 		{
 		    SerializedProperty inputAssetsProperty = inputNode._uiCache._inputAssetsProperty;
 		    if (inputAssetsProperty != null)
@@ -215,11 +219,7 @@ namespace HoudiniEngineUnity
 		    }
 
 		}
-		//else if (inputObjectType == HEU_InputNode.InputObjectType.CURVE)
-		//{
-		//	TODO INPUT CURVE
-		//}
-		else if (inputObjectType == HEU_InputNode.InputObjectType.UNITY_MESH)
+		else if (HEU_InputNode.GetInternalObjectType(inputObjectType) == HEU_InputNode.InternalObjectType.UNITY_MESH)
 		{
 		    SerializedProperty inputObjectsProperty = inputNode._uiCache._inputObjectsProperty;
 		    if (inputObjectsProperty != null)
@@ -241,7 +241,18 @@ namespace HoudiniEngineUnity
 
 			    if (GUILayout.Button("Add Selection"))
 			    {
-				HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(GameObject));
+				if (inputObjectType == HEU_InputNode.InputObjectType.TERRAIN)
+				{
+				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(Terrain));
+				}
+				else if (inputObjectType == HEU_InputNode.InputObjectType.BOUNDING_BOX)
+				{
+				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(HEU_BoundingVolume));
+				}
+				else
+				{
+				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(GameObject));
+				}
 			    }
 
 			    if (GUILayout.Button("Clear"))
@@ -285,8 +296,44 @@ namespace HoudiniEngineUnity
 					if (i < inputNode._uiCache._inputObjectCache.Count)
 					{
 					    HEU_InputNodeUICache.HEU_InputObjectUICache objectCache = inputNode._uiCache._inputObjectCache[i];
+					    GameObject oldObject = inputNode.InputObjects[i]._gameObject;
 
-					    EditorGUILayout.PropertyField(objectCache._gameObjectProperty, GUIContent.none);
+					    GameObject newObject = null;
+					    
+
+					    switch (inputObjectType)
+					    {
+						case HEU_InputNode.InputObjectType.TERRAIN:
+						    inputNode.InputObjects[i]._terrainReference = EditorGUILayout.ObjectField(inputNode.InputObjects[i]._terrainReference,  typeof(Terrain), true) as Terrain;
+
+						    if (inputNode.InputObjects[i]._terrainReference != null)
+						    {
+							newObject = inputNode.InputObjects[i]._terrainReference.gameObject;
+						    }
+						    
+						    break;
+						case HEU_InputNode.InputObjectType.BOUNDING_BOX:
+						    inputNode.InputObjects[i]._boundingVolumeReference = EditorGUILayout.ObjectField(inputNode.InputObjects[i]._boundingVolumeReference,  typeof(HEU_BoundingVolume), true) as HEU_BoundingVolume;
+
+						    if (inputNode.InputObjects[i]._boundingVolumeReference != null)
+						    {
+							newObject = inputNode.InputObjects[i]._boundingVolumeReference.gameObject;
+						    }
+						    
+						    break;
+
+						default:
+						    newObject = EditorGUILayout.ObjectField(inputNode.InputObjects[i]._gameObject,  typeof(GameObject), true) as GameObject;
+						    break;
+					    }
+					    
+
+					    if (oldObject != newObject)
+					    {
+						Undo.RecordObject(inputNode, "GameObject Assign");
+						inputNode.InputObjects[i]._gameObject = newObject;
+						EditorUtility.SetDirty(inputNode);
+					    }
 
 					    using (new EditorGUI.DisabledScope(!inputNode._uiCache._keepWorldTransformProperty.boolValue))
 					    {
