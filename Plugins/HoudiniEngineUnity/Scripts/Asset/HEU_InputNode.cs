@@ -63,8 +63,20 @@ namespace HoudiniEngineUnity
 	{
 	    HDA,
 	    UNITY_MESH,
-	    //CURVE
+	    CURVE,
+	    TERRAIN,
+	    BOUNDING_BOX
 	}
+
+
+	// I don't want to break backwards compatibility, but I want some options to map onto others to avoid duplication of tested code
+	// So we will map InputObjectType -> InternalObjectType when uploading input.
+	public enum InternalObjectType
+	{
+	    UNKNOWN,
+	    HDA,
+	    UNITY_MESH,
+	};
 
 	[SerializeField]
 	private InputObjectType _inputObjectType = InputObjectType.UNITY_MESH;
@@ -79,6 +91,7 @@ namespace HoudiniEngineUnity
 	// The IDs of the object merge created for the input objects
 	[SerializeField]
 	private List<HEU_InputObjectInfo> _inputObjects = new List<HEU_InputObjectInfo>();
+	public List<HEU_InputObjectInfo> InputObjects { get { return _inputObjects; } }
 
 	// This holds node IDs of input nodes that are created for uploading mesh data
 	[SerializeField]
@@ -214,7 +227,7 @@ namespace HoudiniEngineUnity
 
 	public void InsertInputEntry(int index, GameObject newInputGameObject)
 	{
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		if (index >= 0 && index < _inputObjects.Count)
 		{
@@ -225,7 +238,7 @@ namespace HoudiniEngineUnity
 		    HEU_Logger.LogErrorFormat("Insert index {0} out of range (number of items is {1})", index, _inputObjects.Count);
 		}
 	    }
-	    else if (_inputObjectType == InputObjectType.HDA)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		if (index >= 0 && index < _inputAssetInfos.Count)
 		{
@@ -240,7 +253,7 @@ namespace HoudiniEngineUnity
 
 	public GameObject GetInputEntryGameObject(int index)
 	{
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		if (index >= 0 && index < _inputObjects.Count)
 		{
@@ -251,7 +264,7 @@ namespace HoudiniEngineUnity
 		    HEU_Logger.LogErrorFormat("Get index {0} out of range (number of items is {1})", index, _inputObjects.Count);
 		}
 	    }
-	    else if (_inputObjectType == InputObjectType.HDA)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		if (index >= 0 && index < _inputAssetInfos.Count)
 		{
@@ -267,11 +280,11 @@ namespace HoudiniEngineUnity
 
 	public void AddInputEntryAtEnd(GameObject newEntryGameObject)
 	{
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		InternalAddInputObjectAtEnd(newEntryGameObject);
 	    }
-	    else if (_inputObjectType == InputObjectType.HDA)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		InternalAddInputHDAAtEnd(newEntryGameObject);
 	    }
@@ -279,7 +292,7 @@ namespace HoudiniEngineUnity
 
 	public HEU_InputObjectInfo AddInputEntryAtEndMesh(GameObject newEntryGameObject)
 	{
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		return InternalAddInputObjectAtEnd(newEntryGameObject);
 	    }
@@ -295,11 +308,11 @@ namespace HoudiniEngineUnity
 
 	public int NumInputEntries()
 	{
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		return _inputObjects.Count;
 	    }
-	    else if (_inputObjectType == InputObjectType.HDA)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		return _inputAssetInfos.Count;
 	    }
@@ -324,7 +337,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public void ResetConnectionForForceUpdate(HEU_SessionBase session)
 	{
-	    if (_inputObjectType == InputObjectType.HDA)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		if (AreAnyInputHDAsConnected())
 		{
@@ -351,125 +364,148 @@ namespace HoudiniEngineUnity
 		ChangeInputType(session, _pendingInputObjectType);
 	    }
 
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (_inputObjectType == InputObjectType.CURVE)
 	    {
-		// Connect regular gameobjects
+		// Curves are the same as HDAs except with type checking
 
-		if (_inputObjects == null || _inputObjects.Count == 0)
+		foreach (HEU_InputHDAInfo inputHDAInfo in _inputAssetInfos)
 		{
-		    DisconnectAndDestroyInputs(session);
-		}
-		else
-		{
-		    DisconnectAndDestroyInputs(session);
-
-		    List<HEU_InputObjectInfo> inputObjectClone = new List<HEU_InputObjectInfo>(_inputObjects);
-
-		    // Special input interface preprocessing
-		    for (int i = inputObjectClone.Count - 1; i >= 0; i--)
+		    HEU_HoudiniAssetRoot assetRoot = inputHDAInfo._pendingGO.GetComponent<HEU_HoudiniAssetRoot>();
+		    if (assetRoot != null && assetRoot._houdiniAsset != null)
 		    {
-			if (inputObjectClone[i] == null || inputObjectClone[i]._gameObject == null)
+			if (assetRoot._houdiniAsset.GetCurves().Count == 0)
 			{
-			    continue;
+			    HEU_Logger.LogErrorFormat("Input asset {0} contains no curves!", assetRoot.gameObject.name);
 			}
-
-			HEU_BoundingVolume boundingVolume = inputObjectClone[i]._gameObject.GetComponent<HEU_BoundingVolume>();
-			if (boundingVolume == null)
-			{
-			    continue;
-			}
-
-			List<GameObject> boundingBoxObjects = boundingVolume.GetAllIntersectingObjects();
-			if (boundingBoxObjects == null)
-			{
-			    continue;
-			}
-
-			foreach (GameObject obj in boundingBoxObjects)
-			{
-			    if (obj == null)
-			    {
-				continue;
-			    }
-
-			    HEU_InputObjectInfo newObjInfo = new HEU_InputObjectInfo();
-			    inputObjectClone[i].CopyTo(newObjInfo);
-			    newObjInfo._gameObject = obj;
-			    inputObjectClone.Add(newObjInfo);
-			}
-
-			// Remove this because it's not a real interface
-			inputObjectClone.RemoveAt(i);
-
-		    }
-
-		    // Create merge object, and input nodes with data, then connect them to the merge object
-		    bool bResult = HEU_InputUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref inputObjectClone, ref _inputObjectsConnectedAssetIDs, _keepWorldTransform);
-		    if (!bResult)
-		    {
-			DisconnectAndDestroyInputs(session);
-			return;
-		    }
-
-		    // Now connect from this asset to the merge object
-		    ConnectToMergeObject(session);
-
-		    if (!UploadObjectMergeTransformType(session))
-		    {
-			HEU_Logger.LogErrorFormat("Failed to upload object merge transform type!");
-			return;
-		    }
-
-		    if (!UploadObjectMergePackGeometry(session))
-		    {
-			HEU_Logger.LogErrorFormat("Failed to upload object merge pack geometry value!");
-			return;
 		    }
 		}
+		
+		UploadHDAInput(session);
 	    }
-	    else if (_inputObjectType == InputObjectType.HDA)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
-		// Connect HDAs
+		// An HDA input should be able to use any kind of HDA
+		UploadHDAInput(session);
 
-		// First clear all previous input connections
-		DisconnectAndDestroyInputs(session);
-
-		// Create merge object, and connect all input HDAs
-		bool bResult = HEU_InputUtility.CreateInputNodeWithMultiAssets(session, _parentAsset, ref _connectedNodeID, ref _inputAssetInfos, _keepWorldTransform, -1);
-		if (!bResult)
-		{
-		    DisconnectAndDestroyInputs(session);
-		    return;
-		}
-
-		// Now connect from this asset to the merge object
-		ConnectToMergeObject(session);
-
-		if (!UploadObjectMergeTransformType(session))
-		{
-		    HEU_Logger.LogErrorFormat("Failed to upload object merge transform type!");
-		    return;
-		}
-
-		if (!UploadObjectMergePackGeometry(session))
-		{
-		    HEU_Logger.LogErrorFormat("Failed to upload object merge pack geometry value!");
-		    return;
-		}
 	    }
-	    //else if (_inputObjectType == InputObjectType.CURVE)
-	    //{
-	    // TODO INPUT NODE - create new Curve SOP (add HEU_Curve here?)
-	    //}
 	    else
 	    {
-		HEU_Logger.LogErrorFormat("Unsupported input type {0}. Unable to upload input.", _inputObjectType);
+		UploadUnityInput(session);
+		//HEU_Logger.LogErrorFormat("Unsupported input type {0}. Unable to upload input.", _inputObjectType);
 	    }
 
 	    RequiresUpload = false;
 	    RequiresCook = true;
 
 	    ClearUICache();
+	}
+
+	private void UploadHDAInput(HEU_SessionBase session)
+	{
+	    // Connect HDAs
+
+	    // First clear all previous input connections
+	    DisconnectAndDestroyInputs(session);
+
+	    // Create merge object, and connect all input HDAs
+	    bool bResult = HEU_InputUtility.CreateInputNodeWithMultiAssets(session, _parentAsset, ref _connectedNodeID, ref _inputAssetInfos, _keepWorldTransform, -1);
+	    if (!bResult)
+	    {
+	        DisconnectAndDestroyInputs(session);
+	        return;
+	    }
+
+	    // Now connect from this asset to the merge object
+	    ConnectToMergeObject(session);
+
+	    if (!UploadObjectMergeTransformType(session))
+	    {
+	        HEU_Logger.LogErrorFormat("Failed to upload object merge transform type!");
+	        return;
+	    }
+
+	    if (!UploadObjectMergePackGeometry(session))
+	    {
+	        HEU_Logger.LogErrorFormat("Failed to upload object merge pack geometry value!");
+	        return;
+	    }
+	}
+
+	private void UploadUnityInput(HEU_SessionBase session)
+	{
+	    // Connect regular gameobjects
+
+	    if (_inputObjects == null || _inputObjects.Count == 0)
+	    {
+	        DisconnectAndDestroyInputs(session);
+	    }
+	    else
+	    {
+	        DisconnectAndDestroyInputs(session);
+
+	        List<HEU_InputObjectInfo> inputObjectClone = new List<HEU_InputObjectInfo>(_inputObjects);
+
+	        // Special input interface preprocessing
+	        for (int i = inputObjectClone.Count - 1; i >= 0; i--)
+	        {
+		    if (inputObjectClone[i] == null || inputObjectClone[i]._gameObject == null)
+		    {
+		        continue;
+		    }
+
+		    HEU_BoundingVolume boundingVolume = inputObjectClone[i]._gameObject.GetComponent<HEU_BoundingVolume>();
+		    if (boundingVolume == null)
+		    {
+		        continue;
+		    }
+
+		    List<GameObject> boundingBoxObjects = boundingVolume.GetAllIntersectingObjects();
+		    if (boundingBoxObjects == null)
+		    {
+		        continue;
+		    }
+
+		    foreach (GameObject obj in boundingBoxObjects)
+		    {
+		        if (obj == null)
+		        {
+			    continue;
+		        }
+
+		        HEU_InputObjectInfo newObjInfo = new HEU_InputObjectInfo();
+		        inputObjectClone[i].CopyTo(newObjInfo);
+		        newObjInfo._gameObject = obj;
+		        inputObjectClone.Add(newObjInfo);
+		    }
+
+		    // Remove this because it's not a real interface
+		    inputObjectClone.RemoveAt(i);
+
+	        }
+
+	        // Create merge object, and input nodes with data, then connect them to the merge object
+	        bool bResult = HEU_InputUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref inputObjectClone, ref _inputObjectsConnectedAssetIDs, _keepWorldTransform);
+	        if (!bResult)
+	        {
+		    DisconnectAndDestroyInputs(session);
+	    	    return;
+	        }
+
+	        // Now connect from this asset to the merge object
+	        ConnectToMergeObject(session);
+
+	        if (!UploadObjectMergeTransformType(session))
+	        {
+		    HEU_Logger.LogErrorFormat("Failed to upload object merge transform type!");
+		    return;
+	        }
+
+	        if (!UploadObjectMergePackGeometry(session))
+	        {
+		    HEU_Logger.LogErrorFormat("Failed to upload object merge pack geometry value!");
+		    return;
+	        }
+	    }
 	}
 
 	public bool AreAnyInputHDAsConnected()
@@ -486,7 +522,7 @@ namespace HoudiniEngineUnity
 
 	public void ReconnectToUpstreamAsset()
 	{
-	    if (_inputObjectType == InputObjectType.HDA && AreAnyInputHDAsConnected())
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA && AreAnyInputHDAsConnected())
 	    {
 		foreach (HEU_InputHDAInfo hdaInfo in _inputAssetInfos)
 		{
@@ -649,11 +685,11 @@ namespace HoudiniEngineUnity
 
 	public int GetConnectedInputCount()
 	{
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		return _inputObjectsConnectedAssetIDs.Count;
 	    }
-	    else if (_inputObjectType == InputObjectType.HDA)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		return _inputAssetInfos.Count;
 	    }
@@ -662,14 +698,14 @@ namespace HoudiniEngineUnity
 
 	public HAPI_NodeId GetConnectedNodeID(int index)
 	{
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		if (index >= 0 && index < _inputObjectsConnectedAssetIDs.Count)
 		{
 		    return _inputObjectsConnectedAssetIDs[index];
 		}
 	    }
-	    else if (_inputObjectType == InputObjectType.HDA)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		return _inputAssetInfos[index]._connectedInputNodeID;
 	    }
@@ -745,7 +781,7 @@ namespace HoudiniEngineUnity
 	public bool HasInputNodeTransformChanged()
 	{
 	    // Only need to check Mesh inputs, since HDA inputs don't upload transform
-	    if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		for (int i = 0; i < _inputObjects.Count; ++i)
 		{
@@ -772,7 +808,7 @@ namespace HoudiniEngineUnity
 	public void UploadInputObjectTransforms(HEU_SessionBase session)
 	{
 	    // Only need to upload Mesh inputs, since HDA inputs don't upload transform
-	    if (_nodeID == HEU_HAPIConstants.HAPI_INVALID_PARM_ID || _inputObjectType != InputObjectType.UNITY_MESH)
+	    if (_nodeID == HEU_HAPIConstants.HAPI_INVALID_PARM_ID || HEU_InputNode.GetInternalObjectType(_inputObjectType) != InternalObjectType.UNITY_MESH)
 	    {
 		return;
 	    }
@@ -796,7 +832,7 @@ namespace HoudiniEngineUnity
 	/// <param name="session"></param>
 	public void UpdateOnAssetRecreation(HEU_SessionBase session)
 	{
-	    if (_inputObjectType == InputObjectType.HDA)
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
 	    {
 		// For HDA inputs, need to recreate the merge node, cook the HDAs, and connect the HDAs to the merge nodes
 
@@ -820,7 +856,7 @@ namespace HoudiniEngineUnity
 		    _inputAssetInfos[i]._connectedInputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 		}
 	    }
-	    else if (_inputObjectType == InputObjectType.UNITY_MESH)
+	    else if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		// For mesh input, invalidate _inputObjectsConnectedAssetIDs and _connectedNodeID as their
 		// nodes most likely don't exist, and the IDs will not be correct since this asset got recreated
@@ -834,7 +870,7 @@ namespace HoudiniEngineUnity
 	{
 	    destInputNode._pendingInputObjectType = _inputObjectType;
 
-	    if (destInputNode._inputObjectType == InputObjectType.HDA)
+	    if (GetInternalObjectType(destInputNode._inputObjectType) == InternalObjectType.HDA)
 	    {
 		destInputNode.ResetConnectionForForceUpdate(session);
 	    }
@@ -929,7 +965,7 @@ namespace HoudiniEngineUnity
 
 	    ChangeInputType(session, inputPreset._inputObjectType);
 
-	    if (inputPreset._inputObjectType == InputObjectType.UNITY_MESH)
+	    if (GetInternalObjectType(inputPreset._inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
 		bool bSet = false;
 		int numObjects = inputPreset._inputObjectPresets.Count;
@@ -977,7 +1013,7 @@ namespace HoudiniEngineUnity
 		    }
 		}
 	    }
-	    else if (inputPreset._inputObjectType == HEU_InputNode.InputObjectType.HDA)
+	    else if (HEU_InputNode.GetInternalObjectType(inputPreset._inputObjectType) == HEU_InputNode.InternalObjectType.HDA)
 	    {
 		bool bSet = false;
 		int numInptus = inputPreset._inputAssetPresets.Count;
@@ -1136,6 +1172,22 @@ namespace HoudiniEngineUnity
 
 	    return bResult;
 	}
+
+	public static InternalObjectType GetInternalObjectType(InputObjectType type)
+	{
+	    switch (type)
+	    {
+		case InputObjectType.HDA:
+		case InputObjectType.CURVE:
+		    return InternalObjectType.HDA;
+		case InputObjectType.UNITY_MESH:
+		case InputObjectType.TERRAIN:
+		case InputObjectType.BOUNDING_BOX:
+		    return InternalObjectType.UNITY_MESH;
+		default:
+		    return InternalObjectType.UNKNOWN;
+	    }
+	}
     }
 
     // Container for each input object in this node
@@ -1144,6 +1196,14 @@ namespace HoudiniEngineUnity
     {
 	// Gameobject containing mesh
 	public GameObject _gameObject;
+
+	// Hidden variables to serialize UI references
+	[HideInInspector]
+	public Terrain _terrainReference;
+	[HideInInspector]
+
+	public HEU_BoundingVolume _boundingVolumeReference;
+
 
 	// The last upload transform, for diff checks
 	public Matrix4x4 _syncdTransform = Matrix4x4.identity;
@@ -1278,5 +1338,4 @@ namespace HoudiniEngineUnity
 
 	public List<HEU_InputAssetUICache> _inputAssetCache = new List<HEU_InputAssetUICache>();
     }
-
 }   // HoudiniEngineUnity
