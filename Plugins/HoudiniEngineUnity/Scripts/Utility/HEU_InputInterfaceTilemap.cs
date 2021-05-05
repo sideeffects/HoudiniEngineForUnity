@@ -26,9 +26,6 @@
 
 // Special thanks to rendereverything for helping to write this input interface.
 
-//#define TILENAME_GROUPS
-///#define EXPORT_RECT_GRID  //Export minimal bounds (including empty tiles) that encompasses all real tiles 
-
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
