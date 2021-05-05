@@ -27,7 +27,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
-
+using UnityEngine.Tilemaps;
 
 namespace HoudiniEngineUnity
 {
@@ -65,7 +65,8 @@ namespace HoudiniEngineUnity
 	    UNITY_MESH,
 	    CURVE,
 	    TERRAIN,
-	    BOUNDING_BOX
+	    BOUNDING_BOX,
+	    TILEMAP
 	}
 
 
@@ -176,6 +177,11 @@ namespace HoudiniEngineUnity
 
 	public bool IsAssetInput() { return _inputNodeType == InputNodeType.CONNECTION; }
 
+
+	// Tilemap specific settings:
+	[SerializeField]
+	private HEU_InputInterfaceTilemapSettings _tilemapSettings = new HEU_InputInterfaceTilemapSettings();
+	public HEU_InputInterfaceTilemapSettings TilemapSettings { get { return  _tilemapSettings; }}
 
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
@@ -484,7 +490,7 @@ namespace HoudiniEngineUnity
 	        }
 
 	        // Create merge object, and input nodes with data, then connect them to the merge object
-	        bool bResult = HEU_InputUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref inputObjectClone, ref _inputObjectsConnectedAssetIDs, _keepWorldTransform);
+	        bool bResult = HEU_InputUtility.CreateInputNodeWithMultiObjects(session, _nodeID, ref _connectedNodeID, ref inputObjectClone, ref _inputObjectsConnectedAssetIDs, this);
 	        if (!bResult)
 	        {
 		    DisconnectAndDestroyInputs(session);
@@ -539,6 +545,7 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_InputObjectInfo newObjectInfo = new HEU_InputObjectInfo();
 	    newObjectInfo._gameObject = inputGameObject;
+	    newObjectInfo.SetReferencesFromGameObject();
 
 	    return newObjectInfo;
 	}
@@ -1183,6 +1190,7 @@ namespace HoudiniEngineUnity
 		case InputObjectType.UNITY_MESH:
 		case InputObjectType.TERRAIN:
 		case InputObjectType.BOUNDING_BOX:
+		case InputObjectType.TILEMAP:
 		    return InternalObjectType.UNITY_MESH;
 		default:
 		    return InternalObjectType.UNKNOWN;
@@ -1203,7 +1211,8 @@ namespace HoudiniEngineUnity
 	[HideInInspector]
 
 	public HEU_BoundingVolume _boundingVolumeReference;
-
+	[HideInInspector]
+	public Tilemap _tilemapReference;
 
 	// The last upload transform, for diff checks
 	public Matrix4x4 _syncdTransform = Matrix4x4.identity;
@@ -1227,12 +1236,25 @@ namespace HoudiniEngineUnity
 	public void CopyTo(HEU_InputObjectInfo destObject)
 	{
 	    destObject._gameObject = _gameObject;
+	    destObject._terrainReference = _terrainReference;
+	    destObject._boundingVolumeReference = _boundingVolumeReference;
+	    destObject._tilemapReference = _tilemapReference;
 	    destObject._syncdTransform = _syncdTransform;
 	    destObject._useTransformOffset = _useTransformOffset;
 	    destObject._translateOffset = _translateOffset;
 	    destObject._rotateOffset = _rotateOffset;
 	    destObject._scaleOffset = _scaleOffset;
 	    destObject._inputInterfaceType = _inputInterfaceType;
+	}
+
+	public void SetReferencesFromGameObject()
+	{
+	    if (_gameObject != null)
+	    {
+		_terrainReference = _gameObject.GetComponent<Terrain>();
+		_tilemapReference = _gameObject.GetComponent<Tilemap>();
+		_boundingVolumeReference = _gameObject.GetComponent<HEU_BoundingVolume>();
+	    }
 	}
 
 	public bool IsEquivalentTo(HEU_InputObjectInfo other)
@@ -1314,6 +1336,9 @@ namespace HoudiniEngineUnity
 	public UnityEditor.SerializedProperty _inputObjectsProperty;
 
 	public UnityEditor.SerializedProperty _inputAssetsProperty;
+	public UnityEditor.SerializedProperty _tilemapSettingsProperty;
+
+
 #endif
 
 	public class HEU_InputObjectUICache

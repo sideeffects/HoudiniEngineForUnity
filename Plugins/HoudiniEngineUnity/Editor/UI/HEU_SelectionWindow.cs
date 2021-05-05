@@ -27,6 +27,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.Tilemaps;
 
 namespace HoudiniEngineUnity
 {
@@ -223,6 +224,11 @@ namespace HoudiniEngineUnity
 	    {
 		HEU_BoundingVolume volume = obj as HEU_BoundingVolume;
 		return volume.gameObject;
+	    }
+	    else if (type == typeof(Tilemap))
+	    {
+		Tilemap tilemap = obj as Tilemap;
+		return tilemap.gameObject;
 	    }
 	    else
 	    {
