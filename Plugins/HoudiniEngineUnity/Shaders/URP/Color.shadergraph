@@ -38,7 +38,7 @@
             "m_Guid": ""
         }
     },
-    "m_Path": "Houdini/UDP",
+    "m_Path": "Houdini/URP",
     "m_ConcretePrecision": 0,
     "m_ActiveOutputNodeGuidSerialized": "d84630c0-df1c-40c3-a534-726385c78b53"
 }
