@@ -27,6 +27,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using UnityEngine.Tilemaps;
 
 namespace HoudiniEngineUnity
 {
@@ -35,6 +36,12 @@ namespace HoudiniEngineUnity
     /// </summary>
     public static class HEU_InputNodeUI
     {
+
+	private static GUIContent _tilemapCreateGroupsContent = new GUIContent("Create Groups for Tiles", "If checked, will create a point group for each kind of tile using its tile name. If unchecked, will create a point string attribute instead.");
+	private static GUIContent _tilemapExportUnusedTilesContent = new GUIContent("Keep Unused Tiles", "If checked, will create a point for an empty tile");
+	private static GUIContent _tilemapColorContent = new GUIContent("Apply Tile color", "If checked, will output a Cd color attribute to point.");
+	private static GUIContent _tilemapOrientationContent = new GUIContent("Apply Tilemap Orientation", "If checked, will offset position by the tilemap position offset, and produce orient/pscale attributes to the points.");
+
 	/// <summary>
 	/// Populate the UI cache for the given input node
 	/// </summary>
@@ -53,6 +60,8 @@ namespace HoudiniEngineUnity
 
 		inputNode._uiCache._inputObjectsProperty = HEU_EditorUtility.GetSerializedProperty(inputNode._uiCache._inputNodeSerializedObject, "_inputObjects");
 
+		inputNode._uiCache._tilemapSettingsProperty = HEU_EditorUtility.GetSerializedProperty(inputNode._uiCache._inputNodeSerializedObject, "_tilemapSettings");
+
 		int inputCount = inputNode._uiCache._inputObjectsProperty.arraySize;
 		for (int i = 0; i < inputCount; ++i)
 		{
@@ -67,6 +76,7 @@ namespace HoudiniEngineUnity
 		    objectCache._translateProperty = inputObjectProperty.FindPropertyRelative("_translateOffset");
 		    objectCache._rotateProperty = inputObjectProperty.FindPropertyRelative("_rotateOffset");
 		    objectCache._scaleProperty = inputObjectProperty.FindPropertyRelative("_scaleOffset");
+
 
 		    inputNode._uiCache._inputObjectCache.Add(objectCache);
 		}
@@ -249,6 +259,10 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 				{
 				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(HEU_BoundingVolume));
 				}
+				else if (inputObjectType == HEU_InputNode.InputObjectType.TILEMAP)
+				{
+				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(Tilemap));
+				}
 				else
 				{
 				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(GameObject));
@@ -321,17 +335,28 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 						    }
 						    
 						    break;
+						case HEU_InputNode.InputObjectType.TILEMAP:
+						    inputNode.InputObjects[i]._tilemapReference = EditorGUILayout.ObjectField(inputNode.InputObjects[i]._tilemapReference,  typeof(Tilemap), true) as Tilemap;
+
+						    if (inputNode.InputObjects[i]._tilemapReference != null)
+						    {
+							newObject = inputNode.InputObjects[i]._tilemapReference.gameObject;
+						    }
+
+						    break;
 
 						default:
 						    newObject = EditorGUILayout.ObjectField(inputNode.InputObjects[i]._gameObject,  typeof(GameObject), true) as GameObject;
 						    break;
 					    }
-					    
+
 
 					    if (oldObject != newObject)
 					    {
 						Undo.RecordObject(inputNode, "GameObject Assign");
 						inputNode.InputObjects[i]._gameObject = newObject;
+						// Set the reference to avoid strange bugs when switching input type modes
+						inputNode.InputObjects[i].SetReferencesFromGameObject();
 						EditorUtility.SetDirty(inputNode);
 					    }
 
@@ -344,6 +369,24 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 						    objectCache._rotateProperty.vector3Value = EditorGUILayout.Vector3Field(rotateLabel, objectCache._rotateProperty.vector3Value);
 						    objectCache._scaleProperty.vector3Value = EditorGUILayout.Vector3Field(scaleLabel, objectCache._scaleProperty.vector3Value);
 						}
+					    }
+
+					    if (inputObjectType == HEU_InputNode.InputObjectType.TILEMAP && inputNode.TilemapSettings != null)
+					    {
+					        EditorGUILayout.LabelField("Tilemap settings ");
+						EditorGUI.indentLevel++;
+						{
+					    	    UnityEditor.SerializedProperty createGroupsForTilesProperty = inputNode._uiCache._tilemapSettingsProperty.FindPropertyRelative("_createGroupsForTiles");
+						    UnityEditor.SerializedProperty exportUnusedTilesProperty = inputNode._uiCache._tilemapSettingsProperty.FindPropertyRelative("_exportUnusedTiles");
+						    UnityEditor.SerializedProperty applyTileColorProperty = inputNode._uiCache._tilemapSettingsProperty.FindPropertyRelative("_applyTileColor");
+						    UnityEditor.SerializedProperty applyTilemapOrientationProperty = inputNode._uiCache._tilemapSettingsProperty.FindPropertyRelative("_applyTilemapOrientation");
+
+						    createGroupsForTilesProperty.boolValue = HEU_EditorUI.DrawToggleLeft(createGroupsForTilesProperty.boolValue, _tilemapCreateGroupsContent.text, _tilemapCreateGroupsContent.tooltip);
+						    exportUnusedTilesProperty.boolValue = HEU_EditorUI.DrawToggleLeft(exportUnusedTilesProperty.boolValue, _tilemapExportUnusedTilesContent.text, _tilemapExportUnusedTilesContent.tooltip);
+						    applyTileColorProperty.boolValue = HEU_EditorUI.DrawToggleLeft(applyTileColorProperty.boolValue, _tilemapColorContent.text, _tilemapColorContent.tooltip);
+						    applyTilemapOrientationProperty.boolValue = HEU_EditorUI.DrawToggleLeft(applyTilemapOrientationProperty.boolValue, _tilemapOrientationContent.text, _tilemapOrientationContent.tooltip);
+						}
+						EditorGUI.indentLevel--;
 					    }
 					}
 				    }

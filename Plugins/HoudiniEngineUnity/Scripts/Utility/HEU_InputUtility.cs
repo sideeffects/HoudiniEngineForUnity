@@ -181,11 +181,12 @@ namespace HoudiniEngineUnity
 	/// <param name="connectMergeID">Created SOP/merge node ID</param>
 	/// <param name="inputObjects">List of input objects to upload</param>
 	/// <param name="inputObjectsConnectedAssetIDs">List of input node IDs for the input nodes created</param>
-	/// <param name="bKeepWorldTransform">Whether to use world transform for the input nodes</param>
+	/// <param name="inputNode">The specified inputNode to create the node for (used for settings)</param>
 	/// <returns>True if successfully uploading input nodes</returns>
 	public static bool CreateInputNodeWithMultiObjects(HEU_SessionBase session, HAPI_NodeId assetID,
-		ref HAPI_NodeId connectMergeID, ref List<HEU_InputObjectInfo> inputObjects, ref List<HAPI_NodeId> inputObjectsConnectedAssetIDs, bool bKeepWorldTransform)
+		ref HAPI_NodeId connectMergeID, ref List<HEU_InputObjectInfo> inputObjects, ref List<HAPI_NodeId> inputObjectsConnectedAssetIDs, HEU_InputNode inputNode)
 	{
+	    bool bKeepWorldTransform = inputNode.KeepWorldTransform;
 	    // Create the merge SOP node that the input nodes are going to connect to.
 	    if (!session.CreateNode(-1, "SOP/merge", null, true, out connectMergeID))
 	    {
@@ -211,6 +212,14 @@ namespace HoudiniEngineUnity
 		{
 		    HEU_Logger.LogWarningFormat("No input interface found for gameobject: {0}. Skipping upload!", inputObjects[i]._gameObject.name);
 		    continue;
+		}
+
+		// Apply settings based on the interface type.
+		System.Type inputInterfaceType = inputInterface.GetType();
+		if (inputInterfaceType == typeof(HEU_InputInterfaceTilemap))
+		{
+		    HEU_InputInterfaceTilemap tilemapInterface = inputInterface as HEU_InputInterfaceTilemap;
+		    tilemapInterface.Initialize(inputNode.TilemapSettings);
 		}
 
 		bool bResult = inputInterface.CreateInputNodeWithDataUpload(session, connectMergeID, inputObjects[i]._gameObject, out newConnectInputID);

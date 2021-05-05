@@ -113,6 +113,51 @@ namespace HoudiniEngineUnity
 
 	    return System.Text.Encoding.UTF8.GetString(buffer, 0, buffer.Length - 1);
 	}
+
+	// Vector3
+	public static Vector3 SwapXAndY(this Vector3 self)
+	{
+	    float tmp = self.x;
+	    self.x = self.y;
+	    self.y = tmp;
+
+	    return self;
+	}
+
+	public static Vector3 SwapXAndZ(this Vector3 self)
+	{
+	    float tmp = self.x;
+	    self.x = self.z;
+	    self.z = tmp;
+
+	    return self;
+	}
+
+	public static Vector3 SwapYAndZ(this Vector3 self)
+	{
+	    float tmp = self.y;
+	    self.y = self.z;
+	    self.z = tmp;
+
+	    return self;
+	}
+
+	// Matrix4x4
+	public static Vector3 DecomposeToPosition(this Matrix4x4 self)
+	{
+	    return self.GetColumn(3);
+	}
+
+	public static Quaternion DecomposeToRotation(this Matrix4x4 self)
+	{
+	    return Quaternion.LookRotation(self.GetColumn(2), self.GetColumn(1));
+	}
+
+	public static Vector3 DecomposeToScale(this Matrix4x4 self)
+	{
+	    return new Vector3(self.GetColumn(0).magnitude, self.GetColumn(1).magnitude, self.GetColumn(2).magnitude);
+	}
+
     }
 
 
