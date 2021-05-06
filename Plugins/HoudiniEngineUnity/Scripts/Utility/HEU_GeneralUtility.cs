@@ -2015,6 +2015,39 @@ namespace HoudiniEngineUnity
 	    return value - Mathf.Floor(value);
 	}
 
+	public static string LongestCommonPrefix(List<string> list)
+	{
+	    if (list == null || list.Count == 0)
+	    {
+		return "";
+	    }
+	    else if (list.Count == 1)
+	    {
+		return list[0];
+	    }
+
+	    list.Sort();
+
+	    string firstStr = list[0];
+	    string lastStr = list[list.Count - 1];
+
+	    string resultStr = "";
+
+	    for (int i = 0; i < firstStr.Length; i++)
+	    {
+		if (firstStr[i] == lastStr[i])
+		{
+		    resultStr += firstStr[i];
+		}
+		else
+		{
+		    break;
+		}
+	    }
+
+	    return resultStr;
+	}
+
     };
 
 
