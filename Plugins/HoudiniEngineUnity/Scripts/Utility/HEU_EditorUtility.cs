@@ -1254,6 +1254,87 @@ namespace HoudiniEngineUnity
 #endif
 	}
 
+	// Gets the object parent folder for meshes, materials, or terrains
+	public static string GetObjectParentFolder(GameObject parentObject)
+	{
+	    string targetAssetPath = "";
+#if UNITY_EDITOR
+	    List<string> possiblePaths = new List<string>();
+
+	    MeshFilter[] currentObjectMeshes = parentObject.GetComponentsInChildren<MeshFilter>();
+	    if (currentObjectMeshes != null)
+	    {
+		foreach (MeshFilter meshFilter in currentObjectMeshes)
+		{
+		    if (meshFilter.sharedMesh != null)
+		    {
+			string possibleObjectPath = GetObjectParentFolderHelper(meshFilter.sharedMesh.GetInstanceID());
+			if (possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
+			{
+			    possiblePaths.Add(possibleObjectPath);
+			}
+		    }
+		}
+	    }
+
+	    MeshRenderer[] currentObjectMeshRenderers = parentObject.GetComponentsInChildren<MeshRenderer>();
+	    if (currentObjectMeshRenderers != null)
+	    {
+		foreach (MeshRenderer meshRend in currentObjectMeshRenderers)
+		{
+		    Material[] materials = meshRend.sharedMaterials;
+		    foreach (Material mat in materials)
+		    {
+			string possibleObjectPath = GetObjectParentFolderHelper(mat.GetInstanceID());
+			if (possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
+			{
+			    possiblePaths.Add(possibleObjectPath);
+			}
+		    }
+
+		}
+	    }
+
+	    Terrain[] currentObjectTerrains = parentObject.GetComponentsInChildren<Terrain>();
+	    if (currentObjectTerrains != null)
+	    {
+		foreach (Terrain terrain in currentObjectTerrains)
+		{
+		    if (terrain.terrainData != null)
+		    {
+			string possibleObjectPath = GetObjectParentFolderHelper(terrain.terrainData.GetInstanceID());
+			if (possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
+			{
+			    possiblePaths.Add(possibleObjectPath);
+			}
+		    }
+		}
+	    }
+
+	    targetAssetPath = HEU_GeneralUtility.LongestCommonPrefix(possiblePaths);
+#endif
+
+	    return targetAssetPath;
+	}
+
+	private static string GetObjectParentFolderHelper(int instanceID)
+	{
+	    string targetAssetPath = "";
+#if UNITY_EDITOR
+	    string currentObjectPath = AssetDatabase.GetAssetPath(instanceID);
+	    if (HEU_Platform.DoesFileExist(currentObjectPath))
+	    {
+	        string combinedPath = HEU_Platform.GetParentDirectory(HEU_Platform.GetParentDirectory(currentObjectPath));
+
+	        if (HEU_Platform.DoesDirectoryExist(combinedPath))
+	        {
+	            targetAssetPath = HEU_AssetDatabase.GetAssetRelativePath(combinedPath);
+	        }
+	    }
+#endif
+	    return targetAssetPath;
+	}
+
 	public static void RepaintScene()
 	{
 #if UNITY_EDITOR
