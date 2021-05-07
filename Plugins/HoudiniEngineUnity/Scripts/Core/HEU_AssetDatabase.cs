@@ -1311,46 +1311,6 @@ namespace HoudiniEngineUnity
 	    return null;
 #endif
 	}
-
-	public static void AddAlwaysIncludedShader(string shaderName)
-	{
-#if UNITY_EDITOR
-	    Shader shader = Shader.Find(shaderName);
-
-	    if (shader == null)
-	        return;
-
-            UnityEngine.Rendering.GraphicsSettings graphicsSettings = 
-	        AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.GraphicsSettings>("ProjectSettings/GraphicsSettings.asset");
-	
-	    if (graphicsSettings == null)
-	        return;
-
-	    SerializedObject serializedObject = new SerializedObject(graphicsSettings);
-	    SerializedProperty arrayProp = serializedObject.FindProperty("m_AlwaysIncludedShaders");
-	    bool hasShader = false;
-
-	    for (int i = 0; i < arrayProp.arraySize; i++)
-	    {
-	        SerializedProperty arrayElem = arrayProp.GetArrayElementAtIndex(i);
-	        if (shader == arrayElem.objectReferenceValue)
-	        {
-	            hasShader = true;
-	    	    break;
-	        }
-	    }
-
-	    if (!hasShader)
-	    {
-	        int arrayIndex = arrayProp.arraySize;
-	        arrayProp.InsertArrayElementAtIndex(arrayIndex);
-	        SerializedProperty arrayElem = arrayProp.GetArrayElementAtIndex(arrayIndex);
-	        arrayElem.objectReferenceValue = shader;
-	        serializedObject.ApplyModifiedProperties();
-	        AssetDatabase.SaveAssets();
-	    }
-#endif
-	}
     }
 
 }   // HoudiniEngineUnity

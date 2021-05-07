@@ -56,23 +56,6 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_InputInterfaceTerrain inputInterface = new HEU_InputInterfaceTerrain();
 	    HEU_InputUtility.RegisterInputInterface(inputInterface);
-	    #if UNITY_2019_2_OR_NEWER
-	        // Make sure that the default terrain material is always included in the build
-		HEU_PipelineType pipelineType = HEU_RenderingPipelineDefines.GetPipeline();
-
-		if (pipelineType == HEU_PipelineType.BiRP)
-		{
-	            HEU_AssetDatabase.AddAlwaysIncludedShader(HEU_Defines.DEFAULT_TERRAIN_SHADER);
-		}
-		else if (pipelineType == HEU_PipelineType.HDRP)
-		{
-		    HEU_AssetDatabase.AddAlwaysIncludedShader(HEU_Defines.DEFAULT_TERRAIN_SHADER_HDRP);
-		}
-		else if (pipelineType == HEU_PipelineType.URP)
-		{
-		    HEU_AssetDatabase.AddAlwaysIncludedShader(HEU_Defines.DEFAULT_TERRAIN_SHADER_URP);
-		}
-	    #endif
 	}
 #endif
 
