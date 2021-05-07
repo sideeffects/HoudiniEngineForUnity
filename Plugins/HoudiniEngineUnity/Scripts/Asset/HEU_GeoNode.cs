@@ -883,9 +883,13 @@ namespace HoudiniEngineUnity
 	    int numParts = _parts.Count;
 	    for (int i = 0; i < numParts; ++i)
 	    {
-		HEU_GeneralUtility.AssignUnityTag(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
-		HEU_GeneralUtility.AssignUnityLayer(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
-		HEU_GeneralUtility.MakeStaticIfHasAttribute(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
+		if (_parts[i].OutputGameObject != null)
+		{
+		    HEU_GeneralUtility.AssignUnityTag(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
+		    HEU_GeneralUtility.AssignUnityLayer(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
+		    HEU_GeneralUtility.MakeStaticIfHasAttribute(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
+		}
+
 	    }
 	}
 

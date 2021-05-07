@@ -1372,6 +1372,11 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public static void AssignUnityTag(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, GameObject gameObject)
 	{
+	    if (gameObject == null)
+	    {
+		return;
+	    }
+
 	    HAPI_AttributeInfo tagAttrInfo = new HAPI_AttributeInfo();
 	    int[] tagAttr = new int[0];
 	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityTagAttributeName, ref tagAttrInfo, ref tagAttr, session.GetAttributeStringData);
@@ -1402,6 +1407,11 @@ namespace HoudiniEngineUnity
 	/// <param name="gameObject"></param>
 	public static void AssignUnityLayer(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, GameObject gameObject)
 	{
+	    if (gameObject == null)
+	    {
+		return;
+	    }
+
 	    HAPI_AttributeInfo layerAttrInfo = new HAPI_AttributeInfo();
 	    int[] layerAttr = new int[0];
 	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityLayerAttributeName, ref layerAttrInfo, ref layerAttr, session.GetAttributeStringData);
@@ -1428,6 +1438,11 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public static void MakeStaticIfHasAttribute(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, GameObject gameObject)
 	{
+	    if (gameObject == null)
+	    {
+		return;
+	    }
+
 	    HAPI_AttributeInfo staticAttrInfo = new HAPI_AttributeInfo();
 	    int[] staticAttr = new int[0];
 	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_PluginSettings.UnityStaticAttributeName, ref staticAttrInfo, ref staticAttr, session.GetAttributeIntData);
