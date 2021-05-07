@@ -376,6 +376,11 @@ namespace HoudiniEngineUnity
 
 		foreach (HEU_InputHDAInfo inputHDAInfo in _inputAssetInfos)
 		{
+		    if (inputHDAInfo == null || inputHDAInfo._pendingGO == null)
+		    {
+			continue;
+		    }
+
 		    HEU_HoudiniAssetRoot assetRoot = inputHDAInfo._pendingGO.GetComponent<HEU_HoudiniAssetRoot>();
 		    if (assetRoot != null && assetRoot._houdiniAsset != null)
 		    {
