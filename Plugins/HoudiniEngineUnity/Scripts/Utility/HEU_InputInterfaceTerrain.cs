@@ -179,6 +179,7 @@ namespace HoudiniEngineUnity
 	    idt._heightNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 	    idt._maskNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 	    idt._mergeNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    idt._parentNodeID = -1; // Heightfields should have its own objects.
 
 	    // Create the HeightField node network
 	    bool bResult = session.CreateHeightFieldInput(idt._parentNodeID, idt._heightFieldName, idt._numPointsX, idt._numPointsY, idt._voxelSize,
