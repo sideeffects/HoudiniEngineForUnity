@@ -462,7 +462,7 @@ namespace HoudiniEngineUnity
 	public static bool CreateAndCookCurveAsset(HEU_SessionBase session, string assetName, bool bCookTemplatedGeos, out HAPI_NodeId newAssetID)
 	{
 	    newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
-	    if (!session.CreateNode(HEU_Defines.HEU_INVALID_NODE_ID, "SOP/curve", assetName, true, out newAssetID))
+	    if (!session.CreateNode(HEU_Defines.HEU_INVALID_NODE_ID, "SOP/curve::", assetName, true, out newAssetID))
 	    {
 		return false;
 	    }
