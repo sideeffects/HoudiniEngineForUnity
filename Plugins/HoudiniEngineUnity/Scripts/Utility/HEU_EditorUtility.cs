@@ -1255,7 +1255,8 @@ namespace HoudiniEngineUnity
 	}
 
 	// Gets the object parent folder for meshes, materials, or terrains
-	public static string GetObjectParentFolder(GameObject parentObject)
+	// Skips material paths that are not in generatedMaterials
+	public static string GetObjectParentFolder(GameObject parentObject, HashSet<Material> generatedMaterials)
 	{
 	    string targetAssetPath = "";
 #if UNITY_EDITOR
@@ -1269,7 +1270,7 @@ namespace HoudiniEngineUnity
 		    if (meshFilter.sharedMesh != null)
 		    {
 			string possibleObjectPath = GetObjectParentFolderHelper(meshFilter.sharedMesh.GetInstanceID());
-			if (possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
+			if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
 			{
 			    possiblePaths.Add(possibleObjectPath);
 			}
@@ -1283,15 +1284,19 @@ namespace HoudiniEngineUnity
 		foreach (MeshRenderer meshRend in currentObjectMeshRenderers)
 		{
 		    Material[] materials = meshRend.sharedMaterials;
-		    foreach (Material mat in materials)
+		    for (int i = 0; i < materials.Length; i++)
 		    {
-			string possibleObjectPath = GetObjectParentFolderHelper(mat.GetInstanceID());
-			if (possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
+			if (!generatedMaterials.Contains(materials[i]))
+			{
+			    continue;
+			}
+			
+			string possibleObjectPath = GetObjectParentFolderHelper(materials[i].GetInstanceID());
+			if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
 			{
 			    possiblePaths.Add(possibleObjectPath);
 			}
 		    }
-
 		}
 	    }
 
@@ -1303,7 +1308,7 @@ namespace HoudiniEngineUnity
 		    if (terrain.terrainData != null)
 		    {
 			string possibleObjectPath = GetObjectParentFolderHelper(terrain.terrainData.GetInstanceID());
-			if (possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
+			if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
 			{
 			    possiblePaths.Add(possibleObjectPath);
 			}
@@ -1312,6 +1317,12 @@ namespace HoudiniEngineUnity
 	    }
 
 	    targetAssetPath = HEU_GeneralUtility.LongestCommonPrefix(possiblePaths);
+
+	    // Fallback to the gameobject name if we can't find a good path
+	    if (targetAssetPath == "")
+	    {
+		targetAssetPath = HEU_Platform.BuildPath(HEU_AssetDatabase.GetAssetBakedPath(), parentObject.name);
+	    }
 #endif
 
 	    return targetAssetPath;

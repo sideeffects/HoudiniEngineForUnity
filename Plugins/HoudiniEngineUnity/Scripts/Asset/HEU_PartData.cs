@@ -1425,7 +1425,7 @@ namespace HoudiniEngineUnity
 
 		    // Find the geo name and terrain tile index
 		    //	@"/(Working)/(\w+)/(\w+)/(Terrain/Tile[0-9]+)/TerrainData.asset$"
-		    string pattern = string.Format(@"{0}(Working){0}(\w+){0}(\w+){0}({1}{0}{2}[0-9]+){0}TerrainData{3}",
+		    string pattern = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}({1}{0}{2}[0-9]+){0}TerrainData{3}",
 			    HEU_Platform.DirectorySeparatorStr,
 			    HEU_Defines.HEU_FOLDER_TERRAIN,
 			    HEU_Defines.HEU_FOLDER_TILE,

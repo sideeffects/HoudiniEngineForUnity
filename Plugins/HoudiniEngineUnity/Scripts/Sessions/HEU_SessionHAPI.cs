@@ -2600,6 +2600,13 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+	public override bool SetNodeDisplay(HAPI_NodeId node_id, int onOff)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetNodeDisplay(ref _sessionData._HAPISession, node_id, onOff);
+	    HandleStatusResult(result, "Setting Node display", false, false);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 #endif // HOUDINIENGINEUNITY_ENABLED
 
     }

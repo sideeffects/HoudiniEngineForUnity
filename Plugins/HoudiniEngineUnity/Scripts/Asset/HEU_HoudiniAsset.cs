@@ -3034,7 +3034,26 @@ namespace HoudiniEngineUnity
 
 	    string targetAssetPath = null;
 
-	    string foundParentFolder = HEU_EditorUtility.GetObjectParentFolder(bakeTargetGO);
+	    HashSet<Material> generatedMaterials = new HashSet<Material>();
+	    foreach (HEU_PartData part in clonableParts)
+	    {
+		if (part == null || part.ParentAsset == null)
+		{
+		    continue;
+		}
+
+		List<HEU_MaterialData> materialCache = part.ParentAsset.GetMaterialCache();
+
+		foreach (HEU_MaterialData materialData in materialCache)
+		{
+		    if (materialData != null && (materialData._materialSource == HEU_MaterialData.Source.DEFAULT || materialData._materialSource == HEU_MaterialData.Source.HOUDINI))
+		    {
+			generatedMaterials.Add(materialData._material);
+		    }
+		}
+	    }
+
+	    string foundParentFolder = HEU_EditorUtility.GetObjectParentFolder(bakeTargetGO, generatedMaterials);
 	    if (foundParentFolder != "")
 	    {
 		targetAssetPath = foundParentFolder;
