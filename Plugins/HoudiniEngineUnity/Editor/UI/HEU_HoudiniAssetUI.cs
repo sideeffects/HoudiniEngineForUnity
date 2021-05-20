@@ -126,7 +126,7 @@ namespace HoudiniEngineUnity
 	    _recookhdaContent = new GUIContent("  Recook   ", _recookhdaIcon, "Force recook of the asset in Houdini with the current parameter values and specified input data. Updates asset if changed in Houdini.");
 	    _bakegameobjectContent = new GUIContent("  GameObject", _bakegameobjectIcon, "Bakes the output to a new GameObject. Meshes and Materials are copied.");
 	    _bakeprefabContent = new GUIContent("  Prefab", _bakeprefabIcon, "Bakes the output to a new Prefab. Meshes and Materials are copied.");
-	    _bakeandreplaceContent = new GUIContent("  Update", _bakeandreplaceIcon, "Update existing GameObject(s) and Prefab(s). Generated components, meshes, and materials are updated.");
+	    _bakeandreplaceContent = new GUIContent("  Update", _bakeandreplaceIcon, "Update existing GameObject(s) and Prefab(s). Generated components, meshes, and materials are updated. Assumes the that all asset resources are in the default cook folder indexed by the gameObject name.");
 	    _removeheContent = new GUIContent("  Keep Only Output", _removeheIcon, "Remove Houdini Engine data (HDA_Data, Houdini Asset Root object), and leave just the generated Unity data (meshes, materials, instances, etc.).");
 	    _duplicateContent = new GUIContent("  Duplicate", _duplicateAssetIcon, "Safe duplication of this asset to create an exact copy. The asset is duplicated in Houdini. All data is copied over.");
 	    _resetParamContent = new GUIContent("  Reset All", _resetParamIcon, "Reset all parameters, materials, and inputs to their HDA default values, clear cache, reload HDA, cook, and generate output.");

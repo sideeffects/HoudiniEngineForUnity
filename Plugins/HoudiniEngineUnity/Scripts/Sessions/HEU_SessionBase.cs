@@ -1665,6 +1665,11 @@ namespace HoudiniEngineUnity
 	{
 	    return false;
 	}
+
+	public virtual bool SetNodeDisplay(HAPI_NodeId node_id, int onOff)
+	{
+	    return false;
+	}
     }
 
 }   // HoudiniEngineUnity
