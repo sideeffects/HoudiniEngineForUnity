@@ -1003,10 +1003,13 @@ namespace HoudiniEngineUnity
 			    // Mark the instancers as having been created so that the object instancer step skips this.
 			    _parts[i].ObjectInstancesBeenGenerated = true;
 
+			    bool throwWarningIfNoTileAttribute = _volumeCaches.Count > 1;
+
 			    // Now populate scatter trees based on attributes on this part
+			    // Note: Might do redudant work for each volume and might need refactoring for performance.
 			    foreach (HEU_VolumeCache cache in _volumeCaches)
 			    {
-			    	cache.PopulateScatterTrees(session, GeoID, _parts[i].PartID, treeInstAttrInfo.count);
+			    	cache.PopulateScatterTrees(session, GeoID, _parts[i].PartID, treeInstAttrInfo.count, throwWarningIfNoTileAttribute);
 			    }
 			}
 		    }

@@ -127,6 +127,7 @@ namespace HoudiniEngineUnity
 	public int[] _prototypeIndices;
 	public float[] _rotations;
 	public float[] _widthScales;
+	public int[] _terrainTiles;
 
 	public bool IsEquivalentTo(HEU_VolumeScatterTrees other)
 	{
@@ -149,6 +150,7 @@ namespace HoudiniEngineUnity
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._prototypeIndices, other._prototypeIndices, ref bResult, header, "_prototypeIndices");
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._rotations, other._rotations, ref bResult, header, "_rotations");
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._widthScales, other._widthScales, ref bResult, header, "_widthScales");
+	    HEU_TestHelpers.AssertTrueLogEquivalent(this._terrainTiles, other._terrainTiles, ref bResult, header, "_terrainTiles");
 
 	    return bResult;
 	}
@@ -1095,7 +1097,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Scattering - trees and details
-	    HEU_TerrainUtility.ApplyScatterTrees(terrainData, _scatterTrees);
+	    HEU_TerrainUtility.ApplyScatterTrees(terrainData, _scatterTrees, _tileIndex);
 	    HEU_TerrainUtility.ApplyDetailLayers(terrain, terrainData, _detailProperties, detailPrototypes, convertedDetailMaps);
 
 	    // If the layers were writen out, this saves the asset DB. Otherwise user has to save it themselves.
@@ -1241,9 +1243,9 @@ namespace HoudiniEngineUnity
 		}
 #endif
 
-	public void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount)
+	public void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount, bool throwWarningIfNoTileAttribute)
 	{
-	    HEU_TerrainUtility.PopulateScatterTrees(session, geoID, partID, pointCount, ref _scatterTrees);
+	    HEU_TerrainUtility.PopulateScatterTrees(session, geoID, partID, pointCount, ref _scatterTrees, throwWarningIfNoTileAttribute);
 	}
 
 	public void PopulateDetailPrototype(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
