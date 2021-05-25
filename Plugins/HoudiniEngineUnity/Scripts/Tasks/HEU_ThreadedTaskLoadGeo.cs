@@ -938,9 +938,11 @@ namespace HoudiniEngineUnity
 		    continue;
 		}
 
+		bool throwWarningIfNoTileAttribute = volumeBuffers.Count > 1;
+
 		foreach (HEU_LoadBufferVolume volume in volumeBuffers)
 		{
-		    HEU_TerrainUtility.PopulateScatterTrees(session, nodeID, scatterInstancerParts[i].id, scatterInstancerParts[i].pointCount, ref volume._scatterTrees);
+		    HEU_TerrainUtility.PopulateScatterTrees(session, nodeID, scatterInstancerParts[i].id, scatterInstancerParts[i].pointCount, ref volume._scatterTrees, throwWarningIfNoTileAttribute);
 		}
 	    }
 

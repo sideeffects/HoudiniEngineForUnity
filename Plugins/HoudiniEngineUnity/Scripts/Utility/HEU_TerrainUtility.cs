@@ -758,7 +758,7 @@ namespace HoudiniEngineUnity
 	/// <param name="partID">Part (volume layer) ID</param>
 	/// <param name="pointCount">Number of expected scatter points</param>
 	public static void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount,
-		ref HEU_VolumeScatterTrees scatterTrees)
+		ref HEU_VolumeScatterTrees scatterTrees, bool throwWarningIfNoTileAttribute)
 	{
 	    // The HEU_VolumeScatterTrees might already have been created when the volumecache was queried.
 	    // The "height" layer might have had prototype data which is set in _scatterTrees.
@@ -781,6 +781,27 @@ namespace HoudiniEngineUnity
 		    HEU_Logger.LogWarningFormat("Scatter instance index count for attribute {0} is not valid. Expected {1} but got {2}",
 			    HEU_Defines.HEIGHTFIELD_TREEINSTANCE_PROTOTYPEINDEX, pointCount, (indices != null ? indices.Length : 0));
 		}
+	    }
+
+	    HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
+	    int[] tiles = new int[0];
+	    if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEIGHTFIELD_UNITY_TILE, ref tileAttrInfo, ref tiles, session.GetAttributeIntData))
+	    {
+		if (throwWarningIfNoTileAttribute)
+		{
+		    HEU_Logger.LogWarning("Multiple tiles detected but attribute unity_hf_tile was not found! This will cause tree instances to default to the first tile. Set unity_hf_tile to the tile index to prevent this.");
+		}
+
+		tiles = new int[scatterTrees._prototypeIndices.Length];
+		for (int i = 0; i < scatterTrees._prototypeIndices.Length; i++)
+		{
+		    tiles[i] = -1;
+		}
+	    }
+
+	    if (tiles != null && tiles.Length == scatterTrees._prototypeIndices.Length)
+	    {
+		scatterTrees._terrainTiles = tiles;
 	    }
 
 	    // Using the UVs as position of the instances, since they are properly mapped to the terrain tile.
@@ -894,7 +915,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Apply the cached scatter prototypes and instances to the given TerrainData.
 	/// </summary>
-	public static void ApplyScatterTrees(TerrainData terrainData, HEU_VolumeScatterTrees scatterTrees)
+	public static void ApplyScatterTrees(TerrainData terrainData, HEU_VolumeScatterTrees scatterTrees, int tileIndex)
 	{
 #if UNITY_2019_1_OR_NEWER
 	    if (scatterTrees == null || scatterTrees._treePrototypInfos == null || scatterTrees._treePrototypInfos.Count == 0)
@@ -928,6 +949,11 @@ namespace HoudiniEngineUnity
 
 		for (int i = 0; i < scatterTrees._positions.Length; ++i)
 		{
+		    if (scatterTrees._terrainTiles != null && i < scatterTrees._terrainTiles.Length && scatterTrees._terrainTiles[i] != -1 && scatterTrees._terrainTiles[i] != tileIndex)
+		    {
+		        continue;
+		    }
+
 		    treeInstances[i] = new TreeInstance();
 		    treeInstances[i].color = scatterTrees._colors != null ? scatterTrees._colors[i] : new Color32(255, 255, 255, 255);
 		    treeInstances[i].heightScale = scatterTrees._heightScales != null ? scatterTrees._heightScales[i] : 1f;

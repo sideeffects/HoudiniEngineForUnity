@@ -1611,8 +1611,24 @@ namespace HoudiniEngineUnity
 		SetCookStatus(AssetCookStatus.NONE, _lastCookResult = AssetCookResult.ERRORED);
 
 		string resultString = string.Format(HEU_Defines.HEU_NAME + ": Failed to cook asset {0}! \n{1}", AssetName, nodeStatusError);
-		HEU_Logger.LogErrorFormat(resultString);
-		return;
+
+		bool ignoreError = false;
+		// Some heightfield nodes seem bugged in Houdini at the the moment, always producing an error
+		if (resultString.Contains("Invalid volume \"__temp_debris\" specified"))
+		{
+		    ignoreError = true;
+		}
+
+		if (!ignoreError)
+		{
+		    HEU_Logger.LogErrorFormat(resultString);
+		    return;
+		}
+		else
+		{
+		    //HEU_Logger.LogWarning(resultString);
+		    HEU_CookLogs.Instance.AppendCookLog(resultString);
+		}
 	    }
 
 	    // We will always regenerate parameters after cooking to make sure we're in sync.

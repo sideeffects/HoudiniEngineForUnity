@@ -697,7 +697,7 @@ namespace HoudiniEngineUnity
 		    // Set the tree scattering
 		    if (terrainBuffers[t]._scatterTrees != null)
 		    {
-			HEU_TerrainUtility.ApplyScatterTrees(terrainData, terrainBuffers[t]._scatterTrees);
+			HEU_TerrainUtility.ApplyScatterTrees(terrainData, terrainBuffers[t]._scatterTrees, terrainBuffers[t]._tileIndex);
 		    }
 
 		    // Set the detail layers

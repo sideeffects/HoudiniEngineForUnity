@@ -158,6 +158,8 @@ namespace HoudiniEngineUnity
 	public const string HEIGHTFIELD_TREEINSTANCE_LIGHTMAPCOLOR = "unity_hf_treeinstance_lightmapcolor";
 
 	public const string HEIGHTFIELD_DETAIL_RESOLUTION_PER_PATCH = "unity_hf_detail_resolution_patch";
+
+	public const string HEIGHTFIELD_UNITY_TILE = "unity_hf_tile";
 	public const string HEIGHTFIELD_DETAIL_DISTANCE = "unity_hf_detail_distance";
 	public const string HEIGHTFIELD_DETAIL_DENSITY = "unity_hf_detail_density";
 
