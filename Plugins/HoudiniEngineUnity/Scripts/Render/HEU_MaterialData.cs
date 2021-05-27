@@ -121,7 +121,7 @@ namespace HoudiniEngineUnity
 	    if (diffuseMapParmIndex >= 0 && diffuseMapParmIndex < parmInfos.Length)
 	    {
 		string diffuseTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[diffuseMapParmIndex]);
-		_material.mainTexture = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[diffuseMapParmIndex].id, diffuseTextureFileName, assetCacheFolderPath);
+		_material.mainTexture = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[diffuseMapParmIndex].id, diffuseTextureFileName, assetCacheFolderPath, false);
 	    }
 
 	    // Normal map - render & extract texture
@@ -129,7 +129,7 @@ namespace HoudiniEngineUnity
 	    if (normalMapParmIndex >= 0 && normalMapParmIndex < parmInfos.Length)
 	    {
 		string normalTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[normalMapParmIndex]);
-		Texture2D normalMap = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[normalMapParmIndex].id, normalTextureFileName, assetCacheFolderPath);
+		Texture2D normalMap = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[normalMapParmIndex].id, normalTextureFileName, assetCacheFolderPath, true);
 		if (normalMap != null)
 		{
 		    _material.SetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP, normalMap);

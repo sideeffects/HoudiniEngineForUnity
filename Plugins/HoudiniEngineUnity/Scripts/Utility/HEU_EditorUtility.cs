@@ -1356,6 +1356,17 @@ namespace HoudiniEngineUnity
 	    }
 #endif
 	}
+
+	public static void SetTextureToNormalMap(string filename)
+	{
+#if UNITY_EDITOR && UNITY_2018_4_OR_NEWER
+	    TextureImporter importer = (TextureImporter)TextureImporter.GetAtPath(filename);
+	    importer.textureType = TextureImporterType.NormalMap;
+	    EditorUtility.SetDirty(importer);
+	    importer.SaveAndReimport();
+#endif
+	}
+
     }
 
 }   // HoudiniEngineUnity

@@ -134,7 +134,7 @@ namespace HoudiniEngineUnity
 	    HEU_AssetDatabase.DeleteAsset(material);
 	}
 
-	public static Texture2D RenderAndExtractImageToTexture(HEU_SessionBase session, HAPI_MaterialInfo materialInfo, HAPI_ParmId textureParmID, string textureName, string assetCacheFolderPath)
+	public static Texture2D RenderAndExtractImageToTexture(HEU_SessionBase session, HAPI_MaterialInfo materialInfo, HAPI_ParmId textureParmID, string textureName, string assetCacheFolderPath, bool isNormalMap)
 	{
 	    //HEU_Logger.LogFormat("Rendering texture {0} with name {1} for material {2} at path {3}", textureParmID, textureName, materialInfo.nodeId, assetCacheFolderPath);
 
@@ -184,6 +184,11 @@ namespace HoudiniEngineUnity
 
 		    // Re-import for project to recognize the new texture file
 		    HEU_AssetDatabase.ImportAsset(textureFileName, HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
+
+		    if (isNormalMap)
+		    {
+			HEU_EditorUtility.SetTextureToNormalMap(textureFileName);
+		    }
 
 		    // Load the new texture file
 		    texture = HEU_AssetDatabase.LoadAssetAtPath(textureFileName, typeof(Texture2D)) as Texture2D;
