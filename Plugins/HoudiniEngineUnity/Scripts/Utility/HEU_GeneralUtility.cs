@@ -2063,6 +2063,19 @@ namespace HoudiniEngineUnity
 	    return resultStr;
 	}
 
+
+	public static string GetRawOperatorName(string assetOpName)
+	{
+	    string result = assetOpName;
+	    int lastSlash = assetOpName.LastIndexOf('/');
+	    if (lastSlash != -1)
+	    {
+		result = assetOpName.Substring(lastSlash+1);
+	    }
+
+	    return result;
+	}
+
     };
 
 
