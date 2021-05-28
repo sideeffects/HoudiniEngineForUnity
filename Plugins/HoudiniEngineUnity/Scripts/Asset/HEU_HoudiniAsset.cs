@@ -2756,7 +2756,10 @@ namespace HoudiniEngineUnity
 
 	    // If we're storing meshes in Asset Database, then we need  to create an asset object to store inside.
 	    UnityEngine.Object newAssetDBObject = null;
-	    string newAssetDBObjectFileName = HEU_AssetDatabase.AppendMeshesAssetFileName(_assetName);
+
+	    // Need to get raw OP name otherwise duplicates may mess up the naming
+	    string rawOpName = HEU_GeneralUtility.GetRawOperatorName(_assetOpName);
+	    string newAssetDBObjectFileName = HEU_AssetDatabase.AppendMeshesAssetFileName(rawOpName);
 
 	    Transform rootTransform = _rootGameObject.transform;
 	    int numCreatedObjects = 0;
@@ -3031,7 +3034,9 @@ namespace HoudiniEngineUnity
 
 	    UnityEngine.Object targetAssetDBObject = null;
 
-	    string assetDBObjectFileName = HEU_AssetDatabase.AppendMeshesAssetFileName(_assetName);
+	    // Need to get raw OP name otherwise duplicates may mess up the naming
+	    string rawOpName = HEU_GeneralUtility.GetRawOperatorName(_assetOpName);
+	    string assetDBObjectFileName = HEU_AssetDatabase.AppendMeshesAssetFileName(rawOpName);
 
 	    List<HEU_PartData> clonableParts = new List<HEU_PartData>();
 	    GetClonableParts(clonableParts);
