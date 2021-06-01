@@ -1367,6 +1367,15 @@ namespace HoudiniEngineUnity
 #endif
 	}
 
+	public static bool ReleasedMouse()
+	{
+	    bool result = true;
+#if UNITY_EDITOR
+	    result = (EditorGUIUtility.hotControl == 0);
+#endif
+	    return result;
+	}
+
     }
 
 }   // HoudiniEngineUnity

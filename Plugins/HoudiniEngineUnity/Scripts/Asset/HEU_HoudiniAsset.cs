@@ -36,11 +36,6 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
-
 
 namespace HoudiniEngineUnity
 {
@@ -727,7 +722,7 @@ namespace HoudiniEngineUnity
 		    // Originally was doing a Recook but because it will keep stuff around (e.g. terrain), a full reset seems better.
 		    RequestReload(bAsync: true);
 		}
-		else if (_pendingAutoCookOnMouseRelease == true && (EditorGUIUtility.hotControl == 0))
+		else if (_pendingAutoCookOnMouseRelease == true && HEU_EditorUtility.ReleasedMouse())
 		{
 		    _pendingAutoCookOnMouseRelease = false;
 		    RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
