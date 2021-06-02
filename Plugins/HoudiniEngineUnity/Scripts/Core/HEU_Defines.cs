@@ -185,14 +185,75 @@ namespace HoudiniEngineUnity
 
 
 	// Material Attributes
-	public const string MAT_OGL_ALPHA_ATTR = "ogl_alpha";
-	public const string MAT_OGL_NORMAL_ATTR = "ogl_normalmap";
-	public const string MAT_OGL_TEX1_ATTR = "ogl_tex1";
-	public const string MAT_BASECOLOR_ATTR = "baseColorMap";
-	public const string MAT_MAP_ATTR = "map";
-	public const string MAT_OGL_ROUGH_ATTR = "ogl_rough";
+
+	// Diffuse
 	public const string MAT_OGL_DIFF_ATTR = "ogl_diff";
+	public const string MAT_DIFF_ATTR = "basecolor";
+
+	public const string MAT_OGL_TEX1_ATTR = "ogl_tex1";
+	public const string MAT_OGL_TEX1_ATTR_ENABLED = "ogl_use_tex1";
+
+	public const string MAT_BASECOLOR_ATTR = "basecolor_texture";
+	public const string MAT_BASECOLOR_ATTR_ENABLED = "basecolor_useTexture";
+
+	public const string MAT_MAP_ATTR = "map";
+
+	public const string MAT_OGL_NORMAL_ATTR = "ogl_normalmap";
+	public const string MAT_NORMAL_ATTR = "baseNormal_texture";
+	public const string MAT_NORMAL_ATTR_ENABLED = "baseBumpAndNormal_enable";
+
+	// Specular
 	public const string MAT_OGL_SPEC_ATTR = "ogl_spec";
+	public const string MAT_SPEC_ATTR = "reflect";
+
+	public const string MAT_OGL_SPEC_MAP_ATTR = "ogl_specmap";
+	public const string MAT_OGL_SPEC_MAP_ATTR_ENABLED = "ogl_use_specmap";
+	public const string MAT_SPEC_MAP_ATTR = "reflect_texture";
+	public const string MAT_SPEC_MAP_ATTR_ENABLED = "reflect_useTexture";
+
+	// Roughness
+	public const string MAT_OGL_ROUGH_ATTR = "ogl_rough";
+	public const string MAT_ROUGH_ATTR = "rough";
+
+	public const string MAT_OGL_ROUGH_MAP_ATTR = "ogl_roughmap";
+	public const string MAT_OGL_ROUGH_MAP_ATTR_ENABLED = "ogl_use_roughmap";
+
+	public const string MAT_ROUGH_MAP_ATTR = "rough_texture";
+	public const string MAT_ROUGH_MAP_ATTR_ENABLED = "rough_useTexture";
+
+	// Metallic
+	public const string MAT_OGL_METALLIC_ATTR = "ogl_metallic";
+	public const string MAT_METALLIC_ATTR = "metallic";
+
+	public const string MAT_OGL_METALLIC_MAP_ATTR = "ogl_metallicmap";
+	public const string MAT_OGL_METALLIC_MAP_ATTR_ENABLED = "ogl_use_metallicmap";
+
+	public const string MAT_METALLIC_MAP_ATTR = "metallic_texture";
+	public const string MAT_METALLIC_MAP_ATTR_ENABLED = "metallic_useTexture";
+	// Emissive
+	public const string MAT_OGL_EMISSIVE_ATTR = "ogl_emit";
+	public const string MAT_EMISSIVE_ATTR = "emitcolor";
+	public const string MAT_OGL_EMISSIVE_MAP_ATTR = "ogl_emissionmap";
+	public const string MAT_OGL_EMISSIVE_MAP_ATTR_ENABLED = "ogl_use_emissionmap";
+	public const string MAT_EMISSIVE_MAP_ATTR = "emitcolor_texture";
+	public const string MAT_EMISSIVE_MAP_ATTR_ENABLED = "emitcolor_useTexture";
+
+	// Alpha
+	public const string MAT_OGL_ALPHA_ATTR = "ogl_alpha";
+	public const string MAT_ALPHA_ATTR = "opac";
+
+	public const string MAT_OGL_OPACITY_MAP_ATTR = "ogl_opacitymap";
+	public const string MAT_OGL_OPACITY_MAP_ATTR_ENABLED = "ogl_use_opacitymap";
+
+	public const string MAT_OPACITY_MAP_ATTR = "opaccolor_texture";
+	public const string MAT_OPACITY_MAP_ATTR_ENABLED = "opaccolor_useTexture";
+	public const string MAT_OGL_TRANSPARENCY_ATTR = "ogl_transparency";
+	public const string MAT_OGL_TRANSPARENCY_ATTR_ENABLED = "ogl_use_alpha_transparency";
+
+
+	// Occlusion (No regular occlusion, just maps)
+	public const string MAT_OGL_OCCLUSION_MAP_ATTR = "ogl_occlusionmap";
+	public const string MAT_OGL_OCCLUSION_MAP_ATTR_ENABLED = "ogl_use_occlusionmap";
 
 	// Curve Parameters
 	public const string CURVE_COORDS_PARAM = "coords";
@@ -216,10 +277,24 @@ namespace HoudiniEngineUnity
 	public const string DEFAULT_INSTANCE_PREFIX_ATTR = "instance_prefix";
 
 	// Unity Shaders
-	public const string UNITY_SHADER_BUMP_MAP = "_BumpMap";
-	public const string UNITY_SHADER_SHININESS = "_Shininess";
 	public const string UNITY_SHADER_COLOR = "_Color";
-	public const string UNITY_SHADER_SPECCOLOR = "_SpecColor";
+	public const string UNITY_SHADER_SPEC_COLOR = "_SpecColor";
+	public const string UNITY_SHADER_SPEC_MAP = "_SpecMap";
+	public const string UNITY_SHADER_METALLIC = "_Metallic";
+	public const string UNITY_SHADER_METALLIC_MAP = "_MetallicMap";
+
+	public const string UNITY_SHADER_BUMP_MAP = "_BumpMap";
+	public const string UNITY_SHADER_EMISSION_COLOR = "_EmissionColor";
+	public const string UNITY_SHADER_EMISSION_MAP = "_EmissionMap";
+	
+	public const string UNITY_SHADER_SMOOTHNESS = "_Smoothness";
+	public const string UNITY_SHADER_SMOOTHNESS_MAP = "_SmoothnessMap";
+	public const string UNITY_SHADER_SHININESS = "_Shininess"; // Deprecated. Use Smoothness instead..
+	public const string UNITY_SHADER_OCCLUSION = "_Occlusion";
+	public const string UNITY_SHADER_OCCLUSION_MAP = "_OcclusionMap";
+
+	public const string UNITY_SHADER_OPACITY = "_Opacity";
+	public const string UNITY_SHADER_OPACITY_MAP = "_OpacityMap";
 
 	// Unity tags
 	public const string UNITY_EDITORONLY_TAG = "EditorOnly";
@@ -227,20 +302,37 @@ namespace HoudiniEngineUnity
 
 	public const string HOUDINI_SHADER_PREFIX = "Houdini/";
 
-	public const string DEFAULT_STANDARD_SHADER = "SpecularVertexColor";
-	public const string DEFAULT_VERTEXCOLOR_SHADER = "SpecularVertexColor";
-	public const string DEFAULT_TRANSPARENT_SHADER = "AlphaSpecularVertexColor";
+	public const string DEFAULT_STANDARD_SHADER = "HoudiniStandard";
+	public const string DEFAULT_VERTEXCOLOR_SHADER = DEFAULT_STANDARD_SHADER;
+	public const string DEFAULT_TRANSPARENT_SHADER = "HoudiniStandardAlpha";
+	public const string DEFAULT_STANDARD_SHADER_SPECULAR = "HoudiniSpecular";
+	public const string DEFAULT_STANDARD_SHADER_SPECULAR_LEGACY = "Legacy/SpecularVertexColor";
+	public const string DEFAULT_VERTEXCOLOR_SHADER_SPECULAR = DEFAULT_STANDARD_SHADER_SPECULAR;
+	public const string DEFAULT_VERTEXCOLOR_SHADER_SPECULAR_LEGACY = DEFAULT_STANDARD_SHADER_SPECULAR_LEGACY;
+	public const string DEFAULT_TRANSPARENT_SHADER_SPECULAR = "HoudiniSpecularAlpha";
+	public const string DEFAULT_TRANSPARENT_SHADER_SPECULAR_LEGACY = "Legacy/AlphaSpecularVertexColor";
 	public const string DEFAULT_CURVE_SHADER = "LineShader";
 	public const string DEFAULT_TERRAIN_SHADER = "Nature/Terrain/Standard";
+	
+	public const string DEFAULT_STANDARD_SHADER_HDRP = "HDRP/StandardLit";
+	public const string DEFAULT_VERTEXCOLOR_SHADER_HDRP = DEFAULT_STANDARD_SHADER_HDRP;
+	public const string DEFAULT_TRANSPARENT_SHADER_HDRP = "HDRP/StandardLitAlpha";
 
-	public const string DEFAULT_STANDARD_SHADER_HDRP = "HDRP/Lit";
-	public const string DEFAULT_VERTEXCOLOR_SHADER_HDRP = "HDRP/Lit";
-	public const string DEFAULT_TRANSPARENT_SHADER_HDRP = "HDRP/AlphaLit";
+	public const string DEFAULT_STANDARD_SHADER_HDRP_SPECULAR = "HDRP/SpecularLit";
+	public const string DEFAULT_VERTEXCOLOR_SHADER_HDRP_SPECULAR = DEFAULT_STANDARD_SHADER_HDRP_SPECULAR;
+	public const string DEFAULT_TRANSPARENT_SHADER_HDRP_SPECULAR = "HDRP/SpecularLitAlpha";
+
 	public const string DEFAULT_CURVE_SHADER_HDRP = "HDRP/Color";
 	public const string DEFAULT_TERRAIN_SHADER_HDRP = "HDRP/TerrainLit";
-	public const string DEFAULT_STANDARD_SHADER_URP = "URP/Lit";
-	public const string DEFAULT_VERTEXCOLOR_SHADER_URP = "URP/Lit";
-	public const string DEFAULT_TRANSPARENT_SHADER_URP = "URP/AlphaLit";
+
+	public const string DEFAULT_STANDARD_SHADER_URP = "URP/StandardLit";
+	public const string DEFAULT_VERTEXCOLOR_SHADER_URP = DEFAULT_STANDARD_SHADER_URP;
+	public const string DEFAULT_TRANSPARENT_SHADER_URP = "URP/StandardLitAlpha";
+
+	public const string DEFAULT_STANDARD_SHADER_URP_SPECULAR = "URP/SpecularLit";
+	public const string DEFAULT_VERTEXCOLOR_SHADER_URP_SPECULAR = DEFAULT_STANDARD_SHADER_URP_SPECULAR;
+	public const string DEFAULT_TRANSPARENT_SHADER_URP_SPECULAR = "URP/SpecularLitAlpha";
+
 	public const string DEFAULT_CURVE_SHADER_URP = "URP/Color";
 	public const string DEFAULT_TERRAIN_SHADER_URP = "Universal Render Pipeline/Terrain/Lit";
 

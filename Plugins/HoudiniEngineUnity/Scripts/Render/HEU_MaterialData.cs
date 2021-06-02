@@ -99,7 +99,9 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Assign transparency shader or non-transparent.
-	    if (IsTransparentMaterial(session, materialInfo.nodeId, parmInfos))
+
+	    bool isTransparent = IsTransparentMaterial(session, materialInfo.nodeId, parmInfos);
+	    if (isTransparent)
 	    {
 		_material.shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultTransparentShader);
 	    }
@@ -108,14 +110,179 @@ namespace HoudiniEngineUnity
 		_material.shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultStandardShader);
 	    }
 
+	    if (HEU_PluginSettings.UseLegacyShaders)
+	    {
+		UseLegacyShaders(materialInfo, assetCacheFolderPath, session, nodeInfo, parmInfos);
+		return;
+	    }
+
 	    // Diffuse texture - render & extract
-	    int diffuseMapParmIndex = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_TEX1_ATTR);
+	    int diffuseMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_TEX1_ATTR, HEU_Defines.MAT_OGL_TEX1_ATTR_ENABLED);
 	    if (diffuseMapParmIndex < 0)
 	    {
-		diffuseMapParmIndex = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_BASECOLOR_ATTR);
+		diffuseMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_BASECOLOR_ATTR, HEU_Defines.MAT_BASECOLOR_ATTR_ENABLED);
+	    }
+	    
+	    if (diffuseMapParmIndex >= 0 && diffuseMapParmIndex < parmInfos.Length)
+	    {
+		string diffuseTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[diffuseMapParmIndex]);
+		_material.mainTexture = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[diffuseMapParmIndex].id, diffuseTextureFileName, assetCacheFolderPath, false);
+	    }
+
+	    Color diffuseColor;
+	    if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_DIFF_ATTR, Color.white, out diffuseColor))
+	    {
+		HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_DIFF_ATTR, Color.white, out diffuseColor);
+	    }
+
+	    float alpha;
+	    GetMaterialAlpha(session, materialInfo.nodeId, parmInfos, 1f, out alpha);
+
+	    if (isTransparent)
+	    {
+		int opacityMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR, HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR_ENABLED);
+		if (opacityMapParmIndex < 0)
+		{
+		    opacityMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OPACITY_MAP_ATTR, HEU_Defines.MAT_OPACITY_MAP_ATTR_ENABLED);
+		}
+		
+		if (opacityMapParmIndex >= 0 && opacityMapParmIndex < parmInfos.Length)
+		{
+		    string opacityTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[opacityMapParmIndex]);
+		    _material.SetTexture(HEU_Defines.UNITY_SHADER_OPACITY_MAP, HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[opacityMapParmIndex].id, opacityTextureFileName, assetCacheFolderPath, false));
+		}
+	    }
+
+	    diffuseColor.a = alpha;
+	    _material.SetColor(HEU_Defines.UNITY_SHADER_COLOR, diffuseColor);
+
+	    if (HEU_PluginSettings.UseSpecularShader)
+	    {
+		Color specular;
+		Color defaultSpecular = new Color(0.2f, 0.2f, 0.2f, 1);
+		if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_SPEC_ATTR, defaultSpecular, out specular))
+		{
+		    HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_SPEC_ATTR, defaultSpecular, out specular);
+		}
+		_material.SetColor(HEU_Defines.UNITY_SHADER_SPEC_COLOR, specular);
+
+		int specMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_SPEC_MAP_ATTR, HEU_Defines.MAT_OGL_SPEC_MAP_ATTR_ENABLED);
+		if (specMapParmIndex < 0)
+		{
+		    specMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_SPEC_MAP_ATTR, HEU_Defines.MAT_SPEC_MAP_ATTR_ENABLED);
+		}
+		
+		if (specMapParmIndex >= 0 && specMapParmIndex < parmInfos.Length)
+		{
+		    string specTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[specMapParmIndex]);
+		    _material.SetTexture(HEU_Defines.UNITY_SHADER_SPEC_MAP, HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[specMapParmIndex].id, specTextureFileName, assetCacheFolderPath, false));
+		}
+	    }
+	    else
+	    {
+	 	float metallic = 0;
+	 	if (!HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_METALLIC_ATTR, 0f, out metallic))
+	 	{
+		    HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_METALLIC_ATTR, 0f, out metallic);
+	 	}
+
+		_material.SetFloat(HEU_Defines.UNITY_SHADER_METALLIC, metallic);
+
+		int metallicMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_METALLIC_MAP_ATTR, HEU_Defines.MAT_OGL_METALLIC_MAP_ATTR_ENABLED);
+		if (metallicMapParmIndex < 0)
+		{
+		    metallicMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_METALLIC_MAP_ATTR, HEU_Defines.MAT_METALLIC_MAP_ATTR_ENABLED);
+		}
+
+		
+		if (metallicMapParmIndex >= 0 && metallicMapParmIndex < parmInfos.Length)
+		{
+		    string metallicTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[metallicMapParmIndex]);
+		    _material.SetTexture(HEU_Defines.UNITY_SHADER_METALLIC_MAP, HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[metallicMapParmIndex].id, metallicTextureFileName, assetCacheFolderPath, false));
+		}
+	    }
+
+	    // Normal map - render & extract texture
+	    int normalMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_NORMAL_ATTR, HEU_Defines.MAT_NORMAL_ATTR_ENABLED);
+	    if (normalMapParmIndex < 0)
+	    {
+		normalMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_NORMAL_ATTR, "");
+	    }
+
+	    if (normalMapParmIndex >= 0 && normalMapParmIndex < parmInfos.Length)
+	    {
+		string normalTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[normalMapParmIndex]);
+		Texture2D normalMap = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[normalMapParmIndex].id, normalTextureFileName, assetCacheFolderPath, true);
+		if (normalMap != null)
+		{
+		    _material.SetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP, normalMap);
+		}
+	    }
+
+	    // Emission
+	    Color emission;
+	    Color defaultEmission = new Color(0, 0, 0, 0);
+	    if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_EMISSIVE_ATTR, defaultEmission, out emission))
+	    {
+	        HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_EMISSIVE_ATTR, defaultEmission, out emission);
+	    }
+	    _material.SetColor(HEU_Defines.UNITY_SHADER_EMISSION_COLOR, emission);
+
+	    int emissionMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_EMISSIVE_MAP_ATTR, HEU_Defines.MAT_OGL_EMISSIVE_MAP_ATTR_ENABLED);
+	    if (emissionMapParmIndex < 0)
+	    {
+	        emissionMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_EMISSIVE_MAP_ATTR, HEU_Defines.MAT_EMISSIVE_MAP_ATTR_ENABLED);
+	    }
+	    
+	    if (emissionMapParmIndex >= 0 && emissionMapParmIndex < parmInfos.Length)
+	    {
+	        string emissionTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[emissionMapParmIndex]);
+	        _material.SetTexture(HEU_Defines.UNITY_SHADER_EMISSION_MAP, HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[emissionMapParmIndex].id, emissionTextureFileName, assetCacheFolderPath, false));
+	    }
+
+	    // Smoothness (need to invert roughness!)
+	    float roughness;
+	    float defaultRoughness = 0.5f;
+	    if (!HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_ROUGH_ATTR, defaultRoughness, out roughness))
+	    {
+		HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_ROUGH_ATTR, defaultRoughness, out roughness);
+	    }
+
+	    // Clamp shininess to non-zero as results in very hard shadows. Unity's UI does not allow zero either.
+	    _material.SetFloat(HEU_Defines.UNITY_SHADER_SMOOTHNESS, Mathf.Max(0.03f, 1.0f - roughness));
+
+	    int roughMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_ROUGH_MAP_ATTR, HEU_Defines.MAT_OGL_ROUGH_MAP_ATTR_ENABLED);
+	    if (roughMapParmIndex < 0)
+	    {
+	        roughMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_ROUGH_MAP_ATTR, HEU_Defines.MAT_ROUGH_MAP_ATTR_ENABLED);
+	    }
+	    
+	    if (roughMapParmIndex >= 0 && roughMapParmIndex < parmInfos.Length)
+	    {
+	        string roughTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[roughMapParmIndex]);
+	        _material.SetTexture(HEU_Defines.UNITY_SHADER_SMOOTHNESS_MAP, HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[roughMapParmIndex].id, roughTextureFileName, assetCacheFolderPath, false, invertTexture: true));
+	    }
+
+	    // Occlusion (only has ogl map) 
+	    int occlusionMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_OCCLUSION_MAP_ATTR, HEU_Defines.MAT_OGL_ROUGH_MAP_ATTR_ENABLED);
+
+	    if (occlusionMapParmIndex >= 0 && occlusionMapParmIndex < parmInfos.Length)
+	    {
+	        string occlusionTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[occlusionMapParmIndex]);
+	        _material.SetTexture(HEU_Defines.UNITY_SHADER_OCCLUSION_MAP, HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo, parmInfos[occlusionMapParmIndex].id, occlusionTextureFileName, assetCacheFolderPath, false));
+	    }
+	}
+
+	public void UseLegacyShaders(HAPI_MaterialInfo materialInfo, string assetCacheFolderPath, HEU_SessionBase session, HAPI_NodeInfo nodeInfo, HAPI_ParmInfo[] parmInfos)
+	{
+	    // Diffuse texture - render & extract
+	    int diffuseMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_TEX1_ATTR,  HEU_Defines.MAT_OGL_TEX1_ATTR_ENABLED);
+	    if (diffuseMapParmIndex < 0)
+	    {
+		diffuseMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_BASECOLOR_ATTR, HEU_Defines.MAT_BASECOLOR_ATTR_ENABLED);
 		if (diffuseMapParmIndex < 0)
 		{
-		    diffuseMapParmIndex = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_MAP_ATTR);
+		    diffuseMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_MAP_ATTR, "");
 		}
 	    }
 	    if (diffuseMapParmIndex >= 0 && diffuseMapParmIndex < parmInfos.Length)
@@ -125,7 +292,12 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Normal map - render & extract texture
-	    int normalMapParmIndex = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_NORMAL_ATTR);
+	    int normalMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_NORMAL_ATTR, HEU_Defines.MAT_NORMAL_ATTR_ENABLED);
+	    if (normalMapParmIndex < 0)
+	    {
+		normalMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos, HEU_Defines.MAT_OGL_NORMAL_ATTR, "");
+	    }
+	    
 	    if (normalMapParmIndex >= 0 && normalMapParmIndex < parmInfos.Length)
 	    {
 		string normalTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[normalMapParmIndex]);
@@ -139,15 +311,36 @@ namespace HoudiniEngineUnity
 	    // Assign shader properties
 
 	    // Clamp shininess to non-zero as results in very hard shadows. Unity's UI does not allow zero either.
-	    float shininess = HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_ROUGH_ATTR, 0f);
+
+	    float shininess;
+	    if (!HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_ROUGH_ATTR, 0f, out shininess))
+	    {
+		HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_ROUGH_ATTR, 0f, out shininess);
+	    }
+
 	    _material.SetFloat(HEU_Defines.UNITY_SHADER_SHININESS, Mathf.Max(0.03f, 1.0f - shininess));
 
-	    Color diffuseColor = HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_DIFF_ATTR, Color.white);
-	    diffuseColor.a = HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_ALPHA_ATTR, 1f);
+	    Color diffuseColor;
+	    if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_DIFF_ATTR, Color.white, out diffuseColor))
+	    {
+		HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_DIFF_ATTR, Color.white, out diffuseColor);
+	    }
+
+	    float alpha;
+	    if (!HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_ALPHA_ATTR, 1f, out alpha))
+	    {
+		HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_ALPHA_ATTR, 1f, out alpha);
+	    }
+
+	    diffuseColor.a = alpha;
 	    _material.SetColor(HEU_Defines.UNITY_SHADER_COLOR, diffuseColor);
 
-	    Color specular = HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_SPEC_ATTR, Color.black);
-	    _material.SetColor(HEU_Defines.UNITY_SHADER_SPECCOLOR, specular);
+	    Color specular;
+	    if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_OGL_SPEC_ATTR, Color.black, out specular))
+	    {
+	        HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos, HEU_Defines.MAT_SPEC_ATTR, Color.black, out specular);
+	    }
+	    _material.SetColor(HEU_Defines.UNITY_SHADER_SPEC_COLOR, specular);
 	}
 
 	/// <summary>
@@ -198,8 +391,52 @@ namespace HoudiniEngineUnity
 	/// <returns>True if the material is transparent</returns>
 	public static bool IsTransparentMaterial(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters)
 	{
-	    float alpha = HEU_ParameterUtility.GetParameterFloatValue(session, nodeID, parameters, HEU_Defines.MAT_OGL_ALPHA_ATTR, 1f);
+	    float alpha;
+	    GetMaterialAlpha(session, nodeID, parameters, 1, out alpha);
 	    return alpha < 0.95f;
+	}
+
+	// Gets the alpha of the material
+	// Checks ogl_use_alpha_transparency to make sure that it's enabled.
+	public static bool GetMaterialAlpha(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters, float defaultValue, out float alpha)
+	{
+
+	    int foundUseParmId = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeID, parameters, HEU_Defines.MAT_OGL_TRANSPARENCY_ATTR_ENABLED);
+	    if (foundUseParmId >= 0)
+	    {
+		// Found a valid "use" parameter. Check if it is disabled.
+		int[] useValue = new int[1];
+		int intValuesIndex = parameters[foundUseParmId].intValuesIndex;
+
+		if (session.GetParamIntValues(nodeID, useValue, parameters[foundUseParmId].intValuesIndex, 1))
+		{
+		    if (useValue.Length > 0 && useValue[0] == 0)
+		    {
+			// We found the texture, but the use tag is disabled, so don't use it!
+			alpha = defaultValue;
+			return false;
+		    }
+		}
+	    }
+
+	    if (HEU_ParameterUtility.GetParameterFloatValue(session, nodeID, parameters, HEU_Defines.MAT_OGL_ALPHA_ATTR, defaultValue, out alpha))
+	    {
+		return true;
+	    }
+
+	    if (HEU_ParameterUtility.GetParameterFloatValue(session, nodeID, parameters, HEU_Defines.MAT_ALPHA_ATTR, defaultValue, out alpha))
+	    {
+		return true;
+	    }
+
+	    if (HEU_ParameterUtility.GetParameterFloatValue(session, nodeID, parameters, HEU_Defines.MAT_OGL_TRANSPARENCY_ATTR, defaultValue, out alpha))
+	    {
+		alpha = 1 - alpha;
+		return true;
+	    }
+
+	    alpha = defaultValue;
+	    return false;
 	}
 
 	/// <summary>

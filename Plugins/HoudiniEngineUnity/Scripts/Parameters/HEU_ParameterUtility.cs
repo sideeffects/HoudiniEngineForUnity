@@ -339,12 +339,53 @@ namespace HoudiniEngineUnity
 	    return parameterIndex;
 	}
 
-	public static float GetParameterFloatValue(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters, string parameterName, float defaultValue)
+	public static int FindTextureParamByNameOrTag(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters, string parameterName, string useTextureParmName)
+	{
+	    int outParmId = GetParameterIndexFromNameOrTag(session, nodeID, parameters, parameterName);
+	    if (outParmId < 0)
+	    {
+		return outParmId;
+	    }
+
+	    // Check if the matching "use" parameter exists.
+	    int foundUseParmId = GetParameterIndexFromNameOrTag(session, nodeID, parameters, useTextureParmName);
+	    if (foundUseParmId >= 0)
+	    {
+		// Found a valid "use" parameter. Check if it is disabled.
+		int[] useValue = new int[1];
+		int intValuesIndex = parameters[foundUseParmId].intValuesIndex;
+
+		if (session.GetParamIntValues(nodeID, useValue, parameters[foundUseParmId].intValuesIndex, 1))
+		{
+		    if (useValue.Length > 0 && useValue[0] == 0)
+		    {
+			// We found the texture, but the use tag is disabled, so don't use it!
+			return -1;
+		    }
+		}
+	    }
+
+	    // Finally, make sure that the found texture parm is not empty!
+	    int[] parmValueHandle = new int[1];
+	    if (session.GetParamStringValues(nodeID, parmValueHandle, parameters[outParmId].stringValuesIndex, 1))
+	    {
+		string parmValue = HEU_SessionManager.GetString(parmValueHandle[0], session);
+		if (string.IsNullOrEmpty(parmValue))
+		{
+		    return -1;
+		}
+	    }
+
+	    return outParmId;
+	}
+
+	public static bool GetParameterFloatValue(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters, string parameterName, float defaultValue, out float returnValue)
 	{
 	    int parameterIndex = GetParameterIndexFromNameOrTag(session, nodeID, parameters, parameterName);
 	    if (parameterIndex < 0 || parameterIndex >= parameters.Length)
 	    {
-		return defaultValue;
+		returnValue = defaultValue;
+		return false;
 	    }
 
 	    int valueIndex = parameters[parameterIndex].floatValuesIndex;
@@ -352,24 +393,28 @@ namespace HoudiniEngineUnity
 
 	    if (session.GetParamFloatValues(nodeID, value, valueIndex, 1))
 	    {
-		return value[0];
+		returnValue = value[0];
+		return true;
 	    }
 
-	    return defaultValue;
+	    returnValue = defaultValue;
+	    return false;
 	}
 
-	public static Color GetParameterColor3Value(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters, string parameterName, Color defaultValue)
+	public static bool GetParameterColor3Value(HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters, string parameterName, Color defaultValue, out Color outputColor)
 	{
 	    int parameterIndex = GetParameterIndexFromNameOrTag(session, nodeID, parameters, parameterName);
 	    if (parameterIndex < 0 || parameterIndex >= parameters.Length)
 	    {
-		return defaultValue;
+		outputColor = defaultValue;
+		return false;
 	    }
 
 	    if (parameters[parameterIndex].size < 3)
 	    {
 		HEU_Logger.LogError("Parameter size not large enough to be a Color3");
-		return defaultValue;
+		outputColor = defaultValue;
+		return false;
 	    }
 
 	    int valueIndex = parameters[parameterIndex].floatValuesIndex;
@@ -377,9 +422,12 @@ namespace HoudiniEngineUnity
 
 	    if (session.GetParamFloatValues(nodeID, value, valueIndex, 3))
 	    {
-		return new Color(value[0], value[1], value[2], 1f);
+		outputColor = new Color(value[0], value[1], value[2], 1f);
+		return true;
 	    }
-	    return defaultValue;
+
+	    outputColor = defaultValue;
+	    return false;
 	}
     }
 
