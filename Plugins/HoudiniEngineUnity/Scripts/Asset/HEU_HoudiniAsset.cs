@@ -2591,6 +2591,15 @@ namespace HoudiniEngineUnity
 	    // Instancing - process part instances first, then do object instances.
 	    // This assures that if objects being instanced have all their parts completed.
 
+	    // Clear part instances, to make sure that the object instances don't overwrite the part instances.
+	    foreach (HEU_ObjectNode objNode in _objectNodes)
+	    {
+		if (objNode.IsInstancer())
+		{
+		    objNode.ClearObjectInstances(session);
+		}
+	    }
+
 	    foreach (HEU_ObjectNode objNode in _objectNodes)
 	    {
 		objNode.GeneratePartInstances(session);

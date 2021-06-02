@@ -600,12 +600,6 @@ namespace HoudiniEngineUnity
 			    instancePrefixes = HEU_GeneralUtility.GetAttributeStringData(session, _geoNodes[i].GeoID, parts[j].PartID, instancePrefixAttrName, ref instancePrefixAttrInfo);
 			}
 
-			// Must clear out instances, as otherwise we get duplicates
-			parts[j].ClearInstances();
-
-			// Clear out invalid object instance infos that no longer have any valid parts
-			parts[j].ClearInvalidObjectInstanceInfos();
-
 			if (instanceAttrInfo.exists)
 			{
 			    // Object instancing via Houdini instance attribute
@@ -635,13 +629,45 @@ namespace HoudiniEngineUnity
 
 			    if (_objectInfo.objectToInstanceId == HEU_Defines.HEU_INVALID_NODE_ID)
 			    {
-				HEU_Logger.LogAssertionFormat("Invalid object ID {0} used for object instancing. "
-					+ "Make sure to turn on Full point instancing and set the correct Instance Object.", _objectInfo.objectToInstanceId);
+				// HEU_Logger.LogAssertionFormat("Invalid object ID {0} used for object instancing. "
+				// 	+ "Make sure to turn on Full point instancing and set the correct Instance Object.", _objectInfo.objectToInstanceId);
+				// Could be a part instancer
 				continue;
 			    }
 
 			    parts[j].GenerateInstancesFromObjectID(session, _objectInfo.objectToInstanceId, instancePrefixes);
 			}
+		    }
+		}
+	    }
+	}
+
+	public void ClearObjectInstances(HEU_SessionBase session)
+	{
+	    if (!IsInstancer())
+	    {
+		return;
+	    }
+
+	    int numGeos = _geoNodes.Count;
+	    for (int i = 0; i < numGeos; ++i)
+	    {
+		if (_geoNodes[i].Displayable)
+		{
+		    List<HEU_PartData> parts = _geoNodes[i].GetParts();
+		    int numParts = parts.Count;
+		    for (int j = 0; j < numParts; ++j)
+		    {
+			if (parts[j].ObjectInstancesBeenGenerated || parts[j].IsPartVolume())
+			{
+			    continue;
+			}
+
+			// Must clear out instances, as otherwise we get duplicates
+			parts[j].ClearInstances();
+
+			// Clear out invalid object instance infos that no longer have any valid parts
+			parts[j].ClearInvalidObjectInstanceInfos();
 		    }
 		}
 	    }
