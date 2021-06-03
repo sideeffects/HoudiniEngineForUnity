@@ -134,7 +134,7 @@ namespace HoudiniEngineUnity
 	    HEU_AssetDatabase.DeleteAsset(material);
 	}
 
-	public static Texture2D RenderAndExtractImageToTexture(HEU_SessionBase session, HAPI_MaterialInfo materialInfo, HAPI_ParmId textureParmID, string textureName, string assetCacheFolderPath, bool isNormalMap)
+	public static Texture2D RenderAndExtractImageToTexture(HEU_SessionBase session, HAPI_MaterialInfo materialInfo, HAPI_ParmId textureParmID, string textureName, string assetCacheFolderPath, bool isNormalMap, bool invertTexture = false)
 	{
 	    //HEU_Logger.LogFormat("Rendering texture {0} with name {1} for material {2} at path {3}", textureParmID, textureName, materialInfo.nodeId, assetCacheFolderPath);
 
@@ -150,6 +150,23 @@ namespace HoudiniEngineUnity
 		if (texture != null)
 		{
 		    texture.name = textureName;
+
+		    // Note: Should I make this a plugin option for roughness?
+		    if (invertTexture)
+		    {
+			Color[] pixels = texture.GetPixels();
+			for (int i = 0; i < pixels.Length; i++)
+			{
+			    pixels[i].r = 1 - pixels[i].r;
+			    pixels[i].g = 1 - pixels[i].g;
+			    pixels[i].b = 1 - pixels[i].b;
+			}
+
+			texture.SetPixels(pixels);
+
+			texture.Apply();
+		    }
+
 
 		    // Get the Textures folder in the assetCacheFolderPath. Make sure it exists.
 		    assetCacheFolderPath = HEU_AssetDatabase.AppendTexturesPathToAssetFolder(assetCacheFolderPath);
