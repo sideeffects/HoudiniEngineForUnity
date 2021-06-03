@@ -4653,6 +4653,7 @@ namespace HoudiniEngineUnity
 	    newAsset._ignoreNonDisplayNodes = this._ignoreNonDisplayNodes;
 	    newAsset._generateMeshUsingPoints = this._generateMeshUsingPoints;
 	    newAsset._useLODGroups = this._useLODGroups;
+	    newAsset._alwaysOverwriteOnLoad = this._alwaysOverwriteOnLoad;
 
 	    // Copy over tools state
 	    newAsset._editableNodesToolsEnabled = this._editableNodesToolsEnabled;
