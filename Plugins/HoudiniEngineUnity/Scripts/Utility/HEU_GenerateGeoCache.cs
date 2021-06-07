@@ -513,7 +513,7 @@ namespace HoudiniEngineUnity
 		    HEU_SessionManager.GetGroupMembership(session, GeoID, PartID, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, groupName, ref membership, _partInfo.isInstanced);
 
 		    bool bIsCollidable = groupName.Contains(HEU_PluginSettings.CollisionGroupName);
-		    bool bIsRenderCollidable = groupName.Contains(HEU_PluginSettings.RenderedCollisionGroupName);
+		    bool bIsRenderCollidable = groupName.Contains(HEU_PluginSettings.RenderedCollisionGroupName) || groupName.Contains(HEU_PluginSettings.RenderedConvexCollisionGroupName);
 		    bool bIsLODGroup = bUseLODGroups && groupName.StartsWith(HEU_Defines.HEU_DEFAULT_LOD_NAME);
 		    _hasLODGroups |= bIsLODGroup;
 
@@ -1554,6 +1554,7 @@ namespace HoudiniEngineUnity
 
 	    string collisionGroupName = HEU_PluginSettings.CollisionGroupName;
 	    string renderCollisionGroupName = HEU_PluginSettings.RenderedCollisionGroupName;
+	    string renderConvexCollisionGroupName = HEU_PluginSettings.RenderedConvexCollisionGroupName;
 
 	    string lodName = HEU_Defines.HEU_DEFAULT_LOD_NAME;
 
@@ -1588,7 +1589,7 @@ namespace HoudiniEngineUnity
 		List<int> groupVertexOffset = geoCache._groupVertexOffsets[groupName];
 
 		bool bIsCollidable = groupName.Contains(collisionGroupName);
-		bool bIsRenderCollidable = groupName.Contains(renderCollisionGroupName);
+		bool bIsRenderCollidable = groupName.Contains(renderCollisionGroupName) || groupName.Contains(renderConvexCollisionGroupName);
 		if (bIsCollidable || bIsRenderCollidable)
 		{
 		    if (numCollisionMeshes > 0)
@@ -1657,7 +1658,8 @@ namespace HoudiniEngineUnity
 			HEU_ColliderInfo.ColliderType colliderType = HEU_ColliderInfo.ColliderType.MESH;
 
 			if (groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_COLLISION_GEO)
-				|| groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_COLLISION_GEO))
+				|| groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_COLLISION_GEO)
+				|| groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_CONVEX_COLLISION_GEO))
 			{
 			    if (groupName.EndsWith("box"))
 			    {
@@ -2057,6 +2059,7 @@ namespace HoudiniEngineUnity
 
 	    string collisionGroupName = HEU_PluginSettings.CollisionGroupName;
 	    string renderCollisionGroupName = HEU_PluginSettings.RenderedCollisionGroupName;
+	    string renderConvexCollisionGroupName = HEU_PluginSettings.RenderedConvexCollisionGroupName;
 
 	    string lodName = HEU_Defines.HEU_DEFAULT_LOD_NAME;
 
@@ -2091,7 +2094,7 @@ namespace HoudiniEngineUnity
 		List<int> groupVertexOffset = geoCache._groupVertexOffsets[groupName];
 
 		bool bIsCollidable = groupName.Contains(collisionGroupName);
-		bool bIsRenderCollidable = groupName.Contains(renderCollisionGroupName);
+		bool bIsRenderCollidable = groupName.Contains(renderCollisionGroupName) || groupName.Contains(renderConvexCollisionGroupName);
 		if (bIsCollidable || bIsRenderCollidable)
 		{
 		    if (numCollisionMeshes > 0)

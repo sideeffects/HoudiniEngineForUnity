@@ -796,6 +796,16 @@ namespace HoudiniEngineUnity
 	    }
 	    HEU_EditorUI.DrawSeparator();
 	    {
+		string oldValue = HEU_PluginSettings.RenderedConvexCollisionGroupName;
+		string newValue = EditorGUILayout.DelayedTextField("Rendered Convex Collision Group", oldValue);
+		if (oldValue != newValue && !string.IsNullOrEmpty(newValue))
+		{
+		    HEU_PluginSettings.RenderedConvexCollisionGroupName = newValue;
+		    bChanged = true;
+		}
+	    }
+	    HEU_EditorUI.DrawSeparator();
+	    {
 		string oldValue = HEU_PluginSettings.UnityMaterialAttribName;
 		string newValue = EditorGUILayout.DelayedTextField("Unity Material Attribute", oldValue);
 		if (oldValue != newValue && !string.IsNullOrEmpty(newValue))

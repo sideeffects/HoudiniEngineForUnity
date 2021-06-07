@@ -150,6 +150,20 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static string RenderedConvexCollisionGroupName
+	{
+	    get
+	    {
+		string sValue = HEU_Defines.DEFAULT_RENDERED_CONVEX_COLLISION_GEO;
+		HEU_PluginStorage.Instance.Get("HAPI_RenderedConvexCollisionGroupName", out sValue, sValue);
+		return sValue;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_RenderedConvexCollisionGroupName", value);
+	    }
+	}
+
 	public static string UnityMaterialAttribName
 	{
 	    get
