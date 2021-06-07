@@ -122,9 +122,11 @@ namespace HoudiniEngineUnity
 	// Collision
 	public const string DEFAULT_COLLISION_GEO = "collision_geo";
 	public const string DEFAULT_RENDERED_COLLISION_GEO = "rendered_collision_geo";
+	public const string DEFAULT_RENDERED_CONVEX_COLLISION_GEO = "rendered_convex_collision_geo";
 	public const string DEFAULT_CONVEX_COLLISION_GEO = "convex";
 	public const string DEFAULT_SIMPLE_COLLISION_GEO = "collision_geo_simple";
 	public const string DEFAULT_SIMPLE_RENDERED_COLLISION_GEO = "rendered_collision_geo_simple";
+	public const string DEFAULT_SIMPLE_RENDERED_CONVEX_COLLISION_GEO = "rendered_convex_collision_geo_simple";
 	public const string DEFAULT_COLLISION_TRIGGER = "trigger";
 
 	// Materials
