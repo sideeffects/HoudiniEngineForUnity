@@ -1449,7 +1449,7 @@ namespace HoudiniEngineUnity
 		    // e.g.: "Assets/HoudiniEngineAssetCache/Working/simple_heightfield/heightfield_noise1/Terrain/Tile0/TerrainData.asset"
 		    if (match.Success && match.Groups.Count == 5)
 		    {
-			bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
+			bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[2].Value, match.Groups[3].Value, match.Groups[4].Value);
 		    }
 		    else
 		    {
@@ -1466,7 +1466,7 @@ namespace HoudiniEngineUnity
 			Match match_pdg = reg_pdg.Match(sourceAssetPath);
 			if (match_pdg.Success)
 			{
-			    bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match_pdg.Groups[3].Value, match_pdg.Groups[5].Value);
+			    bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[2].Value, match_pdg.Groups[3].Value, match_pdg.Groups[5].Value);
 			}
 			else{
 			    string supposedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);

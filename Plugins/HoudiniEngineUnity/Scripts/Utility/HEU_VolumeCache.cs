@@ -715,8 +715,8 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // The TerrainData and TerrainLayer files needs to be saved out if we create them. This creates the relative folder
-	    // path from the Asset's cache folder: {assetCache}/{geo name}/Terrain/Tile{tileIndex}/...
-	    string relativeFolderPath = HEU_Platform.BuildPath(_ownerNode.GeoName, HEU_Defines.HEU_FOLDER_TERRAIN, HEU_Defines.HEU_FOLDER_TILE + TileIndex);
+	    // path from the Asset's cache folder: {assetCache}/{object name}/{geo name}/Terrain/Tile{tileIndex}/...
+	    string relativeFolderPath = HEU_Platform.BuildPath(_ownerNode.ObjectNode.ObjectName, _ownerNode.GeoName, HEU_Defines.HEU_FOLDER_TERRAIN, HEU_Defines.HEU_FOLDER_TILE + TileIndex);
 
 	    if (bRebuild)
 	    {
