@@ -376,6 +376,21 @@ namespace HoudiniEngineUnity
 		textureFileName = textureFileName.Replace("?", "_");
 		textureFileName = textureFileName.Replace("/", "_");
 
+
+		// Filename is too long! Shorten it!
+		int lastDot = textureFileName.LastIndexOf('.');
+		if (lastDot != -1)
+		{
+		    string baseName = textureFileName.Substring(0, lastDot);
+
+		    while (baseName.Length > 50 && baseName.IndexOf('_') != -1)
+		    {
+			baseName = baseName.Substring(baseName.IndexOf('_') + 1);
+		    }
+
+		    textureFileName = baseName + textureFileName.Substring(lastDot);
+		}
+
 		//HEU_Logger.LogFormat("Texture File Name: {0}, {1}", paramStrValue, textureFileName);
 	    }
 
