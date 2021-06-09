@@ -832,7 +832,7 @@ namespace HoudiniEngineUnity
 	    }
 	    else
 	    {
-		if (_cookStatus == AssetCookStatus.NONE)
+		if (_cookStatus == AssetCookStatus.NONE || _cookStatus == AssetCookStatus.POSTLOAD)
 		{
 		    RecookBlocking(bCheckParametersChanged, bSkipCookCheck, 
 			bUploadParameters, bUploadParameterPreset: false, 
