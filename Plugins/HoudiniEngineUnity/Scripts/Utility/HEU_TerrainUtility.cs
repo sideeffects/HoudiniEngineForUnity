@@ -785,17 +785,20 @@ namespace HoudiniEngineUnity
 
 	    HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
 	    int[] tiles = new int[0];
-	    if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEIGHTFIELD_UNITY_TILE, ref tileAttrInfo, ref tiles, session.GetAttributeIntData))
+	    if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tiles, session.GetAttributeIntData))
 	    {
-		if (throwWarningIfNoTileAttribute)
+		if (!HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEIGHTFIELD_UNITY_TILE, ref tileAttrInfo, ref tiles, session.GetAttributeIntData))
 		{
-		    HEU_Logger.LogWarning("Multiple tiles detected but attribute unity_hf_tile was not found! This will cause tree instances to default to the first tile. Set unity_hf_tile to the tile index to prevent this.");
-		}
+		    if (throwWarningIfNoTileAttribute)
+		    {
+		        HEU_Logger.LogWarning("Multiple tiles detected but attribute tile or unity_hf_tile was not found! This will cause tree instances to default to the first tile. Set unity_hf_tile to the tile index to prevent this.");
+		    }
 
-		tiles = new int[scatterTrees._prototypeIndices.Length];
-		for (int i = 0; i < scatterTrees._prototypeIndices.Length; i++)
-		{
-		    tiles[i] = -1;
+		    tiles = new int[scatterTrees._prototypeIndices.Length];
+		    for (int i = 0; i < scatterTrees._prototypeIndices.Length; i++)
+		    {
+		        tiles[i] = -1;
+		    }
 		}
 	    }
 
