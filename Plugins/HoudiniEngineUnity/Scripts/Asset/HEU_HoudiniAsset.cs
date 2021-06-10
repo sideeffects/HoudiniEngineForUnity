@@ -401,7 +401,7 @@ namespace HoudiniEngineUnity
 #pragma warning restore 0414
 
 	[SerializeField]
-	private bool _curveDisableScaleRotation = false;
+	private bool _curveDisableScaleRotation = true;
 
 	public bool CurveDisableScaleRotation { get { return _curveDisableScaleRotation; } set { _curveDisableScaleRotation = value; } }
 
