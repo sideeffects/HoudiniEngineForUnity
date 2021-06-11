@@ -2076,7 +2076,7 @@ namespace HoudiniEngineUnity
 	    return result;
 	}
 
-	public static GameObject InstantiateGameObjectFromPath(string path)
+	public static GameObject GetPrefabFromPath(string path)
 	{
 	    GameObject result = null;
 	    if (path.Contains("Resources/"))

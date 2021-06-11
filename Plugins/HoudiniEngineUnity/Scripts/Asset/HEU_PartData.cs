@@ -883,7 +883,7 @@ namespace HoudiniEngineUnity
 
 		    if (!loadedUnityObjectMap.TryGetValue(instancePathAttrValues[i], out unitySrcGO))
 		    {
-			unitySrcGO = HEU_GeneralUtility.InstantiateGameObjectFromPath(instancePathAttrValues[i]);
+			unitySrcGO = HEU_GeneralUtility.GetPrefabFromPath(instancePathAttrValues[i]);
 
 			if (unitySrcGO == null)
 			{

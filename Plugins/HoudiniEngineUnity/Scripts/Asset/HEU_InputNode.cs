@@ -294,6 +294,10 @@ namespace HoudiniEngineUnity
 	    {
 		InternalAddInputHDAAtEnd(newEntryGameObject);
 	    }
+	    else
+	    {
+		HEU_Logger.LogWarning("Warning: Unsupported input type!");
+	    }
 	}
 
 	public HEU_InputObjectInfo AddInputEntryAtEndMesh(GameObject newEntryGameObject)
@@ -1205,7 +1209,7 @@ namespace HoudiniEngineUnity
 
     // Container for each input object in this node
     [System.Serializable]
-    public class HEU_InputObjectInfo
+    public class HEU_InputObjectInfo : IEquivable<HEU_InputObjectInfo>
     {
 	// Gameobject containing mesh
 	public GameObject _gameObject;
@@ -1279,7 +1283,7 @@ namespace HoudiniEngineUnity
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._translateOffset, other._translateOffset, ref bResult, header, "_translateOffset");
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._rotateOffset, other._rotateOffset, ref bResult, header, "_rotateOffset");
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._scaleOffset, other._scaleOffset, ref bResult, header, "_scaleOffset");
-	    HEU_TestHelpers.AssertTrueLogEquivalent(this._inputInterfaceType.Name, other._inputInterfaceType.Name, ref bResult, header, "_inputInterfaceType");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._inputInterfaceType, other._inputInterfaceType, ref bResult, header, "_inputInterfaceType");
 	 
 	    return bResult;
 	}
@@ -1287,7 +1291,7 @@ namespace HoudiniEngineUnity
     }
 
     [System.Serializable]
-    public class HEU_InputHDAInfo
+    public class HEU_InputHDAInfo : IEquivable<HEU_InputHDAInfo>
     {
 	// The HDA gameobject that needs to be connected
 	public GameObject _pendingGO;

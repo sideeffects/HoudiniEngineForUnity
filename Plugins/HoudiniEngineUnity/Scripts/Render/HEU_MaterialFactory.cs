@@ -571,6 +571,10 @@ namespace HoudiniEngineUnity
 		{
 		    HEU_Logger.LogWarningFormat("Empty material name found. Using default material.");
 		}
+		else if (materialPath.Contains("Resources/unity_builtin_extra"))
+		{
+		    // Built in material. Don't display error.
+		}
 		else
 		{
 		    HEU_Logger.LogErrorFormat("Unable to find {0} material {1}. Using a default material instead. Please check material exists in project and reload asset!", sourceType, materialPath);
