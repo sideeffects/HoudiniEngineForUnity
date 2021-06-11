@@ -1430,7 +1430,7 @@ namespace HoudiniEngineUnity
 
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._tileIndex, other._tileIndex, ref bResult, header, "_tileIndex");
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._isDirty, other._isDirty, ref bResult, header, "_isDirty");
-	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
 	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._objName, other._objName, ref bResult, header, "_objName");
 
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._terrainData.ToTestObject(), other._terrainData.ToTestObject(), ref bResult, header, "_terrainData");

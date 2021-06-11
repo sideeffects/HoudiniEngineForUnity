@@ -470,6 +470,18 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
+	    // Setting for unit tests only
+	    //HEU_EditorUI.DrawSeparator();
+	    //{
+	//	bool oldValue = HEU_PluginSettings.ShortenFolderPaths;
+	//	bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Use Shorten paths");
+	//	if (newValue != oldValue)
+	//	{
+	//	    HEU_PluginSettings.ShortenFolderPaths = newValue;
+	//	    bChanged = true;
+	//	}
+	    //}
+
 	    return bChanged;
 	}
 

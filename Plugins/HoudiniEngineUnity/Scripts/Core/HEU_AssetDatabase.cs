@@ -419,7 +419,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="suggestedAssetPath">A suggested path to try. Will use default if empty or null./param>
 	/// <returns>Unique asset cache folder for given asset path</returns>
-	public static string CreateAssetCacheFolder(string suggestedAssetPath)
+	public static string CreateAssetCacheFolder(string suggestedAssetPath, int hash = 0)
 	{
 #if UNITY_EDITOR
 	    // We create a unique folder inside our plugin's asset database cache folder.
@@ -436,6 +436,11 @@ namespace HoudiniEngineUnity
 	    {
 		fileName = "AssetCache";
 		HEU_Logger.LogWarningFormat("Unable to get file name from {0}. Using default value: {1}.", suggestedAssetPath, fileName);
+	    }
+
+	    if (HEU_PluginSettings.ShortenFolderPaths && fileName.Length >= 3 && hash != 0)
+	    {
+		fileName = fileName.Substring(0, 3) + hash;
 	    }
 
 	    string fullPath = HEU_Platform.BuildPath(assetWorkingPath, fileName);
