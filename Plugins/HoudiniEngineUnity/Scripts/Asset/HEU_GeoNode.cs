@@ -180,7 +180,16 @@ namespace HoudiniEngineUnity
 	{
 	    _containerObjectNode = containerObjectNode;
 	    _geoInfo = geoInfo;
-	    _geoName = HEU_SessionManager.GetString(_geoInfo.nameSH, session);
+
+	    string realName = HEU_SessionManager.GetString(_geoInfo.nameSH, session);
+	    if (!HEU_PluginSettings.ShortenFolderPaths || realName.Length < 3)
+	    {
+	        _geoName = HEU_SessionManager.GetString(_geoInfo.nameSH, session);
+	    }
+	    else
+	    {
+		_geoName = realName.Substring(0, 3) + this.GetHashCode();
+	    }
 
 	    //HEU_Logger.Log(string.Format("GeoNode initialized with ID={0}, name={1}, type={2}", GeoID, GeoName, geoInfo.type));
 	}
@@ -1085,7 +1094,7 @@ namespace HoudiniEngineUnity
 
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoInfo.ToTestObject(), other._geoInfo.ToTestObject(), ref bResult, header, "_geoInfo");
 
-	    HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
+	    //HEU_TestHelpers.AssertTrueLogEquivalent(this._geoName, other._geoName, ref bResult, header, "_geoName");
 
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parts, other._parts, ref bResult, header, "_part");
 	    

@@ -1074,7 +1074,17 @@ namespace HoudiniEngineUnity
 	    UpdateTotalCookCount();
 
 	    // Cache asset info
-	    _assetName = HEU_SessionManager.GetString(_assetInfo.nameSH, session);
+	    string realName = HEU_SessionManager.GetString(_assetInfo.nameSH, session);
+
+	    if (!HEU_PluginSettings.ShortenFolderPaths || realName.Length < 3)
+	    {
+	        _assetName = realName;
+	    }
+	    else
+	    {
+		_assetName = realName.Substring(0, 3) + this.GetHashCode();
+	    }
+
 	    _assetOpName = HEU_SessionManager.GetString(_assetInfo.fullOpNameSH, session);
 	    _assetHelp = HEU_SessionManager.GetString(_assetInfo.helpTextSH, session);
 
@@ -3945,7 +3955,7 @@ namespace HoudiniEngineUnity
 
 		}
 
-		_assetCacheFolderPath = HEU_AssetDatabase.CreateAssetCacheFolder(suggestedFileName);
+		_assetCacheFolderPath = HEU_AssetDatabase.CreateAssetCacheFolder(suggestedFileName, this.GetHashCode());
 	    }
 	    return _assetCacheFolderPath;
 	}

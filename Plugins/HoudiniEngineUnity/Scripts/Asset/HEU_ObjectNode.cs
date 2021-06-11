@@ -90,7 +90,16 @@ namespace HoudiniEngineUnity
 
 	private void SyncWithObjectInfo(HEU_SessionBase session)
 	{
-	    _objName = HEU_SessionManager.GetString(_objectInfo.nameSH, session);
+	    string realName = HEU_SessionManager.GetString(_objectInfo.nameSH, session);
+	    if (!HEU_PluginSettings.ShortenFolderPaths || realName.Length < 3)
+	    {
+		_objName = realName;
+	    }
+	    else
+	    {
+		_objName = realName.Substring(0, 3) + this.GetHashCode();
+	    }
+	    
 	}
 
 	public void Initialize(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, HAPI_Transform objectTranform, HEU_HoudiniAsset parentAsset)

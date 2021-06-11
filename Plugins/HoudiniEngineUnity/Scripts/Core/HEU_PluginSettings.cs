@@ -1022,6 +1022,22 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Uses the hash instead of the name to shorten folder paths.
+	// Warning: Meant for unit tests only. Untested for regular use.
+	public static bool ShortenFolderPaths
+	{
+	    get
+	    {
+		bool enabled = false;
+		HEU_PluginStorage.Instance.Get("HAPI_ShortenFolderPaths", out enabled, enabled);
+		return enabled;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_ShortenFolderPaths", value);
+	    }
+	}
+
     }
 
 }   // HoudiniEngineUnity

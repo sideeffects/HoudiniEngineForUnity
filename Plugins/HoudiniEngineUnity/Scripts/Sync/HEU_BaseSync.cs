@@ -1154,7 +1154,7 @@ namespace HoudiniEngineUnity
 	    if (string.IsNullOrEmpty(_outputCacheDirectory))
 	    {
 		// Get a unique working folder if none set
-		_outputCacheDirectory = HEU_AssetDatabase.CreateAssetCacheFolder(this.name);
+		_outputCacheDirectory = HEU_AssetDatabase.CreateAssetCacheFolder(this.name, this.GetHashCode());
 	    }
 	    return _outputCacheDirectory;
 	}

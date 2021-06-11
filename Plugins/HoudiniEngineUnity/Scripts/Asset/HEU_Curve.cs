@@ -1198,7 +1198,7 @@ namespace HoudiniEngineUnity
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._parameters, other._parameters , ref bResult, header, "_parameters");
 
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._bUploadParameterPreset, other._bUploadParameterPreset, ref bResult, header, "_bUploadParamterPreset");
-	    HEU_TestHelpers.AssertTrueLogEquivalent(this._curveName, other._curveName, ref bResult, header, "_curveName");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._curveName, other._curveName, ref bResult, header, "_curveName");
 	    
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._targetGameObject, other._targetGameObject, ref bResult, header, "_targetGameObject");
 
