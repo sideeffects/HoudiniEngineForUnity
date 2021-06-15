@@ -272,6 +272,7 @@ namespace HoudiniEngineUnity
 	public const string DEFAULT_UNITY_TAG_ATTR = "unity_tag";
 	public const string DEFAULT_UNITY_SCRIPT_ATTR = "unity_script";
 	public const string DEFAULT_UNITY_INSTANCE_ATTR = "unity_instance";
+	public const string UNITY_USE_INSTANCE_FLAGS_ATTR = "unity_use_instance_flags";
 	public const string DEFAULT_UNITY_INPUT_MESH_ATTR = "unity_input_mesh_name";
 	public const string DEFAULT_UNITY_STATIC_ATTR = "unity_static";
 	public const string DEFAULT_UNITY_LAYER_ATTR = "unity_layer";

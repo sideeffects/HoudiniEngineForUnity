@@ -842,6 +842,15 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
+	    HAPI_AttributeInfo useUnityInstanceFlagsInfo  = new HAPI_AttributeInfo();
+	    int[] useUnityInstanceFlags = new int[0];
+	    bool copyParentFlags = true;
+	    HEU_GeneralUtility.GetAttribute(session, _geoID, _partID, HEU_Defines.UNITY_USE_INSTANCE_FLAGS_ATTR, ref useUnityInstanceFlagsInfo, ref useUnityInstanceFlags, session.GetAttributeIntData);
+	    if (useUnityInstanceFlagsInfo.exists && useUnityInstanceFlags.Length > 0 && useUnityInstanceFlags[0] == 1)
+	    {
+		copyParentFlags = false;
+	    }
+
 	    SetObjectInstancer(true);
 	    ObjectInstancesBeenGenerated = true;
 
@@ -930,7 +939,7 @@ namespace HoudiniEngineUnity
 
 		CreateNewInstanceFromObject(unitySrcGO, (i + 1), partTransform, ref instanceTransforms[i],
 			HEU_Defines.HEU_INVALID_NODE_ID, instancePathAttrValues[i], rotationOffset, scaleOffset, instancePrefixes,
-			collisionSrcGO);
+			collisionSrcGO, copyParentFlags: copyParentFlags);
 	    }
 
 	    if (tempGO != null)
@@ -948,7 +957,7 @@ namespace HoudiniEngineUnity
 	/// <param name="hapiTransform">HAPI transform to apply to the new instance.</param>
 	private void CreateNewInstanceFromObject(GameObject sourceObject, int instanceIndex, Transform parentTransform, ref HAPI_Transform hapiTransform,
 		HAPI_NodeId instancedObjectNodeID, string instancedObjectPath, Vector3 rotationOffset, Vector3 scaleOffset, string[] instancePrefixes,
-		GameObject collisionSrcGO)
+		GameObject collisionSrcGO, bool copyParentFlags = true)
 	{
 	    GameObject newInstanceGO = null;
 
@@ -970,7 +979,10 @@ namespace HoudiniEngineUnity
 	    // To get the instance output name, we pass in the instance index. The actual name will be +1 from this.
 	    newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(PartName, instancePrefixes, instanceIndex);
 
-	    HEU_GeneralUtility.CopyFlags(OutputGameObject, newInstanceGO, true);
+	    if (copyParentFlags)
+	    {
+	        HEU_GeneralUtility.CopyFlags(OutputGameObject, newInstanceGO, true);
+	    }
 	
 	    Transform instanceTransform = newInstanceGO.transform;
 	    HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnityForInstance(ref hapiTransform, instanceTransform);
