@@ -2067,10 +2067,11 @@ namespace HoudiniEngineUnity
 	public static string GetRawOperatorName(string assetOpName)
 	{
 	    string result = assetOpName;
-	    int lastSlash = assetOpName.LastIndexOf('/');
+	    result = result.Replace(':', '_');
+	    int lastSlash = result.LastIndexOf('/');
 	    if (lastSlash != -1)
 	    {
-		result = assetOpName.Substring(lastSlash+1);
+		result = result.Substring(lastSlash+1);
 	    }
 
 	    return result;
