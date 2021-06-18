@@ -33,7 +33,7 @@ using UnityEngine.Events;
 namespace HoudiniEngineUnity
 {
     /// <summary>
-    /// Asset Event Classes since UnityEvent doesn't directly support generics.
+    /// Asset Event Classes since UnityEvent doesn't directly support generics. 
     /// </summary>
 
     public enum HEU_AssetEventType
