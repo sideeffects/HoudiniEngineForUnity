@@ -33,7 +33,6 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
-    // Super hacky way to force save data when access is limited such as undo deletion events
     public class HEU_CookLogs
     {
 	private static HEU_CookLogs _instance;
