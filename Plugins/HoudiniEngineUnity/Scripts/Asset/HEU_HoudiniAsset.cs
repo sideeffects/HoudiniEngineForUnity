@@ -359,6 +359,7 @@ namespace HoudiniEngineUnity
 
 	public bool BakeUpdateKeepPreviousTransformValues { get { return _bakeUpdateKeepPreviousTransformValues; } set { _bakeUpdateKeepPreviousTransformValues = value; } }
 
+	// If false, pauses all cooking on this HDA until set back to true. Meant for unit testing use.
 	[SerializeField]
 	private bool _pauseCooking = false;
 	public bool PauseCooking { get { return _pauseCooking; } set { _pauseCooking = value; }}
