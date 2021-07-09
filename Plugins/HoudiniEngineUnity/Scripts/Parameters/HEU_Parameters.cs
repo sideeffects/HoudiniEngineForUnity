@@ -331,6 +331,7 @@ namespace HoudiniEngineUnity
 
 				// This is the list of values that Unity Inspector requires for dropdowns
 				newParameter._choiceIntValues = new int[parmInfo.choiceCount];
+				HAPI_ChoiceListType choiceType = parmInfo.choiceListType;
 
 				for (int c = 0; c < parmInfo.choiceCount; ++c)
 				{
@@ -338,8 +339,23 @@ namespace HoudiniEngineUnity
 				    string labelStr = HEU_SessionManager.GetString(_paramChoices[parmInfo.choiceIndex + c].labelSH, session);
 				    newParameter._choiceLabels[c] = new GUIContent(labelStr);
 
+				    string tokenStr = HEU_SessionManager.GetString(_paramChoices[parmInfo.choiceIndex + c].valueSH, session);
+
 				    // This will be the index of the above string value for Unity
 				    newParameter._choiceIntValues[c] = c;
+
+				    if (parmInfo.useMenuItemTokenAsValue)
+				    {
+					try
+					{
+					    int value = Int32.Parse(tokenStr);
+					    newParameter._choiceIntValues[c] = value;
+					}
+					catch (Exception e)
+					{
+					    HEU_Logger.LogWarningFormat("UseMenuItemTokenAsValue set but unable to parse token value: {0}", e.ToString());
+					}
+				    }
 
 				    // Store the current chosen value's index. This is to let Unity know which option to display.
 				    if (_paramInts[parmInfo.intValuesIndex] == newParameter._choiceIntValues[c])

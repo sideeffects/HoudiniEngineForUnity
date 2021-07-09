@@ -1066,12 +1066,11 @@ namespace HoudiniEngineUnity
 		    paramUICache._secondaryValue.IntValue = EditorGUILayout.IntPopup(new GUIContent(parameterData._labelName, GetFormattedTooltip(parameterData)), paramUICache._secondaryValue.IntValue, parameterData._choiceLabels, parameterData._choiceIntValues);
 
 		    // No need to check, just always updated with latest choiceProperty
-		    if (intsValue[0] != parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue])
+		    if (intsValue[0] != paramUICache._secondaryValue.IntValue)
 		    {
 		    	//HEU_Logger.LogFormat("Setting int property {0} from {1} to {2}", parameterData._labelName, intsProperty.GetArrayElementAtIndex(0).intValue, parameterData._choiceIntValues[choiceProperty.intValue]);
-		    	intsValue[0] = parameterData._choiceIntValues[paramUICache._secondaryValue.IntValue];
+		    	intsValue[0] = paramUICache._secondaryValue.IntValue;
 		    }
-
 		}
 		else if (parameterData._parmInfo.choiceCount > 0 && parameterData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
 		{
