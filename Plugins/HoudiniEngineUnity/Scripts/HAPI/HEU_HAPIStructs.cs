@@ -402,6 +402,9 @@ namespace HoudiniEngineUnity
 
         public HAPI_StringHandle disabledConditionSH;              //Provides the raw condition string which is used to evalute whethera parm is enabled or disabled
 
+        [MarshalAs(UnmanagedType.U1)]
+        public HAPI_Bool useMenuItemTokenAsValue;              //Whether or not the "Use Menu Item Token As Value" checkbox was checked in a integer menu item.
+
     };
 
     [StructLayout(LayoutKind.Sequential)]
