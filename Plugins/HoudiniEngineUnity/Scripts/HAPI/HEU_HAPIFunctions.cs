@@ -985,6 +985,19 @@ namespace HoudiniEngineUnity
                 out HAPI_GeoInfo geo_info);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
+        HAPI_GetOutputGeoCount(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                out int count);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetOutputGeoInfos(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                [Out] HAPI_GeoInfo[] geo_infos_array,
+                int count);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
         HAPI_GetGeoInfo(
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
