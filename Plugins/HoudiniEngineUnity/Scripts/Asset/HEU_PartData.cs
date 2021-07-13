@@ -778,6 +778,11 @@ namespace HoudiniEngineUnity
 	/// <param name="unityInstanceAttr">Name of the attribute to get the Unity path from.</param>
 	public void GenerateInstancesFromUnityAssetPathAttribute(HEU_SessionBase session, string unityInstanceAttr)
 	{
+	    if (!IsAttribInstancer())
+	    {
+		return;
+	    }
+
 	    int numInstances = GetPartPointCount();
 	    if (numInstances <= 0)
 	    {
