@@ -882,6 +882,18 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+
+	public virtual bool GetOutputGeoCount(HAPI_NodeId nodeID, out int count, bool bLogError = false)
+	{
+	    count = 0;
+	    return false;
+	}
+
+	public virtual bool GetOutputGeoInfos(HAPI_NodeId nodeID, ref HAPI_GeoInfo[] geoInfosArray, int count, bool bLogError = false)
+	{
+	    return false;
+	}
+
 	/// <summary>
 	/// Get the geometry info on a SOP node.
 	/// </summary>

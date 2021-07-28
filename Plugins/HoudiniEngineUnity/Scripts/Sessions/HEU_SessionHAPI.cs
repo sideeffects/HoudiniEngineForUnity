@@ -1550,6 +1550,20 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+	public override bool GetOutputGeoCount(HAPI_NodeId nodeID, out int count, bool bLogError)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetOutputGeoCount(ref _sessionData._HAPISession, nodeID, out count);
+	    HandleStatusResult(result, "Getting Output Geo Info Count", false, bLogError);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool GetOutputGeoInfos(HAPI_NodeId nodeID, ref HAPI_GeoInfo[] geoInfosArray, int count, bool bLogError)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetOutputGeoInfos(ref _sessionData._HAPISession, nodeID, geoInfosArray, count);
+	    HandleStatusResult(result, "Getting Output Geo Infos", false, bLogError);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 	/// <summary>
 	/// Get the geometry info on a SOP node.
 	/// </summary>

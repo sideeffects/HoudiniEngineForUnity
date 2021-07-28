@@ -102,7 +102,7 @@ namespace HoudiniEngineUnity
 	    
 	}
 
-	public void Initialize(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, HAPI_Transform objectTranform, HEU_HoudiniAsset parentAsset)
+	public void Initialize(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, HAPI_Transform objectTranform, HEU_HoudiniAsset parentAsset, bool bUseOutputNodes)
 	{
 	    _objectInfo = objectInfo;
 	    _objectTransform = objectTranform;
@@ -122,6 +122,63 @@ namespace HoudiniEngineUnity
 	    }
 	    //HEU_Logger.LogFormat("Found geoinfo with name {0} and id {1}", HEU_SessionManager.GetString(displayGeoInfo.nameSH, session), displayGeoInfo.nodeId);
 	    geoInfos.Add(displayGeoInfo);
+
+	    if (bUseOutputNodes)
+	    {
+
+		int outputCount = 0;
+		if (!session.GetOutputGeoCount(_objectInfo.nodeId, out outputCount))
+		{
+		    outputCount = 0;
+		}
+
+		if (outputCount > 0)
+		{
+		    HAPI_GeoInfo[] outputGeoInfos = new HAPI_GeoInfo[outputCount];
+		    if (!session.GetOutputGeoInfos(_objectInfo.nodeId, ref outputGeoInfos, outputCount))
+		    {
+			outputGeoInfos = new HAPI_GeoInfo[0];
+		    }
+
+		    foreach (HAPI_GeoInfo geoInfo in outputGeoInfos)
+		    {
+			if (geoInfo.nodeId == displayGeoInfo.nodeId)
+			{
+			    continue;
+			}
+
+			bool bValidOutput = true;
+			int parentId = HEU_HAPIUtility.GetParentNodeID(session, geoInfo.nodeId);
+			while (parentId >= 0)
+			{
+			    if (parentId == geoInfo.nodeId)
+			    {
+				    // This output node is inside the display geo
+				    // Do not use this output to avoid duplicates
+				    bValidOutput = false;
+				    break;
+			    }
+
+			    parentId = HEU_HAPIUtility.GetParentNodeID(session, parentId);
+			}
+
+			if (bValidOutput)
+			{
+			    // Need to cook output geometry to get their parts
+			    HAPI_GeoInfo cookedGeoInfo = new HAPI_GeoInfo();
+			    session.CookNode(geoInfo.nodeId, HEU_PluginSettings.CookTemplatedGeos);
+			    
+			    // Get the refreshed geo info
+			    if (session.GetGeoInfo(geoInfo.nodeId, ref cookedGeoInfo))
+			    {
+				geoInfos.Add(cookedGeoInfo);
+			    }
+
+			}
+		    }
+		}
+	    }
+
 
 	    // Get editable nodes, cook em, then create geo nodes for them
 	    HAPI_NodeId[] editableNodes = null;
@@ -247,6 +304,57 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    displayGeoInfo.nodeId = HEU_Defines.HEU_INVALID_NODE_ID;
+		}
+
+		bool useOutputNodes = true;
+		if (useOutputNodes)
+		{
+		    
+		    int outputCount = 0;
+		    if (!session.GetOutputGeoCount(_objectInfo.nodeId, out outputCount))
+		    {
+		        outputCount = 0;
+		    }
+		    if (outputCount > 0)
+		    {
+			HAPI_GeoInfo[] outputGeoInfos = new HAPI_GeoInfo[outputCount];
+			if (!session.GetOutputGeoInfos(_objectInfo.nodeId, ref outputGeoInfos, outputCount))
+			{
+			    outputGeoInfos = new HAPI_GeoInfo[0];
+			}
+			foreach (HAPI_GeoInfo geoInfo in outputGeoInfos)
+			{
+			    if (geoInfo.nodeId == displayGeoInfo.nodeId)
+			    {
+				continue;
+			    }
+			    bool bValidOutput = true;
+			    int parentId = HEU_HAPIUtility.GetParentNodeID(session, geoInfo.nodeId);
+			    while (parentId >= 0)
+			    {
+				if (parentId == geoInfo.nodeId)
+				{
+				    // This output node is inside the display geo
+				    // Do not use this output to avoid duplicates
+				    bValidOutput = false;
+				    break;
+				}
+    				parentId = HEU_HAPIUtility.GetParentNodeID(session, parentId);
+			    }
+    			    if (bValidOutput)
+			    {
+				// Need to cook output geometry to get their parts
+				HAPI_GeoInfo cookedGeoInfo = new HAPI_GeoInfo();
+				session.CookNode(geoInfo.nodeId, HEU_PluginSettings.CookTemplatedGeos);
+				
+				// Get the refreshed geo info
+				if (session.GetGeoInfo(geoInfo.nodeId, ref cookedGeoInfo))
+				{
+				    postCookGeoInfos.Add(cookedGeoInfo);
+				}
+    			    }
+			}
+		    }
 		}
 
 		// Get editable nodes, cook em, then create geo nodes for them
