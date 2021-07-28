@@ -368,6 +368,14 @@ namespace HoudiniEngineUnity
         HAPI_STORAGETYPE_UINT8,        
         HAPI_STORAGETYPE_INT8,        
         HAPI_STORAGETYPE_INT16,        
+        HAPI_STORAGETYPE_INT_ARRAY,        
+        HAPI_STORAGETYPE_INT64_ARRAY,        
+        HAPI_STORAGETYPE_FLOAT_ARRAY,        
+        HAPI_STORAGETYPE_FLOAT64_ARRAY,        
+        HAPI_STORAGETYPE_STRING_ARRAY,        
+        HAPI_STORAGETYPE_UINT8_ARRAY,        
+        HAPI_STORAGETYPE_INT8_ARRAY,        
+        HAPI_STORAGETYPE_INT16_ARRAY,        
         HAPI_STORAGETYPE_MAX,        
     };
 
