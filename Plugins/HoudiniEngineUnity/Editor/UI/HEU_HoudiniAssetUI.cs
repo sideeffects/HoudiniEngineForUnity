@@ -237,15 +237,27 @@ namespace HoudiniEngineUnity
 		// Check if any changes occurred, and if so, trigger a recook
 		if (EditorGUI.EndChangeCheck())
 		{
+		    bool oldUseOutputNodes = _houdiniAsset.UseOutputNodes;
 		    _houdiniAssetSerializedObject.ApplyModifiedProperties();
 		    serializedObject.ApplyModifiedProperties();
 
+		    bool bNeedsRebuild = false;
+
+		    // UseOutputNodes is a special parameter that requires us to rebuild in order to use it.
+		    if (_houdiniAsset.UseOutputNodes != oldUseOutputNodes)
+		    {
+			bNeedsRebuild = true;
+		    }
+
 		    if (!bSkipAutoCook)
 		    {
-			// Do automatic cook if values have changed
-			if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && _houdiniAsset.DoesAssetRequireRecook())
+			// If we need a rebuild, do that first
+			if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && bNeedsRebuild)
 			{
-
+			    _houdiniAsset.RequestReload(true);
+			}
+			else if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && _houdiniAsset.DoesAssetRequireRecook())
+			{
 			    // Often times, cooking while dragging mouse results in poor UX
 			    bool isDragging = (EditorGUIUtility.hotControl != 0);
 			    bool blockAutoCook =  _houdiniAsset.PendingAutoCookOnMouseRelease == true || (isDragging && Event.current != null && _delayAutoCookStrings.Contains(Event.current.commandName));
@@ -400,6 +412,7 @@ namespace HoudiniEngineUnity
 
 		    EditorGUILayout.BeginVertical();
 		    HEU_EditorUI.BeginSimpleSection("Generate");
+			HEU_EditorUI.DrawPropertyField(assetObject, "_useOutputNodes", "Use output nodes", "Create outputs using output nodes. Note: Requires a full rebuild if changed");
 			HEU_EditorUI.DrawPropertyField(assetObject, "_useLODGroups", "LOD Groups", "Automatically create Unity LOD group if found.");
 			HEU_EditorUI.DrawPropertyField(assetObject, "_generateNormals", "Normals", "Generate normals in Unity for output geometry.");
 			HEU_EditorUI.DrawPropertyField(assetObject, "_generateTangents", "Tangents", "Generate tangents in Unity for output geometry.");
