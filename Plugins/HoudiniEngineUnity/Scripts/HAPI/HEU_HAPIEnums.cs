@@ -66,6 +66,7 @@ namespace HoudiniEngineUnity
         HAPI_LICENSE_HOUDINI_FX,        
         HAPI_LICENSE_HOUDINI_ENGINE_INDIE,        
         HAPI_LICENSE_HOUDINI_INDIE,        
+        HAPI_LICENSE_HOUDINI_ENGINE_UNITY_UNREAL,        
         HAPI_LICENSE_MAX,        
     };
 

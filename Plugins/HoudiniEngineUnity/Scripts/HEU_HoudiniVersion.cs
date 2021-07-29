@@ -47,9 +47,9 @@ namespace HoudiniEngineUnity
                 public const string HOUDINI_VERSION_STRING = "19.0.330";
 
                 public const int HOUDINI_ENGINE_MAJOR	= 4;
-                public const int HOUDINI_ENGINE_MINOR	= 1;
+                public const int HOUDINI_ENGINE_MINOR	= 2;
 
-                public const int HOUDINI_ENGINE_API		= 14;
+                public const int HOUDINI_ENGINE_API		= 0;
 
                 public const int UNITY_PLUGIN_VERSION	= 2;
 
