@@ -107,6 +107,7 @@ namespace HoudiniEngineUnity
 		    case HAPI_License.HAPI_LICENSE_HOUDINI_FX: sb.Append("Houdini FX\n"); break;
 		    case HAPI_License.HAPI_LICENSE_HOUDINI_ENGINE_INDIE: sb.Append("Houdini Engine Indie"); break;
 		    case HAPI_License.HAPI_LICENSE_HOUDINI_INDIE: sb.Append("Houdini Indie\n"); break;
+                    case HAPI_License.HAPI_LICENSE_HOUDINI_ENGINE_UNITY_UNREAL: sb.Append("Houdini Engine for Unity/Unreal\n"); break;
 		    default: sb.Append("Unknown\n"); break;
 		}
 
