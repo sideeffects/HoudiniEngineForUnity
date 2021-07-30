@@ -376,6 +376,21 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static bool UseHybridCurveEditing
+	{
+	    get
+	    {
+		bool attrValue = true;
+		HEU_PluginStorage.Instance.Get("HAPI_UseHybridCurveEditing", out attrValue, attrValue);
+		return attrValue;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_UseHybridCurveEditing", value);
+	    }
+	}
+
+
 	public static string EditorOnly_Tag
 	{
 	    get
