@@ -752,7 +752,17 @@ namespace HoudiniEngineUnity
 		    bChanged = true;
 		}
 	    }
+
 	    HEU_EditorUI.DrawSeparator();
+	    {
+		bool oldValue = HEU_PluginSettings.UseHybridCurveEditing;
+		bool newValue =  HEU_EditorUI.DrawToggleLeft(oldValue, "Use Hybrid Curve Editing", "Toggles the usage of 'Hybrid Curve Editing', which overrides the shift function when working with curves.");
+		if (oldValue != newValue)
+		{
+		    HEU_PluginSettings.UseHybridCurveEditing = newValue;
+		    bChanged = true;
+		}
+	    }
 
 	    return bChanged;
 	}
