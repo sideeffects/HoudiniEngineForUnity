@@ -1833,7 +1833,7 @@ namespace HoudiniEngineUnity
 
 	    if (IsPartCurve())
 	    {
-		_curve.GenerateMesh(OutputGameObject);
+		_curve.GenerateMesh(OutputGameObject, session);
 
 		// When a Curve asset is used as input node, it creates this editable and useless curve part type.
 		// For now deleting it as it causes issues on recook (from scene load), as well as unnecessary curve editor UI.
@@ -1918,14 +1918,14 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void ProcessCurvePart(HEU_SessionBase session)
+	public void ProcessCurvePart(HEU_SessionBase session, HAPI_PartId partId)
 	{
 	    HEU_HoudiniAsset parentAsset = ParentAsset;
 
 	    bool bNewCurve = (_curve == null);
 	    if (bNewCurve)
 	    {
-		_curve = HEU_Curve.CreateSetupCurve(parentAsset, _geoNode.Editable, _partName, _geoID, false);
+		_curve = HEU_Curve.CreateSetupCurve(session, parentAsset, _geoNode.Editable, _partName, _geoID, partId, false);
 	    }
 	    else
 	    {

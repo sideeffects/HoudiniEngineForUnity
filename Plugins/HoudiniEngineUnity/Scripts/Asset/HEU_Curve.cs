@@ -119,6 +119,11 @@ namespace HoudiniEngineUnity
 	public HAPI_NodeId GeoID { get { return _geoID; } }
 
 	[SerializeField]
+	private HAPI_NodeId _partID;
+
+	public HAPI_NodeId PartID { get { return _partID; } }
+
+	[SerializeField]
 	private List<CurveNodeData> _curveNodeData = new List<CurveNodeData>();
 
 	public List<CurveNodeData> CurveNodeData { get { return _curveNodeData; }}
@@ -187,14 +192,19 @@ namespace HoudiniEngineUnity
 
 	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; }}
 
+	[SerializeField]
+	private bool _bIsCurveNode = false;
+
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
-	public static HEU_Curve CreateSetupCurve(HEU_HoudiniAsset parentAsset, bool isEditable, string curveName, HAPI_NodeId geoID, bool bGeoCurve)
+	public static HEU_Curve CreateSetupCurve(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool isEditable, string curveName, HAPI_NodeId geoID, HAPI_PartId partID, bool bGeoCurve)
 	{
 	    HEU_Curve newCurve = ScriptableObject.CreateInstance<HEU_Curve>();
 	    newCurve._isEditable = isEditable;
 	    newCurve._curveName = curveName;
 	    newCurve._geoID = geoID;
+	    newCurve._partID = partID;
+
 	    newCurve.SetEditState(CurveEditState.INVALID);
 	    newCurve._isGeoCurve = bGeoCurve;
 	    newCurve._parentAsset = parentAsset;
@@ -203,6 +213,15 @@ namespace HoudiniEngineUnity
 	    {
 		newCurve._curveNodeData = parentAsset.SerializedMetaData.SavedCurveNodeData[curveName];
 		parentAsset.SerializedMetaData.SavedCurveNodeData.Remove(curveName);
+	    }
+
+	    HAPI_ParmId parmID = -1;
+	    if (session.GetParmIDFromName(geoID, HEU_Defines.CURVE_COORDS_PARAM, out parmID))
+	    {
+		if (parmID != -1)
+		{
+		    newCurve._bIsCurveNode = true;
+		}
 	    }
 
 	    parentAsset.AddCurve(newCurve);
@@ -226,6 +245,14 @@ namespace HoudiniEngineUnity
 	    if (bIsRebuild && _parentAsset != null && _parentAsset.SerializedMetaData.SavedCurveNodeData != null && !_parentAsset.CurveDisableScaleRotation)
 	    {
 		_parentAsset.SerializedMetaData.SavedCurveNodeData.Add(_curveName, _curveNodeData);
+	    }
+
+	    if (_targetGameObject != null && !_bIsCurveNode)
+	    {
+		for (int i = _targetGameObject.transform.childCount - 1; i >= 0; i--)
+		{
+		    GameObject.DestroyImmediate(_targetGameObject.transform.GetChild(i).gameObject);
+		}
 	    }
 	}
 
@@ -292,19 +319,19 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UpdateCurve(HEU_SessionBase session, HAPI_PartId partID)
+	public void UpdateCurve(HEU_SessionBase session, HAPI_PartId partId)
 	{
 	    int vertexCount = 0;
 	    float[] posAttr = new float[0];
 
-	    if (partID != HEU_Defines.HEU_INVALID_NODE_ID)
+	    if (partId != HEU_Defines.HEU_INVALID_NODE_ID)
 	    {
 		// Get position attributes.
 		// Note that for an empty curve (ie. no position attributes) this query will fail, 
 		// but the curve is still valid, so we simply set to null vertices. This allows 
 		// user to add points later on.
 		HAPI_AttributeInfo posAttrInfo = new HAPI_AttributeInfo();
-		HEU_GeneralUtility.GetAttribute(session, _geoID, partID, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref posAttr, session.GetAttributeFloatData);
+		HEU_GeneralUtility.GetAttribute(session, _geoID, partId, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref posAttr, session.GetAttributeFloatData);
 		if (posAttrInfo.exists)
 		{
 		    vertexCount = posAttrInfo.count;
@@ -321,27 +348,144 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void GenerateMesh(GameObject inGameObject)
+	private static int[] GetCurveCounts(HEU_SessionBase session, HAPI_NodeId geoId, HAPI_PartId partID)
+	{
+	    HAPI_CurveInfo curveInfo = new HAPI_CurveInfo();
+	    if (!session.GetCurveInfo(geoId, partID, ref curveInfo))
+	    {
+		return null;
+	    }
+
+	     int[] curveCounts = new int[curveInfo.curveCount];
+
+	    if (!session.GetCurveCounts(geoId, partID, curveCounts, 0, curveInfo.curveCount))
+	    {
+		return null;
+	    }
+
+	    int totalCurveCounts = 0;
+
+	    foreach (int count in curveCounts)
+	    {
+		totalCurveCounts += count;
+	    }
+
+	    HAPI_AttributeInfo pointAttributeInfo = new HAPI_AttributeInfo();
+	    if (session.GetAttributeInfo(geoId, partID, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, HAPI_AttributeOwner.HAPI_ATTROWNER_POINT, ref pointAttributeInfo))
+	    {
+		bool bResult =  totalCurveCounts > 0 && totalCurveCounts == pointAttributeInfo.count;
+		if (!bResult)
+		{
+		    // Fallback on old style
+		    curveCounts = new int[1] { pointAttributeInfo.count };
+		}
+	    }
+	    else
+	    {
+		// Should not happen. Error out!
+		curveCounts = null;
+	    }
+
+	    return curveCounts;
+	}
+
+	public void GenerateMesh(GameObject inGameObject, HEU_SessionBase session)
 	{
 	    _targetGameObject = inGameObject;
 
-	    MeshFilter meshFilter = _targetGameObject.GetComponent<MeshFilter>();
+	    List<GameObject> childGameObjects = new List<GameObject>();
+
+	    int[] curveCounts = null; 
+
+	    bool useCurveCounts = false;
+
+	    if (_bIsCurveNode)
+	    {
+		childGameObjects.Add(_targetGameObject);
+	    }
+	    else
+	    {
+		curveCounts = GetCurveCounts(session, _geoID, _partID);
+		if (curveCounts != null && curveCounts.Length > 0)
+		{
+		    HEU_GeneralUtility.ComposeNChildren(_targetGameObject, curveCounts.Length, ref childGameObjects, true);
+		    useCurveCounts = true;
+		}
+		else
+		{
+		    childGameObjects.Add(_targetGameObject);
+		}
+	    }
+
+	    List<Vector3[]> vertexList = new List<Vector3[]>();
+	    if (!useCurveCounts)
+	    {
+		vertexList.Add(_vertices);
+	    }
+	    else
+	    {
+		// Destroy the meshfilter/component on the parent as it interferes with the children
+		MeshFilter meshFilter = _targetGameObject.GetComponent<MeshFilter>();
+		if (meshFilter != null)
+		{
+		    DestroyImmediate(meshFilter);
+		}
+
+		MeshRenderer meshRenderer =_targetGameObject.GetComponent<MeshRenderer>();
+		if (meshRenderer != null)
+		{
+		    DestroyImmediate(meshRenderer);
+		}
+
+		int startingIndex = 0;
+		for (int i = 0; i < curveCounts.Length; i++)
+		{
+		    int curveCount = curveCounts[i];
+		    Vector3[] newVertexList = new Vector3[curveCount];
+		    for (int j = 0; j < curveCount; j++)
+		    {
+			newVertexList[j] = _vertices[startingIndex + j];
+		    }
+
+		    startingIndex += curveCount;
+
+		    vertexList.Add(newVertexList);
+		}
+	    }
+
+
+	    for (int i = 0; i < childGameObjects.Count; i++)
+	    {
+		GenerateMeshForSingleObject(childGameObjects[i], vertexList[i]);
+	    }
+
+	    SetEditState(CurveEditState.GENERATED);
+	}
+
+	public void GenerateMeshForSingleObject(GameObject targetObject, Vector3[] vertexList)
+	{
+	    MeshFilter meshFilter = targetObject.GetComponent<MeshFilter>();
 	    if (meshFilter == null)
 	    {
-		meshFilter = _targetGameObject.AddComponent<MeshFilter>();
+		meshFilter = targetObject.AddComponent<MeshFilter>();
 	    }
 
-	    MeshRenderer meshRenderer = _targetGameObject.GetComponent<MeshRenderer>();
+	    MeshRenderer meshRenderer = targetObject.GetComponent<MeshRenderer>();
 	    if (meshRenderer == null)
 	    {
-		meshRenderer = _targetGameObject.AddComponent<MeshRenderer>();
-
-		Shader shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultCurveShader);
-		meshRenderer.sharedMaterial = new Material(shader);
-		meshRenderer.sharedMaterial.SetColor("_Color", HEU_PluginSettings.LineColor);
+		meshRenderer = targetObject.AddComponent<MeshRenderer>();
 	    }
 
-	    Mesh mesh = meshFilter.sharedMesh;
+	    Shader shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultCurveShader);
+	    meshRenderer.sharedMaterial = new Material(shader);
+	    meshRenderer.sharedMaterial.SetColor("_Color", HEU_PluginSettings.LineColor);
+
+	    Mesh mesh = null;
+	    // For some reason, attempting to reuse shared mesh results in an error for curve::2.0
+	    if (meshFilter.sharedMesh != null && meshFilter.sharedMesh.isReadable)
+	    {
+	        mesh = meshFilter.sharedMesh;
+	    }
 
 	    if (_curveNodeData.Count <= 1)
 	    {
@@ -359,24 +503,22 @@ namespace HoudiniEngineUnity
 		    mesh.name = "Curve";
 		}
 
-		int[] indices = new int[_vertices.Length];
-		for (int i = 0; i < _vertices.Length; ++i)
+		int[] indices = new int[vertexList.Length];
+		for (int i = 0; i < vertexList.Length; ++i)
 		{
 		    indices[i] = i;
 		}
 
 		mesh.Clear();
-		mesh.vertices = _vertices;
+		mesh.vertices = vertexList;
 		mesh.SetIndices(indices, MeshTopology.LineStrip, 0);
 		mesh.RecalculateBounds();
 
 		mesh.UploadMeshData(false);
 	    }
-
+	
 	    meshFilter.sharedMesh = mesh;
 	    meshRenderer.enabled = HEU_PluginSettings.Curves_ShowInSceneView;
-
-	    SetEditState(CurveEditState.GENERATED);
 	}
 
 
@@ -707,27 +849,27 @@ namespace HoudiniEngineUnity
 			    }
 
 			    HAPI_AttributeInfo attr_info = new HAPI_AttributeInfo();
-			    session.GetAttributeInfo(curveIdNode, 0, attr_name, (HAPI_AttributeOwner)nOwner, ref attr_info);
+			    session.GetAttributeInfo(curveIdNode, _partID, attr_name, (HAPI_AttributeOwner)nOwner, ref attr_info);
 			    switch (attr_info.storage)
 			    {
 				case HAPI_StorageType.HAPI_STORAGETYPE_INT:
 				    int[] intData = new int[attr_info.count * attr_info.tupleSize];
-				    session.GetAttributeIntData(curveIdNode, 0, attr_name, ref attr_info, intData, 0, attr_info.count);
-				    session.AddAttribute(curveIdNode, 0, attr_name, ref attr_info);
-				    session.SetAttributeIntData(curveIdNode, 0, attr_name, ref attr_info, intData, 0, attr_info.count );
+				    session.GetAttributeIntData(curveIdNode, _partID, attr_name, ref attr_info, intData, 0, attr_info.count);
+				    session.AddAttribute(curveIdNode, _partID, attr_name, ref attr_info);
+				    session.SetAttributeIntData(curveIdNode, _partID, attr_name, ref attr_info, intData, 0, attr_info.count );
 
 				    break;
 				case HAPI_StorageType.HAPI_STORAGETYPE_FLOAT:
 				    float[] floatData = new float[attr_info.count * attr_info.tupleSize];
-				    session.GetAttributeFloatData(curveIdNode, 0, attr_name, ref attr_info, floatData, 0, attr_info.count);
-				    session.AddAttribute(curveIdNode, 0, attr_name, ref attr_info);
-				    session.SetAttributeFloatData(curveIdNode, 0, attr_name, ref attr_info, floatData, 0, attr_info.count );
+				    session.GetAttributeFloatData(curveIdNode, _partID, attr_name, ref attr_info, floatData, 0, attr_info.count);
+				    session.AddAttribute(curveIdNode, _partID, attr_name, ref attr_info);
+				    session.SetAttributeFloatData(curveIdNode, _partID, attr_name, ref attr_info, floatData, 0, attr_info.count );
 
 				    break;
 				case HAPI_StorageType.HAPI_STORAGETYPE_STRING:
 				    string[] stringData = HEU_GeneralUtility.GetAttributeStringData(session, curveIdNode, 0, attr_name, ref attr_info);
-				    session.AddAttribute(curveIdNode, 0, attr_name, ref attr_info);
-				    session.SetAttributeStringData(curveIdNode, 0, attr_name, ref attr_info, stringData, 0, attr_info.count);
+				    session.AddAttribute(curveIdNode, _partID, attr_name, ref attr_info);
+				    session.SetAttributeStringData(curveIdNode, _partID, attr_name, ref attr_info, stringData, 0, attr_info.count);
 				    break;
 				default:
 				    //=HEU_Logger.Log("Storage type: " + attr_info.storage + " " + attr_name);
@@ -740,29 +882,29 @@ namespace HoudiniEngineUnity
 		if (partInfos.type == HAPI_PartType.HAPI_PARTTYPE_CURVE)
 		{
 		    HAPI_CurveInfo curveInfo = new HAPI_CurveInfo();
-		    session.GetCurveInfo(curveIdNode, 0, ref curveInfo);
+		    session.GetCurveInfo(curveIdNode, _partID, ref curveInfo);
 
 		    int[] curveCounts = new int[curveInfo.curveCount];
-		    session.GetCurveCounts(curveIdNode, 0, curveCounts, 0, curveInfo.curveCount);
+		    session.GetCurveCounts(curveIdNode, _partID, curveCounts, 0, curveInfo.curveCount);
 
 		    int[] curveOrders = new int[curveInfo.curveCount];
-		    session.GetCurveOrders(curveIdNode, 0, curveOrders, 0, curveInfo.curveCount);
+		    session.GetCurveOrders(curveIdNode, _partID, curveOrders, 0, curveInfo.curveCount);
 
 		    float[] knotsArray = null;
 		    if (curveInfo.hasKnots)
 		    {
 		        knotsArray = new float[curveInfo.knotCount];
-		        session.GetCurveKnots(curveIdNode, 0, knotsArray, 0, curveInfo.knotCount);
+		        session.GetCurveKnots(curveIdNode, _partID, knotsArray, 0, curveInfo.knotCount);
 		    }
 
-		    session.SetCurveInfo(curveIdNode, 0, ref curveInfo);
+		    session.SetCurveInfo(curveIdNode, _partID, ref curveInfo);
 
-		    session.SetCurveCounts(curveIdNode, 0, curveCounts, 0, curveInfo.curveCount);
-		    session.SetCurveOrders(curveIdNode, 0, curveOrders, 0, curveInfo.curveCount);
+		    session.SetCurveCounts(curveIdNode, _partID, curveCounts, 0, curveInfo.curveCount);
+		    session.SetCurveOrders(curveIdNode, _partID, curveOrders, 0, curveInfo.curveCount);
 
 		    if (curveInfo.hasKnots)
 		    {
-		        session.SetCurveKnots(curveIdNode, 0, knotsArray, 0, curveInfo.knotCount);
+		        session.SetCurveKnots(curveIdNode, _partID, knotsArray, 0, curveInfo.knotCount);
 		    }
 
 		}
@@ -770,18 +912,18 @@ namespace HoudiniEngineUnity
 		if (partInfos.faceCount > 0)
 		{
 		    int[] faceCounts = new int[partInfos.faceCount];
-		    if (session.GetFaceCounts(curveIdNode, 0, faceCounts, 0, partInfos.faceCount, false))
+		    if (session.GetFaceCounts(curveIdNode, _partID, faceCounts, 0, partInfos.faceCount, false))
 		    {
-		        session.SetFaceCount(curveIdNode, 0, faceCounts, 0, partInfos.faceCount);
+		        session.SetFaceCount(curveIdNode, _partID, faceCounts, 0, partInfos.faceCount);
 		    }
 		}
 
 		if (partInfos.vertexCount > 0)
 		{
 		    int[] vertexList = new int[partInfos.vertexCount];
-		    if (session.GetVertexList(curveIdNode, 0, vertexList, 0, partInfos.vertexCount))
+		    if (session.GetVertexList(curveIdNode, _partID, vertexList, 0, partInfos.vertexCount))
 		    {
-		        session.SetVertexList(curveIdNode, 0, vertexList, 0, partInfos.vertexCount);
+		        session.SetVertexList(curveIdNode, _partID, vertexList, 0, partInfos.vertexCount);
 		    }
 		}
 
@@ -796,7 +938,7 @@ namespace HoudiniEngineUnity
 		    attributeInfoRotation.storage = HAPI_StorageType.HAPI_STORAGETYPE_FLOAT;
 		    attributeInfoRotation.originalOwner = originalAttributesOwner;
 
-		    session.AddAttribute(_geoID, 0, HEU_Defines.HAPI_ATTRIB_ROTATION, ref attributeInfoRotation);
+		    session.AddAttribute(_geoID, _partID, HEU_Defines.HAPI_ATTRIB_ROTATION, ref attributeInfoRotation);
 
 		    float[] curveRotations = new float[numberOfCVs * 4];
 
@@ -814,7 +956,7 @@ namespace HoudiniEngineUnity
 		        curveRotations[i * 4 + 3] = rotQuat[3];
 		    }
 
-		    session.SetAttributeFloatData(curveIdNode, 0, HEU_Defines.HAPI_ATTRIB_ROTATION, ref attributeInfoRotation, curveRotations, 0, attributeInfoRotation.count);
+		    session.SetAttributeFloatData(curveIdNode, _partID, HEU_Defines.HAPI_ATTRIB_ROTATION, ref attributeInfoRotation, curveRotations, 0, attributeInfoRotation.count);
 		}
 
 		if (bAddScales)
@@ -827,7 +969,7 @@ namespace HoudiniEngineUnity
 		    attributeInfoScale.storage = HAPI_StorageType.HAPI_STORAGETYPE_FLOAT;
 		    attributeInfoScale.originalOwner = originalAttributesOwner;
 
-		    session.AddAttribute(_geoID, 0, HEU_Defines.HAPI_ATTRIB_SCALE, ref attributeInfoScale);
+		    session.AddAttribute(_geoID, _partID, HEU_Defines.HAPI_ATTRIB_SCALE, ref attributeInfoScale);
 
 		    float[] curveScales = new float[numberOfCVs * 3];
 
@@ -839,7 +981,7 @@ namespace HoudiniEngineUnity
 		        curveScales[i * 3 + 2] = scaleVector.z;
 		    }
 
-		    session.SetAttributeFloatData(curveIdNode, 0, HEU_Defines.HAPI_ATTRIB_SCALE, ref attributeInfoScale, curveScales, 0, attributeInfoScale.count);
+		    session.SetAttributeFloatData(curveIdNode, _partID, HEU_Defines.HAPI_ATTRIB_SCALE, ref attributeInfoScale, curveScales, 0, attributeInfoScale.count);
 		}
 
 		session.CommitGeo(GeoID);
@@ -886,7 +1028,7 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    UpdatePoints(session, 0);
+	    UpdatePoints(session);
 
 	    // Since we just reset / created new our parameters and sync'd, we also need to 
 	    // get the preset from Houdini session
@@ -896,7 +1038,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private void UpdatePoints(HEU_SessionBase session, HAPI_PartId partID)
+	private void UpdatePoints(HEU_SessionBase session)
 	{
 	    //
 
@@ -914,23 +1056,38 @@ namespace HoudiniEngineUnity
 
 	    _curveNodeData.Clear();
 
-	    string pointList = _parameters.GetStringFromParameter(HEU_Defines.CURVE_COORDS_PARAM);
-	    if (!string.IsNullOrEmpty(pointList))
+	    if (_bIsCurveNode)
 	    {
-		string[] pointSplit = pointList.Split(' ');
-		for (int i = 0; i < pointSplit.Length; i++)
+		string pointList = _parameters.GetStringFromParameter(HEU_Defines.CURVE_COORDS_PARAM);
+		if (!string.IsNullOrEmpty(pointList))
 		{
-		    string str = pointSplit[i];
-
-		    string[] vecSplit = str.Split(',');
-		    if (vecSplit.Length == 3)
+		    string[] pointSplit = pointList.Split(' ');
+		    for (int i = 0; i < pointSplit.Length; i++)
 		    {
-			Vector3 position = new Vector3(-System.Convert.ToSingle(vecSplit[0], System.Globalization.CultureInfo.InvariantCulture),
+		        string str = pointSplit[i];
+
+			string[] vecSplit = str.Split(',');
+			if (vecSplit.Length == 3)
+			{
+			    Vector3 position = new Vector3(-System.Convert.ToSingle(vecSplit[0], System.Globalization.CultureInfo.InvariantCulture),
 				System.Convert.ToSingle(vecSplit[1], System.Globalization.CultureInfo.InvariantCulture),
 				System.Convert.ToSingle(vecSplit[2], System.Globalization.CultureInfo.InvariantCulture));
 
-			positions.Add(position);
+			    positions.Add(position);
+			}
 		    }
+		}    
+	    }
+	    else
+	    {
+		HAPI_AttributeInfo posAttrInfo = new HAPI_AttributeInfo();
+		float[] _posAttr = new float[0];
+		HEU_GeneralUtility.GetAttribute(session, GeoID, _partID, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref _posAttr, session.GetAttributeFloatData);
+
+		int numPositions = posAttrInfo.count / 3;
+		for (int i = 0; i < numPositions; i++)
+		{
+			positions.Add(new Vector3(-_posAttr[i * 3 + 0], _posAttr[i * 3 + 1], _posAttr[i * 3 + 2]));
 		}
 	    }
 
