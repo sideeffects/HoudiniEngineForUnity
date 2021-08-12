@@ -193,7 +193,12 @@ namespace HoudiniEngineUnity
 	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; }}
 
 	[SerializeField]
-	private bool _bIsCurveNode = false;
+	private bool _bIsLegacyCurve = false;
+
+
+	// Whether or not this curve is a part generated from an input part (from another HDA)
+	[SerializeField]
+	private bool _bIsInputCurve = false;
 
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
@@ -220,12 +225,72 @@ namespace HoudiniEngineUnity
 	    {
 		if (parmID != -1)
 		{
-		    newCurve._bIsCurveNode = true;
+		    newCurve._bIsLegacyCurve = true;
 		}
+	    }
+
+	    // Detect whether or not this is an input node - should delete to remove duplicates
+	    string parmName = "objpath1";
+
+	    int parmId = -1;
+	    if (session.GetParmIDFromName(geoID, parmName, out parmId) && parmId != -1)
+	    {
+		HAPI_NodeId nodeId = -1;
+		if (session.GetParamNodeValue(geoID, parmName, out nodeId) )
+		{
+		    Debug.Log("Parm id: " + parmId);
+		    Debug.Log("Object merge path: " + nodeId);
+		    Debug.Log("Object merge name: " + HEU_SessionManager.GetNodeName(nodeId));
+
+			foreach (HEU_InputNode input in parentAsset.GetInputNodes())
+			{
+			    List<HEU_InputHDAInfo> assetInfos = input.InputAssetInfos;
+			    foreach (HEU_InputHDAInfo info in assetInfos)
+			    {
+				Debug.Log("Connected node id: " + info._connectedInputNodeID);
+				Debug.Log("Connected merge node id: " + info._connectedMergeNodeID);
+
+
+
+				HAPI_AssetInfo assetInfo2 = new HAPI_AssetInfo();
+				session.GetAssetInfo(info._connectedMergeNodeID, ref assetInfo2);
+
+				Debug.Log("Merge node name: " + HEU_SessionManager.GetNodeName(assetInfo2.objectNodeId));
+
+				if (assetInfo2.objectNodeId == nodeId)
+				{
+				    newCurve._bIsInputCurve = true;
+				    break;
+				}
+			    }
+
+			    if (newCurve._bIsInputCurve)
+			        break;
+			}
+		}
+
 	    }
 
 	    parentAsset.AddCurve(newCurve);
 	    return newCurve;
+	}
+
+	public bool ShouldKeepNode(HEU_SessionBase session)
+	{
+	    // We only need to keep information about geo curves at the moment.
+	    // Note: This will change in the future when we use parts as input
+
+	    if (_curveNodeData.Count <= 1)
+	    {
+		return false;
+	    }
+
+	    if (_bIsInputCurve)
+	    {
+		return false;
+	    }
+
+	    return true;
 	}
 
 	public void DestroyAllData(bool bIsRebuild = false)
@@ -247,7 +312,7 @@ namespace HoudiniEngineUnity
 		_parentAsset.SerializedMetaData.SavedCurveNodeData.Add(_curveName, _curveNodeData);
 	    }
 
-	    if (_targetGameObject != null && !_bIsCurveNode)
+	    if (_targetGameObject != null && !_bIsLegacyCurve)
 	    {
 		for (int i = _targetGameObject.transform.childCount - 1; i >= 0; i--)
 		{
@@ -398,12 +463,12 @@ namespace HoudiniEngineUnity
 	    int[] curveCounts = null; 
 
 	    bool useCurveCounts = false;
-
-	    if (_bIsCurveNode)
+	    if (_curveNodeData.Count <= 1)
 	    {
-		childGameObjects.Add(_targetGameObject);
+		return;
 	    }
-	    else
+
+	    if (!_bIsLegacyCurve)
 	    {
 		curveCounts = GetCurveCounts(session, _geoID, _partID);
 		if (curveCounts != null && curveCounts.Length > 0)
@@ -414,7 +479,11 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    childGameObjects.Add(_targetGameObject);
-		}
+		}  
+	    }
+	    else
+	    {
+		childGameObjects.Add(_targetGameObject);
 	    }
 
 	    List<Vector3[]> vertexList = new List<Vector3[]>();
@@ -1056,7 +1125,7 @@ namespace HoudiniEngineUnity
 
 	    _curveNodeData.Clear();
 
-	    if (_bIsCurveNode)
+	    if (_bIsLegacyCurve)
 	    {
 		string pointList = _parameters.GetStringFromParameter(HEU_Defines.CURVE_COORDS_PARAM);
 		if (!string.IsNullOrEmpty(pointList))

@@ -114,6 +114,8 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private List<HEU_InputHDAInfo> _inputAssetInfos = new List<HEU_InputHDAInfo>();
 
+	public List<HEU_InputHDAInfo> InputAssetInfos {get { return _inputAssetInfos; }}
+
 	[SerializeField]
 	private HAPI_NodeId _nodeID;
 
@@ -1301,6 +1303,8 @@ namespace HoudiniEngineUnity
 
 	// The ID of the connected HDA
 	public HAPI_NodeId _connectedInputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	public HAPI_NodeId _connectedMergeNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 
 	public void CopyTo(HEU_InputHDAInfo destInfo)
 	{

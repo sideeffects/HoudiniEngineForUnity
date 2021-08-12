@@ -292,6 +292,7 @@ namespace HoudiniEngineUnity
 
 		inputAssetInfos[i]._connectedInputNodeID = inputAssetID;
 		inputAssetInfos[i]._connectedGO = inputAssetInfos[i]._pendingGO;
+		inputAssetInfos[i]._connectedMergeNodeID = connectMergeID;
 
 		parentAsset.ConnectToUpstream(inputAssetRoot._houdiniAsset);
 	    }

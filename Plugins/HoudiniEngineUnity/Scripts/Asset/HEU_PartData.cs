@@ -1834,11 +1834,11 @@ namespace HoudiniEngineUnity
 	    if (IsPartCurve())
 	    {
 		_curve.GenerateMesh(OutputGameObject, session);
-
+		
 		// When a Curve asset is used as input node, it creates this editable and useless curve part type.
 		// For now deleting it as it causes issues on recook (from scene load), as well as unnecessary curve editor UI.
 		// Should revisit sometime in the future to review this.
-		return (_curve != null && _curve.GetNumPoints() > 0);
+		return (_curve != null && _curve.ShouldKeepNode(session));
 	    }
 	    else
 	    {
