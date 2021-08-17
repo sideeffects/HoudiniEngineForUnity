@@ -105,6 +105,7 @@ namespace HoudiniEngineUnity
 
 	public const string HAPI_OBJMERGE_TRANSFORM_PARAM = "xformtype";
 	public const string HAPI_OBJMERGE_PACK_GEOMETRY = "pack";
+	public const string HAPI_OBJPATH_1_PARAM = "objpath1";
 
 	// Messages
 	public const string NO_EXISTING_SESSION = "No existing session.";
