@@ -252,7 +252,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Destroy generated data such as instances and gameobject.
 	/// </summary>
-	public void DestroyAllData()
+	public void DestroyAllData(bool bIsRebuild = false)
 	{
 	    ClearObjectInstanceInfos();
 
@@ -262,7 +262,7 @@ namespace HoudiniEngineUnity
 		{
 		    ParentAsset.RemoveCurve(_curve);
 		}
-		_curve.DestroyAllData();
+		_curve.DestroyAllData(bIsRebuild);
 		HEU_GeneralUtility.DestroyImmediate(_curve);
 		_curve = null;
 	    }
@@ -1926,6 +1926,7 @@ namespace HoudiniEngineUnity
 	    if (bNewCurve)
 	    {
 		_curve = HEU_Curve.CreateSetupCurve(session, parentAsset, _geoNode.Editable, _partName, _geoID, partId, false);
+		_curve.OnPresyncParameters(session, parentAsset);
 	    }
 	    else
 	    {
@@ -2135,12 +2136,12 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Destroy list of parts and their data.
 	/// </summary>
-	public static void DestroyParts(List<HEU_PartData> parts)
+	public static void DestroyParts(List<HEU_PartData> parts, bool bIsRebuild = false)
 	{
 	    int numParts = parts.Count;
 	    for (int i = 0; i < numParts; ++i)
 	    {
-		DestroyPart(parts[i]);
+		DestroyPart(parts[i], bIsRebuild);
 	    }
 	    parts.Clear();
 	}
@@ -2149,9 +2150,9 @@ namespace HoudiniEngineUnity
 	/// Destroy the given part and its data.
 	/// </summary>
 	/// <param name="part"></param>
-	public static void DestroyPart(HEU_PartData part)
+	public static void DestroyPart(HEU_PartData part, bool bIsRebuild = false)
 	{
-	    part.DestroyAllData();
+	    part.DestroyAllData(bIsRebuild);
 	    HEU_GeneralUtility.DestroyImmediate(part);
 	}
 

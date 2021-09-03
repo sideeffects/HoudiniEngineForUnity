@@ -28,6 +28,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Text;
 using System;
+using System.Linq;
 
 namespace HoudiniEngineUnity
 {
@@ -49,6 +50,10 @@ namespace HoudiniEngineUnity
 
 	[SerializeField]
 	public Vector3 scale = Vector3.one;
+
+	// The index of the curve that this node belongs to
+	[SerializeField]
+	public int curveCountIndex = 0;
 
 	public CurveNodeData()
 	{
@@ -105,6 +110,58 @@ namespace HoudiniEngineUnity
 	}
     };
 
+
+    // Mimics HAPI_InputCurveInfo, but serializes fields for UX
+    [System.Serializable]
+    public class HEU_InputCurveInfo
+    {
+        public HAPI_CurveType curveType = HAPI_CurveType.HAPI_CURVETYPE_LINEAR;
+	[Range(2, 11)]
+        public int order = 2;
+        public bool closed = false;
+	public bool reverse = false;
+        public HAPI_InputCurveMethod inputMethod;
+
+        public HAPI_InputCurveParameterization breakpointParameterization;
+
+	public static HEU_InputCurveInfo CreateFromHAPI_InputCurveInfo(HAPI_InputCurveInfo curveInfo)
+	{
+	    HEU_InputCurveInfo inputCurveInfo = new HEU_InputCurveInfo();
+
+	    inputCurveInfo.curveType = curveInfo.curveType;
+	    inputCurveInfo.order = curveInfo.order;
+	    inputCurveInfo.closed = curveInfo.closed;
+	    inputCurveInfo.reverse = curveInfo.reverse;
+	    inputCurveInfo.inputMethod = curveInfo.inputMethod;
+	    inputCurveInfo.breakpointParameterization = curveInfo.breakpointParameterization;
+	    return inputCurveInfo;
+	}
+
+	public static string[] GetCurveTypeNames()
+	{
+	    return new string[]{ "Linear", "NURBS", "Bezier" };
+	}
+
+	public static string[] GetInputMethodNames()
+	{
+	    return new string[] { "CVs", "Breakpoints" };
+	}
+
+	public static string[] GetBreakpointParameterizationNames()
+	{
+	    return new string[] { "Uniform", "Chord", "Centripetal" };
+	}
+
+    }
+
+    [System.Serializable]
+    public enum HEU_CurveDataType
+    {
+	INVALID = 0,
+	GEO_COORDS_PARAM = 1, // i.e. curve::1.0
+	HAPI_COORDS_PARAM = 2,
+	POSITION_ATTRIBUTE = 3
+    };
 
     /// <summary>
     /// Contains data and logic for curve node drawing and editing.
@@ -192,13 +249,40 @@ namespace HoudiniEngineUnity
 
 	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; }}
 
-	[SerializeField]
-	private bool _bIsLegacyCurve = false;
-
-
 	// Whether or not this curve is a part generated from an input part (from another HDA)
 	[SerializeField]
 	private bool _bIsInputCurve = false;
+
+	// Variables dealing with part curves
+
+	[SerializeField]
+	private bool _bIsPartCurve = true;
+	public bool IsPartCurve { get { return _bIsPartCurve; }}
+
+	[SerializeField]
+	private HAPI_CurveInfo _cachedCurveInfo;
+
+	[SerializeField]
+	private bool _cachedCurveInfoValid = false;
+
+	[SerializeField]
+	private int[] _cachedCurveCounts = null;
+
+
+	// Doesn't need to be serialized, but adding here for convinence
+	private int[] _cachedCurveCountSums = null;
+
+	[SerializeField]
+	private HEU_CurveDataType _curveDataType = HEU_CurveDataType.INVALID;
+
+	public HEU_CurveDataType CurveDataType { get { return _curveDataType; }}
+
+	// Stored curve settings to mimic HAPI_CurveInfo
+	// Only used if it is not a geo curve / is not a legacy curve
+	[SerializeField]
+	private HEU_InputCurveInfo _inputCurveInfo = null;
+
+	public HEU_InputCurveInfo InputCurveInfo { get { return _inputCurveInfo; }}
 
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
@@ -213,21 +297,6 @@ namespace HoudiniEngineUnity
 	    newCurve.SetEditState(CurveEditState.INVALID);
 	    newCurve._isGeoCurve = bGeoCurve;
 	    newCurve._parentAsset = parentAsset;
-
-	    if (parentAsset.SerializedMetaData != null && parentAsset.SerializedMetaData.SavedCurveNodeData != null && parentAsset.SerializedMetaData.SavedCurveNodeData.ContainsKey(curveName) && !parentAsset.CurveDisableScaleRotation)
-	    {
-		newCurve._curveNodeData = parentAsset.SerializedMetaData.SavedCurveNodeData[curveName];
-		parentAsset.SerializedMetaData.SavedCurveNodeData.Remove(curveName);
-	    }
-
-	    HAPI_ParmId parmID = -1;
-	    if (session.GetParmIDFromName(geoID, HEU_Defines.CURVE_COORDS_PARAM, out parmID))
-	    {
-		if (parmID != -1)
-		{
-		    newCurve._bIsLegacyCurve = true;
-		}
-	    }
 
 	    // Detect whether or not this is an input node - should delete to remove duplicates
 	    string parmName = HEU_Defines.HAPI_OBJPATH_1_PARAM;
@@ -257,11 +326,82 @@ namespace HoudiniEngineUnity
 			        break;
 			}
 		}
+	    }
 
+	    newCurve._curveDataType = newCurve.GetCurveDataType(session);
+
+	    if (partID != HEU_Defines.HEU_INVALID_NODE_ID && newCurve._curveDataType != HEU_CurveDataType.GEO_COORDS_PARAM)
+	    {
+		HAPI_PartInfo partInfo = new HAPI_PartInfo();
+		session.GetPartInfo(geoID, partID, ref partInfo);
+		newCurve._bIsPartCurve = (partInfo.type == HAPI_PartType.HAPI_PARTTYPE_CURVE);
+		if (newCurve._bIsPartCurve)
+		{
+		    newCurve.UpdateCachedCurveInfo(session, true);
+		}
+
+		if (newCurve._curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
+		{
+		    newCurve._inputCurveInfo = new HEU_InputCurveInfo();
+		}
+	    }
+
+	    if (parentAsset.SerializedMetaData != null && parentAsset.SerializedMetaData.SavedCurveNodeData != null && parentAsset.SerializedMetaData.SavedCurveNodeData.ContainsKey(curveName))
+	    {
+		newCurve.UsePreviousCurveData(curveName);
+	    }
+	    else if (newCurve._curveDataType ==  HEU_CurveDataType.HAPI_COORDS_PARAM && parentAsset.SerializedMetaData != null && parentAsset.SerializedMetaData.SavedCurveNodeData != null && parentAsset.SerializedMetaData.SavedCurveNodeData.Count > 0)
+	    {
+		// Kind of hacky, but ...
+		// ... if it is a HAPI input curve, then always get the first one if it exists
+		List<string> keys = parentAsset.SerializedMetaData.SavedCurveNodeData.Keys.ToList();
+		if (keys.Count > 0)
+		{
+		    newCurve.UsePreviousCurveData(keys[0]);
+		}
 	    }
 
 	    parentAsset.AddCurve(newCurve);
 	    return newCurve;
+	}
+
+	private void UsePreviousCurveData(string curveName)
+	{
+	    if (_parentAsset == null || _parentAsset.SerializedMetaData == null || _parentAsset.SerializedMetaData.SavedCurveNodeData == null
+	    || !_parentAsset.SerializedMetaData.SavedCurveNodeData.ContainsKey(curveName))
+	    {
+		return;
+	    }
+
+	    _curveNodeData = _parentAsset.SerializedMetaData.SavedCurveNodeData[curveName];
+	    _parentAsset.SerializedMetaData.SavedCurveNodeData.Remove(curveName);
+
+	    if (_parentAsset.SerializedMetaData.SavedInputCurveInfo != null && _parentAsset.SerializedMetaData.SavedInputCurveInfo.ContainsKey(curveName) && _curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
+	    {
+		_inputCurveInfo = _parentAsset.SerializedMetaData.SavedInputCurveInfo[curveName];
+		_parentAsset.SerializedMetaData.SavedInputCurveInfo.Remove(curveName);
+	    }
+	}
+
+	private  HEU_CurveDataType GetCurveDataType(HEU_SessionBase session)
+	{
+	    // Determine if it is a legacy curve (curve::1.0)
+	    // If it is NOT a legacy curve, then read it as a curve part.
+	    // curve::2.0 is not supported right now
+	    HAPI_ParmId parmID = -1;
+
+	    if (session.GetParmIDFromName(_geoID, HEU_Defines.CURVE_COORDS_PARAM, out parmID) && parmID != -1)
+	    {
+		return HEU_CurveDataType.GEO_COORDS_PARAM;
+	    }
+	    else if (HEU_GeneralUtility.HasAttribute(session, _geoID, _partID, HEU_HAPIConstants.HAPI_ATTRIB_INPUT_CURVE_COORDS, HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL))
+	    {
+		return HEU_CurveDataType.HAPI_COORDS_PARAM;
+	    }
+	    else
+	    {
+		return HEU_CurveDataType.POSITION_ATTRIBUTE;
+	    }
 	}
 
 	public bool ShouldKeepNode(HEU_SessionBase session)
@@ -269,7 +409,7 @@ namespace HoudiniEngineUnity
 	    // We only need to keep information about geo curves at the moment.
 	    // Note: This will change in the future when we use parts as input
 
-	    if (_curveNodeData.Count <= 1)
+	    if (_curveDataType == HEU_CurveDataType.GEO_COORDS_PARAM && _curveNodeData.Count <= 0)
 	    {
 		return false;
 	    }
@@ -296,12 +436,14 @@ namespace HoudiniEngineUnity
 		_targetGameObject = null;
 	    }
 
-	    if (bIsRebuild && _parentAsset != null && _parentAsset.SerializedMetaData.SavedCurveNodeData != null && !_parentAsset.CurveDisableScaleRotation)
+	    if (bIsRebuild && _parentAsset != null && _parentAsset.SerializedMetaData.SavedCurveNodeData != null)
 	    {
 		_parentAsset.SerializedMetaData.SavedCurveNodeData.Add(_curveName, _curveNodeData);
+		if (_inputCurveInfo != null)
+		    _parentAsset.SerializedMetaData.SavedInputCurveInfo.Add(_curveName, _inputCurveInfo);
 	    }
 
-	    if (_targetGameObject != null && !_bIsLegacyCurve)
+	    if (_targetGameObject != null && _curveDataType != HEU_CurveDataType.GEO_COORDS_PARAM)
 	    {
 		for (int i = _targetGameObject.transform.childCount - 1; i >= 0; i--)
 		{
@@ -454,10 +596,11 @@ namespace HoudiniEngineUnity
 	    bool useCurveCounts = false;
 	    if (_curveNodeData.Count <= 1)
 	    {
+		SetEditState(CurveEditState.GENERATED);
 		return;
 	    }
 
-	    if (!_bIsLegacyCurve)
+	    if (_curveDataType != HEU_CurveDataType.GEO_COORDS_PARAM)
 	    {
 		curveCounts = GetCurveCounts(session, _geoID, _partID);
 		if (curveCounts != null && curveCounts.Length > 0)
@@ -579,12 +722,128 @@ namespace HoudiniEngineUnity
 	    meshRenderer.enabled = HEU_PluginSettings.Curves_ShowInSceneView;
 	}
 
+	public void OnPresyncParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	{
+	    if (!_isEditable)
+	    {
+		return;
+	    }
+
+	    if (_curveDataType == HEU_CurveDataType.GEO_COORDS_PARAM)
+	    {
+		UpdateCurveInputForCustomAttributes(session, parentAsset);
+	    }
+	    else
+	    {
+		UpdateCurveInputForCurveParts(session, parentAsset);
+	    }
+	}
+
+
+	// Get order abiding by the curve rules as mentioned in GT_PrimCurveMesh::setBasis
+	public static int GetOrderForCurveType(int requestedOrder, HAPI_CurveType curveType)
+	{
+	    switch (curveType)
+	    {
+		case HAPI_CurveType.HAPI_CURVETYPE_LINEAR:
+		    return 2; 
+		case HAPI_CurveType.HAPI_CURVETYPE_NURBS:
+		    return Mathf.Clamp(requestedOrder, 2, 128);
+		case HAPI_CurveType.HAPI_CURVETYPE_BEZIER:
+		    return Mathf.Clamp(requestedOrder, 2, 31);
+		default:
+		    return Mathf.Clamp(requestedOrder, 4, 128);
+	    }
+	}
+
+	public bool UpdateCurveInputForCurveParts(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	{
+	
+	    // Re-create the curve attributes from scratch in order to modify the curve/rotation values
+	    // Additional CVs may be added or removed so we need to recreate the translation/rotation/scale lists
+	    // i.e. It is not guaranteed that positions.Count == rotations.Count == scales.Count so we have to do this
+	    bool hasRotations = !parentAsset.CurveDisableScaleRotation;
+	    bool hasScales = !parentAsset.CurveDisableScaleRotation;
+
+	    List<Vector3> positions = new List<Vector3>();
+	    List<Quaternion> rotations = new List<Quaternion>();
+	    List<Vector3> scales = new List<Vector3>();
+	    List<int> curveCountIndices = new List<int>();
+
+	    _curveNodeData.ForEach((CurveNodeData data) =>
+	    {
+	        positions.Add(data.position);
+
+		if (hasRotations)
+		{
+		    rotations.Add(data.GetRotation());
+		}
+
+		if (hasScales)
+		{
+		    scales.Add(data.scale);
+		}
+
+		curveCountIndices.Add(data.curveCountIndex);
+	    });
+
+	    // Probably not necessary, but just in case
+	    hasRotations &= rotations.Count == positions.Count;
+	    hasScales &= scales.Count == scales.Count;
+
+	    float [] posArr = new float[positions.Count * 3];
+	    float [] rotArr = new float[positions.Count * 4];
+	    float [] scaleArr = new float[positions.Count * 3];
+	    for (int i = 0; i < positions.Count; i++)
+	    {
+		posArr[i* 3 + 0] = -positions[i].x;
+		posArr[i* 3 + 1] = positions[i].y;
+		posArr[i* 3 + 2] = positions[i].z;
+
+		if (hasRotations)
+		{
+		    Quaternion rotQuat = rotations[i];
+		    Vector3 euler = rotQuat.eulerAngles;
+		    euler.y = -euler.y;
+		    euler.z = -euler.z;
+		    rotQuat = Quaternion.Euler(euler);
+		    rotArr[i*4 + 0] = rotQuat[0];
+		    rotArr[i*4 + 1] = rotQuat[1];
+		    rotArr[i*4 + 2] = rotQuat[2];
+		    rotArr[i*4 + 3] = rotQuat[3];
+		}
+
+		if (hasScales)
+		{
+		    scaleArr[i* 3 + 0] = scales[i].x;
+		    scaleArr[i* 3 + 1] = scales[i].y;
+		    scaleArr[i* 3 + 2] = scales[i].z;
+		}
+	    }
+
+	    HAPI_InputCurveInfo inputCurveInfo = new HAPI_InputCurveInfo();
+	    inputCurveInfo.FillData(_inputCurveInfo);
+
+	    session.SetInputCurveInfo(_geoID, _partID, ref inputCurveInfo);
+
+	    if (_curveNodeData.Count > 0)
+	    {
+		if (!hasRotations && !hasScales)
+		{
+		    session.SetInputCurvePositions(_geoID, _partID, posArr, 0, posArr.Length);
+		}
+		else
+		{
+		    session.SetInputCurvePositionsRotationsScales(_geoID, _partID, posArr, 0, posArr.Length, rotArr, 0, rotArr.Length, scaleArr, 0, scaleArr.Length);
+		}
+	    }
+
+	    return true;
+	}
 
 
 	public bool UpdateCurveInputForCustomAttributes(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
-
-
 	    // Stop now just to be safe (Everything will be done Houdini-side) and we just fetch from there
 	    // If I add the option to add custom attributes, this might be moved to one level up in the future.
 	    if (parentAsset.CurveDisableScaleRotation)
@@ -1075,6 +1334,12 @@ namespace HoudiniEngineUnity
 		_parameters = ScriptableObject.CreateInstance<HEU_Parameters>();
 	    }
 
+	    if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
+	    {
+	        _inputCurveInfo = new HEU_InputCurveInfo();
+	    }
+
+
 	    string geoNodeName = HEU_SessionManager.GetString(geoNodeInfo.nameSH, session);
 	    _parameters._uiLabel = geoNodeName.ToUpper() + " PARAMETERS";
 
@@ -1094,11 +1359,17 @@ namespace HoudiniEngineUnity
 	    {
 		DownloadPresetData(session);
 	    }
+	    // single_curve_operation/order set_up_prims/order round_corners/order rounded_corner_setup/order
 	}
+
 
 	private void UpdatePoints(HEU_SessionBase session)
 	{
 	    //
+	    if (_bIsPartCurve && _curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
+	    {
+		UpdateCachedCurveInfo(session, false);
+	    }
 
 	    // We want to keep positions in sync with Houdini, but use our rotations/scales because
 	    // The number of them depend on the curve type
@@ -1114,39 +1385,60 @@ namespace HoudiniEngineUnity
 
 	    _curveNodeData.Clear();
 
-	    if (_bIsLegacyCurve)
+	    switch (_curveDataType)
 	    {
-		string pointList = _parameters.GetStringFromParameter(HEU_Defines.CURVE_COORDS_PARAM);
-		if (!string.IsNullOrEmpty(pointList))
-		{
-		    string[] pointSplit = pointList.Split(' ');
-		    for (int i = 0; i < pointSplit.Length; i++)
+		case HEU_CurveDataType.GEO_COORDS_PARAM:
+		    string pointList = _parameters.GetStringFromParameter(HEU_Defines.CURVE_COORDS_PARAM);
+		    if (!string.IsNullOrEmpty(pointList))
 		    {
-		        string str = pointSplit[i];
-
-			string[] vecSplit = str.Split(',');
-			if (vecSplit.Length == 3)
+			string[] pointSplit = pointList.Split(' ');
+			for (int i = 0; i < pointSplit.Length; i++)
 			{
-			    Vector3 position = new Vector3(-System.Convert.ToSingle(vecSplit[0], System.Globalization.CultureInfo.InvariantCulture),
+			    string str = pointSplit[i];
+    
+			    string[] vecSplit = str.Split(',');
+			    if (vecSplit.Length == 3)
+			    {
+				Vector3 position = new Vector3(-System.Convert.ToSingle(vecSplit[0], System.Globalization.CultureInfo.InvariantCulture),
 				System.Convert.ToSingle(vecSplit[1], System.Globalization.CultureInfo.InvariantCulture),
 				System.Convert.ToSingle(vecSplit[2], System.Globalization.CultureInfo.InvariantCulture));
-
-			    positions.Add(position);
+    
+				positions.Add(position);
+			    }
 			}
-		    }
-		}    
-	    }
-	    else
-	    {
-		HAPI_AttributeInfo posAttrInfo = new HAPI_AttributeInfo();
-		float[] _posAttr = new float[0];
-		HEU_GeneralUtility.GetAttribute(session, GeoID, _partID, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref _posAttr, session.GetAttributeFloatData);
+		    }    
+		    break;
 
-		int numPositions = posAttrInfo.count / 3;
-		for (int i = 0; i < numPositions; i++)
-		{
-			positions.Add(new Vector3(-_posAttr[i * 3 + 0], _posAttr[i * 3 + 1], _posAttr[i * 3 + 2]));
-		}
+		case HEU_CurveDataType.HAPI_COORDS_PARAM:
+		    HAPI_AttributeInfo hapiCoordsInfo = new HAPI_AttributeInfo();
+		    session.GetAttributeInfo(_geoID, _partID, HEU_HAPIConstants.HAPI_ATTRIB_INPUT_CURVE_COORDS, HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL, ref hapiCoordsInfo);
+
+		    if (hapiCoordsInfo.exists)
+		    {
+			float[] posAttr = new float[hapiCoordsInfo.totalArrayElements];
+			int[] sizesArr = new int[hapiCoordsInfo.count];
+			long numPts = hapiCoordsInfo.totalArrayElements / 3;
+			session.GetAttributeFloatArrayData(_geoID, _partID, HEU_HAPIConstants.HAPI_ATTRIB_INPUT_CURVE_COORDS, ref hapiCoordsInfo, ref posAttr, (int)hapiCoordsInfo.totalArrayElements, ref sizesArr, 0, hapiCoordsInfo.count);
+    
+			for (int i = 0; i < numPts; i++)
+			{
+			    positions.Add(new Vector3(-posAttr[i * 3 + 0], posAttr[i * 3 + 1], posAttr[i * 3 + 2]));
+			}
+
+		    }
+
+		    break;
+		case HEU_CurveDataType.POSITION_ATTRIBUTE:
+		    HAPI_AttributeInfo posAttrInfo = new HAPI_AttributeInfo();
+		    float[] _posAttr = new float[0];
+		    HEU_GeneralUtility.GetAttribute(session, GeoID, _partID, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref posAttrInfo, ref _posAttr, session.GetAttributeFloatData);
+    
+		    int numPositions = posAttrInfo.count;
+		    for (int i = 0; i < numPositions; i++)
+		    {
+		    	positions.Add(new Vector3(-_posAttr[i * 3 + 0], _posAttr[i * 3 + 1], _posAttr[i * 3 + 2]));
+		    }
+		    break;
 	    }
 
 	    for (int i = 0; i < positions.Count; i++)
@@ -1164,6 +1456,11 @@ namespace HoudiniEngineUnity
 		    {
 		        data.scale = scales[i];
 		    }
+		}
+
+		if (_cachedCurveInfoValid)
+		{
+		    data.curveCountIndex = GetCurveCountIndexFromPositionIndex(i);
 		}
 
 		_curveNodeData.Add(data);
@@ -1389,6 +1686,72 @@ namespace HoudiniEngineUnity
 	public void SetCurveNodeData(List<CurveNodeData> curveNodeData)
 	{
 	    _curveNodeData = curveNodeData;
+	}
+
+
+	private void UpdateCachedCurveInfo(HEU_SessionBase session, bool copyCurveSettings)
+	{
+	    HAPI_CurveInfo curveInfo = new HAPI_CurveInfo();
+	    if (session.GetCurveInfo(_geoID, _partID, ref curveInfo))
+	    {
+		_cachedCurveInfo = curveInfo;
+		_cachedCurveInfoValid = true;
+
+		_cachedCurveCounts = new int[curveInfo.curveCount];
+		session.GetCurveCounts(_geoID, _partID, _cachedCurveCounts, 0, curveInfo.curveCount);
+
+		_cachedCurveCountSums = new int[_cachedCurveCounts.Length];
+
+		// Cache sum array for finding index positions more effiicently
+		int curSum = 0;
+		for (int i = 0; i < _cachedCurveCounts.Length; i++)
+		{
+		    curSum += _cachedCurveCounts[i];
+		    _cachedCurveCountSums[i] = curSum;
+		}
+
+		if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM) 
+		{
+		    HAPI_InputCurveInfo inputCurveInfo = new HAPI_InputCurveInfo();
+		    //hapi_GetInputCurveInfo(session, _geoID, _partID, ref inputCurveInfo);
+		    session.GetInputCurveInfo(_geoID, _partID, ref inputCurveInfo);
+		    _inputCurveInfo = HEU_InputCurveInfo.CreateFromHAPI_InputCurveInfo(inputCurveInfo);
+		}
+
+	    }
+	}
+
+	public int GetCurveCountIndexFromPositionIndex(int positionIndex)
+	{
+	    if (_cachedCurveCountSums == null)
+	    {
+		return 0;
+	    }
+
+	    if (_cachedCurveCountSums.Length == 1)
+	    {
+		return 0;
+	    }
+
+	    // for 0 < i < n, where n = curveCounts.Length
+	    // positionIndex = max i such that sum{curveCounts} < positionIndex
+	    // or n-1 if positionIndex > sum{curveCounts}
+
+	    int pointNum = positionIndex + 1;
+
+	    for (int i = 1; i < _cachedCurveCountSums.Length; i++)
+	    {
+		if (_cachedCurveCounts[i] < pointNum)
+		{
+		    continue;
+		}
+		else
+		{
+		    return i;
+		}
+	    }
+
+	    return _cachedCurveCountSums.Length - 1;
 	}
 
 	public bool IsEquivalentTo(HEU_Curve other)

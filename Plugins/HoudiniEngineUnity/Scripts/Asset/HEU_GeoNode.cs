@@ -130,7 +130,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	public void DestroyAllData(bool bIsRebuild = false)
 	{
-	    HEU_PartData.DestroyParts(_parts);
+	    HEU_PartData.DestroyParts(_parts, bIsRebuild);
 
 	    if (_inputNode != null)
 	    {
@@ -632,7 +632,7 @@ namespace HoudiniEngineUnity
 	    _geoCurve.UpdateCurve(session, partID);
 	    if (!bNewCurve)
 	    {
-	        _geoCurve.UpdateCurveInputForCustomAttributes(session, parentAsset);
+		_geoCurve.OnPresyncParameters(session, parentAsset);
 	    }
 
 	    _geoCurve.GenerateMesh(_geoCurve._targetGameObject, session);

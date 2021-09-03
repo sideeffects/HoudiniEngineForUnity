@@ -977,6 +977,12 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public virtual bool GetAttributeFloatArrayData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		ref float[] data, int dataLength, ref int[] sizesArray, int start, int sizesLength)
+	{
+	    return false;
+	}
+
 	public virtual bool GetAttributeFloat64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] double[] data, int start, int length)
 	{
 	    return false;
@@ -1152,6 +1158,10 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	public virtual bool GetInputCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_InputCurveInfo inputCurveInfo)
+	{
+	    return false;
+	}
 
 	// GEOMETRY SETTERS -------------------------------------------------------------------------------------------
 
@@ -1196,6 +1206,12 @@ namespace HoudiniEngineUnity
 
 	public virtual bool SetAttributeFloatData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		float[] data, int start, int length)
+	{
+	    return false;
+	}
+
+	public virtual bool SetAttributeFloatArrayData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		float[] data, int dataLength, int[] sizesArray, int start, int sizesLength)
 	{
 	    return false;
 	}
@@ -1252,6 +1268,22 @@ namespace HoudiniEngineUnity
 	}
 
 	public virtual bool SetCurveKnots(HAPI_NodeId nodeID, HAPI_PartId partID, float[] knots, int start, int length)
+	{
+	    return false;
+	}
+
+	public virtual bool SetInputCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_InputCurveInfo curveInfo)
+	{
+	    return false;
+	}
+
+	public virtual bool SetInputCurvePositions(HAPI_NodeId nodeID, HAPI_PartId partID, float[] positionsArray, int start, int length)
+	{
+	    return false;
+	}
+
+	public virtual bool SetInputCurvePositionsRotationsScales(HAPI_NodeId nodeID, HAPI_PartId partID, float[] positionsArray, int start, int length
+	    , float[] rotationsArray, int rotationsStart, int rotationsLength, float[] scalesArray, int scalesStart, int scalesLength)
 	{
 	    return false;
 	}
@@ -1494,6 +1526,12 @@ namespace HoudiniEngineUnity
 	// INPUT NODES ------------------------------------------------------------------------------------------------
 
 	public virtual bool CreateInputNode(out HAPI_NodeId nodeID, string name)
+	{
+	    nodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    return false;
+	}
+
+	public virtual bool CreateInputCurveNode(out HAPI_NodeId nodeID, string name)
 	{
 	    nodeID = HEU_Defines.HEU_INVALID_NODE_ID;
 	    return false;

@@ -470,6 +470,17 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
+	    HEU_EditorUI.DrawSeparator();
+	    {
+		bool oldValue = HEU_PluginSettings.UseLegacyInputCurves;
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Use Legacy Input Curves", "Uses the old curve::1.0 node instead of HAPI curves.");
+		if (newValue != oldValue)
+		{
+		    HEU_PluginSettings.UseLegacyInputCurves = newValue;
+		    bChanged = true;
+		}
+	    }
+
 	    // Setting for unit tests only
 	    //HEU_EditorUI.DrawSeparator();
 	    //{

@@ -1053,6 +1053,21 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static bool UseLegacyInputCurves
+	{
+	    get
+	    {
+		bool enabled = false;
+		HEU_PluginStorage.Instance.Get("HAPI_UseLegacyInputCurves", out enabled, enabled);
+		return enabled;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_UseLegacyInputCurves", value);
+	    }
+	}
+
+
     }
 
 }   // HoudiniEngineUnity

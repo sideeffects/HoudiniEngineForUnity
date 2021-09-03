@@ -43,6 +43,10 @@ namespace HoudiniEngineUnity
 	private Dictionary<string, List<CurveNodeData>> _savedCurveNodeData = new Dictionary<string, List<CurveNodeData>>();
 	public Dictionary<string, List<CurveNodeData>> SavedCurveNodeData { get { return _savedCurveNodeData; } }
 
+	[SerializeField]
+	private Dictionary<string, HEU_InputCurveInfo> _savedInputCurveInfo = new Dictionary<string, HEU_InputCurveInfo>();
+	public Dictionary<string, HEU_InputCurveInfo> SavedInputCurveInfo { get { return _savedInputCurveInfo; } }
+
 	public bool IsEquivalentTo(HEU_AssetSerializedMetaData other)
 	{
 	    bool bResult = true;

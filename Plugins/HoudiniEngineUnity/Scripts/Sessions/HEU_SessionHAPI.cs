@@ -1668,6 +1668,14 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+	public override bool GetAttributeFloatArrayData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		ref float[] data, int dataLength, ref int[] sizesArray, int start, int sizesLength)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeFloatArrayData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, dataLength, sizesArray, start, sizesLength);
+	    HandleStatusResult(result, "Getting Attribute Float Array Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 	public override bool GetAttributeFloat64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] double[] data, int start, int length)
 	{
 	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeFloat64Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
@@ -1901,6 +1909,13 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+	public override bool GetInputCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_InputCurveInfo inputCurveInfo)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetInputCurveInfo(ref _sessionData._HAPISession, nodeID, partID, out inputCurveInfo);
+	    HandleStatusResult(result, "Getting Input Curve Info", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 	// GEOMETRY SETTERS -------------------------------------------------------------------------------------------
 
 	public override bool SetPartInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_PartInfo partInfo)
@@ -1963,6 +1978,16 @@ namespace HoudiniEngineUnity
 	    HandleStatusResult(result, "Setting Attribute Float Data", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
+
+	public override bool SetAttributeFloatArrayData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		float[] data, int dataLength, int[] sizesArray, int start, int sizesLength)
+	{
+
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetAttributeFloatArrayData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, dataLength, sizesArray, start, sizesLength);
+	    HandleStatusResult(result, "Setting Attribute Float Array Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 
 	public override bool SetAttributeStringData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
 		string[] data, int start, int length)
@@ -2039,6 +2064,39 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetCurveKnots(ref _sessionData._HAPISession, nodeID, partID, knots, start, length);
 	    HandleStatusResult(result, "Setting Curve Knots", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetInputCurveInfo(HAPI_NodeId nodeID, HAPI_PartId partID, ref HAPI_InputCurveInfo inputCurveInfo)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetInputCurveInfo(ref _sessionData._HAPISession, nodeID, partID, ref inputCurveInfo);
+	    HandleStatusResult(result, "Setting Input Curve Info", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetInputCurvePositions(HAPI_NodeId nodeID, HAPI_PartId partID, float[] positionsArray, int start, int length)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetInputCurvePositions(ref _sessionData._HAPISession, nodeID, partID, positionsArray, start, length);
+	    HandleStatusResult(result, "Setting Input Curve Positions", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool SetInputCurvePositionsRotationsScales(HAPI_NodeId nodeID, HAPI_PartId partID, float[] positionsArray, int start, int length
+	    , float[] rotationsArray, int rotationsStart, int rotationsLength, float[] scalesArray, int scalesStart, int scalesLength)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetInputCurvePositionsRotationsScales(
+		    ref _sessionData._HAPISession,nodeID,
+		    partID,
+		    positionsArray,
+		    start,
+		    length,
+		    rotationsArray,
+		    rotationsStart,
+		    rotationsLength,
+		    scalesArray,
+		    scalesStart,
+		    scalesLength);
+	    HandleStatusResult(result, "Setting Input Curve Positions Rotations Scales", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
@@ -2378,6 +2436,13 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateInputNode(ref _sessionData._HAPISession, out nodeID, name.AsByteArray());
 	    HandleStatusResult(result, "Creating Input Node", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public override bool CreateInputCurveNode(out HAPI_NodeId nodeID, string name)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateInputCurveNode(ref _sessionData._HAPISession, out nodeID, name.AsByteArray());
+	    HandleStatusResult(result, "Creating Input Curve Node", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 

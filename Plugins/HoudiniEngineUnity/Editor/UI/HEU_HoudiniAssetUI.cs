@@ -998,6 +998,54 @@ namespace HoudiniEngineUnity
 
 			    HEU_EditorUtility.EditorDrawSerializedProperty(serializedCurve, "_curveNodeData", label: curve.CurveName + " Data");
 
+			    if (curve.CurveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
+			    {
+
+				HEU_EditorUI.DrawHeadingLabel("Input Curve Info:");
+				EditorGUI.indentLevel++;
+
+				// Create the UI manually to have more control
+				SerializedProperty inputCurveInfoProperty = HEU_EditorUtility.GetSerializedProperty(serializedCurve, "_inputCurveInfo");
+
+				HEU_EditorUtility.EnumToPopup(
+				    inputCurveInfoProperty.FindPropertyRelative("curveType"),
+				    "Curve Type",
+				    (int)curve.InputCurveInfo.curveType,
+				    HEU_InputCurveInfo.GetCurveTypeNames(),
+				    true,
+				    "Type of the curve. Can be Linear, NURBs or Bezier. May impose restrictions on the order depending on what you choose."
+				);
+
+				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("order"));
+
+				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("closed"));
+
+				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("reverse"));
+
+				HEU_EditorUtility.EnumToPopup(
+				    inputCurveInfoProperty.FindPropertyRelative("inputMethod"),
+				    "Input Method",
+				    (int)curve.InputCurveInfo.inputMethod,
+				    HEU_InputCurveInfo.GetInputMethodNames(),
+				    true,
+				    "How the curve behaves with respect to the provided CVs. Can be either CVs, which influence the curve, or breakpoints, which intersects the curve."
+				);
+
+				using (new EditorGUI.DisabledScope(curve.InputCurveInfo.inputMethod != HAPI_InputCurveMethod.HAPI_CURVEMETHOD_BREAKPOINTS))
+				{
+				    HEU_EditorUtility.EnumToPopup(
+				        inputCurveInfoProperty.FindPropertyRelative("breakpointParameterization"),
+				        "Breakpoint Parameterization",
+				        (int)curve.InputCurveInfo.breakpointParameterization,
+				        HEU_InputCurveInfo.GetBreakpointParameterizationNames(),
+				        true,
+				        "Defines which method is used to refine the curve when using breakpoints."
+				    );
+				}
+
+				EditorGUI.indentLevel--;
+			    }
+
 			    if (EditorGUI.EndChangeCheck())
 			    {
 				curves[i].SetEditState(HEU_Curve.CurveEditState.REQUIRES_GENERATION);

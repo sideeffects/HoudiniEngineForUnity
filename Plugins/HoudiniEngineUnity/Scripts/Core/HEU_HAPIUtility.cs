@@ -463,25 +463,40 @@ namespace HoudiniEngineUnity
 	public static bool CreateAndCookCurveAsset(HEU_SessionBase session, string assetName, bool bCookTemplatedGeos, out HAPI_NodeId newAssetID)
 	{
 	    newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
-	    if (!session.CreateNode(HEU_Defines.HEU_INVALID_NODE_ID, "SOP/curve::", assetName, true, out newAssetID))
-	    {
-		return false;
-	    }
 
-	    // Make sure cooking is successfull before proceeding. Any licensing or file data issues will be caught here.
-	    if (!HEU_HAPIUtility.ProcessHoudiniCookStatus(session, assetName))
+	    if (HEU_PluginSettings.UseLegacyInputCurves)
 	    {
-		return false;
-	    }
+		if (!session.CreateNode(HEU_Defines.HEU_INVALID_NODE_ID, "SOP/curve::", assetName, true, out newAssetID))
+		{
+		    return false;
+		}
 
-	    // In case the cooking wasn't done previously, force it now.
-	    bool bResult = HEU_HAPIUtility.CookNodeInHoudini(session, newAssetID, bCookTemplatedGeos, assetName);
-	    if (!bResult)
+		// Make sure cooking is successfull before proceeding. Any licensing or file data issues will be caught here.
+		if (!HEU_HAPIUtility.ProcessHoudiniCookStatus(session, assetName))
+		{
+		    return false;
+		}
+
+		// In case the cooking wasn't done previously, force it now.
+		bool bResult = HEU_HAPIUtility.CookNodeInHoudini(session, newAssetID, bCookTemplatedGeos, assetName);
+		if (!bResult)
+		{
+		    // When cook failed, delete the node created earlier
+		    session.DeleteNode(newAssetID);
+		    newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
+		    return false;
+		}
+	    }
+	    else
 	    {
-		// When cook failed, delete the node created earlier
-		session.DeleteNode(newAssetID);
-		newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
-		return false;
+
+		if (!session.CreateInputCurveNode(out newAssetID, assetName))
+		{
+		    // When cook failed, delete the node created earlier
+		    session.DeleteNode(newAssetID);
+		    newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
+		    return false;
+		}
 	    }
 
 	    return true;

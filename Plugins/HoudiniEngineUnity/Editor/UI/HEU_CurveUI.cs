@@ -1641,6 +1641,12 @@ namespace HoudiniEngineUnity
 	{
 	    // Get the parameters, find the coords parameter data, then set the points array as string
 
+	    if (serializedCurve.FindProperty("_curveDataType").enumValueIndex != (int)HEU_CurveDataType.GEO_COORDS_PARAM)
+	    {
+		// Uploading for new curves are done in HEU_Curve::OnPresyncParameters()
+		return;
+	    }
+
 	    SerializedProperty parametersProperty = serializedCurve.FindProperty("_parameters");
 
 	    // Since Unity doesn't automatically serialize referenced objects, so we need to create serialized object, and apply changes
@@ -1732,6 +1738,13 @@ namespace HoudiniEngineUnity
 
 		SerializedProperty scaleProperty = curveNodeProperty.FindPropertyRelative("scale");
 		scaleProperty.vector3Value = Vector3.one;
+
+		if (curve.IsPartCurve)
+		{
+		    SerializedProperty curveCountIndexProperty = curveNodeProperty.FindPropertyRelative("curveCountIndex");
+		    int newCurveCountIndexValue = curve.GetCurveCountIndexFromPositionIndex(pointIndex);
+		    curveCountIndexProperty.intValue = newCurveCountIndexValue;
+		}
 
 		SerializedProperty editStateProperty = serializedCurve.FindProperty("_editState");
 		if (editStateProperty.intValue != (int)HEU_Curve.CurveEditState.EDITING)

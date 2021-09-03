@@ -2309,7 +2309,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (curve.IsEditable())
 		{
-		    curve.UpdateCurveInputForCustomAttributes(session, this);
+		    curve.OnPresyncParameters(session, this);
 		    HEU_Parameters curveParameters = curve.Parameters;
 		    if (curveParameters != null)
 		    {

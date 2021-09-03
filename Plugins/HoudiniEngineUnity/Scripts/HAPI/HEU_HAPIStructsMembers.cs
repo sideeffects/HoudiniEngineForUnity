@@ -33,6 +33,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
@@ -298,6 +299,19 @@ namespace HoudiniEngineUnity
 	    }
 
 	    offset = 0;
+	}
+    }
+
+    public partial struct HAPI_InputCurveInfo
+    {
+	public void FillData(HEU_InputCurveInfo curveInfo)
+	{
+	    closed = curveInfo.closed;
+	    curveType = curveInfo.curveType;
+	    order = HEU_Curve.GetOrderForCurveType(curveInfo.order, curveInfo.curveType);
+	    reverse = curveInfo.reverse;
+	    inputMethod = curveInfo.inputMethod;
+	    breakpointParameterization = curveInfo.breakpointParameterization;
 	}
     }
 
