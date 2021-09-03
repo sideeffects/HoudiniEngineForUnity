@@ -734,16 +734,36 @@ namespace HoudiniEngineUnity
         public int knotCount;              //The number of knots for all curves.
 
         [MarshalAs(UnmanagedType.U1)]
-        public HAPI_Bool isPeriodic;              //Whether the curves in this curve mesh are periodic.Whether the curves in this curve mesh are rational.
+        public HAPI_Bool isPeriodic;              //Whether the curves in this curve mesh are periodic.
 
         [MarshalAs(UnmanagedType.U1)]
-        public HAPI_Bool isRational;              //Whether the curves in this curve mesh are periodic.Whether the curves in this curve mesh are rational.
+        public HAPI_Bool isRational;              //Whether the curves in this curve mesh are rational.
 
         [MarshalAs(UnmanagedType.I4)]
         public int order;              //Order of 1 is invalid. 0 means there is a varying order.
 
         [MarshalAs(UnmanagedType.U1)]
         public HAPI_Bool hasKnots;              //Whether the curve has knots.
+
+    };
+
+    [StructLayout(LayoutKind.Sequential)]
+    public partial struct HAPI_InputCurveInfo          
+    {
+        public HAPI_CurveType curveType;              //The desired curve type of the curveNote that this is NOT necessarily equal to the value in HAPI_CurveInfoin the case of curve refinement
+
+        [MarshalAs(UnmanagedType.I4)]
+        public int order;              //The desired order for your input curveThis is your desired order which may differ from HAPI_CurveInfoas it will do range checks and adjust the actual order accordingly
+
+        [MarshalAs(UnmanagedType.U1)]
+        public HAPI_Bool closed;              //Whether or not the curve is closedMay differ from HAPI_CurveInfo::isPeriodic depending on the curveTypee.g. A NURBs curve is never technically closed according to HAPI_CurveInfo
+
+        [MarshalAs(UnmanagedType.U1)]
+        public HAPI_Bool reverse;              //Whether or not to reverse the curve input
+
+        public HAPI_InputCurveMethod inputMethod;              
+
+        public HAPI_InputCurveParameterization breakpointParameterization;              
 
     };
 

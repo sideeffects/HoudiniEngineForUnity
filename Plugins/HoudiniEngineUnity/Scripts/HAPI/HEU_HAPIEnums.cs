@@ -339,6 +339,23 @@ namespace HoudiniEngineUnity
         HAPI_CURVETYPE_MAX,        
     };
 
+    public enum HAPI_InputCurveMethod          
+    {
+        HAPI_CURVEMETHOD_INVALID = -1,        
+        HAPI_CURVEMETHOD_CVS,        
+        HAPI_CURVEMETHOD_BREAKPOINTS,        
+        HAPI_CURVEMETHOD_MAX,        
+    };
+
+    public enum HAPI_InputCurveParameterization          
+    {
+        HAPI_CURVEPARAMETERIZATION_INVALID = -1,        
+        HAPI_CURVEPARAMETERIZATION_UNIFORM,        
+        HAPI_CURVEPARAMETERIZATION_CHORD,        
+        HAPI_CURVEPARAMETERIZATION_CENTRIPETAL,        
+        HAPI_CURVEPARAMETERIZATION_MAX,        
+    };
+
     public enum HAPI_VolumeType          
     {
         HAPI_VOLUMETYPE_INVALID = -1,        
@@ -476,16 +493,6 @@ namespace HoudiniEngineUnity
         HAPI_ZXY,        
         HAPI_ZYX,        
         HAPI_XYZORDER_DEFAULT = HAPI_XYZ,        
-    };
-
-    public enum HAPI_CoordinateSystem          
-    {
-        HAPI_YUP_RHANDED = 0,        
-        HAPI_YUP_LHANDED,        
-        HAPI_ZUP_RHANDED,        
-        HAPI_ZUP_LHANDED,        
-        HAPI_COORDINATESYSTEM_MAX,        
-        HAPI_COORDINATESYSTEM_DEFAULT = HAPI_YUP_RHANDED,        
     };
 
     public enum HAPI_ImageDataFormat          

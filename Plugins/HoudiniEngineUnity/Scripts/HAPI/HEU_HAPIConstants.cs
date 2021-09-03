@@ -81,6 +81,8 @@ namespace HoudiniEngineUnity
         public const string HAPI_ATTRIB_COLOR = "Cd";
         public const string HAPI_ATTRIB_NAME = "name";
         public const string HAPI_ATTRIB_INSTANCE = "instance";
+        public const string HAPI_ATTRIB_ROT = "rot";
+        public const string HAPI_ATTRIB_SCALE = "scale";
         public const string HAPI_UNGROUPED_GROUP_NAME = "__ungrouped_group";
         public const string HAPI_RAW_FORMAT_NAME = "HAPI_RAW";
         public const string HAPI_PNG_FORMAT_NAME = "PNG";
@@ -101,6 +103,7 @@ namespace HoudiniEngineUnity
         public const string HAPI_CACHE_GL_VERTEX = "OpenGL Vertex Cache";
         public const string HAPI_CACHE_SOP = "SOP Cache";
         public const string HAPI_CACHE_VEX = "VEX File Cache";
+        public const string HAPI_ATTRIB_INPUT_CURVE_COORDS = "hapi_input_curve_coords";
 
     }
 
