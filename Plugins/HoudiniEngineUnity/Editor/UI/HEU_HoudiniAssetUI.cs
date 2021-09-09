@@ -160,7 +160,6 @@ namespace HoudiniEngineUnity
 
 	public void HEU_UIRepaint()
 	{
-	    //Repaint();
 	    SceneView.RepaintAll();
 	}
 
@@ -806,9 +805,7 @@ namespace HoudiniEngineUnity
 	    Texture2D headerImage = Resources.Load(fileName) as Texture2D;
 
 	    HEU_EditorUI.DrawSeparator();
-	    //HEU_EditorUI.BeginSection();
 	    GUILayout.Label(headerImage);
-	    //HEU_EditorUI.EndSection();
 
 	    GUI.backgroundColor = Color.white;
 	}
@@ -1162,7 +1159,6 @@ namespace HoudiniEngineUnity
 			bool bAttributesDirty = !System.Array.TrueForAll(attributesStoresArray, s => !s.AreAttributesDirty());
 			if (bAttributesDirty)
 			{
-			    //HEU_Logger.Log("Cook for attributes dirty!");
 			    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
 			}
 		    }

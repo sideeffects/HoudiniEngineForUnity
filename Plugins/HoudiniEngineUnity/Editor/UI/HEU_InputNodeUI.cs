@@ -105,8 +105,6 @@ namespace HoudiniEngineUnity
 	{
 	    int plusButtonWidth = 20;
 
-	    //GUIStyle boldLabelStyle = new GUIStyle(EditorStyles.boldLabel);
-	    //boldLabelStyle.alignment = TextAnchor.UpperLeft;
 	    const string inputTypeTooltip = @"Input type of the object. 
 
 The HDA type can accept any object with a HEU_HoudiniAssetRoot component. (Including curves)
@@ -287,7 +285,6 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 				    {
 					EditorGUILayout.LabelField("Input " + (i + 1));
 
-					//using (var vs3 = new EditorGUILayout.VerticalScope())
 					{
 					    if (GUILayout.Button("+", GUILayout.Width(plusButtonWidth)))
 					    {
