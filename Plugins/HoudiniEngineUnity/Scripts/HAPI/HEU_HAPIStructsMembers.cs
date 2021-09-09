@@ -306,6 +306,11 @@ namespace HoudiniEngineUnity
     {
 	public void FillData(HEU_InputCurveInfo curveInfo)
 	{
+	    if (curveInfo == null)
+	    {
+		return;
+	    }
+	    
 	    closed = curveInfo.closed;
 	    curveType = curveInfo.curveType;
 	    order = HEU_Curve.GetOrderForCurveType(curveInfo.order, curveInfo.curveType);

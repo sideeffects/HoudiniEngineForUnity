@@ -733,7 +733,7 @@ namespace HoudiniEngineUnity
 	    {
 		UpdateCurveInputForCustomAttributes(session, parentAsset);
 	    }
-	    else
+	    else if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
 	    {
 		UpdateCurveInputForCurveParts(session, parentAsset);
 	    }
@@ -1713,7 +1713,6 @@ namespace HoudiniEngineUnity
 		if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM) 
 		{
 		    HAPI_InputCurveInfo inputCurveInfo = new HAPI_InputCurveInfo();
-		    //hapi_GetInputCurveInfo(session, _geoID, _partID, ref inputCurveInfo);
 		    session.GetInputCurveInfo(_geoID, _partID, ref inputCurveInfo);
 		    _inputCurveInfo = HEU_InputCurveInfo.CreateFromHAPI_InputCurveInfo(inputCurveInfo);
 		}
