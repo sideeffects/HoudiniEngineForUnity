@@ -1376,6 +1376,7 @@ namespace HoudiniEngineUnity
 	    return result;
 	}
 
+#if UNITY_EDITOR
 	public static void EnumToPopup(SerializedProperty property, string name, int currentEnumValue, string [] enumNames, bool bAddOneToEnumIndex,  string tooltip = "")
 	{
 	    int newEnumValue = EditorGUILayout.Popup(
@@ -1392,6 +1393,7 @@ namespace HoudiniEngineUnity
 	        property.enumValueIndex =  newEnumValue;
 	    }
 	}
+#endif
 
     }
 
