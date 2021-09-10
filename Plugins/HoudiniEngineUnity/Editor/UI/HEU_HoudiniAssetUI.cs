@@ -954,7 +954,31 @@ namespace HoudiniEngineUnity
 			    HEU_EditorUI.DrawHeadingLabel("Projection Settings");
 			    EditorGUI.indentLevel++;
 
-			    HEU_EditorUtility.EditorDrawSerializedProperty(assetObject, "_curveProjectDirection", label: "Project Direction", tooltip: "The ray cast direction for projecting the curve points.");
+			    SerializedProperty projectCurveToSceneViewProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveProjectDirectionToView");
+			    HEU_EditorUtility.EditorDrawSerializedProperty(assetObject, "_curveProjectDirectionToView", label: "Project Direction To Scene View", tooltip: "Project the curve points according to the scene view.");
+
+			    bool curveToSceneView = projectCurveToSceneViewProperty.boolValue;
+			    Vector3 projectDir = Vector3.down;
+
+			    if (curveToSceneView)
+			    {
+				SceneView sceneView = UnityEditor.EditorWindow.GetWindow<SceneView>();
+				Quaternion sceneRot = sceneView.rotation;
+				if (sceneView && sceneRot != Quaternion.identity)
+				{
+				    projectDir = sceneRot * Vector3.forward;
+				}
+				else
+				{
+				    curveToSceneView = false; // Fallback to hard coded direction
+				}
+			    }
+
+			    using (new EditorGUI.DisabledScope(curveToSceneView))
+			    {
+				HEU_EditorUtility.EditorDrawSerializedProperty(assetObject, "_curveProjectDirection", label: "Project Direction", tooltip: "The ray cast direction for projecting the curve points.");
+			    }
+
 			    HEU_EditorUtility.EditorDrawFloatProperty(assetObject, "_curveProjectMaxDistance", label: "Project Max Distance", tooltip: "The maximum ray cast distance for projecting the curve points.");
 
 			    _projectCurvePointsButton.text = projectLabel;
@@ -963,7 +987,11 @@ namespace HoudiniEngineUnity
 				SerializedProperty projectDirProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveProjectDirection");
 				SerializedProperty maxDistanceProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveProjectMaxDistance");
 
-				Vector3 projectDir = projectDirProperty != null ? projectDirProperty.vector3Value : Vector3.down;
+				if (!curveToSceneView && projectDirProperty != null)
+				{
+				    projectDir = projectDirProperty.vector3Value;
+				}
+
 				float maxDistance = maxDistanceProperty != null ? maxDistanceProperty.floatValue : 0;
 
 				for (int i = 0; i < curves.Count; ++i)

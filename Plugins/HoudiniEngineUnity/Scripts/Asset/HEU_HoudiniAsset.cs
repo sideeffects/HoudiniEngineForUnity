@@ -403,6 +403,10 @@ namespace HoudiniEngineUnity
 
 	[SerializeField]
 	private Vector3 _curveProjectDirection = Vector3.down;
+
+	[SerializeField]
+	private bool _curveProjectDirectionToView = true;
+
 #pragma warning restore 0414
 
 	[SerializeField]
