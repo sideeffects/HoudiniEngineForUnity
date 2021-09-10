@@ -164,6 +164,11 @@ namespace HoudiniEngineUnity
 
 	    // Always add the default shelf
 	    HEU_Shelf defaultShelf = AddShelf(HEU_Defines.HEU_HENGINE_SHIPPED_SHELF, HEU_Defines.HEU_HENGINE_TOOLS_SHIPPED_FOLDER);
+	    if (defaultShelf == null)
+	    {
+		return;
+	    }
+	    
 	    defaultShelf._defaultShelf = true;
 
 	    List<string> shelfEntries = HEU_PluginSettings.HEngineToolsShelves;
@@ -417,6 +422,16 @@ namespace HoudiniEngineUnity
 
 	public static HEU_Shelf AddShelf(string shelfName, string shelfPath)
 	{
+	    if (_shelves.Find((HEU_Shelf shelf) => shelf._shelfName == shelfName) != null)
+	    {
+		return null;
+	    }
+
+	    if (!HEU_AssetDatabase.IsValidFolderName(shelfName))
+	    {
+		return null;
+	    }
+
 	    HEU_Shelf newShelf = new HEU_Shelf();
 	    newShelf._shelfName = shelfName;
 	    newShelf._shelfPath = shelfPath;
