@@ -392,6 +392,25 @@ namespace HoudiniEngineUnity
 
 		    EditorGUILayout.BeginHorizontal();
 
+		    // If inspector is not too small, create two columns for more visually pleasing UX
+		    int shortenLength = 420;
+
+		    int screenWidth = Screen.width;
+
+		    bool useTwoColumns = screenWidth > shortenLength;
+
+		    System.Action drawGenerateSection = () =>
+		    {
+			HEU_EditorUI.BeginSimpleSection("Generate");
+			    HEU_EditorUI.DrawPropertyField(assetObject, "_useOutputNodes", "Use output nodes", "Create outputs using output nodes. Note: Requires a full rebuild if changed");
+			    HEU_EditorUI.DrawPropertyField(assetObject, "_useLODGroups", "LOD Groups", "Automatically create Unity LOD group if found.");
+			    HEU_EditorUI.DrawPropertyField(assetObject, "_generateNormals", "Normals", "Generate normals in Unity for output geometry.");
+			    HEU_EditorUI.DrawPropertyField(assetObject, "_generateTangents", "Tangents", "Generate tangents in Unity for output geometry.");
+			    HEU_EditorUI.DrawPropertyField(assetObject, "_generateUVs", "UVs", "Force Unity to generate UVs for output geometry.");
+			    HEU_EditorUI.DrawPropertyField(assetObject, "_generateMeshUsingPoints", "Using Points", "Use point attributes instead of vertex attributes for geometry. Ignores vertex attributes.");
+			HEU_EditorUI.EndSimpleSection();
+		    };
+
 		    EditorGUILayout.BeginVertical();
 
 		    HEU_EditorUI.BeginSimpleSection("Cook Triggers");
@@ -401,6 +420,11 @@ namespace HoudiniEngineUnity
 			HEU_EditorUI.DrawPropertyField(assetObject, "_sessionSyncAutoCook", "Session Sync: Auto Cook", "When using Session Sync, this asset will automatically cook and generated output when it is cooked separately in Houdini (e.g. via parm changes).");
 		    HEU_EditorUI.EndSimpleSection();
 
+		    if (!useTwoColumns)
+		    {
+			drawGenerateSection();
+		    }
+
 		    HEU_EditorUI.BeginSimpleSection("Miscellaneous");
 			HEU_EditorUI.DrawPropertyField(assetObject, "_pushTransformToHoudini", "Push Transform To Houdini", "Send the asset's transform to Houdini and apply to object.");
 			HEU_EditorUI.DrawPropertyField(assetObject, "_ignoreNonDisplayNodes", "Ignore Non-Display Nodes", "Only display node geometry will be created.");
@@ -409,16 +433,12 @@ namespace HoudiniEngineUnity
 
 		    EditorGUILayout.EndVertical();
 
-		    EditorGUILayout.BeginVertical();
-		    HEU_EditorUI.BeginSimpleSection("Generate");
-			HEU_EditorUI.DrawPropertyField(assetObject, "_useOutputNodes", "Use output nodes", "Create outputs using output nodes. Note: Requires a full rebuild if changed");
-			HEU_EditorUI.DrawPropertyField(assetObject, "_useLODGroups", "LOD Groups", "Automatically create Unity LOD group if found.");
-			HEU_EditorUI.DrawPropertyField(assetObject, "_generateNormals", "Normals", "Generate normals in Unity for output geometry.");
-			HEU_EditorUI.DrawPropertyField(assetObject, "_generateTangents", "Tangents", "Generate tangents in Unity for output geometry.");
-			HEU_EditorUI.DrawPropertyField(assetObject, "_generateUVs", "UVs", "Force Unity to generate UVs for output geometry.");
-			HEU_EditorUI.DrawPropertyField(assetObject, "_generateMeshUsingPoints", "Using Points", "Use point attributes instead of vertex attributes for geometry. Ignores vertex attributes.");
-		    HEU_EditorUI.EndSimpleSection();
-		    EditorGUILayout.EndVertical();
+		    if (useTwoColumns)
+		    {
+			EditorGUILayout.BeginVertical();
+			drawGenerateSection();
+			EditorGUILayout.EndVertical();
+		    }
 
 		    EditorGUILayout.EndHorizontal();
 
