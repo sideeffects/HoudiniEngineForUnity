@@ -1261,6 +1261,23 @@ namespace HoudiniEngineUnity
 	    return assetPath;
 	}
 
+	public static bool IsValidFolderName(string name)
+	{
+#if UNITY_EDITOR
+	    if (name.IndexOfAny(";:<>?|".ToCharArray()) != -1)
+	    {
+		return false;
+	    }
+
+	    char[] badCharacters = System.IO.Path.GetInvalidFileNameChars();
+	    if (name.IndexOfAny(badCharacters) != -1)
+	    {
+		return false;
+	    }
+#endif
+	    return true;
+	}
+
 	public static T LoadUnityAssetFromUniqueAssetPath<T>(string assetPath) where T : UnityEngine.Object
 	{
 	    // Expecting assetPath to be of format: assetPath::name::assetname OR assetPath::id::assetid

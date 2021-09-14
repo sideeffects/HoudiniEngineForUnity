@@ -105,8 +105,6 @@ namespace HoudiniEngineUnity
 	{
 	    int plusButtonWidth = 20;
 
-	    //GUIStyle boldLabelStyle = new GUIStyle(EditorStyles.boldLabel);
-	    //boldLabelStyle.alignment = TextAnchor.UpperLeft;
 	    const string inputTypeTooltip = @"Input type of the object. 
 
 The HDA type can accept any object with a HEU_HoudiniAssetRoot component. (Including curves)
@@ -169,7 +167,7 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 
 			    if (GUILayout.Button("Add Selection"))
 			    {
-				HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputHDAs, typeof(HEU_HoudiniAssetRoot));
+				HEU_SelectionWindow.ShowWindow(HandleSelectedObjectsForInputHDAs, typeof(HEU_HoudiniAssetRoot), inputNode);
 			    }
 
 			    if (GUILayout.Button("Clear"))
@@ -253,19 +251,19 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 			    {
 				if (inputObjectType == HEU_InputNode.InputObjectType.TERRAIN)
 				{
-				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(Terrain));
+				    HEU_SelectionWindow.ShowWindow(HandleSelectedObjectsForInputObjects, typeof(Terrain), inputNode);
 				}
 				else if (inputObjectType == HEU_InputNode.InputObjectType.BOUNDING_BOX)
 				{
-				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(HEU_BoundingVolume));
+				    HEU_SelectionWindow.ShowWindow(HandleSelectedObjectsForInputObjects, typeof(HEU_BoundingVolume), inputNode);
 				}
 				else if (inputObjectType == HEU_InputNode.InputObjectType.TILEMAP)
 				{
-				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(Tilemap));
+				    HEU_SelectionWindow.ShowWindow(HandleSelectedObjectsForInputObjects, typeof(Tilemap), inputNode);
 				}
 				else
 				{
-				    HEU_SelectionWindow.ShowWindow(inputNode.HandleSelectedObjectsForInputObjects, typeof(GameObject));
+				    HEU_SelectionWindow.ShowWindow(HandleSelectedObjectsForInputObjects, typeof(GameObject), inputNode);
 				}
 			    }
 
@@ -287,7 +285,6 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 				    {
 					EditorGUILayout.LabelField("Input " + (i + 1));
 
-					//using (var vs3 = new EditorGUILayout.VerticalScope())
 					{
 					    if (GUILayout.Button("+", GUILayout.Width(plusButtonWidth)))
 					    {
@@ -423,6 +420,25 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 		    scaleOverrideProperty.vector3Value = Vector3.one;
 		}
 	    }
+	}
+
+	public static void HandleSelectedObjectsForInputHDAs(GameObject[] selectedObjects, HEU_InputNode inputNode)
+	{
+	    inputNode.HandleSelectedObjectsForInputHDAs(selectedObjects);
+
+	    inputNode._uiCache._inputNodeSerializedObject.ApplyModifiedProperties();
+	    inputNode.RequiresUpload = true;
+
+	    inputNode.ClearUICache();
+	}
+
+	public static void HandleSelectedObjectsForInputObjects(GameObject[] selectedObjects, HEU_InputNode inputNode)
+	{
+	    inputNode.HandleSelectedObjectsForInputObjects(selectedObjects);
+	    inputNode._uiCache._inputNodeSerializedObject.ApplyModifiedProperties();
+	    inputNode.RequiresUpload = true;
+
+	    inputNode.ClearUICache();
 	}
     }
 

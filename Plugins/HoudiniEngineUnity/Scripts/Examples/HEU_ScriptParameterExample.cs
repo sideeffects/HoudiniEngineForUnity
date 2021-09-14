@@ -24,6 +24,10 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#if (UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_LINUX)
+#define HOUDINIENGINEUNITY_ENABLED
+#endif
+
 
 using UnityEngine;
 using System.Collections;
@@ -47,7 +51,7 @@ public class HEU_ScriptParameterExample : MonoBehaviour
     public float _scale = 20f;
 
 
-
+#if HOUDINIENGINEUNITY_ENABLED
     public void Start()
     {
 	// Grab the HEU_HoduiniAsset
@@ -100,5 +104,5 @@ public class HEU_ScriptParameterExample : MonoBehaviour
 	    _evergreenAsset.RequestCook(true, false, true, true);
 	}
     }
-
+#endif
 }
