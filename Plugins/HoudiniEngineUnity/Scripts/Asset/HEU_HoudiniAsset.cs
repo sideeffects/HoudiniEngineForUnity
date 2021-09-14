@@ -1691,7 +1691,8 @@ namespace HoudiniEngineUnity
 	    RemoveUnusedMaterials();
 
 	    // This forces the attribute editor to recache
-	    _toolsInfo._recacheRequired = true;
+	    if (_toolsInfo)
+		_toolsInfo._recacheRequired = true;
 
 	    // This is required in order to flag to Unity that the scene data has changed.
 	    // Otherwise saving the scene does not work.
