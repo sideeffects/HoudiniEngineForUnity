@@ -283,6 +283,7 @@ namespace HoudiniEngineUnity
 
 	    _sessionData.ProcessID = processID;
 	    _sessionData.Port = serverPort;
+	    _sessionData.ThisSessionMode = SessionMode.Socket;
 
 	    // Then create the session
 	    _sessionData._HAPISession.type = HAPI_SessionType.HAPI_SESSION_THRIFT;
@@ -385,6 +386,7 @@ namespace HoudiniEngineUnity
 	    HAPI_Result result;
 
 	    _sessionData.PipeName = pipeName;
+	    _sessionData.ThisSessionMode = SessionMode.Pipe;
 
 	    // Start at failed since this is several steps. Once connected, we can set it as such.
 	    ConnectionState = SessionConnectionState.FAILED_TO_CONNECT;
