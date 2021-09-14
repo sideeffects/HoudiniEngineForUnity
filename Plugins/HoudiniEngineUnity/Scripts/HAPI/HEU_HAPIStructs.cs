@@ -732,10 +732,10 @@ namespace HoudiniEngineUnity
         public int knotCount;              //The number of knots for all curves.
 
         [MarshalAs(UnmanagedType.U1)]
-        public HAPI_Bool isPeriodic;              //Whether the curves in this curve mesh are periodic.Whether the curves in this curve mesh are rational.
+        public HAPI_Bool isPeriodic;              //Whether the curves in this curve mesh are periodic.
 
         [MarshalAs(UnmanagedType.U1)]
-        public HAPI_Bool isRational;              //Whether the curves in this curve mesh are periodic.Whether the curves in this curve mesh are rational.
+        public HAPI_Bool isRational;              //Whether the curves in this curve mesh are rational.
 
         [MarshalAs(UnmanagedType.I4)]
         public int order;              //Order of 1 is invalid. 0 means there is a varying order.
