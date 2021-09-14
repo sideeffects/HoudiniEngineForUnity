@@ -403,6 +403,10 @@ namespace HoudiniEngineUnity
 
 	[SerializeField]
 	private Vector3 _curveProjectDirection = Vector3.down;
+
+	[SerializeField]
+	private bool _curveProjectDirectionToView = true;
+
 #pragma warning restore 0414
 
 	[SerializeField]
@@ -1687,7 +1691,8 @@ namespace HoudiniEngineUnity
 	    RemoveUnusedMaterials();
 
 	    // This forces the attribute editor to recache
-	    _toolsInfo._recacheRequired = true;
+	    if (_toolsInfo)
+		_toolsInfo._recacheRequired = true;
 
 	    // This is required in order to flag to Unity that the scene data has changed.
 	    // Otherwise saving the scene does not work.
@@ -1812,7 +1817,7 @@ namespace HoudiniEngineUnity
 	/// <returns>True if asset requires a recook.</returns>
 	public bool DoesAssetRequireRecook()
 	{
-	    if (_parameters.RequiresRegeneration || _parameters.HaveParametersChanged() || _parameters.HasModifiersPending())
+	    if (_parameters == null || _parameters.RequiresRegeneration || _parameters.HaveParametersChanged() || _parameters.HasModifiersPending())
 	    {
 		return true;
 	    }
@@ -4596,7 +4601,8 @@ namespace HoudiniEngineUnity
 	    HEU_SessionBase session = GetAssetSession(true);
 
 	    // Set parameter preset for asset
-	    newAsset.Parameters.SetPresetData(_parameters.GetPresetData());
+	    if (newAsset.Parameters != null && _parameters != null)
+		newAsset.Parameters.SetPresetData(_parameters.GetPresetData());
 
 	    // Set parameter preset for curves
 	    // The curve names for the new asset might be different than that of the old one for reasons

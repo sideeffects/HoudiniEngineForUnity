@@ -320,11 +320,17 @@ namespace HoudiniEngineUnity
 		    if (GUILayout.Button("Create"))
 		    {
 			//HEU_Logger.Log("Shelf name: " + _shelfName);
-			HEU_ShelfTools.AddShelf(_shelfName, _shelfPath);
-			HEU_ShelfTools.SaveShelf();
-			HEU_ShelfTools.SetReloadShelves();
-
-			this.Close();
+			HEU_Shelf newShelf = HEU_ShelfTools.AddShelf(_shelfName, _shelfPath);
+			if (newShelf != null)
+			{
+			    HEU_ShelfTools.SaveShelf();
+			    HEU_ShelfTools.SetReloadShelves();
+			    this.Close();
+			}
+			else
+			{
+			    HEU_Logger.LogError("Invalid Shelf! Please check if the name or path is valid.");
+			}
 		    }
 		}
 

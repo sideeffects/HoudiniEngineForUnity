@@ -33,7 +33,7 @@ namespace HoudiniEngineUnity
 {
     class HEU_SelectionWindow : EditorWindow
     {
-	public static void ShowWindow(SelectionResultHandler selectionHandler, System.Type selectionType)
+	public static void ShowWindow(SelectionResultHandler selectionHandler, System.Type selectionType, HEU_InputNode inputNode = null)
 	{
 	    bool bUtility = false;
 	    bool bFocus = true;
@@ -41,6 +41,7 @@ namespace HoudiniEngineUnity
 
 	    HEU_SelectionWindow window = EditorWindow.GetWindow<HEU_SelectionWindow>(bUtility, title, bFocus);
 	    window.autoRepaintOnSceneChange = true;
+	    window._inputNode = inputNode;
 	    window._selectionHandler = selectionHandler;
 	    window._selectionType = selectionType;
 	}
@@ -190,7 +191,7 @@ namespace HoudiniEngineUnity
 
 			if (selectedGOs.Count > 0)
 			{
-			    _selectionHandler(selectedGOs.ToArray());
+			    _selectionHandler(selectedGOs.ToArray(), _inputNode);
 			}
 		    }
 
@@ -393,9 +394,11 @@ namespace HoudiniEngineUnity
 
 	private Vector2 _scrollViewPos = Vector2.zero;
 
-	public delegate void SelectionResultHandler(GameObject[] selectedObjects);
+	public delegate void SelectionResultHandler(GameObject[] selectedObjects, HEU_InputNode inputNode);
 
 	private SelectionResultHandler _selectionHandler;
+
+	private HEU_InputNode _inputNode;
 
 	private System.Type _selectionType = typeof(GameObject);
 

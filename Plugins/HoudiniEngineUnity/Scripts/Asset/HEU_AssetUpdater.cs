@@ -186,11 +186,12 @@ namespace HoudiniEngineUnity
 				"Prefab: " + prefabPath;
 
 		heu_root._houdiniAsset.WarnedPrefabNotSupported = true;
-		if (HEU_EditorUtility.DisplayDialog(title, message, "Remove Prefab & Revert", "Keep Prefab"))
+		if (HEU_EditorUtility.DisplayDialog(title, message, "Remove Prefab && Revert", "Keep Prefab"))
 		{
 		    HEU_EditorUtility.DisconnectPrefabInstance(instance);
-
 		    HEU_AssetDatabase.DeleteAssetAtPath(prefabPath);
+
+		    HEU_AssetDatabase.SaveAndRefreshDatabase();
 		}
 	    }
 #endif

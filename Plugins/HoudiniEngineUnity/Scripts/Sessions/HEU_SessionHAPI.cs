@@ -671,15 +671,17 @@ namespace HoudiniEngineUnity
 	{
 	    HAPI_SessionType sessionType = HAPI_SessionType.HAPI_SESSION_THRIFT;
 	    int processID = -1;
+	    int port = -1;
 	    if (IsSessionValid())
 	    {
 		sessionType = _sessionData.SessionType;
 		processID = _sessionData.ProcessID;
+		port = _sessionData.Port;
 
 		CheckAndCloseExistingSession();
 	    }
 
-	    if (sessionType == HAPI_SessionType.HAPI_SESSION_THRIFT && processID > 0)
+	    if (sessionType == HAPI_SessionType.HAPI_SESSION_THRIFT && processID > 0 && port > 0)
 	    {
 		return CreateThriftSocketSession(true, HEU_PluginSettings.Session_Localhost, HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
 	    }
