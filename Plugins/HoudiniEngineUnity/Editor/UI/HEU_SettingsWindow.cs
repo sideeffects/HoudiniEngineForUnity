@@ -389,6 +389,17 @@ namespace HoudiniEngineUnity
 	    }
 	    HEU_EditorUI.DrawSeparator();
 	    {
+		bool oldValue = HEU_PluginSettings.CookDisabledGameObjects;
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Cook Disabled GameObjects");
+		if (newValue != oldValue)
+		{
+		    HEU_PluginSettings.CookDisabledGameObjects = newValue;
+		    bChanged = true;
+		}
+	    }
+
+	    HEU_EditorUI.DrawSeparator();
+	    {
 		bool oldValue = HEU_PluginSettings.PushUnityTransformToHoudini;
 		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Push Unity Transform To Houdini");
 		if (newValue != oldValue)

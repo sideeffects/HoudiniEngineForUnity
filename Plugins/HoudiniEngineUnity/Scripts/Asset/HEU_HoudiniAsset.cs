@@ -792,6 +792,12 @@ namespace HoudiniEngineUnity
 	public void RequestReload(bool bAsync)
 	{
 #if HOUDINIENGINEUNITY_ENABLED
+	    if (!HEU_PluginSettings.CookDisabledGameObjects && !this.gameObject.activeInHierarchy)
+	    {
+		HEU_Logger.LogWarning("Houdini Asset: " + this.RootGameObject.name + " Skipped cooking due to being disabled. Enable and recook manually to resync!");
+		return;
+	    }
+
 	    if (bAsync)
 	    {
 		_requestBuildAction = AssetBuildAction.RELOAD;
@@ -817,6 +823,12 @@ namespace HoudiniEngineUnity
 	{
 #if HOUDINIENGINEUNITY_ENABLED
 	    //HEU_Logger.Log(HEU_Defines.HEU_NAME + ": Requesting Cook");
+
+	    if (!HEU_PluginSettings.CookDisabledGameObjects && !this.gameObject.activeInHierarchy)
+	    {
+		HEU_Logger.LogWarning("Houdini Asset: " + this.RootGameObject.name + " Skipped cooking due to being disabled. Enable and recook manually to resync!");
+		return;
+	    }
 
 	    if (bAsync)
 	    {
@@ -1229,6 +1241,12 @@ namespace HoudiniEngineUnity
 	    _cookStartTime = Time.realtimeSinceStartup;
 #endif
 
+	    if (!HEU_PluginSettings.CookDisabledGameObjects && !this.gameObject.activeInHierarchy)
+	    {
+		HEU_Logger.LogWarning("Houdini Asset: " + this.RootGameObject.name + " Skipped cooking due to being disabled. Enable and recook manually to resync!");
+		return false;
+	    }
+
 	    bool bStarted = false;
 
 	    try
@@ -1354,6 +1372,11 @@ namespace HoudiniEngineUnity
 	    bool bUploadParameterPreset, bool bForceUploadInputs,
 	    bool bCookingSessionSync)
 	{
+	    if (!HEU_PluginSettings.CookDisabledGameObjects && !this.gameObject.activeInHierarchy)
+	    {
+		HEU_Logger.LogWarning("Houdini Asset: " + this.RootGameObject.name + " Skipped cooking due to being disabled. Enable and recook manually to resync!");
+		return false;
+	    }
 
 	    if (_preAssetEvent != null)
 	    {
