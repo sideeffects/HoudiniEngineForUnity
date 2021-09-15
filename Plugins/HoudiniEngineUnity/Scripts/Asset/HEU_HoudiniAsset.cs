@@ -147,6 +147,9 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private Matrix4x4 _lastSyncedTransformMatrix;
 
+	[SerializeField]
+	private List<Matrix4x4> _lastSyncedChildTransformMatrices;
+
 	// Location of this asset's cache folder for storing persistant data
 	[SerializeField]
 	private string _assetCacheFolderPath;
@@ -3312,6 +3315,7 @@ namespace HoudiniEngineUnity
 
 		// Save last sync'd transform
 		_lastSyncedTransformMatrix = _rootGameObject.transform.localToWorldMatrix;
+		SyncChildTransforms();
 	    }
 	}
 
@@ -3339,7 +3343,7 @@ namespace HoudiniEngineUnity
 
 		if (bOnlySendIfChangedFromLastSync)
 		{
-		    if (_lastSyncedTransformMatrix == transformMatrix)
+		    if (!HasTransformChangedSinceLastUpdate())
 		    {
 			return;
 		    }
@@ -3353,6 +3357,7 @@ namespace HoudiniEngineUnity
 		else
 		{
 		    _lastSyncedTransformMatrix = transformMatrix;
+		    SyncChildTransforms();
 		}
 
 		// Not updating parameters after setting object transform as that is
@@ -3515,7 +3520,33 @@ namespace HoudiniEngineUnity
 	/// <returns>True if transform has changed since last upload</returns>
 	public bool HasTransformChangedSinceLastUpdate()
 	{
-	    return (_lastSyncedTransformMatrix != transform.localToWorldMatrix);
+	    if (_lastSyncedTransformMatrix != _rootGameObject.transform.localToWorldMatrix)
+	    {
+		return true;
+	    }
+
+	    bool recursive = HEU_PluginSettings.ChildTransformChangeTriggersCooks;
+
+	    if (recursive && _lastSyncedChildTransformMatrices != null)
+	    {
+		List<Matrix4x4> curTransformValues = new List<Matrix4x4>();
+		HEU_InputUtility.GetChildrenTransforms(_rootGameObject.transform, ref curTransformValues);
+
+		if (_lastSyncedChildTransformMatrices.Count != curTransformValues.Count)
+		{
+		    return true;
+		}
+
+		for (int i = 0; i < curTransformValues.Count; i++)
+		{
+		    if (_lastSyncedChildTransformMatrices[i] != curTransformValues[i])
+		    {
+			return true;
+		    }
+		}
+	    }
+
+	    return false;
 	}
 
 	public void GetClonableParts(List<HEU_PartData> clonableParts)
@@ -4843,6 +4874,17 @@ namespace HoudiniEngineUnity
 		}
 	    }
 	    
+	}
+
+	private void SyncChildTransforms()
+	{
+	    if (_lastSyncedChildTransformMatrices == null)
+	    {
+		_lastSyncedChildTransformMatrices = new List<Matrix4x4>();
+	    }
+
+	    _lastSyncedChildTransformMatrices.Clear();
+	    HEU_InputUtility.GetChildrenTransforms(_rootGameObject.transform, ref _lastSyncedChildTransformMatrices);
 	}
 
 	// Equivalence function (Mostly for testing purposes) =======================================================================

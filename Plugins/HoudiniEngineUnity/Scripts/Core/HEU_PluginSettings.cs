@@ -136,6 +136,20 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static bool ChildTransformChangeTriggersCooks
+	{
+	    get
+	    {
+		bool bValue = true;
+		HEU_PluginStorage.Instance.Get("HAPI_ChildTransformChangeTriggersCooks", out bValue, bValue);
+		return bValue;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_ChildTransformChangeTriggersCooks", value);
+	    }
+	}
+
 	public static string CollisionGroupName
 	{
 	    get
