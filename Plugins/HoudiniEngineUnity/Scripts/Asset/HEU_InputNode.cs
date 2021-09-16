@@ -183,6 +183,10 @@ namespace HoudiniEngineUnity
 	private HEU_InputInterfaceTilemapSettings _tilemapSettings = new HEU_InputInterfaceTilemapSettings();
 	public HEU_InputInterfaceTilemapSettings TilemapSettings { get { return  _tilemapSettings; }}
 
+	// Field used in UI only.
+	[SerializeField]
+	private bool _usingSelectFromHierarchy = false;
+	public bool IsUsingSelectFromHierarchy { get { return _usingSelectFromHierarchy; } set { _usingSelectFromHierarchy = value; }}
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
 	public static HEU_InputNode CreateSetupInput(HAPI_NodeId nodeID, int inputIndex, string inputName, string labelName, InputNodeType inputNodeType, HEU_HoudiniAsset parentAsset)
@@ -219,6 +223,7 @@ namespace HoudiniEngineUnity
 	    for (int i = 0; i < _inputObjects.Count; ++i)
 	    {
 		_inputObjects[i]._syncdTransform = Matrix4x4.identity;
+		_inputObjects[i]._syncdChildTransforms.Clear();
 	    }
 	}
 
@@ -796,6 +801,8 @@ namespace HoudiniEngineUnity
 
 	public bool HasInputNodeTransformChanged()
 	{
+	    bool recursive = HEU_PluginSettings.ChildTransformChangeTriggersCooks;
+
 	    // Only need to check Mesh inputs, since HDA inputs don't upload transform
 	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
@@ -813,6 +820,26 @@ namespace HoudiniEngineUnity
 			else if (_inputObjects[i]._gameObject.transform.localToWorldMatrix != _inputObjects[i]._syncdTransform)
 			{
 			    return true;
+			}
+		    }
+
+		    if (recursive)
+		    {
+			List<Matrix4x4> curMatrixTransforms = new List<Matrix4x4>();
+			HEU_InputUtility.GetChildrenTransforms(_inputObjects[i]._gameObject.transform, ref curMatrixTransforms);
+
+			if (curMatrixTransforms.Count != _inputObjects[i]._syncdChildTransforms.Count)
+			{
+			    return true;
+			}
+
+			int length = curMatrixTransforms.Count;
+			for (int j = 0; j < length; j++)
+			{
+			    if (curMatrixTransforms[j] != _inputObjects[j]._syncdChildTransforms[j])
+			    {
+				return true;
+			    }
 			}
 		    }
 		}
@@ -1225,6 +1252,7 @@ namespace HoudiniEngineUnity
 
 	// The last upload transform, for diff checks
 	public Matrix4x4 _syncdTransform = Matrix4x4.identity;
+	public List<Matrix4x4> _syncdChildTransforms = new List<Matrix4x4>();
 
 	// Whether to use the transform offset
 	[FormerlySerializedAs("_useTransformOverride")]

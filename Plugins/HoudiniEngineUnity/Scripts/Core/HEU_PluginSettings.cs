@@ -80,6 +80,20 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static bool CookDisabledGameObjects
+	{
+	    get
+	    {
+		bool bValue = true;
+		HEU_PluginStorage.Instance.Get("HAPI_CookDisabledGameObjects", out bValue, bValue);
+		return bValue;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_CookDisabledGameObjects", value);
+	    }
+	}
+
 	public static bool CookTemplatedGeos
 	{
 	    get
@@ -119,6 +133,20 @@ namespace HoudiniEngineUnity
 	    set
 	    {
 		HEU_PluginStorage.Instance.Set("HAPI_TransformChangeTriggersCooks", value);
+	    }
+	}
+
+	public static bool ChildTransformChangeTriggersCooks
+	{
+	    get
+	    {
+		bool bValue = true;
+		HEU_PluginStorage.Instance.Get("HAPI_ChildTransformChangeTriggersCooks", out bValue, bValue);
+		return bValue;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_ChildTransformChangeTriggersCooks", value);
 	    }
 	}
 
