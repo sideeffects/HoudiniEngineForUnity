@@ -185,6 +185,10 @@ namespace HoudiniEngineUnity
 	private HEU_InputInterfaceTilemapSettings _tilemapSettings = new HEU_InputInterfaceTilemapSettings();
 	public HEU_InputInterfaceTilemapSettings TilemapSettings { get { return  _tilemapSettings; }}
 
+	// Field used in UI only.
+	[SerializeField]
+	private bool _usingSelectFromHierarchy = false;
+	public bool IsUsingSelectFromHierarchy { get { return _usingSelectFromHierarchy; } set { _usingSelectFromHierarchy = value; }}
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
 	public static HEU_InputNode CreateSetupInput(HAPI_NodeId nodeID, int inputIndex, string inputName, string labelName, InputNodeType inputNodeType, HEU_HoudiniAsset parentAsset)
