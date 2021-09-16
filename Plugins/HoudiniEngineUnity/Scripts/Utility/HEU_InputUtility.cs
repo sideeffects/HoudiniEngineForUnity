@@ -346,9 +346,29 @@ namespace HoudiniEngineUnity
 	    if (session.SetObjectTransform(inputNodeInfo.parentId, ref transformEuler))
 	    {
 		inputObject._syncdTransform = inputTransform;
+
+		inputObject._syncdChildTransforms.Clear();
+
+		GetChildrenTransforms(inputObject._gameObject.transform, ref inputObject._syncdChildTransforms);
 	    }
 
 	    return true;
+	}
+
+	// Get the child transform using DFS.
+	public static void GetChildrenTransforms(Transform transform, ref List<Matrix4x4> childTransforms)
+	{
+	    if (transform == null || transform.childCount == 0 || childTransforms == null)
+	    {
+		return;
+	    }
+
+	    for (int i = 0; i < transform.childCount; i++)
+	    {
+		Transform childTransform = transform.GetChild(i);
+		childTransforms.Add(childTransform.localToWorldMatrix);
+		GetChildrenTransforms(childTransform, ref childTransforms);
+	    }
 	}
     }
 

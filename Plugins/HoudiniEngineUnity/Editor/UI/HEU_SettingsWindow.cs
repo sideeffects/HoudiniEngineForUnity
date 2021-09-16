@@ -370,7 +370,9 @@ namespace HoudiniEngineUnity
 
 	    {
 		bool oldValue = HEU_PluginSettings.CookingEnabled;
-		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Enable Cooking");
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue,
+		    "Enable Cooking",
+		    "If disabled, all cooking will stop.");
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.CookingEnabled = newValue;
@@ -380,7 +382,9 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUI.DrawSeparator();
 	    {
 		bool oldValue = HEU_PluginSettings.CookingTriggersDownstreamCooks;
-		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Cooking Triggers Downstream Cooks");
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, 
+		    "Cooking Triggers Downstream Cooks",
+		    "If enabled, modifying a parent HDA will also trigger cooks to other HDAs linked downstrema.");
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.CookingTriggersDownstreamCooks = newValue;
@@ -389,8 +393,23 @@ namespace HoudiniEngineUnity
 	    }
 	    HEU_EditorUI.DrawSeparator();
 	    {
+		bool oldValue = HEU_PluginSettings.CookDisabledGameObjects;
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, 
+		    "Cook Disabled GameObjects",
+		    "If enabled, disabled GameObjects will not be cooked, as if the Enable Cooking option were set to true.");
+		if (newValue != oldValue)
+		{
+		    HEU_PluginSettings.CookDisabledGameObjects = newValue;
+		    bChanged = true;
+		}
+	    }
+
+	    HEU_EditorUI.DrawSeparator();
+	    {
 		bool oldValue = HEU_PluginSettings.PushUnityTransformToHoudini;
-		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Push Unity Transform To Houdini");
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, 
+		    "Push Unity Transform To Houdini",
+		    "If enabled, pushes the Unity Transform value to Houdini. This is useful if you want to do something like Houdini SessionSync.");
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.PushUnityTransformToHoudini = newValue;
@@ -400,13 +419,30 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUI.DrawSeparator();
 	    {
 		bool oldValue = HEU_PluginSettings.TransformChangeTriggersCooks;
-		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Transform Change Triggers Cooks");
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, 
+		    "Transform Change Triggers Cooks",
+		    "When activated, changing the transform of the HEU_HoudiniAsset object or an input node will trigger a cook.");
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.TransformChangeTriggersCooks = newValue;
 		    bChanged = true;
 		}
 	    }
+
+	    HEU_EditorUI.DrawSeparator();
+	    using (new EditorGUI.DisabledScope(!HEU_PluginSettings.TransformChangeTriggersCooks))
+	    {
+		bool oldValue = HEU_PluginSettings.ChildTransformChangeTriggersCooks;
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, 
+		    "Child Transform Change Triggers Cooks", 
+		    "When activated, transform changes on children will also trigger cooks. Only valid if TransformChangeTriggersCook is enabled.");
+		if (newValue != oldValue)
+		{
+		    HEU_PluginSettings.ChildTransformChangeTriggersCooks = newValue;
+		    bChanged = true;
+		}
+	    }
+
 	    HEU_EditorUI.DrawSeparator();
 	    {
 		bool oldValue = HEU_PluginSettings.CookTemplatedGeos;
@@ -451,7 +487,9 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUI.DrawSeparator();
 	    {
 		bool oldValue = HEU_PluginSettings.WriteCookLogs;
-		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Write Cook Logs");
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue,
+		    "Write Cook Logs",
+		    "If enabled, writes cook logs to the cook logs window. Useful for diagnosing issues, but may decrease performance");
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.WriteCookLogs = newValue;
@@ -462,7 +500,9 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUI.DrawSeparator();
 	    {
 		bool oldValue = HEU_PluginSettings.UseHDRColor;
-		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Use HDR Color");
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue,
+		    "Use HDR Color",
+		    "If enabled, uses HDR Color. Otherwise, uses the regular color picker.");
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.UseHDRColor = newValue;
@@ -473,7 +513,9 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUI.DrawSeparator();
 	    {
 		bool oldValue = HEU_PluginSettings.UseLegacyInputCurves;
-		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, "Use Legacy Input Curves", "Uses the old curve::1.0 node instead of HAPI curves.");
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, 
+		    "Use Legacy Input Curves",
+		    "Uses the old curve::1.0 node instead of HAPI curves.");
 		if (newValue != oldValue)
 		{
 		    HEU_PluginSettings.UseLegacyInputCurves = newValue;
