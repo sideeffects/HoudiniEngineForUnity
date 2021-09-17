@@ -248,7 +248,11 @@ namespace HoudiniEngineUnity
 #if UNITY_2018_3_OR_NEWER
 	    // Set to default Unity values
 	    DetailPrototype proto = new DetailPrototype();
+#if UNITY_2020_2_OR_NEWER
+	    // _bendFactor is deprecated
+#else
 	    _bendFactor = proto.bendFactor;
+#endif
 	    _dryColor = proto.dryColor;
 	    _healthyColor = proto.healthyColor;
 	    _maxHeight = proto.maxHeight;
