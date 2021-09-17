@@ -283,7 +283,7 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 				    EditorGUI.indentLevel++;
 				    using (var vs4 = new EditorGUILayout.VerticalScope())
 				    {
-					if (i < inputNode._uiCache._inputObjectCache.Count)
+					if (i < inputNode._uiCache._inputObjectCache.Count && i < inputNode.InputObjects.Count)
 					{
 					    HEU_InputNodeUICache.HEU_InputObjectUICache objectCache = inputNode._uiCache._inputObjectCache[i];
 					    GameObject oldObject = inputNode.InputObjects[i]._gameObject;
