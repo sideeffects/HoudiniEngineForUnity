@@ -1190,7 +1190,12 @@ namespace HoudiniEngineUnity
 		    detailPrototype.usePrototypeMesh = false;
 		}
 
+#if UNITY_2020_2_OR_NEWER
+		// _bendFactor is deprecated
+#else
 		detailPrototype.bendFactor = heuDetail._bendFactor;
+#endif
+
 		detailPrototype.dryColor = heuDetail._dryColor;
 		detailPrototype.healthyColor = heuDetail._healthyColor;
 		detailPrototype.maxHeight = heuDetail._maxHeight;
