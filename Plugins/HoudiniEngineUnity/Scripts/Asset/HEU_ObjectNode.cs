@@ -271,6 +271,11 @@ namespace HoudiniEngineUnity
 	/// <returns>True if internal state has changed (including geometry).</returns>
 	public void UpdateObject(HEU_SessionBase session, bool bForceUpdate)
 	{
+	    if (ParentAsset == null)
+	    {
+		return;
+	    }
+
 	    // Update the geo info
 	    if (!session.GetObjectInfo(ObjectID, ref _objectInfo))
 	    {
@@ -466,6 +471,10 @@ namespace HoudiniEngineUnity
 	    List<HEU_PartData> partsToDestroy = new List<HEU_PartData>();
 
 	    HEU_HoudiniAsset parentAsset = ParentAsset;
+	    if (parentAsset == null)
+	    {
+		return;
+	    }
 
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
@@ -673,6 +682,11 @@ namespace HoudiniEngineUnity
 	/// <param name="session">Active session to use</param>
 	public void GenerateObjectInstances(HEU_SessionBase session)
 	{
+	    if (ParentAsset == null)
+	    {
+		return;
+	    }
+	    
 	    if (!IsInstancer())
 	    {
 		HEU_Logger.LogErrorFormat("Generate object instances called on a non-instancer object {0} for asset {1}!", ObjectName, ParentAsset.AssetName);
