@@ -65,6 +65,7 @@ namespace HoudiniEngineUnity
 	    _ownerSync = ownerSync;
 	    _session = session;
 	    _name = name;
+	    _assetCachePath = GetValidAssetCacheFolderPath(_name);
 
 	    _generateOptions = _ownerSync._generateOptions;
 
@@ -307,7 +308,7 @@ namespace HoudiniEngineUnity
 
 	    // Create Unity mesh buffers
 	    if (!GenerateMeshBuffers(_session, nodeID, meshParts, _generateOptions._splitPoints, _generateOptions._useLODGroups,
-				_generateOptions._generateUVs, _generateOptions._generateTangents, _generateOptions._generateNormals,
+				_generateOptions._generateUVs, _generateOptions._generateTangents, _generateOptions._generateNormals, loadObject,
 				out loadObject._meshBuffers))
 	    {
 		AppendLog(HEU_LoadData.LoadStatus.ERROR, string.Format("Unable to generate mesh data from parts."));
@@ -1012,7 +1013,7 @@ namespace HoudiniEngineUnity
 	
 
 	public bool GenerateMeshBuffers(HEU_SessionBase session, HAPI_NodeId nodeID, List<HAPI_PartInfo> meshParts,
-		bool bSplitPoints, bool bUseLODGroups, bool bGenerateUVs, bool bGenerateTangents, bool bGenerateNormals,
+		bool bSplitPoints, bool bUseLODGroups, bool bGenerateUVs, bool bGenerateTangents, bool bGenerateNormals, HEU_LoadObject loadObject,
 		out List<HEU_LoadBufferMesh> meshBuffers)
 	{
 	    meshBuffers = null;
@@ -1022,7 +1023,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    bool bSuccess = true;
-	    string assetCacheFolderPath = "";
+	    string assetCacheFolderPath = _assetCachePath;
 
 	    meshBuffers = new List<HEU_LoadBufferMesh>();
 
@@ -1037,7 +1038,9 @@ namespace HoudiniEngineUnity
 		{
 		    List<HEU_MaterialData> materialCache = new List<HEU_MaterialData>();
 
-		    HEU_GenerateGeoCache geoCache = HEU_GenerateGeoCache.GetPopulatedGeoCache(session, -1, geoID, partID, bUseLODGroups,
+		    int assetId = loadObject != null ? loadObject._displayNodeID : -1;
+
+		    HEU_GenerateGeoCache geoCache = HEU_GenerateGeoCache.GetPopulatedGeoCache(session, assetId, geoID, partID, bUseLODGroups,
 			    materialCache, assetCacheFolderPath);
 		    if (geoCache == null)
 		    {
@@ -1277,6 +1280,11 @@ namespace HoudiniEngineUnity
 	    return null;
 	}
 
+	public static string GetValidAssetCacheFolderPath(string name)
+	{
+	    return HEU_AssetDatabase.CreateAssetCacheFolder(name);
+	}
+
 	#endregion
 
 	#endregion
@@ -1288,6 +1296,8 @@ namespace HoudiniEngineUnity
 	private HEU_SessionBase _session;
 
 	private HEU_GenerateOptions _generateOptions;
+
+	protected string _assetCachePath = "";
 
 	// Load
 	public enum LoadType
