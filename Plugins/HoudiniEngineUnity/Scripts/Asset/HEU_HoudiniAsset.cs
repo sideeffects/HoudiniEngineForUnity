@@ -1282,9 +1282,22 @@ namespace HoudiniEngineUnity
 	private void DoPostCookWork(HEU_SessionBase session)
 	{
 	    UpdateTotalCookCount();
+	    bool bNeedsRebuild = false;
+
 	    foreach (HEU_ObjectNode objNode in _objectNodes)
 	    {
+		if (objNode == null)
+		{
+		    bNeedsRebuild = true;
+		    continue;
+		}
+
 		objNode.ProcessUnityScriptAttributes(session);
+	    }
+
+	    if (bNeedsRebuild)
+	    {
+		_objectNodes = _objectNodes.Filter(obj => obj != null);
 	    }
 
 	    // Update the Editor UI
@@ -1851,6 +1864,9 @@ namespace HoudiniEngineUnity
 	    // Check curves
 	    foreach (HEU_Curve curve in _curves)
 	    {
+		if (_curves == null)
+		    continue;
+		
 		if (curve.Parameters.HaveParametersChanged())
 		{
 		    return true;
@@ -1859,6 +1875,9 @@ namespace HoudiniEngineUnity
 
 	    foreach (HEU_InputNode inputNode in _inputNodes)
 	    {
+		if (_inputNodes == null)
+		    continue;
+		
 		if (inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER && (inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged()))
 		{
 		    return true;
@@ -1867,6 +1886,9 @@ namespace HoudiniEngineUnity
 
 	    foreach (HEU_VolumeCache volume in _volumeCaches)
 	    {
+		if (volume == null)
+		    continue;
+		
 		if (volume.IsDirty)
 		{
 		    return true;
@@ -2336,8 +2358,15 @@ namespace HoudiniEngineUnity
 
 	private void UploadCurvesParameters(HEU_SessionBase session, bool bCheckParamsChanged)
 	{
+	    bool bNeedsRebuild = false;
 	    foreach (HEU_Curve curve in _curves)
 	    {
+		if (curve == null)
+		{
+		    bNeedsRebuild = true;
+		    continue;
+		}
+
 		if (curve.IsEditable())
 		{
 		    curve.OnPresyncParameters(session, this);
@@ -2348,17 +2377,36 @@ namespace HoudiniEngineUnity
 		    }
 		}
 	    }
+
+	    if (bNeedsRebuild)
+	    {
+		_curves = _curves.Filter(curve => curve != null);
+	    }
 	}
 
 	private void UploadAttributeValues(HEU_SessionBase session)
 	{
+	    // Rebuild for undo safety in UI:
+	    bool bNeedsRebuild = false;
+
 	    for (int i = _attributeStores.Count - 1; i >= 0; i--)
 	    {
 		HEU_AttributesStore attributeStore = _attributeStores[i];
+		if (attributeStore == null)
+		{
+		    bNeedsRebuild = true;
+		    continue;
+		}
+
 		if (!attributeStore.IsValidStore(session))
 		{
 		    RemoveAttributeStore(attributeStore);
 		}
+	    }
+
+	    if (bNeedsRebuild)
+	    {
+		_attributeStores = _attributeStores.Filter(store => store != null);
 	    }
 
 	    // Normally only the attribute stores that are dirty will be uploaded to Houdini.
@@ -2426,6 +2474,11 @@ namespace HoudiniEngineUnity
 	{
 	    foreach (HEU_InputNode inputNode in _inputNodes)
 	    {
+		if (inputNode == null)
+		{
+		    continue;
+		}
+
 		// Upload all but parameter types, as those are taken care of in the parameter update
 		if ((inputNode.InputType != HEU_InputNode.InputNodeType.PARAMETER || bUpdateAll)
 			&& (bForceUpdate || inputNode.RequiresUpload || inputNode.HasInputNodeTransformChanged())
@@ -2445,6 +2498,9 @@ namespace HoudiniEngineUnity
 	{
 	    foreach (HEU_InputNode inputNode in _inputNodes)
 	    {
+		if (inputNode == null)
+		    return true;
+		
 		if (inputNode.HasInputNodeTransformChanged())
 		{
 		    return true;
@@ -2640,6 +2696,9 @@ namespace HoudiniEngineUnity
 	    // Clear part instances, to make sure that the object instances don't overwrite the part instances.
 	    foreach (HEU_ObjectNode objNode in _objectNodes)
 	    {
+		if (objNode == null)
+		    continue;
+		
 		if (objNode.IsInstancer())
 		{
 		    objNode.ClearObjectInstances(session);
@@ -2648,11 +2707,17 @@ namespace HoudiniEngineUnity
 
 	    foreach (HEU_ObjectNode objNode in _objectNodes)
 	    {
+		if (objNode == null)
+		    continue;
+		
 		objNode.GeneratePartInstances(session);
 	    }
 
 	    foreach (HEU_ObjectNode objNode in _objectNodes)
 	    {
+		if (objNode == null)
+		    continue;
+		
 		if (objNode.IsInstancer())
 		{
 		    objNode.GenerateObjectInstances(session);
@@ -3730,14 +3795,27 @@ namespace HoudiniEngineUnity
 
 	public List<HEU_InputNode> GetNonParameterInputNodes()
 	{
+	    // Helps rebuild - Needed to get some undo operations to not error
+	    bool bNeedsRebuild = false;
+
 	    List<HEU_InputNode> nodes = new List<HEU_InputNode>();
 	    foreach (HEU_InputNode node in _inputNodes)
 	    {
+		if (node == null)
+		{
+		    bNeedsRebuild = true;
+		    continue;
+		}
+		
 		if (node.InputType != HEU_InputNode.InputNodeType.PARAMETER)
 		{
 		    nodes.Add(node);
 		}
 	    }
+
+	    if (bNeedsRebuild)
+		_inputNodes = _inputNodes.Filter(node => node != null);
+
 	    return nodes;
 	}
 

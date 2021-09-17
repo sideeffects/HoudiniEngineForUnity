@@ -191,6 +191,7 @@ namespace HoudiniEngineUnity
 		    HEU_EditorUtility.DisconnectPrefabInstance(instance);
 		    HEU_AssetDatabase.DeleteAssetAtPath(prefabPath);
 
+		    // Doesn't actually refresh properly, but should be fixed in 2021.2 and 2022.1 
 		    HEU_AssetDatabase.SaveAndRefreshDatabase();
 		}
 	    }

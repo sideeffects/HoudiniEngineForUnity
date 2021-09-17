@@ -217,6 +217,11 @@ namespace HoudiniEngineUnity
 	    List<HEU_PartData> oldParts = new List<HEU_PartData>(_parts);
 	    _parts.Clear();
 
+	    if (ParentAsset == null)
+	    {
+		return;
+	    }
+
 	    try
 	    {
 		if (!_geoInfo.isDisplayGeo && !ParentAsset.UseOutputNodes)
@@ -337,6 +342,11 @@ namespace HoudiniEngineUnity
 	private void ProcessPart(HEU_SessionBase session, int partID, ref HAPI_PartInfo partInfo, ref HEU_PartData partData)
 	{
 	    HEU_HoudiniAsset parentAsset = ParentAsset;
+	    if (parentAsset == null)
+	    {
+		return;
+	    }
+
 	    bool bResult = true;
 	    //HEU_Logger.LogFormat("Part: name={0}, id={1}, type={2}, instanced={3}, instance count={4}, instance part count={5}", HEU_SessionManager.GetString(partInfo.nameSH, session), partID, partInfo.type, partInfo.isInstanced, partInfo.instanceCount, partInfo.instancedPartCount);
 
@@ -523,6 +533,12 @@ namespace HoudiniEngineUnity
 
 	private void SetupGameObjectAndTransform(HEU_PartData partData, HEU_HoudiniAsset parentAsset)
 	{
+	    // Checking for nulls for undo safety
+	    if (partData == null || parentAsset == null || parentAsset.OwnerGameObject == null || parentAsset.RootGameObject == null)
+	    {
+		return;
+	    }
+
 	    // Set a valid gameobject for this part
 	    if (partData.OutputGameObject == null)
 	    {
@@ -600,6 +616,10 @@ namespace HoudiniEngineUnity
 	private void ProcessGeoCurve(HEU_SessionBase session)
 	{
 	    HEU_HoudiniAsset parentAsset = ParentAsset;
+	    if (parentAsset == null)
+	    {
+		return;
+	    }
 
 	    string curveName = GenerateGeoCurveName();
 	    curveName = HEU_EditorUtility.GetUniqueNameForSibling(ParentAsset.RootGameObject.transform, curveName);
@@ -642,6 +662,11 @@ namespace HoudiniEngineUnity
 
 	private void SetupGeoCurveGameObjectAndTransform(HEU_Curve curve)
 	{
+	    if (ParentAsset == null)
+	    {
+		return;
+	    }
+
 	    if (curve._targetGameObject == null)
 	    {
 		curve._targetGameObject = new GameObject();
@@ -955,6 +980,11 @@ namespace HoudiniEngineUnity
 
 	public void ProcessVolumeParts(HEU_SessionBase session, List<HEU_PartData> volumeParts, bool bRebuild)
 	{
+	    if (ParentAsset == null)
+	    {
+		return;
+	    }
+
 	    int numVolumeParts = volumeParts.Count;
 	    if (numVolumeParts == 0)
 	    {
@@ -1065,7 +1095,8 @@ namespace HoudiniEngineUnity
 		{
 		    if (_volumeCaches[i] != null)
 		    {
-			ParentAsset.RemoveVolumeCache(_volumeCaches[i]);
+			if (ParentAsset)
+			    ParentAsset.RemoveVolumeCache(_volumeCaches[i]);
 			HEU_GeneralUtility.DestroyImmediate(_volumeCaches[i]);
 			_volumeCaches[i] = null;
 		    }

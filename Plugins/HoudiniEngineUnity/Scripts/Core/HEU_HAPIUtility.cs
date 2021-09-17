@@ -726,8 +726,10 @@ namespace HoudiniEngineUnity
 	public static GameObject LoadGeoWithNewGeoSync(HEU_SessionBase session = null)
 	{
 #if UNITY_EDITOR
-	    string filePattern = "bgeo,bgeo.sc";
+	    // Note: sc is necessary on Mac because they are not allowed to have two or more dots in the extension..
+	    string filePattern = "bgeo,bgeo.sc,sc";
 	    string filePath = EditorUtility.OpenFilePanel("Select Geo File To Load", "", filePattern);
+
 	    if (string.IsNullOrEmpty(filePath))
 	    {
 		return null;
