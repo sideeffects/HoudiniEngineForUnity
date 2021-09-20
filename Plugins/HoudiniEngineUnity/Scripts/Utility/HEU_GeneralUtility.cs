@@ -1339,7 +1339,8 @@ namespace HoudiniEngineUnity
 	public static bool IsMouseOverRect(Camera camera, Vector2 mousePosition, ref Rect rect)
 	{
 	    mousePosition.y = camera.pixelHeight - mousePosition.y;
-	    return rect.Contains(mousePosition);
+	    Vector2 mouseNew = new Vector2(mousePosition.x / EditorGUIUtility.pixelsPerPoint, mousePosition.y / EditorGUIUtility.pixelsPerPoint);
+	    return rect.Contains(mouseNew);
 	}
 
 	/// <summary>
