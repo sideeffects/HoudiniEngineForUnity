@@ -317,6 +317,16 @@ namespace HoudiniEngineUnity
 	    return null;
 	}
 
+	public HEU_InputHDAInfo AddInputEntryAtEndHDA(GameObject newEntryGameObject)
+	{
+	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
+	    {
+		return InternalAddInputHDAAtEnd(newEntryGameObject);
+	    }
+
+	    return null;
+	}
+
 	public void RemoveAllInputEntries()
 	{
 	    _inputObjects.Clear();
