@@ -754,6 +754,8 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
+            SetServerEnvString(HEU_HAPIConstants.HAPI_ENV_CLIENT_NAME, "unity");
+
 	    sessionData.IsInitialized = true;
 	    ConnectionState = SessionConnectionState.CONNECTED;
 
