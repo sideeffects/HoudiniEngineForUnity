@@ -27,6 +27,15 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
+
 namespace HoudiniEngineUnity
 {
     /// <summary>
@@ -42,8 +51,6 @@ namespace HoudiniEngineUnity
 	public HEU_HoudiniAsset _houdiniAsset;
 
 	public List<GameObject> _bakeTargets = new List<GameObject>();
-
-
 
 	/// <summary>
 	/// Callback when asset is deleted. Removes assset from Houdini session if in Editor.
@@ -88,7 +95,7 @@ namespace HoudiniEngineUnity
 	/// Leaves this gameobject and its children including Unity-specific
 	/// components like geometry, materials, etc.
 	/// </summary>
-	public void RemoveHoudiniEngineAssetData()
+	internal void RemoveHoudiniEngineAssetData()
 	{
 	    HEU_EditorUtility.UndoRecordObject(this, "Clear References");
 	    // TODO: try Undo.RegisterCompleteObjectUndo or  RegisterFullObjectHierarchyUndo
@@ -110,18 +117,18 @@ namespace HoudiniEngineUnity
 	    HEU_EditorUtility.UndoCollapseCurrentGroup();
 	}
 
-	public void ClearHoudiniEngineReferences()
+	internal void ClearHoudiniEngineReferences()
 	{
 	    _houdiniAsset = null;
 	    _bakeTargets.Clear();
 	}
 
-	public static void DestroyRootComponent(HEU_HoudiniAssetRoot assetRoot)
+	internal static void DestroyRootComponent(HEU_HoudiniAssetRoot assetRoot)
 	{
 	    HEU_GeneralUtility.DestroyImmediate(assetRoot, bRegisterUndo: true);
 	}
 
-	void Reset()
+	internal void Reset()
 	{
 	    // Unity calls this to reset this component.
 	    // _houdiniAsset will be null since that is the default value.

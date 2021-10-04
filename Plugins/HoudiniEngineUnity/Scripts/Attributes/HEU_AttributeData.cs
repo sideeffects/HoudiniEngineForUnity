@@ -28,10 +28,19 @@
 using UnityEngine;
 using System.Collections;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
+
 namespace HoudiniEngineUnity
 {
     [System.Serializable]
-    public sealed class HEU_AttributeData : IEquivable<HEU_AttributeData>
+    internal sealed class HEU_AttributeData : IEquivable<HEU_AttributeData>
     {
 	public HAPI_AttributeInfo _attributeInfo;
 
@@ -63,7 +72,7 @@ namespace HoudiniEngineUnity
 	}
 	public AttributeState _attributeState;
 
-	public void CopyValuesTo(HEU_AttributeData destAttrData)
+	internal void CopyValuesTo(HEU_AttributeData destAttrData)
 	{
 	    if (this._intValues == null)
 	    {

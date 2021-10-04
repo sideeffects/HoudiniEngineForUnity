@@ -178,7 +178,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Always hook into asset UI callback. This could have got reset on code refresh.
-	    _houdiniAsset._refreshUIDelegate = RefreshUI;
+	    _houdiniAsset.RefreshUIDelegate = RefreshUI;
 
 	    serializedObject.Update();
 	    _houdiniAssetSerializedObject.Update();
@@ -214,7 +214,7 @@ namespace HoudiniEngineUnity
 			DrawTerrainSection(_houdiniAsset, _houdiniAssetSerializedObject);
 
 			// If this is a Curve asset, we don't need to draw parameters as its redundant
-			if (_houdiniAsset.AssetType != HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE)
+			if (_houdiniAsset.AssetTypeInternal != HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE)
 			{
 			    DrawParameters(_houdiniAsset.Parameters, ref _parameterEditor);
 			    HEU_EditorUI.DrawSeparator();
@@ -464,6 +464,7 @@ namespace HoudiniEngineUnity
 			    if (newPath != null && !string.IsNullOrEmpty(newPath))
 			    {
 				HEU_AssetPresetUtility.SaveAssetPresetToFile(asset, newPath);
+				
 			    }
 			}
 
@@ -908,7 +909,7 @@ namespace HoudiniEngineUnity
 		    showCurvesProperty.boolValue = HEU_EditorUI.DrawFoldOut(showCurvesProperty.boolValue, "CURVES");
 		    if (showCurvesProperty.boolValue)
 		    {
-			List<HEU_Curve> curves = asset.GetCurves();
+			List<HEU_Curve> curves = asset.Curves;
 
 			SerializedProperty curveEditorProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveEditorEnabled");
 			if (curveEditorProperty != null)
@@ -1016,7 +1017,7 @@ namespace HoudiniEngineUnity
 
 				for (int i = 0; i < curves.Count; ++i)
 				{
-				    curves[i].ProjectToColliders(asset, projectDir, maxDistance);
+				    curves[i].ProjectToCollidersInternal(asset, projectDir, maxDistance);
 				}
 			    }
 			}
@@ -1104,7 +1105,7 @@ namespace HoudiniEngineUnity
 			{
 			    if (asset.GetEditableCurveCount() > 0)
 			    {
-				HEU_Curve[] curvesArray = asset.GetCurves().ToArray();
+				HEU_Curve[] curvesArray = asset.Curves.ToArray();
 				Editor.CreateCachedEditor(curvesArray, null, ref _curveEditor);
 				(_curveEditor as HEU_CurveUI).RepaintCurves();
 
@@ -1179,7 +1180,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (asset.GetEditableCurveCount() > 0)
 		{
-		    HEU_Curve[] curvesArray = asset.GetCurves().ToArray();
+		    HEU_Curve[] curvesArray = asset.Curves.ToArray();
 		    Editor.CreateCachedEditor(curvesArray, null, ref _curveEditor);
 		    (_curveEditor as HEU_CurveUI).UpdateSceneCurves(asset);
 
@@ -1194,7 +1195,7 @@ namespace HoudiniEngineUnity
 	    // Tools Editor
 	    if (asset.EditableNodesToolsEnabled)
 	    {
-		List<HEU_AttributesStore> attributesStores = asset.GetAttributesStores();
+		List<HEU_AttributesStore> attributesStores = asset.AttributeStores;
 		if (attributesStores.Count > 0)
 		{
 		    HEU_AttributesStore[] attributesStoresArray = attributesStores.ToArray();
@@ -1249,7 +1250,7 @@ namespace HoudiniEngineUnity
 		    if (showTerrainProperty.boolValue)
 		    {
 			// Draw each volume layer
-			List<HEU_VolumeCache> volumeCaches = asset.GetVolumeCaches();
+			List<HEU_VolumeCache> volumeCaches = asset.VolumeCaches;
 			int numCaches = volumeCaches.Count;
 			for (int i = 0; i < numCaches; ++i)
 			{

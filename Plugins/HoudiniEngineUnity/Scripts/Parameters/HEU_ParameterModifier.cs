@@ -30,6 +30,17 @@ using UnityEngine;
 
 namespace HoudiniEngineUnity
 {
+
+    // Modifier action
+    public enum HEU_ModifierActionWrapper
+    {
+        MULTIPARM_INSERT,   // Insert _modifierValue number of params from _instanceIndex onwards
+        MULTIPARM_REMOVE,   // Remove _modifierValue number of params from _instanceIndex onwards
+        MULTIPARM_CLEAR,    // Clear all instances
+        SET_FLOAT,          // Set float value for parameter
+        SET_INT             // Set int value for parameter
+    }
+
     /// <summary>
     /// Helper that contains a request for parameter modification.
     /// Currently used to modifier multiparms after the UI has drawn.
@@ -37,10 +48,12 @@ namespace HoudiniEngineUnity
     [System.Serializable]
     public class HEU_ParameterModifier : IEquivable<HEU_ParameterModifier>
     {
-	public int _parameterIndex;
+	[SerializeField]
+	private int _parameterIndex;
+	public int ParameterIndex { get { return _parameterIndex; } set { _parameterIndex = value; } }
 
 	// Modifier action
-	public enum ModifierAction
+	internal enum ModifierAction
 	{
 	    MULTIPARM_INSERT,   // Insert _modifierValue number of params from _instanceIndex onwards
 	    MULTIPARM_REMOVE,   // Remove _modifierValue number of params from _instanceIndex onwards
@@ -48,18 +61,36 @@ namespace HoudiniEngineUnity
 	    SET_FLOAT,          // Set float value for parameter
 	    SET_INT             // Set int value for parameter
 	}
-	public ModifierAction _action;
+
+	[SerializeField]
+	internal ModifierAction _action;
+	public HEU_ModifierActionWrapper Action { get { return ModifierAction_InternalToWrapper(_action); } set { _action = ModifierAction_WrapperToInternal(value); } }
 
 	// Instance index of the parameter instance (for multiparm)
-	public int _instanceIndex;
+	[SerializeField]
+	private int _instanceIndex;
+	public int InstanceIndex { get { return _instanceIndex; } set { _instanceIndex = value; } }
+
 
 	// General value for the action (eg. number of new instances for INSERT, number of instances to REMOVE)
-	public int _modifierValue;
+	[SerializeField]
+	private int _modifierValue;
+	public int ModifierValue { get { return _modifierValue; } set { _modifierValue = value; } }
 
-	public float _floatValue;
-	public int _intValue;
+	[SerializeField]
+	private float _floatValue;
+	public float FloatValue { get { return _floatValue; } set { _floatValue = value; } }
 
-	public static HEU_ParameterModifier GetNewModifier(ModifierAction action, int parameterIndex, int instanceIndex, int modifierValue)
+	[SerializeField]
+	private int _intValue;
+	public int IntValue { get { return _intValue; } set { _intValue = value; } }
+
+	public static HEU_ParameterModifier GetNewModifier(HEU_ModifierActionWrapper action, int parameterIndex, int instanceIndex, int modifierValue)
+	{
+	    return GetNewModifier(ModifierAction_WrapperToInternal(action), parameterIndex, instanceIndex, modifierValue);
+	}
+
+	internal static HEU_ParameterModifier GetNewModifier(ModifierAction action, int parameterIndex, int instanceIndex, int modifierValue)
 	{
 	    HEU_ParameterModifier newModifier = new HEU_ParameterModifier();
 	    newModifier._action = action;
@@ -91,6 +122,44 @@ namespace HoudiniEngineUnity
 	    HEU_TestHelpers.AssertTrueLogEquivalent(this._intValue, other._intValue, ref bResult, header, "_intValue");
 	
 	    return bResult;
+	}
+
+	internal static HEU_ModifierActionWrapper ModifierAction_InternalToWrapper(ModifierAction action)
+	{
+	    switch (action)
+	    {
+		case ModifierAction.MULTIPARM_INSERT:
+		    return HEU_ModifierActionWrapper.MULTIPARM_INSERT;
+		case ModifierAction.MULTIPARM_REMOVE:
+		    return HEU_ModifierActionWrapper.MULTIPARM_REMOVE;
+		case ModifierAction.MULTIPARM_CLEAR:
+		    return HEU_ModifierActionWrapper.MULTIPARM_CLEAR;
+		case ModifierAction.SET_FLOAT:
+		    return HEU_ModifierActionWrapper.SET_FLOAT;
+		case ModifierAction.SET_INT:
+		    return HEU_ModifierActionWrapper.SET_INT;
+		default:
+		    return HEU_ModifierActionWrapper.MULTIPARM_INSERT;
+	    }
+	}
+
+	internal static ModifierAction ModifierAction_WrapperToInternal(HEU_ModifierActionWrapper action)
+	{
+	    switch (action)
+	    {
+		case HEU_ModifierActionWrapper.MULTIPARM_INSERT:
+		    return ModifierAction.MULTIPARM_INSERT;
+		case HEU_ModifierActionWrapper.MULTIPARM_REMOVE:
+		    return ModifierAction.MULTIPARM_REMOVE;
+		case HEU_ModifierActionWrapper.MULTIPARM_CLEAR:
+		    return ModifierAction.MULTIPARM_CLEAR;
+		case HEU_ModifierActionWrapper.SET_FLOAT:
+		    return ModifierAction.SET_FLOAT;
+		case HEU_ModifierActionWrapper.SET_INT:
+		    return ModifierAction.SET_INT;
+		default:
+		    return ModifierAction.MULTIPARM_INSERT;
+	    }
 	}
 
     }

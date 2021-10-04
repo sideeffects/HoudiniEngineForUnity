@@ -55,7 +55,7 @@ namespace HoudiniEngineUnity
 
 */
 
-    public class HEU_TestHelpers
+    internal class HEU_TestHelpers
     {
 
 	// Testing ============

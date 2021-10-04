@@ -162,6 +162,16 @@ namespace HoudiniEngineUnity
 				    && _parmInfo.rampType < HAPI_RampType.HAPI_RAMPTYPE_MAX);
 	}
 
+	public bool IsFloatRamp()
+	{
+	    return _parmInfo.rampType == HAPI_RampType.HAPI_RAMPTYPE_FLOAT;
+	}
+
+	public bool IsColorRamp()
+	{
+	    return _parmInfo.rampType == HAPI_RampType.HAPI_RAMPTYPE_COLOR;
+	}
+
 	public bool IsToggle()
 	{
 	    return (_parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_TOGGLE);
@@ -170,6 +180,16 @@ namespace HoudiniEngineUnity
 	public bool IsColor()
 	{
 	    return (_parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_COLOR);
+	}
+
+	public bool IsFolder()
+	{
+	    return (_parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_FOLDER);
+	}
+
+	public bool IsButton()
+	{
+	    return (_parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_BUTTON);
 	}
 
 	public Vector3 ToVector3()

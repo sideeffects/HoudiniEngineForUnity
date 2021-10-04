@@ -448,12 +448,12 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 		    }
 		}
 
-		if (!inputNode.IsUsingSelectFromHierarchy)
+		if (!inputNode._usingSelectFromHierarchy)
 		{
 		    if (GUILayout.Button(new GUIContent("Select from Hierarchy (Locks Inspector)", "Locks the inspector and so you can select GameObjects from the Hierarchy. Once select, press Use Current Selection to add the specified objects as inputs.")))
 		    {
 		        SetInspectorLock(true);
-			inputNode.IsUsingSelectFromHierarchy = true;
+			inputNode._usingSelectFromHierarchy = true;
 		    }
 		}
 		else
@@ -461,7 +461,7 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 		    if (GUILayout.Button("Use Current Selection"))
 		    {
 		        SetInspectorLock(false);
-			inputNode.IsUsingSelectFromHierarchy = false;
+			inputNode._usingSelectFromHierarchy = false;
 
 			GameObject[] selection = Selection.gameObjects;
 			List<GameObject> filteredObjects = new List<GameObject>(selection);

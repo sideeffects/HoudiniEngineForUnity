@@ -35,6 +35,15 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
+
 namespace HoudiniEngineUnity
 {
     using System;
@@ -81,7 +90,9 @@ namespace HoudiniEngineUnity
     [System.Serializable]
     public class HEU_InputPreset
     {
-	public HEU_InputNode.InputObjectType _inputObjectType;
+	[SerializeField]
+	internal HEU_InputNode.InputObjectType _inputObjectType;
+	public HEU_InputObjectTypeWrapper InputObjectType { get { return HEU_InputNode.InputObjectType_InternalToWrapper(_inputObjectType); } set { _inputObjectType = HEU_InputNode.InputObjectType_WrapperToInternal(value); } }
 
 	public List<HEU_InputObjectPreset> _inputObjectPresets = new List<HEU_InputObjectPreset>();
 
@@ -169,7 +180,7 @@ namespace HoudiniEngineUnity
     /// these second set of presets to apply.
     /// </summary>
     [System.Serializable]
-    public class HEU_RecookPreset
+    internal class HEU_RecookPreset
     {
 	public List<HEU_VolumeCachePreset> _volumeCachePresets = new List<HEU_VolumeCachePreset>();
 	public List<HEU_InputPreset> _inputPresets = new List<HEU_InputPreset>();

@@ -30,6 +30,15 @@ using System.Text;
 using System;
 using System.Linq;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
+
 namespace HoudiniEngineUnity
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,6 +48,9 @@ namespace HoudiniEngineUnity
     using HAPI_ParmId = System.Int32;
     using HAPI_StringHandle = System.Int32;
 
+    /// <summary>
+    /// A class representing a curve CV
+    /// </summary>
     [System.Serializable]
     public class CurveNodeData : IEquivable<CurveNodeData>
     {
@@ -166,24 +178,53 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Contains data and logic for curve node drawing and editing.
     /// </summary>
-    public class HEU_Curve : ScriptableObject, IEquivable<HEU_Curve>
+    public class HEU_Curve : ScriptableObject, IHEU_Curve, IHEU_HoudiniAssetSubcomponent, IEquivable<HEU_Curve>
     {
+	// PUBLIC FIELDS ==============================================================================
+
+	/// <inheritdoc />
+	public GameObject TargetGameObject { get { return _targetGameObject; } set { _targetGameObject = value; } } 
+
+	/// <inheritdoc />
+	public HAPI_NodeId GeoID { get { return _geoID; } }
+	
+	/// <inheritdoc />
+	public HAPI_NodeId PartID { get { return _partID; } }
+
+	/// <inheritdoc />
+	public List<CurveNodeData> CurveNodeData { get { return _curveNodeData; }}
+
+	/// <inheritdoc />
+	public HEU_Parameters Parameters { get { return _parameters; } }
+
+	/// <inheritdoc />
+	public string CurveName { get { return _curveName; } }
+
+	/// <inheritdoc />
+	public bool IsInputCurve { get { return _bIsInputCurve; } }
+
+	/// <inheritdoc />
+	public bool IsPartCurve { get { return _bIsPartCurve; } }
+
+	/// <inheritdoc />
+	public HEU_InputCurveInfo InputCurveInfo { get { return _inputCurveInfo; }}
+
+
+	// =====================================================================================
+
 	// DATA -------------------------------------------------------------------------------------------------------
 
 	[SerializeField]
 	private HAPI_NodeId _geoID;
 
-	public HAPI_NodeId GeoID { get { return _geoID; } }
 
 	[SerializeField]
 	private HAPI_NodeId _partID;
 
-	public HAPI_NodeId PartID { get { return _partID; } }
 
 	[SerializeField]
 	private List<CurveNodeData> _curveNodeData = new List<CurveNodeData>();
 
-	public List<CurveNodeData> CurveNodeData { get { return _curveNodeData; }}
 
 	[SerializeField]
 	private Vector3[] _vertices;
@@ -191,29 +232,26 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private bool _isEditable;
 
-	public bool IsEditable() { return _isEditable; }
 
 	[SerializeField]
 	private HEU_Parameters _parameters;
 
-	public HEU_Parameters Parameters { get { return _parameters; } }
 
 	[SerializeField]
 	private bool _bUploadParameterPreset;
 
-	public void SetUploadParameterPreset(bool bValue) { _bUploadParameterPreset = bValue; }
+	internal void SetUploadParameterPreset(bool bValue) { _bUploadParameterPreset = bValue; }
 
 	[SerializeField]
 	private string _curveName;
 
-	public string CurveName { get { return _curveName; } }
 
-	public GameObject _targetGameObject;
+	[SerializeField]
+	private GameObject _targetGameObject;
 
 	[SerializeField]
 	private bool _isGeoCurve;
 
-	public bool IsGeoCurve() { return _isGeoCurve; }
 
 	public enum CurveEditState
 	{
@@ -238,7 +276,7 @@ namespace HoudiniEngineUnity
 	// Preferred interaction mode when this a curve selected. Allows for quick access for curve editing.
 	public static Interaction PreferredNextInteractionMode = Interaction.VIEW;
 
-	public enum CurveDrawCollision
+	internal enum CurveDrawCollision
 	{
 	    COLLIDERS,
 	    LAYERMASK
@@ -257,7 +295,6 @@ namespace HoudiniEngineUnity
 
 	[SerializeField]
 	private bool _bIsPartCurve = true;
-	public bool IsPartCurve { get { return _bIsPartCurve; }}
 
 	[SerializeField]
 	private HAPI_CurveInfo _cachedCurveInfo;
@@ -282,11 +319,217 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private HEU_InputCurveInfo _inputCurveInfo = null;
 
-	public HEU_InputCurveInfo InputCurveInfo { get { return _inputCurveInfo; }}
+
+	// PUBLIC FUNCTIONS ====================================================================
+
+	/// <inheritdoc />
+	public HEU_SessionBase GetSession()
+	{
+	    if (_parentAsset != null)
+	    {
+		return _parentAsset.GetAssetSession(true);
+	    }
+	    else
+	    {
+		return HEU_SessionManager.GetOrCreateDefaultSession();
+	    }
+	}
+
+	/// <inheritdoc />
+	public void Recook()
+	{
+	    SetEditState(CurveEditState.REQUIRES_GENERATION);
+
+	    if (_parentAsset != null)
+	    {
+		_parentAsset.RequestCook();
+	    }
+	}
+
+	/// <inheritdoc />
+	public bool IsEditable() { return _isEditable; }
+
+	/// <inheritdoc />
+	public bool IsGeoCurve() { return _isGeoCurve; }
+
+	/// <inheritdoc />
+	public void SetCurveName(string name)
+	{
+	    _curveName = name;
+	    if (_targetGameObject != null)
+	    {
+		_targetGameObject.name = name;
+	    }
+	}
+
+	/// <inheritdoc />
+	public void SetCurvePoint(int pointIndex, Vector3 newPosition, bool bRecookAsset = false)
+	{
+	    if (pointIndex >= 0 && pointIndex < _curveNodeData.Count)
+	    {
+		_curveNodeData[pointIndex].position = newPosition;
+	    }
+
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void SetCurvePoint(int pointIndex, CurveNodeData curveData, bool bRecookAsset = false)
+	{
+	    if (pointIndex >= 0 && pointIndex < _curveNodeData.Count)
+	    {
+		_curveNodeData[pointIndex].position = curveData.position;
+		_curveNodeData[pointIndex].rotation = curveData.rotation;
+		_curveNodeData[pointIndex].scale = curveData.scale;
+	    }
+
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void SetCurveNodeData(List<CurveNodeData> curveNodeData, bool bRecookAsset = false)
+	{
+	    _curveNodeData = curveNodeData;
+
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public Vector3 GetCurvePoint(int pointIndex)
+	{
+	    if (pointIndex >= 0 && pointIndex < _curveNodeData.Count)
+	    {
+		return _curveNodeData[pointIndex].position;
+	    }
+	    return Vector3.zero;
+	}
+
+	/// <inheritdoc />
+	public List<CurveNodeData> GetAllPointTransforms()
+	{
+	    return _curveNodeData;
+	}
+
+	/// <inheritdoc />
+	public List<Vector3> GetAllPoints()
+	{
+	    List<Vector3> points = new List<Vector3>();
+
+	    _curveNodeData.ForEach((CurveNodeData transform) => points.Add(transform.position));
+
+	    return points;
+	}
+
+	/// <inheritdoc />
+	public int GetNumPoints()
+	{
+	    return _curveNodeData.Count;
+	}
+
+	/// <inheritdoc />
+	public void InsertCurvePoint(int index, Vector3 position, bool bRecookAsset = false)
+	{
+	    _curveNodeData.Insert(index, new CurveNodeData(position));
+	    
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void InsertCurvePoint(int index, CurveNodeData curveData, bool bRecookAsset = false)
+	{
+	    _curveNodeData.Insert(index, curveData);
+
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void AddCurvePointToEnd(Vector3 position, bool bRecookAsset = false)
+	{
+	    _curveNodeData.Add(new CurveNodeData(position));
+	    
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void AddCurvePointToEnd(CurveNodeData curveData, bool bRecookAsset = false)
+	{
+	    _curveNodeData.Add(curveData);
+
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void RemoveCurvePoint(int pointIndex, bool bRecookAsset = false)
+	{
+	    _curveNodeData.RemoveAt(pointIndex);
+
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void ClearCurveNodeData(bool bRecookAsset = false)
+	{
+	    _curveNodeData.Clear();
+
+	    if (bRecookAsset && _parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public void ProjectToColliders(Vector3 rayDirection, float rayDistance, bool bRecookAsset = false)
+	{
+	    ProjectToCollidersInternal(_parentAsset, rayDirection, rayDistance);
+
+	    if (bRecookAsset) Recook();
+	}
+
+	/// <inheritdoc />
+	public void SetCurveGeometryVisibility(bool bVisible, bool bRecookAsset = false)
+	{
+	    SetCurveGeometryVisibilityInternal(bVisible);
+
+	    if (bRecookAsset) Recook();
+	}
+
+	/// <inheritdoc />
+	public Vector3 GetTransformedPoint(int pointIndex)
+	{
+	    if (pointIndex >= 0 && pointIndex < _curveNodeData.Count)
+	    {
+		return GetTransformedPosition(_curveNodeData[pointIndex].position);
+	    }
+	    return Vector3.zero;
+	}
+
+	/// <inheritdoc />
+	public List<Vector3> GetTransformedPoints()
+	{
+	    List<Vector3> transformedPoints = new List<Vector3>();
+
+	    for (int i = 0; i < _curveNodeData.Count; i++)
+	    {
+		transformedPoints.Add(GetTransformedPosition(_curveNodeData[i].position));
+	    }
+	    
+	    return transformedPoints;
+	}
+
+	/// <inheritdoc />
+	public List<CurveNodeData> DuplicateCurveNodeData()
+	{
+	    List<CurveNodeData> curveNodes = new List<CurveNodeData>();
+	    foreach (CurveNodeData curveData in _curveNodeData)
+	    {
+		curveNodes.Add(new CurveNodeData(curveData));
+	    }
+
+	    return curveNodes;
+	}
+
+	// =====================================================================================
 
 	// LOGIC ------------------------------------------------------------------------------------------------------
 
-	public static HEU_Curve CreateSetupCurve(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool isEditable, string curveName, HAPI_NodeId geoID, HAPI_PartId partID, bool bGeoCurve)
+	internal static HEU_Curve CreateSetupCurve(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool isEditable, string curveName, HAPI_NodeId geoID, HAPI_PartId partID, bool bGeoCurve)
 	{
 	    HEU_Curve newCurve = ScriptableObject.CreateInstance<HEU_Curve>();
 	    newCurve._isEditable = isEditable;
@@ -404,7 +647,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public bool ShouldKeepNode(HEU_SessionBase session)
+	internal bool ShouldKeepNode(HEU_SessionBase session)
 	{
 	    // We only need to keep information about geo curves at the moment.
 	    // Note: This will change in the future when we use parts as input
@@ -422,7 +665,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-	public void DestroyAllData(bool bIsRebuild = false)
+	internal void DestroyAllData(bool bIsRebuild = false)
 	{
 	    if (_parameters != null)
 	    {
@@ -452,16 +695,9 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void SetCurveName(string name)
-	{
-	    _curveName = name;
-	    if (_targetGameObject != null)
-	    {
-		_targetGameObject.name = name;
-	    }
-	}
 
-	public void UploadParameterPreset(HEU_SessionBase session, HAPI_NodeId geoID, HEU_HoudiniAsset parentAsset)
+
+	internal void UploadParameterPreset(HEU_SessionBase session, HAPI_NodeId geoID, HEU_HoudiniAsset parentAsset)
 	{
 	    // TODO FIXME
 	    // This fixes up the geo IDs for curves, and upload parameter values to Houdini.
@@ -477,7 +713,7 @@ namespace HoudiniEngineUnity
 
 	    if (_parameters != null)
 	    {
-		_parameters._nodeID = geoID;
+		_parameters.NodeID = geoID;
 
 		if (_bUploadParameterPreset)
 		{
@@ -491,7 +727,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void ResetCurveParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	internal void ResetCurveParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	    if (_parameters != null)
 	    {
@@ -503,7 +739,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void SetCurveParameterPreset(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, byte[] parameterPreset)
+	internal void SetCurveParameterPreset(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, byte[] parameterPreset)
 	{
 	    if (_parameters != null)
 	    {
@@ -515,7 +751,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UpdateCurve(HEU_SessionBase session, HAPI_PartId partId)
+	internal void UpdateCurve(HEU_SessionBase session, HAPI_PartId partId)
 	{
 	    int vertexCount = 0;
 	    float[] posAttr = new float[0];
@@ -585,7 +821,7 @@ namespace HoudiniEngineUnity
 	    return curveCounts;
 	}
 
-	public void GenerateMesh(GameObject inGameObject, HEU_SessionBase session)
+	internal void GenerateMesh(GameObject inGameObject, HEU_SessionBase session)
 	{
 	    _targetGameObject = inGameObject;
 
@@ -663,7 +899,7 @@ namespace HoudiniEngineUnity
 	    SetEditState(CurveEditState.GENERATED);
 	}
 
-	public void GenerateMeshForSingleObject(GameObject targetObject, Vector3[] vertexList)
+	internal void GenerateMeshForSingleObject(GameObject targetObject, Vector3[] vertexList)
 	{
 	    MeshFilter meshFilter = targetObject.GetComponent<MeshFilter>();
 	    if (meshFilter == null)
@@ -722,7 +958,7 @@ namespace HoudiniEngineUnity
 	    meshRenderer.enabled = HEU_PluginSettings.Curves_ShowInSceneView;
 	}
 
-	public void OnPresyncParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	internal void OnPresyncParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	    if (!_isEditable)
 	    {
@@ -741,7 +977,7 @@ namespace HoudiniEngineUnity
 
 
 	// Get order abiding by the curve rules as mentioned in GT_PrimCurveMesh::setBasis
-	public static int GetOrderForCurveType(int requestedOrder, HAPI_CurveType curveType)
+	internal static int GetOrderForCurveType(int requestedOrder, HAPI_CurveType curveType)
 	{
 	    switch (curveType)
 	    {
@@ -756,7 +992,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public bool UpdateCurveInputForCurveParts(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	internal bool UpdateCurveInputForCurveParts(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	
 	    // Re-create the curve attributes from scratch in order to modify the curve/rotation values
@@ -842,7 +1078,7 @@ namespace HoudiniEngineUnity
 	}
 
 
-	public bool UpdateCurveInputForCustomAttributes(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	internal bool UpdateCurveInputForCustomAttributes(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	    // Stop now just to be safe (Everything will be done Houdini-side) and we just fetch from there
 	    // If I add the option to add custom attributes, this might be moved to one level up in the future.
@@ -1317,7 +1553,7 @@ namespace HoudiniEngineUnity
 
 	}
 
-	public void SyncFromParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	internal void SyncFromParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	    HAPI_NodeInfo geoNodeInfo = new HAPI_NodeInfo();
 	    if (!session.GetNodeInfo(_geoID, ref geoNodeInfo))
@@ -1388,7 +1624,10 @@ namespace HoudiniEngineUnity
 	    switch (_curveDataType)
 	    {
 		case HEU_CurveDataType.GEO_COORDS_PARAM:
-		    string pointList = _parameters.GetStringFromParameter(HEU_Defines.CURVE_COORDS_PARAM);
+		    string pointList = "";
+
+		    _parameters.GetStringParameterValue(HEU_Defines.CURVE_COORDS_PARAM, out pointList);
+
 		    if (!string.IsNullOrEmpty(pointList))
 		    {
 			string[] pointSplit = pointList.Split(' ');
@@ -1474,13 +1713,13 @@ namespace HoudiniEngineUnity
 	/// <param name="parentAsset">Parent asset of the curve</param>
 	/// <param name="rayDirection">Direction to cast ray</param>
 	/// <param name="rayDistance">Maximum ray cast distance</param>
-	public void ProjectToColliders(HEU_HoudiniAsset parentAsset, Vector3 rayDirection, float rayDistance)
+	internal void ProjectToCollidersInternal(HEU_HoudiniAsset parentAsset, Vector3 rayDirection, float rayDistance)
 	{
 	    bool bRequiresUpload = false;
 
 	    LayerMask layerMask = Physics.DefaultRaycastLayers;
 
-	    HEU_Curve.CurveDrawCollision collisionType = parentAsset.CurveDrawCollision;
+	    HEU_Curve.CurveDrawCollision collisionType = HEU_HoudiniAsset.CurveDrawCollision_WrapperToInternal(parentAsset.CurveDrawCollision);
 	    if (collisionType == CurveDrawCollision.COLLIDERS)
 	    {
 		List<Collider> colliders = parentAsset.GetCurveDrawColliders();
@@ -1566,77 +1805,32 @@ namespace HoudiniEngineUnity
 	    return sb.ToString();
 	}
 
-	public void SetEditState(CurveEditState editState)
+	internal void SetEditState(CurveEditState editState)
 	{
 	    _editState = editState;
 	}
 
-	public void SetCurvePoint(int pointIndex, Vector3 newPosition)
-	{
-	    if (pointIndex >= 0 && pointIndex < _curveNodeData.Count)
-	    {
-		_curveNodeData[pointIndex].position = newPosition;
-	    }
-	}
-
-	public Vector3 GetCurvePoint(int pointIndex)
-	{
-	    if (pointIndex >= 0 && pointIndex < _curveNodeData.Count)
-	    {
-		return _curveNodeData[pointIndex].position;
-	    }
-	    return Vector3.zero;
-	}
-
-	public List<CurveNodeData> GetAllPointTransforms()
-	{
-	    return _curveNodeData;
-	}
-
-	public List<Vector3> GetAllPoints()
-	{
-	    List<Vector3> points = new List<Vector3>();
-
-	    _curveNodeData.ForEach((CurveNodeData transform) => points.Add(transform.position));
-
-	    return points;
-	}
-
-	public int GetNumPoints()
-	{
-	    return _curveNodeData.Count;
-	}
-
-	public Vector3 GetTransformedPoint(int pointIndex)
-	{
-	    if (pointIndex >= 0 && pointIndex < _curveNodeData.Count)
-	    {
-		return GetTransformedPosition(_curveNodeData[pointIndex].position);
-	    }
-	    return Vector3.zero;
-	}
-
-	public Vector3 GetTransformedPosition(Vector3 inPosition)
+	internal Vector3 GetTransformedPosition(Vector3 inPosition)
 	{
 	    return this._targetGameObject.transform.TransformPoint(inPosition);
 	}
 
-	public Vector3 GetInvertedTransformedPosition(Vector3 inPosition)
+	internal Vector3 GetInvertedTransformedPosition(Vector3 inPosition)
 	{
 	    return this._targetGameObject.transform.InverseTransformPoint(inPosition);
 	}
 
-	public Vector3 GetInvertedTransformedDirection(Vector3 inPosition)
+	internal Vector3 GetInvertedTransformedDirection(Vector3 inPosition)
 	{
 	    return this._targetGameObject.transform.InverseTransformVector(inPosition);
 	}
 
-	public Vector3[] GetVertices()
+	internal Vector3[] GetVertices()
 	{
 	    return _vertices;
 	}
 
-	public void SetCurveGeometryVisibility(bool bVisible)
+	internal void SetCurveGeometryVisibilityInternal(bool bVisible)
 	{
 	    if (_targetGameObject != null)
 	    {
@@ -1648,7 +1842,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void DownloadPresetData(HEU_SessionBase session)
+	internal void DownloadPresetData(HEU_SessionBase session)
 	{
 	    if (_parameters != null)
 	    {
@@ -1656,7 +1850,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UploadPresetData(HEU_SessionBase session)
+	internal void UploadPresetData(HEU_SessionBase session)
 	{
 	    if (_parameters != null)
 	    {
@@ -1664,30 +1858,13 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void DownloadAsDefaultPresetData(HEU_SessionBase session)
+	internal void DownloadAsDefaultPresetData(HEU_SessionBase session)
 	{
 	    if (_parameters != null)
 	    {
 		_parameters.DownloadAsDefaultPresetData(session);
 	    }
 	}
-
-	public List<CurveNodeData> DuplicateCurveNodeData()
-	{
-	    List<CurveNodeData> curveNodes = new List<CurveNodeData>();
-	    foreach (CurveNodeData curveData in _curveNodeData)
-	    {
-		curveNodes.Add(new CurveNodeData(curveData));
-	    }
-
-	    return curveNodes;
-	}
-
-	public void SetCurveNodeData(List<CurveNodeData> curveNodeData)
-	{
-	    _curveNodeData = curveNodeData;
-	}
-
 
 	private void UpdateCachedCurveInfo(HEU_SessionBase session, bool copyCurveSettings)
 	{
@@ -1720,7 +1897,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public int GetCurveCountIndexFromPositionIndex(int positionIndex)
+	internal int GetCurveCountIndexFromPositionIndex(int positionIndex)
 	{
 	    if (_cachedCurveCountSums == null)
 	    {
