@@ -27,10 +27,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+/// <summary>
+/// Helper class for using the bounding volume input
+/// Attach this to an object and then use it as an input to select all objects within
+/// </summary>
 public class HEU_BoundingVolume : MonoBehaviour
 {
+    /// <summary>
+    /// The bounding collider
+    /// </summary>
     public Collider BoundingCollider {get  { return GetComponent<Collider>(); }}
 
+
+    /// <summary>
+    /// Gets all intersecting objects in the bounding collider
+    /// <returns>A list of all intersecting objects</returns>
+    /// </summary>
     public List<GameObject> GetAllIntersectingObjects()
     {
 	if (BoundingCollider == null)

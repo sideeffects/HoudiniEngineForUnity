@@ -62,6 +62,465 @@ namespace HoudiniEngineUnity
     [ExecuteInEditMode]
     public class HEU_PDGAssetLink : MonoBehaviour, ISerializationCallbackReceiver
     {
+
+	// PUBLIC FIELDS =========================================================================================
+
+	public bool AutoCook { get { return _autoCook; } set { _autoCook = value; } }
+
+	public bool UseHEngineData { get { return _useHEngineData; } set { _useHEngineData = value; } }
+
+	// Filter strings
+	public bool UseTOPNodeFilter { get { return _bUseTOPNodeFilter; } set { _bUseTOPNodeFilter = value; } }
+	public bool UseTOPOutputFilter { get { return _bUseTOPOutputFilter; } set { _bUseTOPOutputFilter = value; } }
+	public string TopNodeFilter { get { return _topNodeFilter; } set { _topNodeFilter = value; } }
+	public string TopOutputFilter { get { return _topOutputFilter; } set { _topOutputFilter = value; } }
+
+
+	public HEU_HoudiniAsset ParentAsset{ get { return _heu; } }
+
+	public string AssetPath { get { return _assetPath; } }
+
+	public GameObject AssetGO { get { return _assetGO; } }
+
+	public string AssetName { get { return _assetName; } }
+
+	public HAPI_NodeId AssetID { get { return _assetID; } }
+
+	public List<HEU_TOPNetworkData> TopNetworks { get { return _topNetworks; } }
+
+	public string[] TopNetworkNames { get { return _topNetworkNames; } }
+
+	public int SelectedTOPNetwork { get { return _selectedTOPNetwork; } }
+
+	public HEU_LinkStateWrapper PDGLinkState { get { return  LinkState_InternalToWrapper(_linkState); } }
+
+	// The root gameobject to place all loaded geometry under
+	public GameObject LoadRootGameObject { get { return _loadRootGameObject; } }
+
+	// The root directory for generated output
+	public string OutputCachePathRoot { get { return _outputCachePathRoot; } }
+
+	// ==========================================================================================================
+
+	//	DATA ------------------------------------------------------------------------------------------------------
+
+#pragma warning disable 0414
+	[SerializeField]
+	private string _assetPath;
+
+	[SerializeField]
+	private GameObject _assetGO;
+#pragma warning restore 0414
+
+	[SerializeField]
+	private string _assetName;
+
+	[SerializeField]
+	private HAPI_NodeId _assetID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	// Linked HDA
+	[SerializeField]
+	private HEU_HoudiniAsset _heu;
+
+	// List of TOP networks within HDA
+	[SerializeField]
+	private List<HEU_TOPNetworkData> _topNetworks = new List<HEU_TOPNetworkData>();
+
+	// Names of TOP networks within HDA
+	[SerializeField]
+	private string[] _topNetworkNames = new string[0];
+
+	// Currently selected TOP network
+	[SerializeField]
+	private int _selectedTOPNetwork;
+
+	[SerializeField]
+	private LinkState _linkState = LinkState.INACTIVE;
+
+	internal LinkState AssetLinkStateInternal { get { return _linkState; } }
+
+	internal enum LinkState
+	{
+	    INACTIVE,
+	    LINKING,
+	    LINKED,
+	    ERROR_NOT_LINKED
+	}
+
+	[SerializeField]
+	private bool _autoCook;
+
+	[SerializeField]
+	private bool _useHEngineData = false;
+
+	// Delegate for Editor window to hook into for callback when needing updating
+	public delegate void UpdateUIDelegate();
+	public UpdateUIDelegate _repaintUIDelegate;
+
+	internal HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
+
+	// The root gameobject to place all loaded geometry under
+	[SerializeField]
+	private GameObject _loadRootGameObject;
+
+	// The root directory for generated output
+	[SerializeField]
+	private string _outputCachePathRoot;
+
+	// Filter strings
+	[SerializeField]
+	private bool _bUseTOPNodeFilter;
+	[SerializeField]
+	private bool _bUseTOPOutputFilter;
+	[SerializeField]
+	private string _topNodeFilter;
+	[SerializeField]
+	private string _topOutputFilter;
+
+	// PUBLIC FUNCTIONS =========================================================================================
+
+
+	public void Setup(HEU_HoudiniAsset hdaAsset)
+	{
+	    _heu = hdaAsset;
+	    _assetGO = _heu.RootGameObject;
+	    _assetPath = _heu.AssetPath;
+	    _assetName = _heu.AssetName;
+	    _bUseTOPNodeFilter = true;
+	    _bUseTOPOutputFilter = true;
+	    _topNodeFilter = HEU_Defines.DEFAULT_TOP_NODE_FILTER;
+	    _topOutputFilter = HEU_Defines.DEFAULT_TOP_OUTPUT_FILTER;
+
+	    // Use the HDAs cache folder for generating output files
+	    string hdaCachePath = _heu.GetValidAssetCacheFolderPath();
+	    _outputCachePathRoot = HEU_Platform.BuildPath(hdaCachePath, "PDGCache");
+
+	    Reset();
+	    Refresh();
+	}
+
+	/// <summary>
+	/// Reset all TOP network and node state.
+	/// Should be done after the linked HDA has rebuilt.
+	/// </summary>
+	public void Reset()
+	{
+	    ClearAllTOPData();
+	}
+
+	/// <summary>
+	/// Refresh this object's internal state by querying and populating TOP network and nodes
+	/// from linked HDA.
+	/// </summary>
+	public void Refresh()
+	{
+	    if (_heu == null)
+	    {
+		_linkState = LinkState.ERROR_NOT_LINKED;
+		_assetID = HEU_Defines.HEU_INVALID_NODE_ID;
+		return;
+	    }
+
+	    if (!_heu.IsAssetValid())
+	    {
+		_linkState = LinkState.INACTIVE;
+		_assetID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    }
+
+	    if (_linkState == LinkState.INACTIVE || _assetID == HEU_Defines.HEU_INVALID_NODE_ID)
+	    {
+		// Never linked before, so do some setup, and cook the HDA
+
+		_linkState = LinkState.LINKING;
+
+		// Removing then adding listener guarantees no duplicate entries
+		_heu.CookedDataEvent.RemoveListener(NotifyAssetCooked);
+		_heu.CookedDataEvent.AddListener(NotifyAssetCooked);
+
+		_heu.ReloadDataEvent.RemoveListener(NotifyAssetCooked);
+		_heu.ReloadDataEvent.AddListener(NotifyAssetCooked);
+
+		// Do a asynchronouse cook of the linked HDA so that we get its latest state
+		_heu.RequestCook(true, true, true, true);
+
+		RepaintUI();
+	    }
+	    else
+	    {
+		// Linked already, so now populate this
+		PopulateFromHDA();
+	    }
+	}
+
+	public List<KeyValuePair<int, HEU_TOPNodeData>> GetNonHiddenTOPNodes(HEU_TOPNetworkData topNetwork)
+	{
+	    List<KeyValuePair<int, HEU_TOPNodeData>> nonHiddenNodes = new List<KeyValuePair<int, HEU_TOPNodeData>>();
+
+	    for (int i = 0; i < topNetwork._topNodes.Count; ++i)
+	    {
+		if (topNetwork._topNodes[i]._tags._show)
+		{
+		    nonHiddenNodes.Add(new KeyValuePair<int, HEU_TOPNodeData>(i, topNetwork._topNodes[i]));
+		}
+	    }
+
+	    return nonHiddenNodes;
+	}
+
+	/// <summary>
+	/// Set the TOP network at the given index as currently selected TOP network
+	/// </summary>
+	/// <param name="newIndex">Index of the TOP network</param>
+	public void SelectTOPNetwork(int newIndex)
+	{
+	    if (newIndex < 0 || newIndex >= _topNetworks.Count)
+	    {
+		return;
+	    }
+
+	    _selectedTOPNetwork = newIndex;
+	}
+
+	/// <summary>
+	/// Set the TOP node at the given index in the given TOP network as currently selected TOP node
+	/// </summary>
+	/// <param name="network">Container TOP network</param>
+	/// <param name="newIndex">Index of the TOP node to be selected</param>
+	public void SelectTOPNode(HEU_TOPNetworkData network, int newIndex)
+	{
+	    if (newIndex < 0 || newIndex >= network._topNodes.Count)
+	    {
+		return;
+	    }
+
+	    network._selectedTOPIndex = newIndex;
+	}
+
+	public HEU_TOPNetworkData GetSelectedTOPNetwork()
+	{
+	    return GetTOPNetwork(_selectedTOPNetwork);
+	}
+
+	public HEU_TOPNodeData GetSelectedTOPNode()
+	{
+	    HEU_TOPNetworkData topNetwork = GetTOPNetwork(_selectedTOPNetwork);
+	    if (topNetwork != null)
+	    {
+		if (topNetwork._selectedTOPIndex >= 0 && topNetwork._selectedTOPIndex < topNetwork._topNodes.Count)
+		{
+		    return topNetwork._topNodes[topNetwork._selectedTOPIndex];
+		}
+	    }
+	    return null;
+	}
+
+	public HEU_TOPNetworkData GetTOPNetwork(int index)
+	{
+	    if (index >= 0 && index < _topNetworks.Count)
+	    {
+		return _topNetworks[index];
+	    }
+	    return null;
+	}
+
+	/// <summary>
+	/// Dirty the specified TOP node and clear its work item results.
+	/// </summary>
+	/// <param name="topNode"></param>
+	public void DirtyTOPNode(HEU_TOPNodeData topNode)
+	{
+	    HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+	    if (pdgSession != null && pdgSession.DirtyTOPNode(topNode._nodeID))
+	    {
+		ClearTOPNodeWorkItemResults(topNode);
+	    }
+	}
+
+	/// <summary>
+	/// Cook the specified TOP node.
+	/// </summary>
+	/// <param name="topNode"></param>
+	public void CookTOPNode(HEU_TOPNodeData topNode)
+	{
+	    HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+	    if (pdgSession != null)
+	    {
+		pdgSession.CookTOPNode(topNode._nodeID);
+	    }
+	}
+
+	/// <summary>
+	/// Dirty the currently selected TOP network and clear all work item results.
+	/// </summary>
+	public void DirtyAll()
+	{
+	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+	    if (topNetwork != null)
+	    {
+		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+		if (pdgSession != null && pdgSession.DirtyAll(topNetwork._nodeID))
+		{
+		    ClearTOPNetworkWorkItemResults(topNetwork);
+		}
+	    }
+	}
+
+	/// <summary>
+	/// Cook the output TOP node of the currently selected TOP network.
+	/// </summary>
+	public void CookOutput()
+	{
+	    HEU_SessionBase session = GetHAPISession();
+	    if (session == null || !session.IsSessionValid())
+	    {
+		return;
+	    }
+
+	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+	    if (topNetwork != null)
+	    {
+		//HEU_Logger.Log("Cooking output!");
+
+		_workItemTally.ZeroAll();
+		ResetTOPNetworkWorkItemTally(topNetwork);
+
+		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+		if (pdgSession != null)
+		{
+		    pdgSession.CookTOPNetworkOutputNode(topNetwork);
+		}
+	    }
+	}
+
+	/// <summary>
+	/// Pause the PDG cook of the currently selected TOP network
+	/// </summary>
+	public void PauseCook()
+	{
+	    HEU_SessionBase session = GetHAPISession();
+	    if (session == null || !session.IsSessionValid())
+	    {
+		return;
+	    }
+
+	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+	    if (topNetwork != null)
+	    {
+		//HEU_Logger.Log("Cooking output!");
+
+		_workItemTally.ZeroAll();
+		ResetTOPNetworkWorkItemTally(topNetwork);
+
+		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+		if (pdgSession != null)
+		{
+		    pdgSession.PauseCook(topNetwork);
+		}
+	    }
+	}
+
+	/// <summary>
+	/// Cancel the PDG cook of the currently selected TOP network
+	/// </summary>
+	public void CancelCook()
+	{
+	    HEU_SessionBase session = GetHAPISession();
+	    if (session == null || !session.IsSessionValid())
+	    {
+		return;
+	    }
+
+	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
+	    if (topNetwork != null)
+	    {
+		//HEU_Logger.Log("Cooking output!");
+
+		_workItemTally.ZeroAll();
+		ResetTOPNetworkWorkItemTally(topNetwork);
+
+		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
+		if (pdgSession != null)
+		{
+		    pdgSession.CancelCook(topNetwork);
+		}
+	    }
+	}
+
+	public HEU_SessionBase GetHAPISession()
+	{
+	    return _heu != null ? _heu.GetAssetSession(true) : null;
+	}
+
+	public HEU_TOPNodeData GetTOPNode(HAPI_NodeId nodeID)
+	{
+	    int numNetworks = _topNetworks.Count;
+	    for (int i = 0; i < numNetworks; ++i)
+	    {
+		int numNodes = _topNetworks[i]._topNodes.Count;
+		for (int j = 0; j < numNodes; ++j)
+		{
+		    if (_topNetworks[i]._topNodes[j]._nodeID == nodeID)
+		    {
+			return _topNetworks[i]._topNodes[j];
+		    }
+		}
+	    }
+	    return null;
+	}
+
+	public string GetTOPNodeStatus(HEU_TOPNodeData topNode)
+	{
+	    if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_FAILED || topNode.AnyWorkItemsFailed())
+	    {
+		return "Cook Failed";
+	    }
+	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_COMPLETE)
+	    {
+		return "Cook Completed";
+	    }
+	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOKING)
+	    {
+		return "Cook In Progress";
+	    }
+	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTIED)
+	    {
+		return "Dirtied";
+	    }
+	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTYING)
+	    {
+		return "Dirtying";
+	    }
+
+	    return "";
+	}
+
+	public static HEU_TOPNetworkData GetTOPNetworkByName(string name, List<HEU_TOPNetworkData> topNetworks)
+	{
+	    for (int i = 0; i < topNetworks.Count; ++i)
+	    {
+		if (topNetworks[i]._nodeName.Equals(name))
+		{
+		    return topNetworks[i];
+		}
+	    }
+	    return null;
+	}
+
+	public static HEU_TOPNodeData GetTOPNodeByName(string name, List<HEU_TOPNodeData> topNodes)
+	{
+	    for (int i = 0; i < topNodes.Count; ++i)
+	    {
+		if (topNodes[i]._nodeName.Equals(name))
+		{
+		    return topNodes[i];
+		}
+	    }
+	    return null;
+	}
+
+	// =======================================================================================================
+
+
 	private void Awake()
 	{
 	    //HEU_Logger.Log("Awake");
@@ -118,25 +577,6 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void Setup(HEU_HoudiniAsset hdaAsset)
-	{
-	    _heu = hdaAsset;
-	    _assetGO = _heu.RootGameObject;
-	    _assetPath = _heu.AssetPath;
-	    _assetName = _heu.AssetName;
-	    _bUseTOPNodeFilter = true;
-	    _bUseTOPOutputFilter = true;
-	    _topNodeFilter = HEU_Defines.DEFAULT_TOP_NODE_FILTER;
-	    _topOutputFilter = HEU_Defines.DEFAULT_TOP_OUTPUT_FILTER;
-
-	    // Use the HDAs cache folder for generating output files
-	    string hdaCachePath = _heu.GetValidAssetCacheFolderPath();
-	    _outputCachePathRoot = HEU_Platform.BuildPath(hdaCachePath, "PDGCache");
-
-	    Reset();
-	    Refresh();
-	}
-
 	/// <summary>
 	/// Callback when linked HDA has been cooked. Allows to trigger a PDG graph cook.
 	/// </summary>
@@ -186,58 +626,6 @@ namespace HoudiniEngineUnity
 	    NotifyAssetCooked(reloadEventData.Asset, reloadEventData.CookSuccess, reloadEventData.OutputObjects);
 	}
 
-	/// <summary>
-	/// Reset all TOP network and node state.
-	/// Should be done after the linked HDA has rebuilt.
-	/// </summary>
-	public void Reset()
-	{
-	    ClearAllTOPData();
-	}
-
-	/// <summary>
-	/// Refresh this object's internal state by querying and populating TOP network and nodes
-	/// from linked HDA.
-	/// </summary>
-	public void Refresh()
-	{
-	    if (_heu == null)
-	    {
-		_linkState = LinkState.ERROR_NOT_LINKED;
-		_assetID = HEU_Defines.HEU_INVALID_NODE_ID;
-		return;
-	    }
-
-	    if (!_heu.IsAssetValid())
-	    {
-		_linkState = LinkState.INACTIVE;
-		_assetID = HEU_Defines.HEU_INVALID_NODE_ID;
-	    }
-
-	    if (_linkState == LinkState.INACTIVE || _assetID == HEU_Defines.HEU_INVALID_NODE_ID)
-	    {
-		// Never linked before, so do some setup, and cook the HDA
-
-		_linkState = LinkState.LINKING;
-
-		// Removing then adding listener guarantees no duplicate entries
-		_heu._cookedDataEvent.RemoveListener(NotifyAssetCooked);
-		_heu._cookedDataEvent.AddListener(NotifyAssetCooked);
-
-		_heu._reloadDataEvent.RemoveListener(NotifyAssetCooked);
-		_heu._reloadDataEvent.AddListener(NotifyAssetCooked);
-
-		// Do a asynchronouse cook of the linked HDA so that we get its latest state
-		_heu.RequestCook(true, true, true, true);
-
-		RepaintUI();
-	    }
-	    else
-	    {
-		// Linked already, so now populate this
-		PopulateFromHDA();
-	    }
-	}
 
 	/// <summary>
 	/// Populate TOP data from linked HDA
@@ -388,7 +776,7 @@ namespace HoudiniEngineUnity
 	/// <param name="topNodeIDs">List of TOP nodes in the TOP network</param>
 	/// <param name="useHEngineData">Whether or not to use HEngine data for filtering</param>
 	/// <returns>True if successfully populated data</returns>
-	public bool PopulateTOPNodes(HEU_SessionBase session, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs, bool useHEngineData)
+	private bool PopulateTOPNodes(HEU_SessionBase session, HEU_TOPNetworkData topNetwork, HAPI_NodeId[] topNodeIDs, bool useHEngineData)
 	{
 	    // Holds list of found TOP nodes
 	    List<HEU_TOPNodeData> newNodes = new List<HEU_TOPNodeData>();
@@ -480,100 +868,6 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-	public List<KeyValuePair<int, HEU_TOPNodeData>> GetNonHiddenTOPNodes(HEU_TOPNetworkData topNetwork)
-	{
-	    List<KeyValuePair<int, HEU_TOPNodeData>> nonHiddenNodes = new List<KeyValuePair<int, HEU_TOPNodeData>>();
-
-	    for (int i = 0; i < topNetwork._topNodes.Count; ++i)
-	    {
-		if (topNetwork._topNodes[i]._tags._show)
-		{
-		    nonHiddenNodes.Add(new KeyValuePair<int, HEU_TOPNodeData>(i, topNetwork._topNodes[i]));
-		}
-	    }
-
-	    return nonHiddenNodes;
-	}
-
-	/// <summary>
-	/// Set the TOP network at the given index as currently selected TOP network
-	/// </summary>
-	/// <param name="newIndex">Index of the TOP network</param>
-	public void SelectTOPNetwork(int newIndex)
-	{
-	    if (newIndex < 0 || newIndex >= _topNetworks.Count)
-	    {
-		return;
-	    }
-
-	    _selectedTOPNetwork = newIndex;
-	}
-
-	/// <summary>
-	/// Set the TOP node at the given index in the given TOP network as currently selected TOP node
-	/// </summary>
-	/// <param name="network">Container TOP network</param>
-	/// <param name="newIndex">Index of the TOP node to be selected</param>
-	public void SelectTOPNode(HEU_TOPNetworkData network, int newIndex)
-	{
-	    if (newIndex < 0 || newIndex >= network._topNodes.Count)
-	    {
-		return;
-	    }
-
-	    network._selectedTOPIndex = newIndex;
-	}
-
-	public HEU_TOPNetworkData GetSelectedTOPNetwork()
-	{
-	    return GetTOPNetwork(_selectedTOPNetwork);
-	}
-
-	public HEU_TOPNodeData GetSelectedTOPNode()
-	{
-	    HEU_TOPNetworkData topNetwork = GetTOPNetwork(_selectedTOPNetwork);
-	    if (topNetwork != null)
-	    {
-		if (topNetwork._selectedTOPIndex >= 0 && topNetwork._selectedTOPIndex < topNetwork._topNodes.Count)
-		{
-		    return topNetwork._topNodes[topNetwork._selectedTOPIndex];
-		}
-	    }
-	    return null;
-	}
-
-	public HEU_TOPNetworkData GetTOPNetwork(int index)
-	{
-	    if (index >= 0 && index < _topNetworks.Count)
-	    {
-		return _topNetworks[index];
-	    }
-	    return null;
-	}
-
-	public static HEU_TOPNetworkData GetTOPNetworkByName(string name, List<HEU_TOPNetworkData> topNetworks)
-	{
-	    for (int i = 0; i < topNetworks.Count; ++i)
-	    {
-		if (topNetworks[i]._nodeName.Equals(name))
-		{
-		    return topNetworks[i];
-		}
-	    }
-	    return null;
-	}
-
-	public static HEU_TOPNodeData GetTOPNodeByName(string name, List<HEU_TOPNodeData> topNodes)
-	{
-	    for (int i = 0; i < topNodes.Count; ++i)
-	    {
-		if (topNodes[i]._nodeName.Equals(name))
-		{
-		    return topNodes[i];
-		}
-	    }
-	    return null;
-	}
 
 	private void ClearAllTOPData()
 	{
@@ -599,7 +893,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public static void ClearTOPNodeWorkItemResults(HEU_TOPNodeData topNode)
+	internal static void ClearTOPNodeWorkItemResults(HEU_TOPNodeData topNode)
 	{
 	    int numResults = topNode._workResults.Count;
 	    for (int i = 0; i < numResults; ++i)
@@ -614,7 +908,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public static void ClearWorkItemResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
+	internal static void ClearWorkItemResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
 	{
 	    HEU_TOPWorkResult result = GetWorkResultByID(topNode, workItemID);
 	    ClearWorkItemResult(topNode, result);
@@ -630,7 +924,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UpdateTOPNodeResultsVisibility(HEU_TOPNodeData topNode)
+	internal void UpdateTOPNodeResultsVisibility(HEU_TOPNodeData topNode)
 	{
 	    if (topNode._workResultParentGO != null)
 	    {
@@ -677,133 +971,6 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	/// <summary>
-	/// Dirty the specified TOP node and clear its work item results.
-	/// </summary>
-	/// <param name="topNode"></param>
-	public void DirtyTOPNode(HEU_TOPNodeData topNode)
-	{
-	    HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
-	    if (pdgSession != null && pdgSession.DirtyTOPNode(topNode._nodeID))
-	    {
-		ClearTOPNodeWorkItemResults(topNode);
-	    }
-	}
-
-	/// <summary>
-	/// Cook the specified TOP node.
-	/// </summary>
-	/// <param name="topNode"></param>
-	public void CookTOPNode(HEU_TOPNodeData topNode)
-	{
-	    HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
-	    if (pdgSession != null)
-	    {
-		pdgSession.CookTOPNode(topNode._nodeID);
-	    }
-	}
-
-	/// <summary>
-	/// Dirty the currently selected TOP network and clear all work item results.
-	/// </summary>
-	public void DirtyAll()
-	{
-	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
-	    if (topNetwork != null)
-	    {
-		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
-		if (pdgSession != null && pdgSession.DirtyAll(topNetwork._nodeID))
-		{
-		    ClearTOPNetworkWorkItemResults(topNetwork);
-		}
-	    }
-	}
-
-	/// <summary>
-	/// Cook the output TOP node of the currently selected TOP network.
-	/// </summary>
-	public void CookOutput()
-	{
-	    HEU_SessionBase session = GetHAPISession();
-	    if (session == null || !session.IsSessionValid())
-	    {
-		return;
-	    }
-
-	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
-	    if (topNetwork != null)
-	    {
-		//HEU_Logger.Log("Cooking output!");
-
-		_workItemTally.ZeroAll();
-		ResetTOPNetworkWorkItemTally(topNetwork);
-
-		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
-		if (pdgSession != null)
-		{
-		    pdgSession.CookTOPNetworkOutputNode(topNetwork);
-		}
-	    }
-	}
-
-	/// <summary>
-	/// Pause the PDG cook of the currently selected TOP network
-	/// </summary>
-	public void PauseCook()
-	{
-	    HEU_SessionBase session = GetHAPISession();
-	    if (session == null || !session.IsSessionValid())
-	    {
-		return;
-	    }
-
-	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
-	    if (topNetwork != null)
-	    {
-		//HEU_Logger.Log("Cooking output!");
-
-		_workItemTally.ZeroAll();
-		ResetTOPNetworkWorkItemTally(topNetwork);
-
-		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
-		if (pdgSession != null)
-		{
-		    pdgSession.PauseCook(topNetwork);
-		}
-	    }
-	}
-
-	/// <summary>
-	/// Cancel the PDG cook of the currently selected TOP network
-	/// </summary>
-	public void CancelCook()
-	{
-	    HEU_SessionBase session = GetHAPISession();
-	    if (session == null || !session.IsSessionValid())
-	    {
-		return;
-	    }
-
-	    HEU_TOPNetworkData topNetwork = GetSelectedTOPNetwork();
-	    if (topNetwork != null)
-	    {
-		//HEU_Logger.Log("Cooking output!");
-
-		_workItemTally.ZeroAll();
-		ResetTOPNetworkWorkItemTally(topNetwork);
-
-		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
-		if (pdgSession != null)
-		{
-		    pdgSession.CancelCook(topNetwork);
-		}
-	    }
-	}
-
-	public HEU_SessionBase GetHAPISession()
-	{
-	    return _heu != null ? _heu.GetAssetSession(true) : null;
-	}
 
 	/// <summary>
 	/// Load the geometry generated as results of the given work item, of the given TOP node.
@@ -815,7 +982,7 @@ namespace HoudiniEngineUnity
 	/// <param name="workItemInfo">Work item whose results to load</param>
 	/// <param name="resultInfos">Results data</param>
 	/// <param name="workItemID">The work item's ID. Required for clearning its results.</param>
-	public void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos, HAPI_PDG_WorkitemId workItemID)
+	internal void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos, HAPI_PDG_WorkitemId workItemID)
 	{
 	    // Create HEU_GeoSync objects, set results, and sync it
 
@@ -923,23 +1090,6 @@ namespace HoudiniEngineUnity
 	    return _loadRootGameObject.transform;
 	}
 
-	public HEU_TOPNodeData GetTOPNode(HAPI_NodeId nodeID)
-	{
-	    int numNetworks = _topNetworks.Count;
-	    for (int i = 0; i < numNetworks; ++i)
-	    {
-		int numNodes = _topNetworks[i]._topNodes.Count;
-		for (int j = 0; j < numNodes; ++j)
-		{
-		    if (_topNetworks[i]._topNodes[j]._nodeID == nodeID)
-		    {
-			return _topNetworks[i]._topNodes[j];
-		    }
-		}
-	    }
-	    return null;
-	}
-
 	public void RepaintUI()
 	{
 	    if (_repaintUIDelegate != null)
@@ -948,7 +1098,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UpdateWorkItemTally()
+	internal void UpdateWorkItemTally()
 	{
 	    _workItemTally.ZeroAll();
 
@@ -968,7 +1118,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void ResetTOPNetworkWorkItemTally(HEU_TOPNetworkData topNetwork)
+	internal void ResetTOPNetworkWorkItemTally(HEU_TOPNetworkData topNetwork)
 	{
 	    if (topNetwork != null)
 	    {
@@ -980,33 +1130,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public string GetTOPNodeStatus(HEU_TOPNodeData topNode)
-	{
-	    if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_FAILED || topNode.AnyWorkItemsFailed())
-	    {
-		return "Cook Failed";
-	    }
-	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOK_COMPLETE)
-	    {
-		return "Cook Completed";
-	    }
-	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.COOKING)
-	    {
-		return "Cook In Progress";
-	    }
-	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTIED)
-	    {
-		return "Dirtied";
-	    }
-	    else if (topNode._pdgState == HEU_TOPNodeData.PDGState.DIRTYING)
-	    {
-		return "Dirtying";
-	    }
-
-	    return "";
-	}
-
-	public void OnTOPNodeFilterChanged(string filter)
+	internal void OnTOPNodeFilterChanged(string filter)
 	{
 	    _topNodeFilter = filter;
 
@@ -1029,7 +1153,7 @@ namespace HoudiniEngineUnity
             }
 	}
 
-	public void OnTOPOutputFilterChanged(string filter)
+	internal void OnTOPOutputFilterChanged(string filter)
 	{
 	    _topOutputFilter = filter;
 
@@ -1110,78 +1234,41 @@ namespace HoudiniEngineUnity
 	    }
         }
 
-	//	DATA ------------------------------------------------------------------------------------------------------
-
-#pragma warning disable 0414
-	[SerializeField]
-	private string _assetPath;
-
-	[SerializeField]
-	private GameObject _assetGO;
-#pragma warning restore 0414
-
-	[SerializeField]
-	private string _assetName;
-
-	public string AssetName { get { return _assetName; } }
-
-	[SerializeField]
-	private HAPI_NodeId _assetID = HEU_Defines.HEU_INVALID_NODE_ID;
-
-	// Linked HDA
-	[SerializeField]
-	private HEU_HoudiniAsset _heu;
-
-	// List of TOP networks within HDA
-	[SerializeField]
-	private List<HEU_TOPNetworkData> _topNetworks = new List<HEU_TOPNetworkData>();
-
-	// Names of TOP networks within HDA
-	public string[] _topNetworkNames = new string[0];
-
-	// Currently selected TOP network
-	[SerializeField]
-	private int _selectedTOPNetwork;
-
-	public int SelectedTOPNetwork { get { return _selectedTOPNetwork; } }
-
-	[SerializeField]
-	private LinkState _linkState = LinkState.INACTIVE;
-
-	public LinkState AssetLinkState { get { return _linkState; } }
-
-	public enum LinkState
+	internal static HEU_LinkStateWrapper LinkState_InternalToWrapper(LinkState linkState)
 	{
-	    INACTIVE,
-	    LINKING,
-	    LINKED,
-	    ERROR_NOT_LINKED
+	    switch (linkState)
+	    {
+		case LinkState.INACTIVE:
+		    return HEU_LinkStateWrapper.INACTIVE;
+		case LinkState.LINKING:
+		    return HEU_LinkStateWrapper.LINKING;
+		case LinkState.LINKED:
+		    return HEU_LinkStateWrapper.LINKED;
+		case LinkState.ERROR_NOT_LINKED:
+		    return HEU_LinkStateWrapper.ERROR_NOT_LINKED;
+		default:
+		    return HEU_LinkStateWrapper.INACTIVE;
+	    }
 	}
 
-	public bool _autoCook;
+	internal static LinkState LinkState_WrapperToInternal(HEU_LinkStateWrapper linkState)
+	{
+	    switch (linkState)
+	    {
+		case HEU_LinkStateWrapper.INACTIVE:
+		    return LinkState.INACTIVE;
+		case HEU_LinkStateWrapper.LINKING:
+		    return LinkState.LINKING;
+		case HEU_LinkStateWrapper.LINKED:
+		    return LinkState.LINKED;
+		case HEU_LinkStateWrapper.ERROR_NOT_LINKED:
+		    return LinkState.ERROR_NOT_LINKED;
+		default:
+		    return LinkState.INACTIVE;
+	    }
+	}
 
-	public bool _useHEngineData = false;
 
-	// Delegate for Editor window to hook into for callback when needing updating
-	public delegate void UpdateUIDelegate();
-	public UpdateUIDelegate _repaintUIDelegate;
-
-	private int _numWorkItems;
-
-	public HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
-
-	// The root gameobject to place all loaded geometry under
-	public GameObject _loadRootGameObject;
-
-	// The root directory for generated output
-	[SerializeField]
-	private string _outputCachePathRoot;
-
-	// Filter strings
-	public bool _bUseTOPNodeFilter;
-	public bool _bUseTOPOutputFilter;
-	public string _topNodeFilter;
-	public string _topOutputFilter;
     }
 
 }   // HoudiniEngineUnity

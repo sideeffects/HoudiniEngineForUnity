@@ -28,6 +28,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
+
 namespace HoudiniEngineUnity
 {
     /// <summary>
@@ -36,7 +45,7 @@ namespace HoudiniEngineUnity
     /// Used by HEU_InstanceInputUI.
     /// </summary>
     [System.Serializable]
-    public class HEU_InstanceInputUIState : ScriptableObject, IEquivable<HEU_InstanceInputUIState>
+    internal class HEU_InstanceInputUIState : ScriptableObject, IEquivable<HEU_InstanceInputUIState>
     {
 	// Whether to show all instance inputs to expanded form
 	public bool _showInstanceInputs = true;
@@ -47,7 +56,7 @@ namespace HoudiniEngineUnity
 	// The current page to show
 	public int _inputsPageIndexUI = 0;
 
-	public void CopyTo(HEU_InstanceInputUIState dest)
+	internal void CopyTo(HEU_InstanceInputUIState dest)
 	{
 	    dest._showInstanceInputs = _showInstanceInputs;
 	    dest._numInputsToShowUI = _numInputsToShowUI;

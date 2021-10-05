@@ -55,7 +55,6 @@ namespace HoudiniEngineUnity
     public class HEU_VolumeLayer : IEquivable<HEU_VolumeLayer>
     {
 	public string _layerName;
-	public HEU_PartData _part;
 	public float _strength = 1.0f;
 	public bool _uiExpanded;
 	public int _tile = 0;
@@ -79,6 +78,9 @@ namespace HoudiniEngineUnity
 	public HFLayerType _layerType;
 
 	public HEU_DetailPrototype _detailPrototype;
+
+	[SerializeField]
+	internal HEU_PartData _part;
 
 	public bool IsEquivalentTo(HEU_VolumeLayer other)
 	{
@@ -287,10 +289,30 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Creates terrain out of volume parts.
     /// </summary>
-    public class HEU_VolumeCache : ScriptableObject, IEquivable<HEU_VolumeCache>
+    public class HEU_VolumeCache : ScriptableObject, IHEU_VolumeCache, IHEU_HoudiniAssetSubcomponent, IEquivable<HEU_VolumeCache>
     {
-	//	DATA ------------------------------------------------------------------------------------------------------
 
+	// PUBLIC FIELDS =============================================================================
+
+	public List<HEU_VolumeLayer> Layers { get { return _layers; } }
+	public int TileIndex { get { return _tileIndex; } }
+
+	public string ObjectName { get { return _objName; } }
+
+	public string GeoName { get { return _geoName; } }
+
+
+	public TerrainData TerrainData { get { return _terrainData; } }
+
+	public HEU_VolumeScatterTrees ScatterTrees { get { return _scatterTrees; } }
+
+	public HEU_DetailProperties DetailProperties { get { return _detailProperties; } }
+
+	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; } }
+
+	// ===========================================================================================
+
+	//	DATA ------------------------------------------------------------------------------------------------------
 	[SerializeField]
 	private HEU_GeoNode _ownerNode;
 
@@ -314,11 +336,7 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private string _objName;
 
-	public int TileIndex { get { return _tileIndex; } }
 
-	public string ObjectName { get { return _objName; } }
-
-	public string GeoName { get { return _geoName; } }
 
 	public bool _uiExpanded = true;
 
@@ -334,10 +352,127 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private HEU_DetailProperties _detailProperties;
 
+	[SerializeField]
+	private HEU_HoudiniAsset _parentAsset;
+
+
+	// PUBLIC FUNCTIONS  =============================================================================
+
+	public HEU_SessionBase GetSession()
+	{
+	    if (_parentAsset != null)
+	    {
+		return _parentAsset.GetAssetSession(true);
+	    }
+	    else
+	    {
+		return HEU_SessionManager.GetOrCreateDefaultSession();
+	    }
+	}
+
+	public void Recook()
+	{
+	    _isDirty = true;
+
+
+	    if (_parentAsset != null) _parentAsset.RequestCook();
+	}
+
+
+	public void ResetParameters()
+	{
+	    _terrainData = null;
+	    _scatterTrees = null;
+	    _detailProperties = null;
+
+	    HEU_VolumeLayer defaultLayer = new HEU_VolumeLayer();
+
+	    foreach (HEU_VolumeLayer layer in _layers)
+	    {
+		CopyLayer(defaultLayer, layer);
+	    }
+	}
+
+	public HEU_VolumeLayer GetLayer(string layerName)
+	{
+	    foreach (HEU_VolumeLayer layer in _layers)
+	    {
+		if (layer._layerName.Equals(layerName))
+		{
+		    return layer;
+		}
+	    }
+	    return null;
+	}
+
+	public void PopulatePreset(HEU_VolumeCachePreset cachePreset)
+	{
+	    cachePreset._objName = ObjectName;
+	    cachePreset._geoName = GeoName;
+	    cachePreset._uiExpanded = UIExpanded;
+	    cachePreset._tile = TileIndex;
+
+	    if (_terrainData != null)
+	    {
+		cachePreset._terrainDataPath = HEU_AssetDatabase.GetAssetPath(_terrainData);
+	    }
+	    else
+	    {
+		cachePreset._terrainDataPath = "";
+	    }
+	    //HEU_Logger.Log("Set terraindata path: " + cachePreset._terrainDataPath);
+
+	    foreach (HEU_VolumeLayer layer in _layers)
+	    {
+		HEU_VolumeLayerPreset layerPreset = new HEU_VolumeLayerPreset();
+
+		layerPreset._layerName = layer._layerName;
+		layerPreset._strength = layer._strength;
+		layerPreset._uiExpanded = layer._uiExpanded;
+		layerPreset._tile = layer._tile;
+
+		cachePreset._volumeLayersPresets.Add(layerPreset);
+	    }
+	}
+
+	public bool ApplyPreset(HEU_VolumeCachePreset volumeCachePreset)
+	{
+	    UIExpanded = volumeCachePreset._uiExpanded;
+
+	    // Load the TerrainData if the path is given
+	    //HEU_Logger.Log("Get terraindata path: " + volumeCachePreset._terrainDataPath);
+	    if (!string.IsNullOrEmpty(volumeCachePreset._terrainDataPath))
+	    {
+		_terrainData = HEU_AssetDatabase.LoadAssetAtPath(volumeCachePreset._terrainDataPath, typeof(TerrainData)) as TerrainData;
+		//HEU_Logger.Log("Loaded terrain? " + (_terrainData != null ? "yes" : "no"));
+	    }
+
+	    foreach (HEU_VolumeLayerPreset layerPreset in volumeCachePreset._volumeLayersPresets)
+	    {
+		HEU_VolumeLayer layer = GetLayer(layerPreset._layerName);
+		if (layer == null)
+		{
+		    HEU_Logger.LogWarningFormat("Volume layer with name {0} not found! Unable to set heightfield layer preset.", layerPreset._layerName);
+		    return false;
+		}
+
+		layer._strength = layerPreset._strength;
+		layer._tile = layerPreset._tile;
+		layer._uiExpanded = layerPreset._uiExpanded;
+	    }
+
+	    IsDirty = true;
+
+	    return true;
+	}
+
+
+
+	//  ==============================================================================================
 
 	//	LOGIC -----------------------------------------------------------------------------------------------------
 
-	public static List<HEU_VolumeCache> UpdateVolumeCachesFromParts(HEU_SessionBase session, HEU_GeoNode ownerNode, List<HEU_PartData> volumeParts, List<HEU_VolumeCache> volumeCaches)
+	internal static List<HEU_VolumeCache> UpdateVolumeCachesFromParts(HEU_SessionBase session, HEU_GeoNode ownerNode, List<HEU_PartData> volumeParts, List<HEU_VolumeCache> volumeCaches)
 	{
 	    HEU_HoudiniAsset parentAsset = ownerNode.ParentAsset;
 
@@ -469,7 +604,7 @@ namespace HoudiniEngineUnity
 	    return updatedCaches;
 	}
 
-	public void Initialize(HEU_GeoNode ownerNode, int tileIndex)
+	internal void Initialize(HEU_GeoNode ownerNode, int tileIndex)
 	{
 	    _ownerNode = ownerNode;
 	    _geoName = ownerNode.GeoName;
@@ -478,42 +613,18 @@ namespace HoudiniEngineUnity
 	    _terrainData = null;
 	    _scatterTrees = null;
 	    _detailProperties = null;
+	    if (ownerNode != null) _parentAsset = ownerNode.ParentAsset;
 	}
 
-	public void ResetParameters()
-	{
-	    _terrainData = null;
-	    _scatterTrees = null;
-	    _detailProperties = null;
 
-	    HEU_VolumeLayer defaultLayer = new HEU_VolumeLayer();
-
-	    foreach (HEU_VolumeLayer layer in _layers)
-	    {
-		CopyLayer(defaultLayer, layer);
-	    }
-	}
-
-	public HEU_VolumeLayer GetLayer(string layerName)
-	{
-	    foreach (HEU_VolumeLayer layer in _layers)
-	    {
-		if (layer._layerName.Equals(layerName))
-		{
-		    return layer;
-		}
-	    }
-	    return null;
-	}
-
-	public void StartUpdateLayers()
+	internal void StartUpdateLayers()
 	{
 	    // Start with new layer list, as otherwise keeping existing layers
 	    // will cause removed layers (by user) to be kept around
 	    _updatedLayers = new List<HEU_VolumeLayer>();
 	}
 
-	public void FinishUpdateLayers()
+	internal void FinishUpdateLayers()
 	{
 	    _layers = _updatedLayers;
 	    _updatedLayers = null;
@@ -605,7 +716,7 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	public void UpdateLayerFromPart(HEU_SessionBase session, HEU_PartData part)
+	internal void UpdateLayerFromPart(HEU_SessionBase session, HEU_PartData part)
 	{
 	    HEU_GeoNode geoNode = part.ParentGeoNode;
 
@@ -687,7 +798,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void GenerateTerrainWithAlphamaps(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, bool bRebuild)
+	internal void GenerateTerrainWithAlphamaps(HEU_SessionBase session, HEU_HoudiniAsset houdiniAsset, bool bRebuild)
 	{
 	    if (_layers == null || _layers.Count == 0)
 	    {
@@ -1182,7 +1293,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 #else
-	public void LoadLayerPropertiesFromAttributes(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, SplatPrototype splat,
+	internal void LoadLayerPropertiesFromAttributes(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, SplatPrototype splat,
 			bool bNewTerrainLayer, Texture2D defaultTexture)
 		{
 			Texture2D diffuseTexture = null;
@@ -1247,79 +1358,18 @@ namespace HoudiniEngineUnity
 		}
 #endif
 
-	public void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount, bool throwWarningIfNoTileAttribute)
+	internal void PopulateScatterTrees(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, int pointCount, bool throwWarningIfNoTileAttribute)
 	{
 	    HEU_TerrainUtility.PopulateScatterTrees(session, geoID, partID, pointCount, ref _scatterTrees, throwWarningIfNoTileAttribute);
 	}
 
-	public void PopulateDetailPrototype(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
+	internal void PopulateDetailPrototype(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID,
 		HEU_VolumeLayer layer)
 	{
 	    HEU_TerrainUtility.PopulateDetailPrototype(session, geoID, partID, ref layer._detailPrototype);
 	}
 
-	public void PopulatePreset(HEU_VolumeCachePreset cachePreset)
-	{
-	    cachePreset._objName = ObjectName;
-	    cachePreset._geoName = GeoName;
-	    cachePreset._uiExpanded = UIExpanded;
-	    cachePreset._tile = TileIndex;
-
-	    if (_terrainData != null)
-	    {
-		cachePreset._terrainDataPath = HEU_AssetDatabase.GetAssetPath(_terrainData);
-	    }
-	    else
-	    {
-		cachePreset._terrainDataPath = "";
-	    }
-	    //HEU_Logger.Log("Set terraindata path: " + cachePreset._terrainDataPath);
-
-	    foreach (HEU_VolumeLayer layer in _layers)
-	    {
-		HEU_VolumeLayerPreset layerPreset = new HEU_VolumeLayerPreset();
-
-		layerPreset._layerName = layer._layerName;
-		layerPreset._strength = layer._strength;
-		layerPreset._uiExpanded = layer._uiExpanded;
-		layerPreset._tile = layer._tile;
-
-		cachePreset._volumeLayersPresets.Add(layerPreset);
-	    }
-	}
-
-	public bool ApplyPreset(HEU_VolumeCachePreset volumeCachePreset)
-	{
-	    UIExpanded = volumeCachePreset._uiExpanded;
-
-	    // Load the TerrainData if the path is given
-	    //HEU_Logger.Log("Get terraindata path: " + volumeCachePreset._terrainDataPath);
-	    if (!string.IsNullOrEmpty(volumeCachePreset._terrainDataPath))
-	    {
-		_terrainData = HEU_AssetDatabase.LoadAssetAtPath(volumeCachePreset._terrainDataPath, typeof(TerrainData)) as TerrainData;
-		//HEU_Logger.Log("Loaded terrain? " + (_terrainData != null ? "yes" : "no"));
-	    }
-
-	    foreach (HEU_VolumeLayerPreset layerPreset in volumeCachePreset._volumeLayersPresets)
-	    {
-		HEU_VolumeLayer layer = GetLayer(layerPreset._layerName);
-		if (layer == null)
-		{
-		    HEU_Logger.LogWarningFormat("Volume layer with name {0} not found! Unable to set heightfield layer preset.", layerPreset._layerName);
-		    return false;
-		}
-
-		layer._strength = layerPreset._strength;
-		layer._tile = layerPreset._tile;
-		layer._uiExpanded = layerPreset._uiExpanded;
-	    }
-
-	    IsDirty = true;
-
-	    return true;
-	}
-
-	public void CopyValuesTo(HEU_VolumeCache destCache)
+	internal void CopyValuesTo(HEU_VolumeCache destCache)
 	{
 	    destCache.UIExpanded = UIExpanded;
 
@@ -1351,7 +1401,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public static void CopyDetailProperties(HEU_DetailProperties srcProp,
+	internal static void CopyDetailProperties(HEU_DetailProperties srcProp,
 		HEU_DetailProperties destProp)
 	{
 	    destProp._detailDistance = srcProp._detailDistance;
@@ -1359,7 +1409,7 @@ namespace HoudiniEngineUnity
 	    destProp._detailResolutionPerPatch = srcProp._detailResolutionPerPatch;
 	}
 
-	public static void CopyLayer(HEU_VolumeLayer srcLayer, HEU_VolumeLayer destLayer)
+	internal static void CopyLayer(HEU_VolumeLayer srcLayer, HEU_VolumeLayer destLayer)
 	{
 	    destLayer._strength = srcLayer._strength;
 	    destLayer._uiExpanded = srcLayer._uiExpanded;
@@ -1384,7 +1434,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public static void CopyPrototype(HEU_DetailPrototype srcProto, HEU_DetailPrototype destProto)
+	internal static void CopyPrototype(HEU_DetailPrototype srcProto, HEU_DetailPrototype destProto)
 	{
 	    destProto._bendFactor = srcProto._bendFactor;
 	    destProto._dryColor = srcProto._dryColor;
@@ -1397,7 +1447,7 @@ namespace HoudiniEngineUnity
 	    destProto._renderMode = srcProto._renderMode;
 	}
 
-	public static Texture2D LoadDefaultSplatTexture()
+	internal static Texture2D LoadDefaultSplatTexture()
 	{
 	    Texture2D texture = LoadAssetTexture(HEU_PluginSettings.TerrainSplatTextureDefault);
 	    if (texture == null)
@@ -1407,7 +1457,7 @@ namespace HoudiniEngineUnity
 	    return texture;
 	}
 
-	public static Texture2D LoadAssetTexture(string path)
+	internal static Texture2D LoadAssetTexture(string path)
 	{
 	    Texture2D texture = HEU_MaterialFactory.LoadTexture(path);
 	    if (texture == null)

@@ -49,7 +49,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Manages materials used by Houdini Engine assets.
     /// </summary>
-    public static class HEU_MaterialFactory
+    public class HEU_MaterialFactory
     {
 
 	public static Shader FindShader(string shaderName)
@@ -587,7 +587,13 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public static HEU_MaterialData CreateMaterialInCache(int materialKey, string materialName, HEU_MaterialData.Source sourceType, bool bWriteToFile, List<HEU_MaterialData> materialCache,
+	public static HEU_MaterialData CreateMaterialInCache(int materialKey, string materialName, HEU_MaterialSourceWrapper sourceType, bool bWriteToFile, List<HEU_MaterialData> materialCache,
+	    string assetCacheFolderPath)
+	{
+	    return CreateMaterialInCache(materialKey, materialName, HEU_MaterialData.MaterialSource_WrapperToInternal(sourceType), bWriteToFile, materialCache, assetCacheFolderPath );
+	}
+
+	internal static HEU_MaterialData CreateMaterialInCache(int materialKey, string materialName, HEU_MaterialData.Source sourceType, bool bWriteToFile, List<HEU_MaterialData> materialCache,
 		string assetCacheFolderPath)
 	{
 	    HEU_MaterialData materialData = ScriptableObject.CreateInstance<HEU_MaterialData>();

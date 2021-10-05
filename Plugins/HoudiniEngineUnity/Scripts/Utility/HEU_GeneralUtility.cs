@@ -1761,7 +1761,7 @@ namespace HoudiniEngineUnity
 	    return (viewportPos.z > 0) && (new Rect(0, 0, 1, 1).Contains(viewportPos));
 	}
 
-	public static List<HEU_Handle> FindOrGenerateHandles(HEU_SessionBase session, ref HAPI_AssetInfo assetInfo, HAPI_NodeId assetID, string assetName, HEU_Parameters parameters, List<HEU_Handle> currentHandles)
+	internal static List<HEU_Handle> FindOrGenerateHandles(HEU_SessionBase session, ref HAPI_AssetInfo assetInfo, HAPI_NodeId assetID, string assetName, HEU_Parameters parameters, List<HEU_Handle> currentHandles)
 	{
 	    List<HEU_Handle> newHandles = new List<HEU_Handle>();
 

@@ -29,6 +29,15 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
+
 namespace HoudiniEngineUnity
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,19 +52,38 @@ namespace HoudiniEngineUnity
     /// Represents the Houdini Object node.
     /// Holds and manages geo nodes.
     /// </summary>
-    public class HEU_ObjectNode : ScriptableObject, IEquivable<HEU_ObjectNode>
+    public class HEU_ObjectNode : ScriptableObject, IHEU_ObjectNode, IHEU_HoudiniAssetSubcomponent, IEquivable<HEU_ObjectNode>
     {
-	//  DATA ------------------------------------------------------------------------------------------------------
 
+	// PUBLIC FIELDS =================================================================
+	
+	/// <inheritdoc />
+	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; } }
+
+	/// <inheritdoc />
 	public HAPI_NodeId ObjectID { get { return _objectInfo.nodeId; } }
+
+	/// <inheritdoc />
+	public string ObjectName { get { return _objName; } }
+
+	/// <inheritdoc />
+	public HAPI_ObjectInfo ObjectInfo { get { return _objectInfo; } }
+
+	/// <inheritdoc />
+	public List<HEU_GeoNode> GeoNodes { get { return _geoNodes; } }
+
+	/// <inheritdoc />
+	public HAPI_Transform ObjectTransform { get { return _objectTransform; } }
+
+	// ===============================================================================
+
+	//  DATA ------------------------------------------------------------------------------------------------------
 
 	[SerializeField]
 	private string _objName;
-	public string ObjectName { get { return _objName; } }
-
+	
 	[SerializeField]
 	private HEU_HoudiniAsset _parentAsset;
-	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; } }
 
 	[SerializeField]
 	private HAPI_ObjectInfo _objectInfo;
@@ -66,10 +94,156 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	public HAPI_Transform _objectTransform;
 
+	// PUBLIC FUNCTIONS ===========================================================================
+
+	/// <inheritdoc />
+	public HEU_SessionBase GetSession()
+	{
+	    if (_parentAsset != null)
+	    {
+		return _parentAsset.GetAssetSession(true);
+	    }
+	    else
+	    {
+		return HEU_SessionManager.GetOrCreateDefaultSession();
+	    }
+	}
+
+	/// <inheritdoc />
+	public void Recook()
+	{
+	    if (_parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
 	public bool IsInstanced() { return _objectInfo.isInstanced; }
 
+	/// <inheritdoc />
 	public bool IsVisible() { return _objectInfo.isVisible; }
 
+	/// <inheritdoc />
+	public bool IsUsingMaterial(HEU_MaterialData materialData)
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		if (geoNode.IsUsingMaterial(materialData))
+		{
+		    return true;
+		}
+	    }
+	    return false;
+	}
+
+
+	/// <inheritdoc />
+	public void GetOutputGameObjects(List<GameObject> outputObjects)
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		// TODO: check if geoNode.Displayable? elmininates editable nodes
+		geoNode.GetOutputGameObjects(outputObjects);
+	    }
+	}
+
+	/// <inheritdoc />
+	public void GetOutput(List<HEU_GeneratedOutput> outputs)
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		geoNode.GetOutput(outputs);
+	    }
+	}
+
+	/// <inheritdoc />
+	public HEU_PartData GetHDAPartWithGameObject(GameObject outputGameObject)
+	{
+	    HEU_PartData foundPart = null;
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		foundPart = geoNode.GetHDAPartWithGameObject(outputGameObject);
+		if (foundPart != null)
+		{
+		    return foundPart;
+		}
+	    }
+
+	    return null;
+	}
+
+	/// <inheritdoc />
+	public HEU_GeoNode GetGeoNode(string geoName)
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		if (geoNode.GeoName.Equals(geoName))
+		{
+		    return geoNode;
+		}
+	    }
+	    return null;
+	}
+
+	/// <inheritdoc />
+	public void GetCurves(List<HEU_Curve> curves, bool bEditableOnly)
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		geoNode.GetCurves(curves, bEditableOnly);
+	    }
+	}
+
+	/// <inheritdoc />
+	public void GetOutputGeoNodes(List<HEU_GeoNode> outGeoNodes)
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		if (geoNode.Displayable)
+		{
+		    outGeoNodes.Add(geoNode);
+		}
+	    }
+	}
+
+	/// <inheritdoc />
+	public void HideAllGeometry()
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		geoNode.HideAllGeometry();
+	    }
+	}
+
+	/// <inheritdoc />
+	public void DisableAllColliders()
+	{
+	    foreach (HEU_GeoNode geoNode in _geoNodes)
+	    {
+		geoNode.DisableAllColliders();
+	    }
+	}
+
+	/// <inheritdoc />
+	public bool IsInstancer()
+	{
+	    if (_objectInfo.isInstancer)
+	    {
+		return true;
+	    }
+	    else
+	    {
+		// Check parts for atrrib instancing
+		foreach (HEU_GeoNode geoNode in _geoNodes)
+		{
+		    if (geoNode.HasAttribInstancer())
+		    {
+			return true;
+		    }
+		}
+	    }
+	    return false;
+	}
+
+	// ============================================================================================
 
 	//  LOGIC -----------------------------------------------------------------------------------------------------
 
@@ -78,7 +252,7 @@ namespace HoudiniEngineUnity
 	    Reset();
 	}
 
-	public void Reset()
+	internal void Reset()
 	{
 	    _objName = "";
 
@@ -102,7 +276,7 @@ namespace HoudiniEngineUnity
 	    
 	}
 
-	public void Initialize(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, HAPI_Transform objectTranform, HEU_HoudiniAsset parentAsset, bool bUseOutputNodes)
+	internal void Initialize(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, HAPI_Transform objectTranform, HEU_HoudiniAsset parentAsset, bool bUseOutputNodes)
 	{
 	    _objectInfo = objectInfo;
 	    _objectTransform = objectTranform;
@@ -219,7 +393,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Destroy all data.
 	/// </summary>
-	public void DestroyAllData(bool bIsRebuild = false)
+	internal void DestroyAllData(bool bIsRebuild = false)
 	{
 	    if (_geoNodes != null)
 	    {
@@ -243,7 +417,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Get debug info for this object
 	/// </summary>
-	public void GetDebugInfo(StringBuilder sb)
+	internal void GetDebugInfo(StringBuilder sb)
 	{
 	    int numGeos = _geoNodes != null ? _geoNodes.Count : 0;
 
@@ -258,7 +432,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void SetObjectInfo(HAPI_ObjectInfo newObjectInfo)
+	internal void SetObjectInfo(HAPI_ObjectInfo newObjectInfo)
 	{
 	    _objectInfo = newObjectInfo;
 	}
@@ -269,7 +443,7 @@ namespace HoudiniEngineUnity
 	/// Geo nodes are then refreshed to be in sync with Houdini session.
 	/// </summary>
 	/// <returns>True if internal state has changed (including geometry).</returns>
-	public void UpdateObject(HEU_SessionBase session, bool bForceUpdate)
+	internal void UpdateObject(HEU_SessionBase session, bool bForceUpdate)
 	{
 	    if (ParentAsset == null)
 	    {
@@ -458,7 +632,7 @@ namespace HoudiniEngineUnity
 	    // Updating the trasform is done in GenerateGeometry
 	}
 
-	public void GenerateGeometry(HEU_SessionBase session, bool bRebuild)
+	internal void GenerateGeometry(HEU_SessionBase session, bool bRebuild)
 	{
 	    // Volumes could come in as a geonode + part for each heightfield layer.
 	    // Otherwise the other geo types can be done individually.
@@ -544,7 +718,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void GeneratePartInstances(HEU_SessionBase session)
+	internal void GeneratePartInstances(HEU_SessionBase session)
 	{
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
@@ -552,7 +726,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void GenerateAttributesStore(HEU_SessionBase session)
+	internal void GenerateAttributesStore(HEU_SessionBase session)
 	{
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
@@ -563,7 +737,7 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Apply this object's transform to all its geo nodes.
 	/// </summary>
-	public void ApplyObjectTransformToGeoNodes()
+	internal void ApplyObjectTransformToGeoNodes()
 	{
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
@@ -571,24 +745,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	/// <summary>
-	/// Returns true if this object is using the given material.
-	/// </summary>
-	/// <param name="materialData">Material data containing the material to check</param>
-	/// <returns>True if this object is using the given material</returns>
-	public bool IsUsingMaterial(HEU_MaterialData materialData)
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		if (geoNode.IsUsingMaterial(materialData))
-		{
-		    return true;
-		}
-	    }
-	    return false;
-	}
-
-	public void GetClonableParts(List<HEU_PartData> clonableParts)
+	internal void GetClonableParts(List<HEU_PartData> clonableParts)
 	{
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
@@ -599,88 +756,13 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	/// <summary>
-	/// Adds gameobjects that were output from this object.
-	/// </summary>
-	/// <param name="outputObjects">List to add to</param>
-	public void GetOutputGameObjects(List<GameObject> outputObjects)
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		// TODO: check if geoNode.Displayable? elmininates editable nodes
-		geoNode.GetOutputGameObjects(outputObjects);
-	    }
-	}
-
-	/// <summary>
-	/// Adds this node's HEU_GeneratedOutput to given outputs list.
-	/// </summary>
-	/// <param name="outputs">List to add to</param>
-	public void GetOutput(List<HEU_GeneratedOutput> outputs)
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		geoNode.GetOutput(outputs);
-	    }
-	}
-
-	/// <summary>
-	/// Returns the HEU_PartData with the given output gameobject.
-	/// </summary>
-	/// <param name="outputGameObject">The output gameobject to check</param>
-	/// <returns>Valid HEU_PartData or null if no match</returns>
-	public HEU_PartData GetHDAPartWithGameObject(GameObject outputGameObject)
-	{
-	    HEU_PartData foundPart = null;
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		foundPart = geoNode.GetHDAPartWithGameObject(outputGameObject);
-		if (foundPart != null)
-		{
-		    return foundPart;
-		}
-	    }
-
-	    return null;
-	}
-
-	public HEU_GeoNode GetGeoNode(string geoName)
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		if (geoNode.GeoName.Equals(geoName))
-		{
-		    return geoNode;
-		}
-	    }
-	    return null;
-	}
-
-	public void GetCurves(List<HEU_Curve> curves, bool bEditableOnly)
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		geoNode.GetCurves(curves, bEditableOnly);
-	    }
-	}
-
-	public void GetOutputGeoNodes(List<HEU_GeoNode> outGeoNodes)
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		if (geoNode.Displayable)
-		{
-		    outGeoNodes.Add(geoNode);
-		}
-	    }
-	}
 
 	/// <summary>
 	/// Generates object instances.
 	/// Skips parts that already have their instances generated.
 	/// </summary>
 	/// <param name="session">Active session to use</param>
-	public void GenerateObjectInstances(HEU_SessionBase session)
+	internal void GenerateObjectInstances(HEU_SessionBase session)
 	{
 	    if (ParentAsset == null)
 	    {
@@ -714,7 +796,7 @@ namespace HoudiniEngineUnity
 		    int numParts = parts.Count;
 		    for (int j = 0; j < numParts; ++j)
 		    {
-			if (parts[j].ObjectInstancesBeenGenerated || parts[j].IsPartVolume())
+			if (parts[j]._objectInstancesGenerated || parts[j].IsPartVolume())
 			{
 			    // This prevents instances being created unnecessarily (e.g. part hasn't changed since last cook).
 			    // Or for volumes that might have instance attributes.
@@ -773,7 +855,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void ClearObjectInstances(HEU_SessionBase session)
+	internal void ClearObjectInstances(HEU_SessionBase session)
 	{
 	    if (!IsInstancer())
 	    {
@@ -789,7 +871,7 @@ namespace HoudiniEngineUnity
 		    int numParts = parts.Count;
 		    for (int j = 0; j < numParts; ++j)
 		    {
-			if (parts[j].ObjectInstancesBeenGenerated || parts[j].IsPartVolume())
+			if (parts[j]._objectInstancesGenerated || parts[j].IsPartVolume())
 			{
 			    continue;
 			}
@@ -808,7 +890,7 @@ namespace HoudiniEngineUnity
 	/// Fill in the objInstanceInfos list with the HEU_ObjectInstanceInfos used by this object.
 	/// </summary>
 	/// <param name="objInstanceInfos">List to fill in</param>
-	public void PopulateObjectInstanceInfos(List<HEU_ObjectInstanceInfo> objInstanceInfos)
+	internal void PopulateObjectInstanceInfos(List<HEU_ObjectInstanceInfo> objInstanceInfos)
 	{
 	    if (IsInstancer())
 	    {
@@ -832,7 +914,7 @@ namespace HoudiniEngineUnity
 	/// Process custom attribute with Unity script name, and attach any scripts found.
 	/// </summary>
 	/// <param name="session">Session to use</param>
-	public void ProcessUnityScriptAttributes(HEU_SessionBase session)
+	internal void ProcessUnityScriptAttributes(HEU_SessionBase session)
 	{
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
@@ -841,20 +923,9 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
-	/// Hide all geometry contained within
-	/// </summary>
-	public void HideAllGeometry()
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		geoNode.HideAllGeometry();
-	    }
-	}
-
-	/// <summary>
 	/// Calculate visiblity of all geometry within
 	/// </summary>
-	public void CalculateVisibility()
+	internal void CalculateVisibility()
 	{
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
@@ -862,44 +933,12 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void CalculateColliderState()
+	internal void CalculateColliderState()
 	{
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
 		geoNode.CalculateColliderState();
 	    }
-	}
-
-	public void DisableAllColliders()
-	{
-	    foreach (HEU_GeoNode geoNode in _geoNodes)
-	    {
-		geoNode.DisableAllColliders();
-	    }
-	}
-
-	/// <summary>
-	/// Returns true if this is an object instancer, or if it has point (attribute) instancer parts.
-	/// </summary>
-	/// <returns></returns>
-	public bool IsInstancer()
-	{
-	    if (_objectInfo.isInstancer)
-	    {
-		return true;
-	    }
-	    else
-	    {
-		// Check parts for atrrib instancing
-		foreach (HEU_GeoNode geoNode in _geoNodes)
-		{
-		    if (geoNode.HasAttribInstancer())
-		    {
-			return true;
-		    }
-		}
-	    }
-	    return false;
 	}
 
 	public override string ToString()

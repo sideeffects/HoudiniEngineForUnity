@@ -27,6 +27,14 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
 
 namespace HoudiniEngineUnity
 {
@@ -41,7 +49,7 @@ namespace HoudiniEngineUnity
     /// Addtionally contains attribute-editing tools data such
     /// as temporary mesh and collider.
     /// </summary>
-    public class HEU_AttributesStore : ScriptableObject, IEquivable<HEU_AttributesStore>
+    internal class HEU_AttributesStore : ScriptableObject, IEquivable<HEU_AttributesStore>
     {
 	//	DATA ------------------------------------------------------------------------------------------------------
 

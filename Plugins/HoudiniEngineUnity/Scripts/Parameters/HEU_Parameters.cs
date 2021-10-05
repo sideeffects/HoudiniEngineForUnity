@@ -43,23 +43,51 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Holds all parameter data for an asset.
     /// </summary>
-    public class HEU_Parameters : ScriptableObject, IEquivable<HEU_Parameters>
+    public class HEU_Parameters : ScriptableObject, IHEU_Parameters, IHEU_HoudiniAssetSubcomponent, IEquivable<HEU_Parameters>
     {
+
+	// PUBLIC FIELDS ================================================================
+
+	/// <inheritdoc />
+	public HEU_HoudiniAsset ParentAsset { get { return _parentAsset; } }
+
+	/// <inheritdoc />
+	public bool ShowParameters { get { return _showParameters; } set { _showParameters = value; } }
+
+	/// <inheritdoc />
+	public HAPI_NodeId NodeID { get { return _nodeID; } internal set { _nodeID = value; } }
+
+	/// <inheritdoc />
+	public List<int> RootParameters  { get { return _rootParameters; } }
+
+	/// <inheritdoc />
+	public List<HEU_ParameterModifier> ParameterModifiers { get { return _parameterModifiers; } }
+
+	// =======================================================================
+
 	//	DATA ------------------------------------------------------------------------------------------------------
 
-	public HAPI_NodeId _nodeID;
+	[SerializeField]
+	private HAPI_NodeId _nodeID;
 
-	public string _uiLabel = "ASSET PARAMETERS";
+	[SerializeField]
+	internal string _uiLabel = "ASSET PARAMETERS";
 
-	public int[] _paramInts;
-	public float[] _paramFloats;
-	public string[] _paramStrings;
-	public HAPI_ParmChoiceInfo[] _paramChoices;
+	[SerializeField]
+	private int[] _paramInts;
+
+	[SerializeField]
+	private float[] _paramFloats;
+
+	[SerializeField]
+	private string[] _paramStrings;
+
+	[SerializeField]
+	private HAPI_ParmChoiceInfo[] _paramChoices;
 
 	// Hierarychy list (for UI)		
 	[SerializeField]
 	private List<int> _rootParameters = new List<int>();
-	public List<int> RootParameters  { get { return _rootParameters; } set { _rootParameters = value; } }
 
 	[SerializeField]
 	private List<HEU_ParameterData> _parameterList = new List<HEU_ParameterData>();
@@ -67,34 +95,31 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private List<HEU_ParameterModifier> _parameterModifiers = new List<HEU_ParameterModifier>();
 
-	public List<HEU_ParameterModifier> ParameterModifiers { get { return _parameterModifiers; } set { _parameterModifiers = value; } }
-
 	// If true, need to recreate the parameters by querying HAPI.
 	// Should be called after inserting or removing an multiparm instance.
 	[SerializeField]
 	private bool _regenerateParameters;
 
-	public bool RequiresRegeneration { get { return _regenerateParameters; } set { _regenerateParameters = value; } }
+	internal bool RequiresRegeneration { get { return _regenerateParameters; } set { _regenerateParameters = value; } }
 
 	// Cache the parameter preset. This is reloaded back into Houdini after scene deserialization.
 	[SerializeField]
 	private byte[] _presetData;
 
-	public byte[] GetPresetData() { return _presetData; }
+	internal byte[] GetPresetData() { return _presetData; }
 
-	public void SetPresetData(byte[] data) { _presetData = data; }
+	internal void SetPresetData(byte[] data) { _presetData = data; }
 
 	// Cache the defaul parameter preset when HDA is initially loaded. Used when resetting parameters.
 	[SerializeField]
 	private byte[] _defaultPresetData;
 
-	public byte[] GetDefaultPresetData() { return _defaultPresetData; }
+	internal byte[] GetDefaultPresetData() { return _defaultPresetData; }
 
 	// Specifies whether the parameters are in a valid state to interact with Houdini
 	[SerializeField]
 	private bool _validParameters;
 
-	public bool AreParametersValid() { return _validParameters; }
 
 	// Disable the warning for unused variable. We're accessing this as a SerializedProperty.
 #pragma warning disable 0414
@@ -102,52 +127,1605 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	[HideInInspector]
 	private bool _showParameters = true;
-	public bool ShowParameters { get { return _showParameters; } set { _showParameters = value; } }
 
 #pragma warning restore 0414
 
-	// Flag that the UI needs to be recached. Should be done whenever any of the parameters change.
 	//[SerializeField]
 	private bool _recacheUI = true;
+	// Flag that the UI needs to be recached. Should be done whenever any of the parameters change.
+	internal bool RecacheUI { get { return _recacheUI; } set { _recacheUI = value; } }
 
-	public bool RecacheUI { get { return _recacheUI; } set { _recacheUI = value; } }
+	[SerializeField]
+	private HEU_HoudiniAsset _parentAsset;
 
 
-	//	LOGIC -----------------------------------------------------------------------------------------------------
+	// PUBLIC FUNCTIONS ===============================================================================================
 
-	public void CleanUp()
+	/// <inheritdoc />
+	public bool AreParametersValid() { return _validParameters; }
+
+	/// <inheritdoc />
+	public HEU_SessionBase GetSession()
 	{
-	    //HEU_Logger.Log("Cleaning up parameters!");
-
-	    // For input parameters, notify removal
-	    foreach (HEU_ParameterData paramData in _parameterList)
+	    if (_parentAsset != null)
 	    {
-		if (paramData != null && paramData._paramInputNode != null)
+		return _parentAsset.GetAssetSession(true);
+	    }
+	    else
+	    {
+		return HEU_SessionManager.GetOrCreateDefaultSession();
+	    }
+	}
+
+	/// <inheritdoc />
+	public void Recook()
+	{
+	    //RequiresRegeneration = true;
+
+	    if (_parentAsset != null) _parentAsset.RequestCook();
+	}
+
+	/// <inheritdoc />
+	public List<HEU_ParameterData> GetParameters()
+	{
+	    return _parameterList;
+	}
+
+	/// <inheritdoc />
+	public HEU_ParameterData GetParameter(int listIndex)
+	{
+	    if (listIndex >= 0 && listIndex < _parameterList.Count)
+	    {
+		return _parameterList[listIndex];
+	    }
+	    return null;
+	}
+
+	/// <inheritdoc />
+	public HEU_ParameterData GetParameter(string name)
+	{
+	    foreach (HEU_ParameterData parameterData in _parameterList)
+	    {
+		if (parameterData._name.Equals(name))
 		{
-		    paramData._paramInputNode.NotifyParentRemovedInput();
+		    return parameterData;
+		}
+	    }
+	    return null;
+	}
+
+	public HEU_ParameterData GetParameterWithParmID(HAPI_ParmId parmID)
+	{
+	    foreach (HEU_ParameterData parameterData in _parameterList)
+	    {
+		if (parameterData.ParmID == parmID)
+		{
+		    return parameterData;
+		}
+	    }
+	    return null;
+	}
+
+	/// <inheritdoc />
+	public void RemoveParameter(int listIndex)
+	{
+	    if (listIndex >= 0 && listIndex < _parameterList.Count)
+	    {
+		_parameterList.RemoveAt(listIndex);
+	    }
+	}
+
+	/// <inheritdoc />
+	public bool HaveParametersChanged()
+	{
+	    if (!AreParametersValid())
+	    {
+		return false;
+	    }
+
+	    foreach (HEU_ParameterData parameterData in _parameterList)
+	    {
+		// Compare parameter data value against the value from arrays
+
+		switch (parameterData._parmInfo.type)
+		{
+		    case HAPI_ParmType.HAPI_PARMTYPE_INT:
+		    case HAPI_ParmType.HAPI_PARMTYPE_BUTTON:
+		    {
+			if (!HEU_GeneralUtility.DoArrayElementsMatch(_paramInts, parameterData._parmInfo.intValuesIndex, parameterData._intValues, 0, parameterData.ParmSize))
+			{
+			    return true;
+			}
+			break;
+		    }
+		    case HAPI_ParmType.HAPI_PARMTYPE_FLOAT:
+		    {
+			if (!HEU_GeneralUtility.DoArrayElementsMatch(_paramFloats, parameterData._parmInfo.floatValuesIndex, parameterData._floatValues, 0, parameterData.ParmSize))
+			{
+			    return true;
+			}
+			break;
+		    }
+		    case HAPI_ParmType.HAPI_PARMTYPE_STRING:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE:
+		    {
+			if (!HEU_GeneralUtility.DoArrayElementsMatch(_paramStrings, parameterData._parmInfo.stringValuesIndex, parameterData._stringValues, 0, parameterData.ParmSize))
+			{
+			    return true;
+			}
+			break;
+		    }
+		    case HAPI_ParmType.HAPI_PARMTYPE_TOGGLE:
+		    {
+			if (_paramInts[parameterData._parmInfo.intValuesIndex] != Convert.ToInt32(parameterData._toggle))
+			{
+			    return true;
+			}
+			break;
+		    }
+		    case HAPI_ParmType.HAPI_PARMTYPE_COLOR:
+		    {
+			if (_paramFloats[parameterData._parmInfo.floatValuesIndex] != parameterData._color[0]
+				|| _paramFloats[parameterData._parmInfo.floatValuesIndex + 1] != parameterData._color[1]
+				|| _paramFloats[parameterData._parmInfo.floatValuesIndex + 2] != parameterData._color[2]
+				|| (parameterData.ParmSize == 4 && _paramFloats[parameterData._parmInfo.floatValuesIndex + 3] != parameterData._color[3]))
+			{
+			    return true;
+			}
+
+			break;
+		    }
+		    case HAPI_ParmType.HAPI_PARMTYPE_NODE:
+		    {
+			if (parameterData._paramInputNode != null && (parameterData._paramInputNode.RequiresUpload || parameterData._paramInputNode.HasInputNodeTransformChanged()))
+			{
+			    return true;
+			}
+
+			break;
+		    }
+		    default:
+		    {
+			// Unsupported type
+			break;
+		    }
+		    // TODO: add support for rest of types
+		}
+	    }
+	    return false;
+	}
+
+	/// <inheritdoc />
+	public bool ResetAllToDefault(bool bRecookAsset = false)
+	{
+	    HEU_SessionBase session = GetSession();
+	    if (session != null)
+	    {
+		ResetAllToDefault(session);
+		if (bRecookAsset) Recook();
+
+		return true;
+	    }
+	    else
+	    {
+		return false;
+	    }
+	}
+
+	/// <inheritdoc />
+	public bool SetFloatParameterValue(string parameterName, float value, int atIndex = 0, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsFloat())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (atIndex >= paramData._floatValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Parameter tuple index {0} is out of range (tuple size == {0}).", atIndex, paramData._floatValues.Length);
+	        return false;
+	    }
+
+	    paramData._floatValues[atIndex] = value;
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+
+	}
+
+	/// <inheritdoc />
+	public bool GetFloatParameterValue(string parameterName, out float value, int atIndex = 0)
+	{
+	    value = 0;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsFloat())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._floatValues == null || atIndex >= paramData._floatValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Parameter tuple index {0} is out of range (tuple size == {0}).", atIndex, paramData._floatValues.Length);
+	        return false;
+	    }
+
+	    value = paramData._floatValues[atIndex];
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetFloatParameterValues(string parameterName, float[] values, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsFloat())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (values == null || values.Length != paramData._floatValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Incorrect number of values for {0}: Expected: {1}, Actual: {2}", parameterName, paramData._floatValues.Length, values.Length);
+	        return false;
+	    }
+
+	    // Copy by value
+	    for (int i = 0; i < paramData._floatValues.Length; i++)
+	    {
+		paramData._floatValues[i] = values[i];
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+
+	}
+
+	/// <inheritdoc />
+	public bool GetFloatParameterValues(string parameterName, out float[] values)
+	{
+	    values = null;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsFloat())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    values = new float[paramData._floatValues.Length];
+
+	    // Copy by value
+	    for (int i = 0; i < paramData._floatValues.Length; i++)
+	    {
+		values[i] = paramData._floatValues[i];
+	    }
+	 
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetColorParameterValue(string parameterName, Color value, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsColor())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    paramData._color = value;    
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetColorParameterValue(string parameterName, out Color value)
+	{
+	    value = Color.white;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsColor())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    value = paramData._color;
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetIntParameterValue(string parameterName, int value, int atIndex = 0, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsInt())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._intValues == null || atIndex >= paramData._intValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Parameter tuple index {0} is out of range (tuple size == {0}).", atIndex, paramData._intValues.Length);
+	        return false;
+	    }
+
+	    paramData._intValues[atIndex] = value;
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetIntParameterValue(string parameterName, out int value, int atIndex = 0)
+	{
+	    value = 0;
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsInt())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._intValues == null || atIndex >= paramData._intValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Parameter tuple index {0} is out of range (tuple size == {0}).", atIndex, paramData._intValues.Length);
+	        return false;
+	    }
+
+	    value =  paramData._intValues[atIndex];
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetIntParameterValues(string parameterName, int[] values, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsInt())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (values == null || values.Length != paramData._intValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Incorrect number of values for {0}: Expected: {1}, Actual: {2}", parameterName, paramData._intValues.Length, values.Length);
+	        return false;
+	    }
+
+	    // Copy by value
+	    for (int i = 0; i < paramData._intValues.Length; i++)
+	    {
+		paramData._intValues[i] = values[i];
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+
+	}
+
+	/// <inheritdoc />
+	public bool GetIntParameterValues(string parameterName, out int[] values)
+	{
+	    values = null;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsFloat())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    values = new int[paramData._intValues.Length];
+	    
+	    // Copy by value
+	    for (int i = 0; i < paramData._floatValues.Length; i++)
+	    {
+		values[i] = paramData._intValues[i];
+	    }
+	 
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetChoiceParameterValue(string parameterName, int value, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsInt() || paramData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (value <= 0 || value >= paramData._choiceIntValues.Length)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: choice is not the correct index!.", parameterName);
+		return false;
+	    }
+
+	    paramData._intValues[0] = paramData._choiceIntValues[value];
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetChoiceParameterValue(string parameterName, out int value)
+	{
+	    value = 0;
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsInt() || paramData._parmInfo.scriptType == HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (value <= 0 || value >= paramData._choiceIntValues.Length)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: choice is not the correct index!.", parameterName);
+		return false;
+	    }
+
+	    value = paramData._intValues[0];
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetBoolParameterValue(string parameterName, bool value, int atIndex = 0, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsToggle())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    paramData._toggle = value;
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetBoolParameterValue(string parameterName, out bool value, int atIndex = 0)
+	{
+	    value = false;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsToggle())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    value = paramData._toggle;
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetStringParameterValue(string parameterName, string value, int atIndex = 0, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsString())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._stringValues == null || atIndex >= paramData._stringValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Parameter tuple index {0} is out of range (tuple size == {0}).", atIndex, paramData._stringValues.Length);
+	        return false;
+	    }
+
+	    paramData._stringValues[atIndex] = value;
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetStringParameterValue(string parameterName, out string value, int atIndex = 0)
+	{
+	    value = "";
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsString() && !paramData.IsPathFile())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._stringValues == null || atIndex >= paramData._stringValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Parameter tuple index {0} is out of range (tuple size == {0}).", atIndex, paramData._stringValues.Length);
+	        return false;
+	    }
+
+	    value = paramData._stringValues[atIndex];
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetStringParameterValues(string parameterName, string[] values, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsString() && !paramData.IsPathFile())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (values == null || values.Length != paramData._stringValues.Length)
+	    {
+	        HEU_Logger.LogWarningFormat("Incorrect number of values for {0}: Expected: {1}, Actual: {2}", parameterName, paramData._stringValues.Length, values.Length);
+	        return false;
+	    }
+
+	    // Copy by value
+	    for (int i = 0; i < paramData._intValues.Length; i++)
+	    {
+		paramData._stringValues[i] = values[i];
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+
+	}
+
+	/// <inheritdoc />
+	public bool GetStringParameterValues(string parameterName, out string[] values)
+	{
+	    values = null;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsString())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    values = new string[paramData._stringValues.Length];
+	    
+	    // Copy by value
+	    for (int i = 0; i < paramData._stringValues.Length; i++)
+	    {
+		values[i] = paramData._stringValues[i];
+	    }
+	 
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetAssetRefParameterValue(string parameterName, GameObject value, int atIndex = 0, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (paramData._paramInputNode == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (atIndex < paramData._paramInputNode.NumInputEntries())
+	    {
+	        paramData._paramInputNode.SetInputEntry(atIndex, value);
+	    }
+	    else
+	    {
+	        paramData._paramInputNode.AddInputEntryAtEnd(value);
+	    }
+
+	    paramData._paramInputNode.RequiresUpload = true;
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetAssetRefParameterValues(string parameterName, GameObject[] values, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (paramData._paramInputNode == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    for (int i = 0; i < values.Length; i++)
+	    {
+		if (i < paramData._paramInputNode.NumInputEntries())
+		{
+		    paramData._paramInputNode.SetInputEntry(i, values[i]);
+		}
+		else
+		{
+		    paramData._paramInputNode.AddInputEntryAtEnd(values[i]);
 		}
 	    }
 
-	    _validParameters = false;
-	    _regenerateParameters = false;
+	    if (bRecookAsset) Recook();
 
-	    _rootParameters = new List<int>();
-	    _parameterList = new List<HEU_ParameterData>();
-	    _parameterModifiers = new List<HEU_ParameterModifier>();
+	    return true;
 
-	    _paramInts = null;
-	    _paramFloats = null;
-	    _paramStrings = null;
-	    _paramChoices = null;
-
-	    _presetData = null;
 	}
 
-	public bool Initialize(HEU_SessionBase session, HAPI_NodeId nodeID, ref HAPI_NodeInfo nodeInfo,
+	/// <inheritdoc />
+	public bool GetAssetRefParameterValue(string parameterName, out GameObject value, int atIndex = 0)
+	{
+	    value = null;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (paramData._paramInputNode == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    value = paramData._paramInputNode.GetInputEntryGameObject(atIndex);
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetAssetRefParameterValues(string parameterName, out GameObject[] values)
+	{
+	    values = null;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (paramData._paramInputNode == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    int numEntries = paramData._paramInputNode.NumInputEntries();
+	    values = new GameObject[numEntries];
+
+	    for (int i = 0; i < numEntries; i++)
+	    {
+		values[i] = paramData._paramInputNode.GetInputEntryGameObject(i);
+	    }
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetRampParameterNumPoints(string parameterName, int numPoints, bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+
+	    int oldCount = paramData._parmInfo.instanceCount;
+
+	    if (oldCount == numPoints)
+	    {
+		return true;
+	    }
+
+	    int numParamsPerPoint = paramData._parmInfo.instanceLength;
+	    int pointID = (oldCount - 1) * numParamsPerPoint;
+
+	    if (pointID >= paramData._childParameterIDs.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    int parmIndex = paramData._childParameterIDs[pointID];
+
+	    if (numPoints > oldCount)
+	    {
+		int numAdd = numPoints - oldCount;
+		HEU_ParameterData childParameter = _parameterList[parmIndex];
+		int instanceIndex = childParameter._parmInfo.instanceNum;
+		InsertInstanceToMultiParm( paramData._unityIndex, instanceIndex, numAdd);
+	    }
+	    else
+	    {
+		int numRemove = oldCount - numPoints;
+		HEU_ParameterData childParameter = _parameterList[parmIndex];
+		int instanceIndex = childParameter._parmInfo.instanceNum;
+		RemoveInstancesFromMultiParm(paramData._unityIndex, instanceIndex, numRemove);
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetRampParameterNumPoints(string parameterName, out int numPoints)
+	{
+	    numPoints = 0;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    numPoints = paramData._parmInfo.instanceCount;
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetFloatRampParameterPointValue(
+	    string parameterName,
+	    int pointIndex,
+	    float pointPosition,
+	    float pointValue,
+	    HEU_HoudiniRampInterpolationTypeWrapper interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.LINEAR,
+	    bool bRecookAsset = false)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsFloatRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._childParameterIDs == null || paramData._childParameterIDs.Count < 3)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    // Return true if we can set at least one of them
+	    bool bResult = true;
+
+	    // For ramps, the number of instances is the number of points in the ramp
+	    // Each point can then have a number of parameters.
+	    int numPoints = paramData._parmInfo.instanceCount;
+	    int numParamsPerPoint = paramData._parmInfo.instanceLength;
+	    int pointID = pointIndex * numParamsPerPoint;
+
+	    if (pointID >= paramData._childParameterIDs.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    int parmIndex = paramData._childParameterIDs[pointID];
+	    if (parmIndex + 2 >= _parameterList.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    HEU_ParameterData paramDataPosition = _parameterList[parmIndex];
+	    if (paramDataPosition != null && paramDataPosition.IsFloat() && paramDataPosition._floatValues.Length > 0)
+	    {
+		paramDataPosition._floatValues[0] = pointPosition;
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    HEU_ParameterData paramDataValue = _parameterList[parmIndex+1];
+	    if (paramDataValue != null && paramDataValue.IsFloat() && paramDataValue._floatValues.Length > 0)
+	    {
+		paramDataValue._floatValues[0] = pointValue;
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    HEU_ParameterData paramDataInterpolationType = _parameterList[parmIndex+2];
+	    if (paramDataInterpolationType != null && paramDataInterpolationType._intValues.Length > 0)
+	    {
+		paramDataInterpolationType._intValues[0] = (int)interpolationType;
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+
+	    if (!bResult)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetFloatRampParameterPointValue(
+	    string parameterName,
+	    int pointIndex,
+	    out float pointPosition,
+	    out float pointValue,
+	    out HEU_HoudiniRampInterpolationTypeWrapper interpolationType
+	)
+	{
+	    pointPosition = 0;
+	    pointValue = 0;
+	    interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.CONSTANT;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsFloatRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._childParameterIDs == null || paramData._childParameterIDs.Count < 3)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    // Return true if we can set all of them
+	    bool bResult = true;
+
+	    // For ramps, the number of instances is the number of points in the ramp
+	    // Each point can then have a number of parameters.
+	    int numPoints = paramData._parmInfo.instanceCount;
+	    int numParamsPerPoint = paramData._parmInfo.instanceLength;
+	    int pointID = pointIndex * numParamsPerPoint;
+
+	    if (pointID >= paramData._childParameterIDs.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    int parmIndex = paramData._childParameterIDs[pointID];
+	    if (parmIndex + 2 >= _parameterList.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    HEU_ParameterData paramDataPosition = _parameterList[parmIndex];
+	    if (paramDataPosition != null && paramDataPosition.IsFloat() && paramDataPosition._floatValues.Length > 0)
+	    {
+		pointPosition = paramDataPosition._floatValues[0];
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    HEU_ParameterData paramDataValue = _parameterList[parmIndex+1];
+	    if (paramDataValue != null && paramDataValue.IsFloat() && paramDataValue._floatValues.Length > 0)
+	    {
+		pointValue = paramDataValue._floatValues[0];
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    HEU_ParameterData paramDataInterpolationType = _parameterList[parmIndex+2];
+	    if (paramDataInterpolationType != null && paramDataInterpolationType._intValues.Length > 0)
+	    {
+		interpolationType = (HEU_HoudiniRampInterpolationTypeWrapper)paramDataInterpolationType._intValues[0];
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    if (!bResult)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetFloatRampParameterPoints(
+	    string parameterName,
+	    HEU_FloatRampPointWrapper[] rampPoints,
+	    bool bRecookAsset = false
+	)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsFloatRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    bool bResult = true;
+
+	    for (int i = 0; i < rampPoints.Length; i++)
+	    {
+		bResult &= SetFloatRampParameterPointValue(parameterName, i, rampPoints[i].Position, rampPoints[i].Value, rampPoints[i].Interpolation, false);
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetFloatRampParameterPoints(
+	    string parameterName,
+	    out HEU_FloatRampPointWrapper[] rampPoints
+	)
+	{
+	    rampPoints = null;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsFloatRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    int numPoints = paramData._parmInfo.instanceCount;
+	    rampPoints = new HEU_FloatRampPointWrapper[numPoints];
+
+	    bool bResult = true;
+
+	    for (int i = 0; i < numPoints; i++)
+	    {
+		float pointPosition;
+		float pointValue;
+		HEU_HoudiniRampInterpolationTypeWrapper interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.LINEAR;
+
+		bResult &= GetFloatRampParameterPointValue(parameterName, i, out pointPosition, out pointValue, out interpolationType);
+
+		rampPoints[i] = new HEU_FloatRampPointWrapper(pointPosition, pointValue, interpolationType);
+	    }
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetColorRampParameterPointValue(
+	    string parameterName,
+	    int pointIndex,
+	    float pointPosition,
+	    Color pointValue,
+	    HEU_HoudiniRampInterpolationTypeWrapper interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.LINEAR,
+	    bool bRecookAsset = false
+	)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsColorRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._childParameterIDs == null || paramData._childParameterIDs.Count < 3)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    // Return true if we can set all of them
+	    bool bResult = true;
+
+	    // For ramps, the number of instances is the number of points in the ramp
+	    // Each point can then have a number of parameters.
+	    int numPoints = paramData._parmInfo.instanceCount;
+	    int numParamsPerPoint = paramData._parmInfo.instanceLength;
+	    int pointID = pointIndex * numParamsPerPoint;
+
+	    if (pointID >= paramData._childParameterIDs.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    int parmIndex = paramData._childParameterIDs[pointID];
+	    if (parmIndex + 2 >= _parameterList.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    HEU_ParameterData paramDataPosition = _parameterList[parmIndex];
+	    if (paramDataPosition != null && paramDataPosition.IsFloat() && paramDataPosition._floatValues.Length > 0)
+	    {
+		paramDataPosition._floatValues[0] = pointPosition;
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+
+	    HEU_ParameterData paramDataValue = _parameterList[parmIndex+1];
+	    if (paramDataValue != null && paramDataValue.IsColor())
+	    {
+		paramDataValue._color = pointValue;
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    HEU_ParameterData paramDataInterpolationType = _parameterList[parmIndex+2];
+	    if (paramDataInterpolationType != null && paramDataInterpolationType._intValues.Length > 0)
+	    {
+		paramDataInterpolationType._intValues[0] = (int)interpolationType;
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    if (!bResult)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetColorRampParameterPointValue(
+	    string parameterName,
+	    int pointIndex,
+	    out float pointPosition,
+	    out Color pointValue,
+	    out HEU_HoudiniRampInterpolationTypeWrapper interpolationType
+	)
+	{
+	    pointPosition = 0;
+	    pointValue = Color.black;
+	    interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.CONSTANT;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsColorRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._childParameterIDs == null || paramData._childParameterIDs.Count < 3)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    // Return true if we can set all of them
+	    bool bResult = true;
+
+	    // For ramps, the number of instances is the number of points in the ramp
+	    // Each point can then have a number of parameters.
+	    int numPoints = paramData._parmInfo.instanceCount;
+	    int numParamsPerPoint = paramData._parmInfo.instanceLength;
+	    int pointID = pointIndex * numParamsPerPoint;
+
+	    if (pointID >= paramData._childParameterIDs.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    int parmIndex = paramData._childParameterIDs[pointID];
+	    if (parmIndex + 2 >= _parameterList.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    HEU_ParameterData paramDataPosition = _parameterList[parmIndex];
+	    if (paramDataPosition != null && paramDataPosition.IsFloat() && paramDataPosition._floatValues.Length > 0)
+	    {
+		pointPosition = paramDataPosition._floatValues[0];
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    HEU_ParameterData paramDataValue = _parameterList[parmIndex+1];
+	    if (paramDataValue != null && paramDataValue.IsColor())
+	    {
+		pointValue = paramDataValue._color;
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    HEU_ParameterData paramDataInterpolationType = _parameterList[parmIndex+2];
+	    if (paramDataInterpolationType != null && paramDataInterpolationType._intValues.Length > 0)
+	    {
+		interpolationType = (HEU_HoudiniRampInterpolationTypeWrapper)paramDataInterpolationType._intValues[0];
+	    }
+	    else
+	    {
+		bResult = false;
+	    }
+
+	    if (!bResult)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetColorRampParameterPoints(
+	    string parameterName,
+	    HEU_ColorRampPointWrapper[] rampPoints,
+	    bool bRecookAsset = false
+	)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsColorRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    bool bResult = true;
+
+	    for (int i = 0; i < rampPoints.Length; i++)
+	    {
+		bResult &= SetColorRampParameterPointValue(parameterName, i, rampPoints[i].Position, rampPoints[i].Value, rampPoints[i].Interpolation, false);
+	    }
+
+	    if (bRecookAsset) Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetColorRampParameterPoints(
+	    string parameterName,
+	    out HEU_ColorRampPointWrapper[] rampPoints
+	)
+	{
+	    rampPoints = null;
+
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+
+	    if (!paramData.IsColorRamp())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    int numPoints = paramData._parmInfo.instanceCount;
+	    rampPoints = new HEU_ColorRampPointWrapper[numPoints];
+
+	    bool bResult = true;
+
+	    for (int i = 0; i < numPoints; i++)
+	    {
+		float pointPosition;
+		Color pointValue;
+		HEU_HoudiniRampInterpolationTypeWrapper interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.LINEAR;
+
+		bResult &= GetColorRampParameterPointValue(parameterName, i, out pointPosition, out pointValue, out interpolationType);
+
+		rampPoints[i] = new HEU_ColorRampPointWrapper(pointPosition, pointValue, interpolationType);
+	    }
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool TriggerButtonParameter(string parameterName)
+	{
+	    HEU_ParameterData paramData = GetParameter(parameterName);
+	    if (paramData == null)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not found.", parameterName);
+		return false;
+	    }
+	    
+	    if (!paramData.IsButton())
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    if (paramData._intValues == null || paramData._intValues.Length == 0)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
+		return false;
+	    }
+
+	    paramData._intValues[0] =  paramData._intValues[0] == 0 ? 1 : 0;
+	    Recook();
+
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool SetParameterTuples(
+	    Dictionary<string, HEU_ParameterTupleWrapper> parameterTuples,
+	    bool bRecook = true
+	)
+	{
+	    foreach (KeyValuePair<string, HEU_ParameterTupleWrapper> tuple in parameterTuples)
+	    {
+		string name = tuple.Key;
+		HEU_ParameterTupleWrapper parameterTuple = tuple.Value;
+
+		HEU_ParameterData parameterData = GetParameter(name);
+		if (parameterTuple == null || parameterData == null)
+		{
+		    HEU_Logger.LogWarningFormat("{0}: is not found.", name);
+		    return false;
+		}
+
+		bool bResult = true;
+
+		if (parameterTuple._boolValues != null && parameterTuple._boolValues.Length > 0)
+		{
+		    int tupleSize = parameterTuple._boolValues.Length;
+		    for (int i = 0; i < tupleSize; i++)
+		    {
+			bResult &= SetBoolParameterValue(name, parameterTuple._boolValues[i], i);
+		    }
+		}
+
+		if (parameterTuple._intValues != null && parameterTuple._intValues.Length > 0)
+		{
+		    int tupleSize = parameterTuple._intValues.Length;
+		    for (int i = 0; i < tupleSize; i++)
+		    {
+			bResult &= SetIntParameterValue(name, parameterTuple._intValues[i], i);
+		    }
+		}
+
+		if (parameterTuple._floatValues != null && parameterTuple._floatValues.Length > 0)
+		{
+		    int tupleSize = parameterTuple._floatValues.Length;
+		    for (int i = 0; i < tupleSize; i++)
+		    {
+			bResult &= SetFloatParameterValue(name, parameterTuple._floatValues[i], i);
+		    }
+		}
+
+		if (parameterTuple._stringValues != null && parameterTuple._stringValues.Length > 0)
+		{
+		    int tupleSize = parameterTuple._stringValues.Length;
+		    for (int i = 0; i < tupleSize; i++)
+		    {
+			bResult &= SetStringParameterValue(name, parameterTuple._stringValues[i], i);
+		    }
+		}
+
+		if (!bResult)
+		{
+		    HEU_Logger.LogWarningFormat("{0}: failed to set parameter!", name);
+		    return false;
+		}
+
+	    }
+	    return true;
+	}
+
+	/// <inheritdoc />
+	public bool GetParameterTuples(out Dictionary<string, HEU_ParameterTupleWrapper> parameterTuples)
+	{
+	    parameterTuples = new Dictionary<string, HEU_ParameterTupleWrapper>();
+	    List<HEU_ParameterData> parameters = GetParameters();
+	    int numParameters = parameters.Count;
+
+	    for (int i = 0; i < numParameters; i++)
+	    {
+		HEU_ParameterData parameter = parameters[i];
+		int tupleSize = parameter._parmInfo.size;
+		string name = parameter._name;
+		HEU_ParameterTupleWrapper parameterTuple = new HEU_ParameterTupleWrapper();
+		bool bSkipped = false;
+
+		switch (parameter._parmInfo.type)
+		{
+		    case HAPI_ParmType.HAPI_PARMTYPE_INT:
+		    case HAPI_ParmType.HAPI_PARMTYPE_MULTIPARMLIST:
+		        // A float/color ramp is a multiparm list.
+		        if (parameter.IsColorRamp())
+			{
+			    GetColorRampParameterPoints(name, out parameterTuple._colorRampValues);
+			}
+			else if (parameter.IsFloatRamp())
+			{
+			    GetFloatRampParameterPoints(name, out parameterTuple._floatRampValues);
+			}
+			else
+			{
+			    // Regular int
+			    parameterTuple._intValues = new int[tupleSize];
+			    for (int j = 0; j < tupleSize; j++)
+			    {
+			        GetIntParameterValue(name, out parameterTuple._intValues[j], j);
+			    }
+			}
+
+		        break;
+
+		    case HAPI_ParmType.HAPI_PARMTYPE_TOGGLE:
+		        parameterTuple._boolValues = new bool[tupleSize];
+			for (int j = 0; j < tupleSize; j++)
+			{
+			    GetBoolParameterValue(name, out parameterTuple._boolValues[j]);
+			}
+		        break;
+		    case HAPI_ParmType.HAPI_PARMTYPE_FLOAT:
+		    case HAPI_ParmType.HAPI_PARMTYPE_COLOR:
+		        parameterTuple._floatValues = new float[tupleSize];
+			for (int j = 0; j < tupleSize; j++)
+			{
+			    GetFloatParameterValue(name, out parameterTuple._floatValues[j], j);
+			}
+		        break;
+
+		    case HAPI_ParmType.HAPI_PARMTYPE_STRING:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE:
+		    case HAPI_ParmType.HAPI_PARMTYPE_NODE:
+		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR:
+		        parameterTuple.StringValues = new string[tupleSize];
+			for (int j = 0; j < tupleSize; j++)
+			{
+			    GetStringParameterValue(name, out parameterTuple.StringValues[j], j);
+			}
+		        break;
+		    case HAPI_ParmType.HAPI_PARMTYPE_BUTTON:
+		    case HAPI_ParmType.HAPI_PARMTYPE_FOLDER:
+		    case HAPI_ParmType.HAPI_PARMTYPE_LABEL:
+		    case HAPI_ParmType.HAPI_PARMTYPE_SEPARATOR:
+			bSkipped = true;
+		        break;
+		    default:
+			bSkipped = true;
+			break;
+		    
+		}
+
+		if (!bSkipped)
+		{
+		    parameterTuples.Add(name, parameterTuple);
+		}
+
+	    }
+
+	    return true;
+	}
+
+	// ================================================================================================================
+
+
+	//	LOGIC -----------------------------------------------------------------------------------------------------
+	internal bool Initialize(HEU_SessionBase session, HAPI_NodeId nodeID, ref HAPI_NodeInfo nodeInfo,
 		Dictionary<string, HEU_ParameterData> previousParamFolders, Dictionary<string, HEU_InputNode> previousParamInputNodes,
 		HEU_HoudiniAsset parentAsset)
 	{
 	    _nodeID = nodeID;
+	    _parentAsset = parentAsset;
 
 	    HAPI_ParmInfo[] parmInfos = new HAPI_ParmInfo[nodeInfo.parmCount];
 	    if (!HEU_GeneralUtility.GetArray1Arg(nodeID, session.GetParams, parmInfos, 0, nodeInfo.parmCount))
@@ -561,7 +2139,7 @@ namespace HoudiniEngineUnity
 				newParameter._paramInputNode = HEU_InputNode.CreateSetupInput(parentAsset.AssetInfo.nodeId, 0, newParameter._name, newParameter._labelName, HEU_InputNode.InputNodeType.PARAMETER, parentAsset);
 				if (newParameter._paramInputNode != null)
 				{
-				    newParameter._paramInputNode.ParamName = newParameter._name;
+				    newParameter._paramInputNode._paramName = newParameter._name;
 				    parentAsset.AddInputNode(newParameter._paramInputNode);
 				}
 			    }
@@ -656,7 +2234,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-	public void SetupRampParameter(HEU_ParameterData rampParameter)
+	private void SetupRampParameter(HEU_ParameterData rampParameter)
 	{
 	    if (rampParameter._parmInfo.rampType == HAPI_RampType.HAPI_RAMPTYPE_COLOR)
 	    {
@@ -744,175 +2322,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public List<HEU_ParameterData> GetParameters()
-	{
-	    return _parameterList;
-	}
-
-	public HEU_ParameterData GetParameter(int listIndex)
-	{
-	    if (listIndex >= 0 && listIndex < _parameterList.Count)
-	    {
-		return _parameterList[listIndex];
-	    }
-	    return null;
-	}
-
-	public HEU_ParameterData GetParameter(string name)
-	{
-	    foreach (HEU_ParameterData parameterData in _parameterList)
-	    {
-		if (parameterData._name.Equals(name))
-		{
-		    return parameterData;
-		}
-	    }
-	    return null;
-	}
-
-	public HEU_ParameterData GetParameterWithParmID(HAPI_ParmId parmID)
-	{
-	    foreach (HEU_ParameterData parameterData in _parameterList)
-	    {
-		if (parameterData.ParmID == parmID)
-		{
-		    return parameterData;
-		}
-	    }
-	    return null;
-	}
-
-	public void RemoveParameter(int listIndex)
-	{
-	    if (listIndex >= 0 && listIndex < _parameterList.Count)
-	    {
-		_parameterList.RemoveAt(listIndex);
-	    }
-	}
-
-	public int GetChosenIndexFromChoiceList(HEU_ParameterData inChoiceParameter)
-	{
-	    Debug.Assert(inChoiceParameter._parmInfo.choiceCount > 0 && inChoiceParameter._parmInfo.scriptType != HAPI_PrmScriptType.HAPI_PRM_SCRIPT_TYPE_BUTTONSTRIP, "Expecting a Choice List!");
-
-	    int numChoices = inChoiceParameter._choiceStringValues.Length;
-	    for (int i = 0; i < numChoices; ++i)
-	    {
-		if (inChoiceParameter._choiceStringValues[i] == _paramStrings[inChoiceParameter._parmInfo.stringValuesIndex])
-		{
-		    return i;
-		}
-	    }
-
-	    return -1;
-	}
-
-	public string GetStringFromParameter(string paramName)
-	{
-	    HEU_ParameterData paramData = GetParameter(paramName);
-	    if (paramData != null && (paramData.IsString() || paramData.IsPathFile()))
-	    {
-		return paramData._stringValues[0];
-	    }
-	    return null;
-	}
-
-	public void SetStringToParameter(string paramName, string value)
-	{
-	    HEU_ParameterData paramData = GetParameter(paramName);
-	    if (paramData != null && (paramData.IsString() || paramData.IsPathFile()))
-	    {
-		paramData._stringValues[0] = value;
-	    }
-	}
-
-	/// <summary>
-	/// Returns true if the parameter values have changed.
-	/// Checks locally stored vs. values in the arrays from Houdini.
-	/// </summary>
-	/// <returns>True if parameter values have changed.</returns>
-	public bool HaveParametersChanged()
-	{
-	    if (!AreParametersValid())
-	    {
-		return false;
-	    }
-
-	    foreach (HEU_ParameterData parameterData in _parameterList)
-	    {
-		// Compare parameter data value against the value from arrays
-
-		switch (parameterData._parmInfo.type)
-		{
-		    case HAPI_ParmType.HAPI_PARMTYPE_INT:
-		    case HAPI_ParmType.HAPI_PARMTYPE_BUTTON:
-		    {
-			if (!HEU_GeneralUtility.DoArrayElementsMatch(_paramInts, parameterData._parmInfo.intValuesIndex, parameterData._intValues, 0, parameterData.ParmSize))
-			{
-			    return true;
-			}
-			break;
-		    }
-		    case HAPI_ParmType.HAPI_PARMTYPE_FLOAT:
-		    {
-			if (!HEU_GeneralUtility.DoArrayElementsMatch(_paramFloats, parameterData._parmInfo.floatValuesIndex, parameterData._floatValues, 0, parameterData.ParmSize))
-			{
-			    return true;
-			}
-			break;
-		    }
-		    case HAPI_ParmType.HAPI_PARMTYPE_STRING:
-		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE:
-		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_DIR:
-		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_GEO:
-		    case HAPI_ParmType.HAPI_PARMTYPE_PATH_FILE_IMAGE:
-		    {
-			if (!HEU_GeneralUtility.DoArrayElementsMatch(_paramStrings, parameterData._parmInfo.stringValuesIndex, parameterData._stringValues, 0, parameterData.ParmSize))
-			{
-			    return true;
-			}
-			break;
-		    }
-		    case HAPI_ParmType.HAPI_PARMTYPE_TOGGLE:
-		    {
-			if (_paramInts[parameterData._parmInfo.intValuesIndex] != Convert.ToInt32(parameterData._toggle))
-			{
-			    return true;
-			}
-			break;
-		    }
-		    case HAPI_ParmType.HAPI_PARMTYPE_COLOR:
-		    {
-			if (_paramFloats[parameterData._parmInfo.floatValuesIndex] != parameterData._color[0]
-				|| _paramFloats[parameterData._parmInfo.floatValuesIndex + 1] != parameterData._color[1]
-				|| _paramFloats[parameterData._parmInfo.floatValuesIndex + 2] != parameterData._color[2]
-				|| (parameterData.ParmSize == 4 && _paramFloats[parameterData._parmInfo.floatValuesIndex + 3] != parameterData._color[3]))
-			{
-			    return true;
-			}
-
-			break;
-		    }
-		    case HAPI_ParmType.HAPI_PARMTYPE_NODE:
-		    {
-			if (parameterData._paramInputNode != null && (parameterData._paramInputNode.RequiresUpload || parameterData._paramInputNode.HasInputNodeTransformChanged()))
-			{
-			    return true;
-			}
-
-			break;
-		    }
-		    default:
-		    {
-			// Unsupported type
-			break;
-		    }
-		    // TODO: add support for rest of types
-		}
-	    }
-	    return false;
-	}
-
-	public bool UploadValuesToHoudini(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bDoCheck = true, bool bForceUploadInputs = false)
+	internal bool UploadValuesToHoudini(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bDoCheck = true, bool bForceUploadInputs = false)
 	{
 	    if (!AreParametersValid())
 	    {
@@ -1060,22 +2470,22 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-	public void InsertInstanceToMultiParm(int unityParamIndex, int instanceIndex, int numInstancesToAdd)
+	internal void InsertInstanceToMultiParm(int unityParamIndex, int instanceIndex, int numInstancesToAdd)
 	{
 	    _parameterModifiers.Add(HEU_ParameterModifier.GetNewModifier(HEU_ParameterModifier.ModifierAction.MULTIPARM_INSERT, unityParamIndex, instanceIndex, numInstancesToAdd));
 	}
 
-	public void RemoveInstancesFromMultiParm(int unityParamIndex, int instanceIndex, int numInstancesToRemove)
+	internal void RemoveInstancesFromMultiParm(int unityParamIndex, int instanceIndex, int numInstancesToRemove)
 	{
 	    _parameterModifiers.Add(HEU_ParameterModifier.GetNewModifier(HEU_ParameterModifier.ModifierAction.MULTIPARM_REMOVE, unityParamIndex, instanceIndex, numInstancesToRemove));
 	}
 
-	public void ClearInstancesFromMultiParm(int unityParamIndex)
+	internal void ClearInstancesFromMultiParm(int unityParamIndex)
 	{
 	    _parameterModifiers.Add(HEU_ParameterModifier.GetNewModifier(HEU_ParameterModifier.ModifierAction.MULTIPARM_CLEAR, unityParamIndex, 0, 0));
 	}
 
-	public bool HasModifiersPending()
+	internal bool HasModifiersPending()
 	{
 	    return _parameterModifiers.Count > 0;
 	}
@@ -1084,7 +2494,7 @@ namespace HoudiniEngineUnity
 	/// Goes through all pending parameter modifiers and actions on them.
 	/// Deferred way to modify the parameter list after UI drawing.
 	/// </summary>
-	public void ProcessModifiers(HEU_SessionBase session)
+	internal void ProcessModifiers(HEU_SessionBase session)
 	{
 	    if (!AreParametersValid())
 	    {
@@ -1095,7 +2505,7 @@ namespace HoudiniEngineUnity
 	    {
 		//HEU_Logger.LogFormat("Processing modifier {0}", paramModifier._action);
 
-		HEU_ParameterData parameter = GetParameter(paramModifier._parameterIndex);
+		HEU_ParameterData parameter = GetParameter(paramModifier.ParameterIndex);
 		if (parameter == null)
 		{
 		    // Possibly removed already? Don't believe need to flag a warning here.
@@ -1123,9 +2533,9 @@ namespace HoudiniEngineUnity
 		    // Insert new parameter instances at the specified index
 		    // paramModifier._instanceIndex is the location to add at
 		    // paramModifier._modifierValue is the number of new parameter instances to add
-		    for (int i = 0; i < paramModifier._modifierValue; ++i)
+		    for (int i = 0; i < paramModifier.ModifierValue; ++i)
 		    {
-			int insertIndex = paramModifier._instanceIndex + i;
+			int insertIndex = paramModifier.InstanceIndex + i;
 			//HEU_Logger.Log("INSERTING instance index " + insertIndex);
 			if (!session.InsertMultiparmInstance(_nodeID, parameter._parmInfo.id, insertIndex))
 			{
@@ -1141,9 +2551,9 @@ namespace HoudiniEngineUnity
 		    // Remove parameter instances at the specified index
 		    // paramModifier._modifierValue number of instances will be removed
 		    // paramModifier._instanceIndex is the starting index to remove from
-		    for (int i = 0; i < paramModifier._modifierValue; ++i)
+		    for (int i = 0; i < paramModifier.ModifierValue; ++i)
 		    {
-			int removeIndex = paramModifier._instanceIndex;
+			int removeIndex = paramModifier.InstanceIndex;
 			//HEU_Logger.Log("REMOVING instance index " + removeIndex);
 			if (!session.RemoveMultiParmInstance(_nodeID, parameter._parmInfo.id, removeIndex))
 			{
@@ -1157,14 +2567,14 @@ namespace HoudiniEngineUnity
 		else if (paramModifier._action == HEU_ParameterModifier.ModifierAction.SET_FLOAT)
 		{
 		    string paramName = parameter._name;
-		    session.SetParamFloatValue(_nodeID, paramName, paramModifier._instanceIndex, paramModifier._floatValue);
+		    session.SetParamFloatValue(_nodeID, paramName, paramModifier.InstanceIndex, paramModifier.FloatValue);
 
 		    RequiresRegeneration = true;
 		}
 		else if (paramModifier._action == HEU_ParameterModifier.ModifierAction.SET_INT)
 		{
 		    string paramName = parameter._name;
-		    session.SetParamIntValue(_nodeID, paramName, paramModifier._instanceIndex, paramModifier._intValue);
+		    session.SetParamIntValue(_nodeID, paramName, paramModifier.InstanceIndex, paramModifier.IntValue);
 
 		    RequiresRegeneration = true;
 		}
@@ -1182,7 +2592,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="folderParams">Map to populate folder parameters</param>
 	/// <param name="inputNodeParams">Map to populate input node parameters</param>
-	public void GetParameterDataForUIRestore(Dictionary<string, HEU_ParameterData> folderParams, Dictionary<string, HEU_InputNode> inputNodeParams)
+	internal void GetParameterDataForUIRestore(Dictionary<string, HEU_ParameterData> folderParams, Dictionary<string, HEU_InputNode> inputNodeParams)
 	{
 	    foreach (HEU_ParameterData parmData in _parameterList)
 	    {
@@ -1201,21 +2611,25 @@ namespace HoudiniEngineUnity
 	/// Returns list of connected input node gameobjects.
 	/// </summary>
 	/// <param name="inputNodeObjects">List to populate</param>
-	public void GetInputNodeConnectionObjects(List<GameObject> inputNodeObjects)
+	internal void GetInputNodeConnectionObjects(List<GameObject> inputNodeObjects)
 	{
-	    /* TODO INPUT NODE - add connected objects to list
 	    foreach (HEU_ParameterData parmData in _parameterList)
 	    {
 
-		    if (parmData._parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_NODE && parmData._parameterInputNode._connectedInputObject != null)
+		    if (parmData._parmInfo.type == HAPI_ParmType.HAPI_PARMTYPE_NODE && parmData._paramInputNode != null && parmData._paramInputNode.InputObjects != null)
 		    {
-			    inputNodeObjects.Add(parmData._parameterInputNode._connectedInputObject);
+			foreach (HEU_InputObjectInfo input in parmData._paramInputNode.InputObjects)
+			{
+			    if (input != null && input._gameObject != null)
+			    {
+				inputNodeObjects.Add(input._gameObject);
+			    }
+			}
 		    }
 	    }
-	    */
 	}
 
-	public void DownloadPresetData(HEU_SessionBase session)
+	internal void DownloadPresetData(HEU_SessionBase session)
 	{
 	    byte[] presetData = null;
 	    if (session.GetPreset(_nodeID, out presetData))
@@ -1224,7 +2638,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UploadPresetData(HEU_SessionBase session)
+	internal void UploadPresetData(HEU_SessionBase session)
 	{
 	    if (_presetData != null && _presetData.Length > 0)
 	    {
@@ -1232,7 +2646,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void DownloadAsDefaultPresetData(HEU_SessionBase session)
+	internal void DownloadAsDefaultPresetData(HEU_SessionBase session)
 	{
 	    byte[] presetData = null;
 	    if (session.GetPreset(_nodeID, out presetData))
@@ -1241,7 +2655,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UploadParameterInputs(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bForceUpdate)
+	internal void UploadParameterInputs(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bForceUpdate)
 	{
 	    foreach (HEU_ParameterData parmData in _parameterList)
 	    {
@@ -1260,14 +2674,14 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void UpdateTransformParameters(HEU_SessionBase session, ref HAPI_TransformEuler HAPITransform)
+	internal void UpdateTransformParameters(HEU_SessionBase session, ref HAPI_TransformEuler HAPITransform)
 	{
 	    SyncParameterFromHoudini(session, "t");
 	    SyncParameterFromHoudini(session, "r");
 	    SyncParameterFromHoudini(session, "s");
 	}
 
-	public void SyncParameterFromHoudini(HEU_SessionBase session, string parameterName)
+	internal void SyncParameterFromHoudini(HEU_SessionBase session, string parameterName)
 	{
 	    HEU_ParameterData parameterData = GetParameter(parameterName);
 	    if (parameterData != null)
@@ -1284,7 +2698,7 @@ namespace HoudiniEngineUnity
 	/// the internal parameter value set. This is used for doing
 	/// comparision of which values had changed after an Undo.
 	/// </summary>
-	public void SyncInternalParametersForUndoCompare(HEU_SessionBase session)
+	internal void SyncInternalParametersForUndoCompare(HEU_SessionBase session)
 	{
 	    HAPI_NodeInfo nodeInfo = new HAPI_NodeInfo();
 	    if (!session.GetNodeInfo(_nodeID, ref nodeInfo))
@@ -1329,7 +2743,35 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	public void ResetAllToDefault(HEU_SessionBase session)
+	internal void CleanUp()
+	{
+	    //HEU_Logger.Log("Cleaning up parameters!");
+
+	    // For input parameters, notify removal
+	    foreach (HEU_ParameterData paramData in _parameterList)
+	    {
+		if (paramData != null && paramData._paramInputNode != null)
+		{
+		    paramData._paramInputNode.NotifyParentRemovedInput();
+		}
+	    }
+
+	    _validParameters = false;
+	    _regenerateParameters = false;
+
+	    _rootParameters = new List<int>();
+	    _parameterList = new List<HEU_ParameterData>();
+	    _parameterModifiers = new List<HEU_ParameterModifier>();
+
+	    _paramInts = null;
+	    _paramFloats = null;
+	    _paramStrings = null;
+	    _paramChoices = null;
+
+	    _presetData = null;
+	}
+
+	internal void ResetAllToDefault(HEU_SessionBase session)
 	{
 	    foreach (HEU_ParameterData parameterData in _parameterList)
 	    {

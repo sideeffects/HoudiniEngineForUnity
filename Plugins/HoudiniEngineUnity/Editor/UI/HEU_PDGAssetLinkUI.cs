@@ -87,7 +87,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	private void DrawAssetLink()
 	{
-	    HEU_PDGAssetLink.LinkState validState = _assetLink.AssetLinkState;
+	    HEU_PDGAssetLink.LinkState validState = _assetLink.AssetLinkStateInternal;
 
 	    using (new EditorGUILayout.VerticalScope(_backgroundStyle))
 	    {
@@ -118,20 +118,20 @@ namespace HoudiniEngineUnity
 		}
 
 		// Autocook allows to automatically cook the TOP network when input assets are cooked
-		_assetLink._autoCook = EditorGUILayout.Toggle(_autocookContent, _assetLink._autoCook);
+		_assetLink.AutoCook = EditorGUILayout.Toggle(_autocookContent, _assetLink.AutoCook);
 
 		// Whether to use HEngine meta data to filter TOP networks and nodes
-		_assetLink._useHEngineData = EditorGUILayout.Toggle(_useHEngineDataContent, _assetLink._useHEngineData);
+		_assetLink.UseHEngineData = EditorGUILayout.Toggle(_useHEngineDataContent, _assetLink.UseHEngineData);
 
 
 		{
 		    GUILayout.BeginHorizontal();
 
-		    _assetLink._bUseTOPNodeFilter = EditorGUILayout.Toggle(_assetLink._bUseTOPNodeFilter, GUILayout.MaxWidth(25));
-		    string oldValue = _assetLink._topNodeFilter;
-		    using (new EditorGUI.DisabledScope(!_assetLink._bUseTOPNodeFilter))
+		    _assetLink.UseTOPNodeFilter = EditorGUILayout.Toggle(_assetLink.UseTOPNodeFilter, GUILayout.MaxWidth(25));
+		    string oldValue = _assetLink.TopNodeFilter;
+		    using (new EditorGUI.DisabledScope(!_assetLink.UseTOPNodeFilter))
 		    {
-			string newValue = EditorGUILayout.DelayedTextField(_topNodeFilterContent, _assetLink._topNodeFilter);
+			string newValue = EditorGUILayout.DelayedTextField(_topNodeFilterContent, _assetLink.TopNodeFilter);
 			if (oldValue != newValue)
 			{
 			    _assetLink.OnTOPNodeFilterChanged(newValue);
@@ -144,11 +144,11 @@ namespace HoudiniEngineUnity
 		{
 		    GUILayout.BeginHorizontal();
 
-		    _assetLink._bUseTOPOutputFilter = EditorGUILayout.Toggle(_assetLink._bUseTOPOutputFilter, GUILayout.MaxWidth(25));
-		    string oldValue = _assetLink._topOutputFilter;
-		    using (new EditorGUI.DisabledScope(!_assetLink._bUseTOPOutputFilter))
+		    _assetLink.UseTOPOutputFilter = EditorGUILayout.Toggle(_assetLink.UseTOPOutputFilter, GUILayout.MaxWidth(25));
+		    string oldValue = _assetLink.TopOutputFilter;
+		    using (new EditorGUI.DisabledScope(!_assetLink.UseTOPOutputFilter))
 		    {
-			string newValue = EditorGUILayout.DelayedTextField(_topOutputFilterContent, _assetLink._topOutputFilter);
+			string newValue = EditorGUILayout.DelayedTextField(_topOutputFilterContent, _assetLink.TopOutputFilter);
 			if (oldValue != newValue)
 			{
 			    _assetLink.OnTOPOutputFilterChanged(newValue);
@@ -232,17 +232,17 @@ namespace HoudiniEngineUnity
 	{
 	    HEU_EditorUI.DrawHeadingLabel("Internal TOP Networks");
 
-	    int numTopNodes = _assetLink._topNetworkNames.Length;
+	    int numTopNodes = _assetLink.TopNetworkNames.Length;
 	    if (numTopNodes > 0)
 	    {
 		using (new EditorGUILayout.HorizontalScope())
 		{
 		    EditorGUILayout.PrefixLabel(_topNetworkChooseLabel);
 
-		    int numTOPs = _assetLink._topNetworkNames.Length;
+		    int numTOPs = _assetLink.TopNetworkNames.Length;
 
 		    int selectedIndex = Mathf.Clamp(_assetLink.SelectedTOPNetwork, 0, numTopNodes - 1);
-		    int newSelectedIndex = EditorGUILayout.Popup(selectedIndex, _assetLink._topNetworkNames);
+		    int newSelectedIndex = EditorGUILayout.Popup(selectedIndex, _assetLink.TopNetworkNames);
 		    if (newSelectedIndex != selectedIndex)
 		    {
 			_assetLink.SelectTOPNetwork(newSelectedIndex);

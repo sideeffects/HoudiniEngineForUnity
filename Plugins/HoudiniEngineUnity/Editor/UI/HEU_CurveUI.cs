@@ -553,7 +553,7 @@ namespace HoudiniEngineUnity
 	    //Vector3 planePosition = mouseRay.origin + mouseRay.direction * 100f;
 	    //Plane collisionPlane = new Plane(-_currentCamera.transform.forward, planePosition);
  
-	    HEU_Curve.CurveDrawCollision drawCollision = asset.CurveDrawCollision;
+	    HEU_Curve.CurveDrawCollision drawCollision = asset.CurveDrawCollisionInternal;
 	    List<Collider> drawColliders = null;
 	    LayerMask drawLayerMask = Physics.DefaultRaycastLayers;
 	    if (drawCollision == HEU_Curve.CurveDrawCollision.LAYERMASK)
@@ -658,7 +658,7 @@ namespace HoudiniEngineUnity
 				if (_curves.Count > 1)
 				{
 				    // Multiple curves -> use position of asset
-				    checkPoint = curve._targetGameObject.transform.position;
+				    checkPoint = curve.TargetGameObject.transform.position;
 				}
 				else
 				{
@@ -1279,7 +1279,7 @@ namespace HoudiniEngineUnity
 	    Color defaultColor = Handles.color;
 	    Handles.color = lineColor;
 	    Matrix4x4 defaultMatrix = Handles.matrix;
-	    Handles.matrix = curve._targetGameObject.transform.localToWorldMatrix;
+	    Handles.matrix = curve.TargetGameObject.transform.localToWorldMatrix;
 	    Handles.DrawAAPolyLine(_lineTexture, 10f, vertices);
 	    Handles.matrix = defaultMatrix;
 	    Handles.color = defaultColor;
@@ -1292,7 +1292,7 @@ namespace HoudiniEngineUnity
 	    Color defaultColor = Handles.color;
 	    Handles.color = lineColor;
 	    Matrix4x4 defaultMatrix = Handles.matrix;
-	    Handles.matrix = curve._targetGameObject.transform.localToWorldMatrix;
+	    Handles.matrix = curve.TargetGameObject.transform.localToWorldMatrix;
 	    Handles.DrawAAPolyLine(_lineTexture, 10f, points.ToArray());
 	    Handles.matrix = defaultMatrix;
 	    Handles.color = defaultColor;

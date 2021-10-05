@@ -40,7 +40,7 @@ namespace HoudiniEngineUnity
 
 	}
 
-	public HEU_HoudiniEngineError(string errorMsg)
+	internal HEU_HoudiniEngineError(string errorMsg)
 	{
 	    _errorMsg = errorMsg;
 	}

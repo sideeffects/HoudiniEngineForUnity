@@ -36,6 +36,14 @@ using System.Collections.Generic;
 using UnityEditor;
 #endif
 
+// Expose public classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
 
 namespace HoudiniEngineUnity
 {
@@ -641,7 +649,12 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-	public static GameObject CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType assetType, string rootName = "HoudiniAsset", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true, GameObject rootGO = null)
+	public static GameObject CreateNewAsset(HEU_AssetTypeWrapper assetType, string rootName = "HoudiniAsset", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true, GameObject rootGO = null)
+	{
+	    return CreateNewAsset(HEU_HoudiniAsset.AssetType_WrapperToInternal(assetType), rootName, parentTransform, session, bBuildAsync);
+	}
+
+	internal static GameObject CreateNewAsset(HEU_HoudiniAsset.HEU_AssetType assetType, string rootName = "HoudiniAsset", Transform parentTransform = null, HEU_SessionBase session = null, bool bBuildAsync = true, GameObject rootGO = null)
 	{
 	    if (session == null)
 	    {
@@ -781,7 +794,7 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <summary>
-	/// Destroy the given game object, including its internal mesh and any shared materials.
+	/// Destroy the given game object, including its public mesh and any shared materials.
 	/// </summary>
 	/// <param name="gameObect">Game object to destroy</param>
 	public static void DestroyGameObject(GameObject gameObect, bool bRegisterUndo = false)  // TODO: remove default bRegisterUndo arg

@@ -107,7 +107,8 @@ namespace HoudiniEngineUnity
 	}
 	public PDGState _pdgState;
 
-	public HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
+	[SerializeField]
+	internal HEU_WorkItemTally _workItemTally = new HEU_WorkItemTally();
 
 	public void Reset()
 	{
@@ -147,7 +148,7 @@ namespace HoudiniEngineUnity
     /// Allows to show number of work items cooking, waiting, errored, etc.
     /// </summary>
     [System.Serializable]
-    public class HEU_WorkItemTally
+    internal class HEU_WorkItemTally
     {
 	public int _totalWorkItems;
 	public int _waitingWorkItems;

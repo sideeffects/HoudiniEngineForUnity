@@ -27,6 +27,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+#endif
+
 namespace HoudiniEngineUnity
 {
     /// <summary>
@@ -324,12 +333,12 @@ namespace HoudiniEngineUnity
 
 	// Writes meshes and materials to the asset cache
 	// Note: It might be useful to merge with BakePartToGameObject in the future to include terrain automatically
-	public void WriteOutputToAssetCache(GameObject parentObject, string outputPath, bool bIsInstancer)
+	internal void WriteOutputToAssetCache(GameObject parentObject, string outputPath, bool bIsInstancer)
 	{
 	    BakeGameObjectComponents(_outputData._gameObject, parentObject, _outputData._gameObject.name, outputPath, bIsInstancer);
 	}
 
-	public static void BakeGameObjectComponents(GameObject sourceGO, GameObject targetGO, string assetName, string outputPath, bool bIsInstancer)
+	internal static void BakeGameObjectComponents(GameObject sourceGO, GameObject targetGO, string assetName, string outputPath, bool bIsInstancer)
 	{
 	    UnityEngine.Object assetDBObject = null;
 	    Dictionary<Mesh, Mesh> sourceToTargetMeshMap = new Dictionary<Mesh, Mesh>();

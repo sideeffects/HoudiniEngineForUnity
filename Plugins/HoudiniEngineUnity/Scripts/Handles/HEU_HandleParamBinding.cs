@@ -39,7 +39,7 @@ namespace HoudiniEngineUnity
     /// Represents a Handle binding to a parameter.
     /// </summary>
     [System.Serializable]
-    public class HEU_HandleParamBinding : IEquivable<HEU_HandleParamBinding>
+    internal class HEU_HandleParamBinding : IEquivable<HEU_HandleParamBinding>
     {
 	public enum HEU_HandleParamType
 	{
