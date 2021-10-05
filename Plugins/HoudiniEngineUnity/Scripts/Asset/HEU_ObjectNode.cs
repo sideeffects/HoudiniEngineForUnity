@@ -70,6 +70,8 @@ namespace HoudiniEngineUnity
 
 	public bool IsVisible() { return _objectInfo.isVisible; }
 
+	internal List<HAPI_PartId> _recentlyDestroyedParts = new List<HAPI_PartId>();
+
 
 	//  LOGIC -----------------------------------------------------------------------------------------------------
 
@@ -476,6 +478,8 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
+	    _recentlyDestroyedParts.Clear();
+
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
 		geoNode.GetPartsByOutputType(meshParts, volumeParts);
@@ -502,6 +506,7 @@ namespace HoudiniEngineUnity
 		if (!bResult)
 		{
 		    partsToDestroy.Add(part);
+		    _recentlyDestroyedParts.Add(part.PartID);
 		}
 	    }
 
