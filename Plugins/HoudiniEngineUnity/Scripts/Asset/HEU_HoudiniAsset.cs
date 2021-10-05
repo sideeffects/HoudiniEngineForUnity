@@ -1548,9 +1548,14 @@ namespace HoudiniEngineUnity
 
 	public static HEU_HoudiniAssetRoot InstantiateHDA(string filePath, bool bAsync = false, Vector3 initialPosition = new Vector3())
 	{
-	    HEU_SessionBase session = HEU_SessionManager.GetOrCreateDefaultSession();
-	    GameObject go = HEU_HAPIUtility.InstantiateHDA(filePath, initialPosition, session, bAsync);
-	    return go.GetComponent<HEU_HoudiniAssetRoot>();
+	    HEU_SessionBase session = HEU_SessionManager.GetOrCreateDefaultSession(false);
+	    if (session != null)
+	    {
+		GameObject go = HEU_HAPIUtility.InstantiateHDA(filePath, initialPosition, session, bAsync);
+		return go.GetComponent<HEU_HoudiniAssetRoot>();
+	    }
+
+	    return null;
 	}
 
 	/// <summary>

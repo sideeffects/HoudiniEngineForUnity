@@ -429,7 +429,7 @@ namespace HoudiniEngineUnity
 	/// <param name="pointValue">The value of the point</param>
 	/// <param name="interpolationType">The interpolation type of the point</param>
 	/// <returns>Whether or not the operation was successful</returns>
-	bool GetFloatRampParameterFloatValue(
+	bool GetFloatRampParameterPointValue(
 	    string parameterName,
 	    int pointIndex,
 	    out float pointPosition,
@@ -489,7 +489,7 @@ namespace HoudiniEngineUnity
 	/// <param name="pointValue">The value of the point</param>
 	/// <param name="interpolationType">The interpolation type of the point</param>
 	/// <returns>Whether or not the operation was successful</returns>
-	bool GetColorRampParameterFloatValue(
+	bool GetColorRampParameterPointValue(
 	    string parameterName,
 	    int pointIndex,
 	    out float pointPosition,

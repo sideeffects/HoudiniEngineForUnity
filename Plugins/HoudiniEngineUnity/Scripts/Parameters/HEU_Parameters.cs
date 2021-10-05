@@ -964,17 +964,28 @@ namespace HoudiniEngineUnity
 		return true;
 	    }
 
+	    int numParamsPerPoint = paramData._parmInfo.instanceLength;
+	    int pointID = (oldCount - 1) * numParamsPerPoint;
+
+	    if (pointID >= paramData._childParameterIDs.Count)
+	    {
+		HEU_Logger.LogWarningFormat("{0}: subparameters are not found.", parameterName);
+		return false;
+	    }
+
+	    int parmIndex = paramData._childParameterIDs[pointID];
+
 	    if (numPoints > oldCount)
 	    {
 		int numAdd = numPoints - oldCount;
-		HEU_ParameterData childParameter = _parameterList[oldCount - 1];
+		HEU_ParameterData childParameter = _parameterList[parmIndex];
 		int instanceIndex = childParameter._parmInfo.instanceNum;
 		InsertInstanceToMultiParm( paramData._unityIndex, instanceIndex, numAdd);
 	    }
 	    else
 	    {
 		int numRemove = oldCount - numPoints;
-		HEU_ParameterData childParameter = _parameterList[oldCount - 1];
+		HEU_ParameterData childParameter = _parameterList[parmIndex];
 		int instanceIndex = childParameter._parmInfo.instanceNum;
 		RemoveInstancesFromMultiParm(paramData._unityIndex, instanceIndex, numRemove);
 	    }
@@ -1099,7 +1110,7 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <inheritdoc />
-	public bool GetFloatRampParameterFloatValue(
+	public bool GetFloatRampParameterPointValue(
 	    string parameterName,
 	    int pointIndex,
 	    out float pointPosition,
@@ -1255,7 +1266,7 @@ namespace HoudiniEngineUnity
 		float pointValue;
 		HEU_HoudiniRampInterpolationTypeWrapper interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.LINEAR;
 
-		bResult &= GetFloatRampParameterFloatValue(parameterName, i, out pointPosition, out pointValue, out interpolationType);
+		bResult &= GetFloatRampParameterPointValue(parameterName, i, out pointPosition, out pointValue, out interpolationType);
 
 		rampPoints[i] = new HEU_FloatRampPointWrapper(pointPosition, pointValue, interpolationType);
 	    }
@@ -1357,7 +1368,7 @@ namespace HoudiniEngineUnity
 	}
 
 	/// <inheritdoc />
-	public bool GetColorRampParameterFloatValue(
+	public bool GetColorRampParameterPointValue(
 	    string parameterName,
 	    int pointIndex,
 	    out float pointPosition,
@@ -1376,7 +1387,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    if (!paramData.IsFloatRamp())
+	    if (!paramData.IsColorRamp())
 	    {
 		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
 		return false;
@@ -1411,7 +1422,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    HEU_ParameterData paramDataPosition = _parameterList[parmIndex];
-	    if (paramDataPosition != null && paramData.IsFloat() && paramData._floatValues.Length > 0)
+	    if (paramDataPosition != null && paramDataPosition.IsFloat() && paramDataPosition._floatValues.Length > 0)
 	    {
 		pointPosition = paramDataPosition._floatValues[0];
 	    }
@@ -1421,7 +1432,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    HEU_ParameterData paramDataValue = _parameterList[parmIndex+1];
-	    if (paramDataValue != null && paramData.IsColor())
+	    if (paramDataValue != null && paramDataValue.IsColor())
 	    {
 		pointValue = paramDataValue._color;
 	    }
@@ -1463,7 +1474,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    if (!paramData.IsFloatRamp())
+	    if (!paramData.IsColorRamp())
 	    {
 		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
 		return false;
@@ -1496,7 +1507,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    if (!paramData.IsFloatRamp())
+	    if (!paramData.IsColorRamp())
 	    {
 		HEU_Logger.LogWarningFormat("{0}: is not the correct type!.", parameterName);
 		return false;
@@ -1513,7 +1524,7 @@ namespace HoudiniEngineUnity
 		Color pointValue;
 		HEU_HoudiniRampInterpolationTypeWrapper interpolationType = HEU_HoudiniRampInterpolationTypeWrapper.LINEAR;
 
-		bResult &= GetColorRampParameterFloatValue(parameterName, i, out pointPosition, out pointValue, out interpolationType);
+		bResult &= GetColorRampParameterPointValue(parameterName, i, out pointPosition, out pointValue, out interpolationType);
 
 		rampPoints[i] = new HEU_ColorRampPointWrapper(pointPosition, pointValue, interpolationType);
 	    }
