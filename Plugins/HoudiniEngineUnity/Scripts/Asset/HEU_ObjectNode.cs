@@ -92,7 +92,9 @@ namespace HoudiniEngineUnity
 	private List<HEU_GeoNode> _geoNodes;
 
 	[SerializeField]
-	public HAPI_Transform _objectTransform;
+	private HAPI_Transform _objectTransform;
+
+	internal List<HAPI_PartId> _recentlyDestroyedParts = new List<HAPI_PartId>();
 
 	// PUBLIC FUNCTIONS ===========================================================================
 
@@ -650,6 +652,8 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
+	    _recentlyDestroyedParts.Clear();
+
 	    foreach (HEU_GeoNode geoNode in _geoNodes)
 	    {
 		geoNode.GetPartsByOutputType(meshParts, volumeParts);
@@ -676,6 +680,7 @@ namespace HoudiniEngineUnity
 		if (!bResult)
 		{
 		    partsToDestroy.Add(part);
+		    _recentlyDestroyedParts.Add(part.PartID);
 		}
 	    }
 

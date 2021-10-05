@@ -694,23 +694,23 @@ namespace HoudiniEngineUnity
 	/// <summary>
 	/// Generate part instances (packed primvites).
 	/// </summary>
-	internal void GeneratePartInstances(HEU_SessionBase session)
+	internal bool GeneratePartInstances(HEU_SessionBase session)
 	{
 	    if (ParentAsset == null)
 	    {
-		return;
+		return false;
 	    }
 
 	    if (HaveInstancesBeenGenerated())
 	    {
 		HEU_Logger.LogWarningFormat("Part {0} has already had its instances generated!", name);
-		return;
+		return true;
 	    }
 
 	    HAPI_PartInfo partInfo = new HAPI_PartInfo();
 	    if (!session.GetPartInfo(_geoID, _partID, ref partInfo))
 	    {
-		return;
+		return false;
 	    }
 
 	    //HEU_Logger.LogFormat("Instancer: name={0}, instanced={1}, instance count={2}, instance part count={3}",
@@ -719,13 +719,13 @@ namespace HoudiniEngineUnity
 	    if (!IsPartInstancer())
 	    {
 		HEU_Logger.LogErrorFormat("Generate Part Instances called on a non-instancer part {0} for asset {1}!", PartName, ParentAsset.AssetName);
-		return;
+		return false;
 	    }
 
 	    if (partInfo.instancedPartCount <= 0)
 	    {
 		HEU_Logger.LogErrorFormat("Invalid instanced part count: {0} for part {1} of asset {2}", partInfo.instancedPartCount, PartName, ParentAsset.AssetName);
-		return;
+		return false;
 	    }
 
 	    // Get the instance node IDs to get the geometry to be instanced.
@@ -737,14 +737,14 @@ namespace HoudiniEngineUnity
 	    HAPI_Transform[] instanceTransforms = new HAPI_Transform[partInfo.instanceCount];
 	    if (!HEU_GeneralUtility.GetArray3Arg(_geoID, PartID, HAPI_RSTOrder.HAPI_SRT, session.GetInstancerPartTransforms, instanceTransforms, 0, partInfo.instanceCount))
 	    {
-		return;
+		return false;
 	    }
 
 	    // Get part IDs for the parts being instanced
 	    HAPI_NodeId[] instanceNodeIDs = new HAPI_NodeId[partInfo.instancedPartCount];
 	    if (!HEU_GeneralUtility.GetArray2Arg(_geoID, PartID, session.GetInstancedPartIds, instanceNodeIDs, 0, partInfo.instancedPartCount))
 	    {
-		return;
+		return false;
 	    }
 
 	    // Get instance names if set
@@ -762,14 +762,22 @@ namespace HoudiniEngineUnity
 		HEU_PartData partData = _geoNode.GetPartFromPartID(instanceNodeIDs[i]);
 		if (partData == null)
 		{
-		    HEU_Logger.LogWarningFormat("Part with id {0} is missing. Unable to generate instance!", instanceNodeIDs[i]);
-		    return;
+		    if (!_geoNode.ObjectNode._recentlyDestroyedParts.Contains(instanceNodeIDs[i]))
+		    {
+			HEU_Logger.LogWarningFormat("Part with id {0} is missing. Unable to generate instance!", instanceNodeIDs[i]);
+		    }
+		    
+		    return false;
 		}
 
 		// If the part we're instancing is itself an instancer, make sure it has generated its instances
 		if (partData.IsPartInstancer() && !partData.HaveInstancesBeenGenerated())
 		{
-		    partData.GeneratePartInstances(session);
+		    bool result = partData.GeneratePartInstances(session);
+		    if (!result)
+		    {
+			return false;
+		    }
 		}
 
 		Debug.Assert(partData.OutputGameObject != null, "Instancer's reference (part) is missing gameobject!");
@@ -797,6 +805,8 @@ namespace HoudiniEngineUnity
 	    }
 
 	    _haveInstancesBeenGenerated = true;
+
+	    return true;
 	}
 
 	/// <summary>

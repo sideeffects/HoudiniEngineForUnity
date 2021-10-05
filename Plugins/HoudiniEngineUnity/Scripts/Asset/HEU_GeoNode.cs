@@ -769,14 +769,35 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	internal void GeneratePartInstances(HEU_SessionBase session)
 	{
+
+	    List<HEU_PartData> partsToDestroy = new List<HEU_PartData>();
 	    int numParts = _parts.Count;
 	    for (int i = 0; i < numParts; ++i)
 	    {
 		if (_parts[i].IsPartInstancer() && !_parts[i].HaveInstancesBeenGenerated())
 		{
-		    _parts[i].GeneratePartInstances(session);
+		    if (!_parts[i].GeneratePartInstances(session))
+		    {
+			partsToDestroy.Add(_parts[i]);
+		    }
 		}
 	    }
+
+	    int numPartsToDestroy = partsToDestroy.Count;
+	    for (int i = 0; i < numPartsToDestroy; ++i)
+	    {
+		HEU_GeoNode parentNode = partsToDestroy[i].ParentGeoNode;
+		if (parentNode != null)
+		{
+		    parentNode.RemoveAndDestroyPart(partsToDestroy[i]);
+		}
+		else
+		{
+		    HEU_PartData.DestroyPart(partsToDestroy[i]);
+		}
+	    }
+	    partsToDestroy.Clear();
+
 	}
 
 	internal void GenerateAttributesStore(HEU_SessionBase session)
