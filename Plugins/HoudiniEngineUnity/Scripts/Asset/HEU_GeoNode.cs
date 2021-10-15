@@ -846,10 +846,7 @@ namespace HoudiniEngineUnity
 	    // to at least set default values.
 	    HAPI_PartId partID = _geoInfo.partCount > 0 ? 0 : HEU_Defines.HEU_INVALID_NODE_ID;
 	    _geoCurve.UpdateCurve(session, partID);
-	    if (!bNewCurve)
-	    {
-		_geoCurve.OnPresyncParameters(session, parentAsset);
-	    }
+
 
 	    _geoCurve.GenerateMesh(_geoCurve.TargetGameObject, session);
 

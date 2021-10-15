@@ -64,7 +64,7 @@ namespace HoudiniEngineUnity
 	public Vector3 scale = Vector3.one;
 
 	// The index of the curve that this node belongs to
-	[SerializeField]
+	[SerializeField, HideInInspector]
 	public int curveCountIndex = 0;
 
 	public CurveNodeData()
@@ -295,9 +295,6 @@ namespace HoudiniEngineUnity
 
 	[SerializeField]
 	private bool _bIsPartCurve = true;
-
-	[SerializeField]
-	private HAPI_CurveInfo _cachedCurveInfo;
 
 	[SerializeField]
 	private bool _cachedCurveInfoValid = false;
@@ -725,6 +722,8 @@ namespace HoudiniEngineUnity
 		    _bUploadParameterPreset = false;
 		}
 	    }
+
+	    OnPresyncParameters(session, parentAsset);
 	}
 
 	internal void ResetCurveParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
@@ -782,6 +781,11 @@ namespace HoudiniEngineUnity
 
 	private static int[] GetCurveCounts(HEU_SessionBase session, HAPI_NodeId geoId, HAPI_PartId partID)
 	{
+	    if (IsMeshCurve(session, geoId, partID))
+	    {
+		return null;
+	    }
+		
 	    HAPI_CurveInfo curveInfo = new HAPI_CurveInfo();
 	    if (!session.GetCurveInfo(geoId, partID, ref curveInfo))
 	    {
@@ -836,10 +840,10 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    if (_curveDataType != HEU_CurveDataType.GEO_COORDS_PARAM)
+	    if (_curveDataType != HEU_CurveDataType.GEO_COORDS_PARAM && !IsMeshCurve(session, _geoID, _partID))
 	    {
 		curveCounts = GetCurveCounts(session, _geoID, _partID);
-		if (curveCounts != null && curveCounts.Length > 0)
+		if (curveCounts != null && curveCounts.Length > 1)
 		{
 		    HEU_GeneralUtility.ComposeNChildren(_targetGameObject, curveCounts.Length, ref childGameObjects, true);
 		    useCurveCounts = true;
@@ -1570,7 +1574,7 @@ namespace HoudiniEngineUnity
 		_parameters = ScriptableObject.CreateInstance<HEU_Parameters>();
 	    }
 
-	    if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
+	    if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM &&  _inputCurveInfo == null)
 	    {
 	        _inputCurveInfo = new HEU_InputCurveInfo();
 	    }
@@ -1868,10 +1872,27 @@ namespace HoudiniEngineUnity
 
 	private void UpdateCachedCurveInfo(HEU_SessionBase session, bool copyCurveSettings)
 	{
+
+	    if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM) 
+	    {
+	        HAPI_InputCurveInfo inputCurveInfo = new HAPI_InputCurveInfo();
+	        session.GetInputCurveInfo(_geoID, _partID, ref inputCurveInfo);
+	        _inputCurveInfo = HEU_InputCurveInfo.CreateFromHAPI_InputCurveInfo(inputCurveInfo);
+	    }
+
+	    if (IsMeshCurve(session, _geoID, _partID))
+	    {
+		// Closed curves do not have the parttype curve
+		_cachedCurveInfoValid = true;
+		_cachedCurveCounts = new int[1] {1};
+
+		_cachedCurveCountSums = new int[1] {1};
+		return;
+	    }
+
 	    HAPI_CurveInfo curveInfo = new HAPI_CurveInfo();
 	    if (session.GetCurveInfo(_geoID, _partID, ref curveInfo))
 	    {
-		_cachedCurveInfo = curveInfo;
 		_cachedCurveInfoValid = true;
 
 		_cachedCurveCounts = new int[curveInfo.curveCount];
@@ -1886,14 +1907,6 @@ namespace HoudiniEngineUnity
 		    curSum += _cachedCurveCounts[i];
 		    _cachedCurveCountSums[i] = curSum;
 		}
-
-		if (_curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM) 
-		{
-		    HAPI_InputCurveInfo inputCurveInfo = new HAPI_InputCurveInfo();
-		    session.GetInputCurveInfo(_geoID, _partID, ref inputCurveInfo);
-		    _inputCurveInfo = HEU_InputCurveInfo.CreateFromHAPI_InputCurveInfo(inputCurveInfo);
-		}
-
 	    }
 	}
 
@@ -1928,6 +1941,14 @@ namespace HoudiniEngineUnity
 	    }
 
 	    return _cachedCurveCountSums.Length - 1;
+	}
+
+	private static bool IsMeshCurve(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID)
+	{
+	    HAPI_PartInfo partInfos = new HAPI_PartInfo();
+	    session.GetPartInfo(geoID, partID, ref partInfos);
+
+	    return (partInfos.type != HAPI_PartType.HAPI_PARTTYPE_CURVE);
 	}
 
 	public bool IsEquivalentTo(HEU_Curve other)

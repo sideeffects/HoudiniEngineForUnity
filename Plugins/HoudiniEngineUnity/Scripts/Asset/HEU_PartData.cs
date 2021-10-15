@@ -2094,7 +2094,6 @@ namespace HoudiniEngineUnity
 	    if (bNewCurve)
 	    {
 		_curve = HEU_Curve.CreateSetupCurve(session, parentAsset, _geoNode.Editable, _partName, _geoID, partId, false);
-		_curve.OnPresyncParameters(session, parentAsset);
 	    }
 	    else
 	    {
