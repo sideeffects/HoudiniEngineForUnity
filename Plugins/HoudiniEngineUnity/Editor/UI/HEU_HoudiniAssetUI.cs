@@ -1053,13 +1053,31 @@ namespace HoudiniEngineUnity
 				// Create the UI manually to have more control
 				SerializedProperty inputCurveInfoProperty = HEU_EditorUtility.GetSerializedProperty(serializedCurve, "_inputCurveInfo");
 
+				System.Action<int> onCurveTypeChanged = (int value) => 
+				{
+				    SerializedProperty orderProperty = inputCurveInfoProperty.FindPropertyRelative("order");
+				    int curOrder = orderProperty.intValue;
+
+				    HAPI_CurveType curveType = (HAPI_CurveType)value;
+				    if (curOrder < 4 && (curveType == HAPI_CurveType.HAPI_CURVETYPE_NURBS || curveType == HAPI_CurveType.HAPI_CURVETYPE_BEZIER))
+				    {
+					orderProperty.intValue = 4;
+				    }
+				    else if (curveType == HAPI_CurveType.HAPI_CURVETYPE_LINEAR)
+				    {
+					orderProperty.intValue = 2;
+				    }
+				};
+
+
 				HEU_EditorUtility.EnumToPopup(
 				    inputCurveInfoProperty.FindPropertyRelative("curveType"),
 				    "Curve Type",
 				    (int)curve.InputCurveInfo.curveType,
 				    HEU_InputCurveInfo.GetCurveTypeNames(),
 				    true,
-				    "Type of the curve. Can be Linear, NURBs or Bezier. May impose restrictions on the order depending on what you choose."
+				    "Type of the curve. Can be Linear, NURBs or Bezier. May impose restrictions on the order depending on what you choose.",
+				    onCurveTypeChanged
 				);
 
 				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("order"));
