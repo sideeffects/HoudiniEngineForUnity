@@ -660,21 +660,33 @@ namespace HoudiniEngineUnity
 
 	    // Get LOD detail float attribute specifying screen transition values.
 	    HAPI_AttributeInfo lodTransitionAttributeInfo = new HAPI_AttributeInfo();
-	    float[] lodAttr = new float[0];
 
-	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR, ref lodTransitionAttributeInfo, ref lodAttr, session.GetAttributeFloatData);
-	    if (lodTransitionAttributeInfo.exists)
+	    if (!session.GetAttributeInfo(geoID, partID, HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR, HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL, ref lodTransitionAttributeInfo))
 	    {
-		int numLODValues = lodAttr.Length;
+		HEU_Logger.LogWarningFormat("Houdini Engine for Unity only supports {0} as detail attributes!", HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR);
+		return;
+	    }
 
-		if (lodTransitionAttributeInfo.owner != HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL)
-		{
-		    HEU_Logger.LogWarningFormat("Houdini Engine for Unity only supports {0} as detail attributes!", HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR);
-		}
-		else
-		{
-		    LODTransitionValues = lodAttr;
-		}
+	    float[] lodAttr = null; 
+
+	    // Accept both float tuples and arrays for convinence.
+	    if (lodTransitionAttributeInfo.storage == HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
+	    {
+		lodAttr = new float[lodTransitionAttributeInfo.count * lodTransitionAttributeInfo.tupleSize];
+		session.GetAttributeFloatData(geoID, partID, HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR, ref lodTransitionAttributeInfo, lodAttr, 0, lodTransitionAttributeInfo.count);
+		LODTransitionValues = lodAttr;
+	    }
+	    else if (lodTransitionAttributeInfo.storage == HAPI_StorageType.HAPI_STORAGETYPE_FLOAT_ARRAY)
+	    {
+		lodAttr = new float[lodTransitionAttributeInfo.totalArrayElements];
+		int[] sizesArr = new int[lodTransitionAttributeInfo.count];
+
+		session.GetAttributeFloatArrayData(geoID, partID, HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR, ref lodTransitionAttributeInfo, ref lodAttr, (int)lodTransitionAttributeInfo.totalArrayElements, ref sizesArr, 0, lodTransitionAttributeInfo.count);
+		LODTransitionValues = lodAttr;
+	    }
+	    else
+	    {
+		HEU_Logger.LogWarningFormat("Unable to identify storage type for {0}!", HEU_Defines.HEU_UNITY_LOD_TRANSITION_ATTR);
 	    }
 	}
 
