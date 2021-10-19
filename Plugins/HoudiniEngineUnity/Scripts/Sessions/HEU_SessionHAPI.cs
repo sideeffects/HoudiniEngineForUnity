@@ -1673,6 +1673,14 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
+	public override bool GetAttributeFloatArrayData(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo,
+		ref float[] data, int dataLength, ref int[] sizesArray, int start, int sizesLength)
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeFloatArrayData(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attrInfo, data, dataLength, sizesArray, start, sizesLength);
+	    HandleStatusResult(result, "Getting Attribute Float Array Data", false, true);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
 	public override bool GetAttributeFloat64Data(HAPI_NodeId nodeID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attributeInfo, [Out] double[] data, int start, int length)
 	{
 	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetAttributeFloat64Data(ref _sessionData._HAPISession, nodeID, partID, name.AsByteArray(), ref attributeInfo, -1, data, start, length);
