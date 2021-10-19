@@ -1698,9 +1698,9 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    HEU_TestHelpers.AssertTrueLogEquivalent(this._pendingGO, other._pendingGO, ref bResult, header, "_pendingGO");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._pendingGO, other._pendingGO, ref bResult, header, "_pendingGO");
 
-	    HEU_TestHelpers.AssertTrueLogEquivalent(this._connectedGO, other._connectedGO, ref bResult, header, "_connectedGO");
+	    // HEU_TestHelpers.AssertTrueLogEquivalent(this._connectedGO, other._connectedGO, ref bResult, header, "_connectedGO");
 
 	    return bResult;
 	}
