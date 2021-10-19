@@ -2083,7 +2083,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (_assetName == null)
 		{
-		    _assetName = "";
+		    _assetName = "curve";
 		}
 
 		bool bResult = HEU_HAPIUtility.CreateAndCookCurveAsset(session, _assetName, HEU_PluginSettings.CookTemplatedGeos, out newAssetID);
