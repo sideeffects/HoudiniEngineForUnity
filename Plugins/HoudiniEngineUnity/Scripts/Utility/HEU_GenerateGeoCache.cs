@@ -667,6 +667,11 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
+	    if (!lodTransitionAttributeInfo.exists)
+	    {
+		return;
+	    }
+
 	    float[] lodAttr = null; 
 
 	    // Accept both float tuples and arrays for convinence.
