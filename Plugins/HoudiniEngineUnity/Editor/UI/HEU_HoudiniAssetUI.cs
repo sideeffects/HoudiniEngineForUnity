@@ -207,18 +207,18 @@ namespace HoudiniEngineUnity
 		    SerializedProperty assetCookStatusProperty = HEU_EditorUtility.GetSerializedProperty(_houdiniAssetSerializedObject, "_cookStatus");
 		    if (assetCookStatusProperty != null)
 		    {
-			DrawCurvesSection(_houdiniAsset, _houdiniAssetSerializedObject);
-
-			DrawInputNodesSection(_houdiniAsset, _houdiniAssetSerializedObject);
-
-			DrawTerrainSection(_houdiniAsset, _houdiniAssetSerializedObject);
-
 			// If this is a Curve asset, we don't need to draw parameters as its redundant
 			if (_houdiniAsset.AssetType != HEU_HoudiniAsset.HEU_AssetType.TYPE_CURVE)
 			{
 			    DrawParameters(_houdiniAsset.Parameters, ref _parameterEditor);
 			    HEU_EditorUI.DrawSeparator();
 			}
+
+			DrawCurvesSection(_houdiniAsset, _houdiniAssetSerializedObject);
+
+			DrawInputNodesSection(_houdiniAsset, _houdiniAssetSerializedObject);
+
+			DrawTerrainSection(_houdiniAsset, _houdiniAssetSerializedObject);
 
 			DrawInstanceInputs(_houdiniAsset, _houdiniAssetSerializedObject);
 
@@ -911,14 +911,26 @@ namespace HoudiniEngineUnity
 
 	    HEU_EditorUI.BeginSection();
 	    {
+		List<HEU_Curve> curves = asset.GetCurves();
+
+		EditorGUI.indentLevel--;
+		for (int i = 0; i < curves.Count; ++i)
+		{
+		    if (curves[i].Parameters != null)
+		    {
+			DrawParameters(curves[i].Parameters, ref _curveParameterEditor);
+		    }
+		}
+		HEU_EditorUI.DrawSeparator();
+
+		EditorGUI.indentLevel++;
+
 		SerializedProperty showCurvesProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_showCurvesSection");
 		if (showCurvesProperty != null)
 		{
 		    showCurvesProperty.boolValue = HEU_EditorUI.DrawFoldOut(showCurvesProperty.boolValue, "CURVES");
 		    if (showCurvesProperty.boolValue)
 		    {
-			List<HEU_Curve> curves = asset.GetCurves();
-
 			SerializedProperty curveEditorProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveEditorEnabled");
 			if (curveEditorProperty != null)
 			{
@@ -1080,13 +1092,6 @@ namespace HoudiniEngineUnity
 
 			HEU_EditorUI.DrawSeparator();
 
-			for (int i = 0; i < curves.Count; ++i)
-			{
-			    if (curves[i].Parameters != null)
-			    {
-				DrawParameters(curves[i].Parameters, ref _curveParameterEditor);
-			    }
-			}
 		    }
 		}
 	    }
