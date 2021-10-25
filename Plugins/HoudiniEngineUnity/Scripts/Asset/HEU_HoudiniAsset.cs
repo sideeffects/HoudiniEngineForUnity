@@ -1692,6 +1692,12 @@ namespace HoudiniEngineUnity
 		    ignoreError = true;
 		}
 
+		// Depending on your OS, certain nodes, i.e. shader-related nodes may contain non-fatal errors (see Bug: 116237)
+		if (resultString.Contains("Unable to load shader"))
+		{
+		    ignoreError = true;
+		}
+
 		if (!ignoreError)
 		{
 		    HEU_Logger.LogErrorFormat(resultString);
