@@ -905,17 +905,7 @@ namespace HoudiniEngineUnity
 	    {
 		List<HEU_Curve> curves = asset.Curves;
 
-		EditorGUI.indentLevel--;
-		for (int i = 0; i < curves.Count; ++i)
-		{
-		    if (curves[i].Parameters != null)
-		    {
-			DrawParameters(curves[i].Parameters, ref _curveParameterEditor);
-		    }
-		}
-		HEU_EditorUI.DrawSeparator();
 
-		EditorGUI.indentLevel++;
 
 		SerializedProperty showCurvesProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_showCurvesSection");
 		if (showCurvesProperty != null)
@@ -923,15 +913,141 @@ namespace HoudiniEngineUnity
 		    showCurvesProperty.boolValue = HEU_EditorUI.DrawFoldOut(showCurvesProperty.boolValue, "CURVES");
 		    if (showCurvesProperty.boolValue)
 		    {
+
+			HEU_EditorUI.DrawHeadingLabel("Curve Data");
+
+			EditorGUI.indentLevel++;
+
+			List<SerializedObject> serializedCurves = new List<SerializedObject>();
+			for (int i = 0; i < curves.Count; i++)
+			{
+			    serializedCurves.Add(new SerializedObject(curves[i]));
+			}
+
+			bool bHasBeenModifiedInInspector = false;
+
+			for (int i = 0; i < serializedCurves.Count; i++)
+			{
+			    HEU_Curve curve = curves[i];
+
+			    SerializedObject serializedCurve = serializedCurves[i];
+			    EditorGUI.BeginChangeCheck();
+
+			    if (curve.CurveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
+			    {
+
+				HEU_EditorUI.DrawHeadingLabel("Input Curve Info:");
+				EditorGUI.indentLevel++;
+
+				// Create the UI manually to have more control
+				SerializedProperty inputCurveInfoProperty = HEU_EditorUtility.GetSerializedProperty(serializedCurve, "_inputCurveInfo");
+
+				System.Action<int> onCurveTypeChanged = (int value) => 
+				{
+				    SerializedProperty orderProperty = inputCurveInfoProperty.FindPropertyRelative("order");
+				    int curOrder = orderProperty.intValue;
+
+				    HAPI_CurveType curveType = (HAPI_CurveType)value;
+				    if (curOrder < 4 && (curveType == HAPI_CurveType.HAPI_CURVETYPE_NURBS || curveType == HAPI_CurveType.HAPI_CURVETYPE_BEZIER))
+				    {
+					orderProperty.intValue = 4;
+				    }
+				    else if (curveType == HAPI_CurveType.HAPI_CURVETYPE_LINEAR)
+				    {
+					orderProperty.intValue = 2;
+				    }
+				};
+
+
+				HEU_EditorUtility.EnumToPopup(
+				    inputCurveInfoProperty.FindPropertyRelative("curveType"),
+				    "Curve Type",
+				    (int)curve.InputCurveInfo.curveType,
+				    HEU_InputCurveInfo.GetCurveTypeNames(),
+				    true,
+				    "Type of the curve. Can be Linear, NURBs or Bezier. May impose restrictions on the order depending on what you choose.",
+				    onCurveTypeChanged
+				);
+
+				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("order"));
+
+				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("closed"));
+
+				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("reverse"));
+
+				HEU_EditorUtility.EnumToPopup(
+				    inputCurveInfoProperty.FindPropertyRelative("inputMethod"),
+				    "Input Method",
+				    (int)curve.InputCurveInfo.inputMethod,
+				    HEU_InputCurveInfo.GetInputMethodNames(),
+				    true,
+				    "How the curve behaves with respect to the provided CVs. Can be either CVs, which influence the curve, or breakpoints, which intersects the curve."
+				);
+
+				using (new EditorGUI.DisabledScope(curve.InputCurveInfo.inputMethod != HAPI_InputCurveMethod.HAPI_CURVEMETHOD_BREAKPOINTS))
+				{
+				    HEU_EditorUtility.EnumToPopup(
+				        inputCurveInfoProperty.FindPropertyRelative("breakpointParameterization"),
+				        "Breakpoint Parameterization",
+				        (int)curve.InputCurveInfo.breakpointParameterization,
+				        HEU_InputCurveInfo.GetBreakpointParameterizationNames(),
+				        true,
+				        "Defines which method is used to refine the curve when using breakpoints."
+				    );
+				}
+
+				EditorGUI.indentLevel--;
+			    }
+
+			    HEU_EditorUtility.EditorDrawSerializedProperty(serializedCurve, "_curveNodeData", label: curve.CurveName + " Data");
+
+			    if (EditorGUI.EndChangeCheck())
+			    {
+				curves[i].SetEditState(HEU_Curve.CurveEditState.REQUIRES_GENERATION);
+				serializedCurve.ApplyModifiedProperties();
+
+				bHasBeenModifiedInInspector = true;
+			    }
+
+			    EditorGUI.indentLevel--;
+
+			    if (curve.Parameters != null)
+			    {
+				DrawParameters(curve.Parameters, ref _curveParameterEditor);
+			    }
+
+			    EditorGUI.indentLevel++;
+
+			}
+
+			if (bHasBeenModifiedInInspector)
+			{
+			    if (asset.GetEditableCurveCount() > 0)
+			    {
+				HEU_Curve[] curvesArray = asset.Curves.ToArray();
+				Editor.CreateCachedEditor(curvesArray, null, ref _curveEditor);
+				(_curveEditor as HEU_CurveUI).RepaintCurves();
+
+				if (HEU_PluginSettings.CookingEnabled && asset.AutoCookOnParameterChange)
+				{
+				    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
+				}
+			    }
+			}
+
+			EditorGUI.indentLevel--;
+
+			HEU_EditorUI.DrawSeparator();
+
+			HEU_EditorUI.DrawHeadingLabel("Curve Node Settings");
+
+			EditorGUI.indentLevel++;
+
 			SerializedProperty curveEditorProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveEditorEnabled");
 			if (curveEditorProperty != null)
 			{
 			    EditorGUILayout.PropertyField(curveEditorProperty);
 			}
-
-			HEU_EditorUI.DrawHeadingLabel("Curve Node Settings");
-
-			EditorGUI.indentLevel++;
 
 			SerializedProperty useScaleRotProperty = HEU_EditorUtility.GetSerializedProperty(assetObject, "_curveDisableScaleRotation");
 
@@ -1034,121 +1150,6 @@ namespace HoudiniEngineUnity
 			    }
 			}
 			EditorGUI.indentLevel--;
-
-			HEU_EditorUI.DrawHeadingLabel("Curve Data");
-
-			EditorGUI.indentLevel++;
-
-			List<SerializedObject> serializedCurves = new List<SerializedObject>();
-			for (int i = 0; i < curves.Count; i++)
-			{
-			    serializedCurves.Add(new SerializedObject(curves[i]));
-			}
-
-			bool bHasBeenModifiedInInspector = false;
-
-			for (int i = 0; i < serializedCurves.Count; i++)
-			{
-			    HEU_Curve curve = curves[i];
-
-			    SerializedObject serializedCurve = serializedCurves[i];
-			    EditorGUI.BeginChangeCheck();
-
-			    HEU_EditorUtility.EditorDrawSerializedProperty(serializedCurve, "_curveNodeData", label: curve.CurveName + " Data");
-
-			    if (curve.CurveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
-			    {
-
-				HEU_EditorUI.DrawHeadingLabel("Input Curve Info:");
-				EditorGUI.indentLevel++;
-
-				// Create the UI manually to have more control
-				SerializedProperty inputCurveInfoProperty = HEU_EditorUtility.GetSerializedProperty(serializedCurve, "_inputCurveInfo");
-
-				System.Action<int> onCurveTypeChanged = (int value) => 
-				{
-				    SerializedProperty orderProperty = inputCurveInfoProperty.FindPropertyRelative("order");
-				    int curOrder = orderProperty.intValue;
-
-				    HAPI_CurveType curveType = (HAPI_CurveType)value;
-				    if (curOrder < 4 && (curveType == HAPI_CurveType.HAPI_CURVETYPE_NURBS || curveType == HAPI_CurveType.HAPI_CURVETYPE_BEZIER))
-				    {
-					orderProperty.intValue = 4;
-				    }
-				    else if (curveType == HAPI_CurveType.HAPI_CURVETYPE_LINEAR)
-				    {
-					orderProperty.intValue = 2;
-				    }
-				};
-
-
-				HEU_EditorUtility.EnumToPopup(
-				    inputCurveInfoProperty.FindPropertyRelative("curveType"),
-				    "Curve Type",
-				    (int)curve.InputCurveInfo.curveType,
-				    HEU_InputCurveInfo.GetCurveTypeNames(),
-				    true,
-				    "Type of the curve. Can be Linear, NURBs or Bezier. May impose restrictions on the order depending on what you choose.",
-				    onCurveTypeChanged
-				);
-
-				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("order"));
-
-				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("closed"));
-
-				EditorGUILayout.PropertyField(inputCurveInfoProperty.FindPropertyRelative("reverse"));
-
-				HEU_EditorUtility.EnumToPopup(
-				    inputCurveInfoProperty.FindPropertyRelative("inputMethod"),
-				    "Input Method",
-				    (int)curve.InputCurveInfo.inputMethod,
-				    HEU_InputCurveInfo.GetInputMethodNames(),
-				    true,
-				    "How the curve behaves with respect to the provided CVs. Can be either CVs, which influence the curve, or breakpoints, which intersects the curve."
-				);
-
-				using (new EditorGUI.DisabledScope(curve.InputCurveInfo.inputMethod != HAPI_InputCurveMethod.HAPI_CURVEMETHOD_BREAKPOINTS))
-				{
-				    HEU_EditorUtility.EnumToPopup(
-				        inputCurveInfoProperty.FindPropertyRelative("breakpointParameterization"),
-				        "Breakpoint Parameterization",
-				        (int)curve.InputCurveInfo.breakpointParameterization,
-				        HEU_InputCurveInfo.GetBreakpointParameterizationNames(),
-				        true,
-				        "Defines which method is used to refine the curve when using breakpoints."
-				    );
-				}
-
-				EditorGUI.indentLevel--;
-			    }
-
-			    if (EditorGUI.EndChangeCheck())
-			    {
-				curves[i].SetEditState(HEU_Curve.CurveEditState.REQUIRES_GENERATION);
-				serializedCurve.ApplyModifiedProperties();
-
-				bHasBeenModifiedInInspector = true;
-			    }
-			}
-
-			if (bHasBeenModifiedInInspector)
-			{
-			    if (asset.GetEditableCurveCount() > 0)
-			    {
-				HEU_Curve[] curvesArray = asset.Curves.ToArray();
-				Editor.CreateCachedEditor(curvesArray, null, ref _curveEditor);
-				(_curveEditor as HEU_CurveUI).RepaintCurves();
-
-				if (HEU_PluginSettings.CookingEnabled && asset.AutoCookOnParameterChange)
-				{
-				    _houdiniAsset.RequestCook(bCheckParametersChanged: true, bAsync: false, bSkipCookCheck: false, bUploadParameters: true);
-				}
-			    }
-			}
-
-			EditorGUI.indentLevel--;
-
-			HEU_EditorUI.DrawSeparator();
 
 		    }
 		}
