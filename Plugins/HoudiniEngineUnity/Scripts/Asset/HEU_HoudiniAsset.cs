@@ -503,7 +503,7 @@ namespace HoudiniEngineUnity
 	private bool _ignoreNonDisplayNodes = false;
 
 	[SerializeField]
-	private bool _useOutputNodes = false;
+	private bool _useOutputNodes = true;
 
 	[SerializeField]
 	private bool _generateMeshUsingPoints = false;
