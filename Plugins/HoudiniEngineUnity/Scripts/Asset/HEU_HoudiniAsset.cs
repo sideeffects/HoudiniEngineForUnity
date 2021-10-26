@@ -347,7 +347,7 @@ namespace HoudiniEngineUnity
 	public bool IgnoreNonDisplayNodes { get { return _ignoreNonDisplayNodes; } set { _ignoreNonDisplayNodes = value; } }
 
 	[SerializeField]
-	private bool _useOutputNodes = false;
+	private bool _useOutputNodes = true;
 	public bool UseOutputNodes { get { return _useOutputNodes; } set {_useOutputNodes = value; } }
 
 	[SerializeField]
