@@ -287,12 +287,26 @@ namespace HoudiniEngineUnity
 	    SyncWithObjectInfo(session);
 
 	    // Translate transform to Unity (TODO)
+	    List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>();
+
+	    HEU_HAPIUtility.GatherAllAssetGeoInfos(session, objectInfo, bUseOutputNodes, ref geoInfos);
+	    int numGeoInfos = geoInfos.Count;
+	    for (int i = 0; i < numGeoInfos; ++i)
+	    {
+		// Create GeoNode for each
+		_geoNodes.Add(CreateGeoNode(session, geoInfos[i]));
+	    }
+	}
+
+	// This is the old way of getting outputs. Keep it for now for legacy. TODO: Remove this later
+	internal void GatherAllAssetOutputsLegacy(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, bool bUseOutputNodes, ref List<HEU_GeoNode> geoNodes)
+	{
 
 	    List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>();
 
 	    // Get display geo info
 	    HAPI_GeoInfo displayGeoInfo = new HAPI_GeoInfo();
-	    if (!session.GetDisplayGeoInfo(_objectInfo.nodeId, ref displayGeoInfo))
+	    if (!session.GetDisplayGeoInfo(objectInfo.nodeId, ref displayGeoInfo))
 	    {
 		return;
 	    }
@@ -303,7 +317,7 @@ namespace HoudiniEngineUnity
 	    {
 
 		int outputCount = 0;
-		if (!session.GetOutputGeoCount(_objectInfo.nodeId, out outputCount))
+		if (!session.GetOutputGeoCount(objectInfo.nodeId, out outputCount))
 		{
 		    outputCount = 0;
 		}
@@ -311,7 +325,7 @@ namespace HoudiniEngineUnity
 		if (outputCount > 0)
 		{
 		    HAPI_GeoInfo[] outputGeoInfos = new HAPI_GeoInfo[outputCount];
-		    if (!session.GetOutputGeoInfos(_objectInfo.nodeId, ref outputGeoInfos, outputCount))
+		    if (!session.GetOutputGeoInfos(objectInfo.nodeId, ref outputGeoInfos, outputCount))
 		    {
 			outputGeoInfos = new HAPI_GeoInfo[0];
 		    }
@@ -358,7 +372,7 @@ namespace HoudiniEngineUnity
 
 	    // Get editable nodes, cook em, then create geo nodes for them
 	    HAPI_NodeId[] editableNodes = null;
-	    HEU_SessionManager.GetComposedChildNodeList(session, _objectInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes);
+	    HEU_SessionManager.GetComposedChildNodeList(session, objectInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes);
 	    if (editableNodes != null)
 	    {
 		foreach (HAPI_NodeId editNodeID in editableNodes)
@@ -385,11 +399,8 @@ namespace HoudiniEngineUnity
 	    for (int i = 0; i < numGeoInfos; ++i)
 	    {
 		// Create GeoNode for each
-		_geoNodes.Add(CreateGeoNode(session, geoInfos[i]));
+		geoNodes.Add(CreateGeoNode(session, geoInfos[i]));
 	    }
-
-	    // This has been moved to GenerateGeometry but kept here just in case.
-	    //ApplyObjectTransformToGeoNodes();
 	}
 
 	/// <summary>
@@ -476,87 +487,12 @@ namespace HoudiniEngineUnity
 		// Form a list of geo infos that are now present after cooking
 		List<HAPI_GeoInfo> postCookGeoInfos = new List<HAPI_GeoInfo>();
 
-		// Get the display geo info
-		HAPI_GeoInfo displayGeoInfo = new HAPI_GeoInfo();
-		if (session.GetDisplayGeoInfo(_objectInfo.nodeId, ref displayGeoInfo, false))
-		{
-		    postCookGeoInfos.Add(displayGeoInfo);
-		}
-		else
-		{
-		    displayGeoInfo.nodeId = HEU_Defines.HEU_INVALID_NODE_ID;
-		}
 
 		bool useOutputNodes = true;
-		if (useOutputNodes)
-		{
-		    
-		    int outputCount = 0;
-		    if (!session.GetOutputGeoCount(_objectInfo.nodeId, out outputCount))
-		    {
-		        outputCount = 0;
-		    }
-		    if (outputCount > 0)
-		    {
-			HAPI_GeoInfo[] outputGeoInfos = new HAPI_GeoInfo[outputCount];
-			if (!session.GetOutputGeoInfos(_objectInfo.nodeId, ref outputGeoInfos, outputCount))
-			{
-			    outputGeoInfos = new HAPI_GeoInfo[0];
-			}
-			foreach (HAPI_GeoInfo geoInfo in outputGeoInfos)
-			{
-			    if (geoInfo.nodeId == displayGeoInfo.nodeId)
-			    {
-				continue;
-			    }
-			    bool bValidOutput = true;
-			    int parentId = HEU_HAPIUtility.GetParentNodeID(session, geoInfo.nodeId);
-			    while (parentId >= 0)
-			    {
-				if (parentId == geoInfo.nodeId)
-				{
-				    // This output node is inside the display geo
-				    // Do not use this output to avoid duplicates
-				    bValidOutput = false;
-				    break;
-				}
-    				parentId = HEU_HAPIUtility.GetParentNodeID(session, parentId);
-			    }
-    			    if (bValidOutput)
-			    {
-				// Need to cook output geometry to get their parts
-				HAPI_GeoInfo cookedGeoInfo = new HAPI_GeoInfo();
-				session.CookNode(geoInfo.nodeId, HEU_PluginSettings.CookTemplatedGeos);
-				
-				// Get the refreshed geo info
-				if (session.GetGeoInfo(geoInfo.nodeId, ref cookedGeoInfo))
-				{
-				    postCookGeoInfos.Add(cookedGeoInfo);
-				}
-    			    }
-			}
-		    }
-		}
+		if (ParentAsset) useOutputNodes = ParentAsset.UseOutputNodes;
 
-		// Get editable nodes, cook em, then create geo nodes for them
-		HAPI_NodeId[] editableNodes = null;
-		HEU_SessionManager.GetComposedChildNodeList(session, _objectInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes);
-		if (editableNodes != null)
-		{
-		    foreach (HAPI_NodeId editNodeID in editableNodes)
-		    {
-			if (editNodeID != displayGeoInfo.nodeId)
-			{
-			    session.CookNode(editNodeID, HEU_PluginSettings.CookTemplatedGeos);
+		HEU_HAPIUtility.GatherAllAssetGeoInfos(session, _objectInfo, useOutputNodes, ref postCookGeoInfos);
 
-			    HAPI_GeoInfo editGeoInfo = new HAPI_GeoInfo();
-			    if (session.GetGeoInfo(editNodeID, ref editGeoInfo))
-			    {
-				postCookGeoInfos.Add(editGeoInfo);
-			    }
-			}
-		    }
-		}
 
 		// Now for each geo node that are present after cooking, we check if its
 		// new or whether we already have it prior to cooking.
