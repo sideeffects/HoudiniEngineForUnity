@@ -244,6 +244,42 @@ namespace HoudiniEngineUnity
 			    HEU_Logger.Log(aF + " " + bF);
 			}
 		    }
+		    else if (a[i].GetType() == typeof(Vector2))
+		    {
+			Vector2 aV = (Vector2)((object)a[i]);
+			Vector2 bV = (Vector2)((object)b[i]);
+			for (int j = 0; j < 2; j++)
+			{
+			     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+			}
+		    }
+		    else if (a[i].GetType() == typeof(Vector3))
+		    {
+			Vector3 aV = (Vector3)((object)a[i]);
+			Vector3 bV = (Vector3)((object)b[i]);
+			for (int j = 0; j < 3; j++)
+			{
+			     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+			}
+		    }
+		    else if (a[i].GetType() == typeof(Vector4))
+		    {
+			Vector4 aV = (Vector4)((object)a[i]);
+			Vector4 bV = (Vector4)((object)b[i]);
+			for (int j = 0; j < 4; j++)
+			{
+			     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+			}
+		    }
+		    else if (a[i].GetType() == typeof(Matrix4x4))
+		    {
+			Matrix4x4 aV = (Matrix4x4)((object)a[i]);
+			Matrix4x4 bV = (Matrix4x4)((object)b[i]);
+			for (int j = 0; j < 16; j++)
+			{
+			     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+			}
+		    }
 		    else
 		    {
 		    	bResult &= a[i].Equals(b[i]);
