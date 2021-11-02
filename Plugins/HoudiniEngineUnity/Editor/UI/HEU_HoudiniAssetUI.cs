@@ -72,6 +72,8 @@ namespace HoudiniEngineUnity
 	// Draws UI for instance inputs
 	private HEU_InstanceInputUI _instanceInputUI;
 
+	private SceneView _sceneView;
+
 	//	GUI CONTENT -----------------------------------------------------------------------------------------------
 
 	private static Texture2D _reloadhdaIcon;
@@ -130,6 +132,8 @@ namespace HoudiniEngineUnity
 	    _removeheContent = new GUIContent("  Keep Only Output", _removeheIcon, "Remove Houdini Engine data (HDA_Data, Houdini Asset Root object), and leave just the generated Unity data (meshes, materials, instances, etc.).");
 	    _duplicateContent = new GUIContent("  Duplicate", _duplicateAssetIcon, "Safe duplication of this asset to create an exact copy. The asset is duplicated in Houdini. All data is copied over.");
 	    _resetParamContent = new GUIContent("  Reset All", _resetParamIcon, "Reset all parameters, materials, and inputs to their HDA default values, clear cache, reload HDA, cook, and generate output.");
+
+	    _sceneView = UnityEditor.EditorWindow.GetWindow<SceneView>();
 
 	    // Get the root gameobject, and the HDA bound to it
 	    _houdiniAssetRoot = target as HEU_HoudiniAssetRoot;
@@ -1109,11 +1113,11 @@ namespace HoudiniEngineUnity
 			    bool curveToSceneView = projectCurveToSceneViewProperty.boolValue;
 			    Vector3 projectDir = Vector3.down;
 
-			    if (curveToSceneView)
+			    if (curveToSceneView && _sceneView != null)
 			    {
-				SceneView sceneView = UnityEditor.EditorWindow.GetWindow<SceneView>();
-				Quaternion sceneRot = sceneView.rotation;
-				if (sceneView && sceneRot != Quaternion.identity)
+				Quaternion sceneRot = _sceneView.rotation;
+
+				if (sceneRot != Quaternion.identity)
 				{
 				    projectDir = sceneRot * Vector3.forward;
 				}
