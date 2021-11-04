@@ -1573,7 +1573,7 @@ namespace HoudiniEngineUnity
 	    List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>(editableGeoInfos);
 	    if (bObjectIsVisible)
 	    {
-	        GatherAllAssetOutputs(session, gatherOutputsNodeId, objectInfo, bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
+	        GatherAllAssetOutputs(session, gatherOutputsNodeId, bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
 	    }
 	}
 
@@ -1701,13 +1701,12 @@ namespace HoudiniEngineUnity
 		List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>(editableGeoInfos);
 		if (bObjectIsVisible)
 		{
-		    GatherAllAssetOutputs(session, gatherOutputsNodeId, objectInfos[objectIdx], bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
+		    GatherAllAssetOutputs(session, gatherOutputsNodeId, bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
 		}
-
 	    }
 	}
 
-	static private void GatherAllAssetOutputs(HEU_SessionBase session, HAPI_NodeId nodeId, HAPI_ObjectInfo objectInfo, bool bUseOutputNodes, bool bOutputTemplatedGeos, ref List<HAPI_GeoInfo> outGeoInfos)
+	static private void GatherAllAssetOutputs(HEU_SessionBase session, HAPI_NodeId nodeId, bool bUseOutputNodes, bool bOutputTemplatedGeos, ref List<HAPI_GeoInfo> outGeoInfos)
 	{
 	    HashSet<HAPI_NodeId> gatheredNodeIds = new HashSet<HAPI_NodeId>();
 	    // NOTE: This function assumes that the incoming node is a Geometry container that contains immediate
@@ -1727,7 +1726,7 @@ namespace HoudiniEngineUnity
 		{
 		    bHasOutputs = true;
 		    HAPI_GeoInfo[] outputGeoInfos = new HAPI_GeoInfo[numOutputs];
-		    if (session.GetOutputGeoInfos(objectInfo.nodeId, ref outputGeoInfos, numOutputs))
+		    if (session.GetOutputGeoInfos(nodeId, ref outputGeoInfos, numOutputs))
 		    {
 			foreach (HAPI_GeoInfo outputGeoInfo in outputGeoInfos)
 			{
