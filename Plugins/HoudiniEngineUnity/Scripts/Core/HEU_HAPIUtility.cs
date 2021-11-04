@@ -1813,7 +1813,31 @@ namespace HoudiniEngineUnity
 
 	    foreach (HAPI_GeoInfo info in geoInfos)
 	    {
-		if (info.partCount <= 0)
+		bool requiresCook = false;
+
+		if (info.partCount <= 0) requiresCook = true;
+
+		if (!requiresCook)
+		{
+		    // Recook assets with invalid parts
+		    int numParts = info.partCount;
+		    for (int i = 0; i < numParts; ++i)
+		    {
+		        HAPI_PartInfo partInfo = new HAPI_PartInfo();
+		        if (!session.GetPartInfo(info.nodeId, i, ref partInfo))
+		        {
+		            continue;
+		        }
+
+			if (partInfo.id < 0 || partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INVALID)
+			{
+			    requiresCook = true;
+			    break;
+			}
+		    }
+		}
+
+		if (requiresCook)
 		{
 		    session.CookNode(info.nodeId, HEU_PluginSettings.CookTemplatedGeos);
 		    HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
