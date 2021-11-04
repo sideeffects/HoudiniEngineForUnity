@@ -1462,7 +1462,7 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	static internal void GatherAllAssetGeoInfos(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, bool bUseOutputNodes, ref List<HAPI_GeoInfo> outGeoInfos)
+	static internal void GatherAllAssetGeoInfos(HEU_SessionBase session, HAPI_NodeId assetId, HAPI_ObjectInfo objectInfo, bool bUseOutputNodes, ref List<HAPI_GeoInfo> outGeoInfos)
 	{
 	    if (objectInfo.nodeId < 0)
 	    {
@@ -1471,15 +1471,14 @@ namespace HoudiniEngineUnity
 
 	    bool bOutputTemplatedGeos = false; // TODO: Add this option in HoudiniAssetComponent
 
-	    HAPI_NodeId assetId = objectInfo.nodeId;
 
 	    // Get the AssetInfo
 	    HAPI_AssetInfo assetInfo = new HAPI_AssetInfo();
-	    if (!session.GetAssetInfo(assetId, ref assetInfo, false)) return;
+	    if (!session.GetAssetInfo(assetId, ref assetInfo)) return;
 
 	    // Get the Asset NodeInfo
 	    HAPI_NodeInfo assetNodeInfo = new HAPI_NodeInfo();
-	    if (!session.GetNodeInfo(assetId, ref assetNodeInfo, false)) return;
+	    if (!session.GetNodeInfo(assetId, ref assetNodeInfo)) return;
 
 	    // In certain cases, such as PDG output processing we might end up with a SOP node instead of a
 	    // container. In that case, don't try to run child queries on this node. They will fail.
