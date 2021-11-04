@@ -289,7 +289,7 @@ namespace HoudiniEngineUnity
 	    // Translate transform to Unity (TODO)
 	    List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>();
 
-	    HEU_HAPIUtility.GatherAllAssetGeoInfos(session, objectInfo, bUseOutputNodes, ref geoInfos);
+	    HEU_HAPIUtility.GatherAllAssetGeoInfos(session, parentAsset.AssetID, objectInfo, bUseOutputNodes, ref geoInfos);
 	    int numGeoInfos = geoInfos.Count;
 	    for (int i = 0; i < numGeoInfos; ++i)
 	    {
@@ -491,8 +491,7 @@ namespace HoudiniEngineUnity
 		bool useOutputNodes = true;
 		if (ParentAsset) useOutputNodes = ParentAsset.UseOutputNodes;
 
-		HEU_HAPIUtility.GatherAllAssetGeoInfos(session, _objectInfo, useOutputNodes, ref postCookGeoInfos);
-
+		HEU_HAPIUtility.GatherAllAssetGeoInfos(session, ParentAsset.AssetID, _objectInfo, useOutputNodes, ref postCookGeoInfos);
 
 		// Now for each geo node that are present after cooking, we check if its
 		// new or whether we already have it prior to cooking.
