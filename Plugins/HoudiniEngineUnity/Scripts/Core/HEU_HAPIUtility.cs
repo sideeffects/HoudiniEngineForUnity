@@ -1477,7 +1477,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-	public static bool GetOutputIndex(HEU_SessionBase session,HAPI_NodeId nodeId, ref int outputIndex)
+	public static bool GetOutputIndex(HEU_SessionBase session, HAPI_NodeId nodeId, ref int outputIndex)
 	{
 	    int tempValue = -1;
 
@@ -1490,9 +1490,125 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	static internal void GatherAllAssetGeoInfos(HEU_SessionBase session, HAPI_NodeId assetId, HAPI_ObjectInfo objectInfo, bool bUseOutputNodes, ref List<HAPI_GeoInfo> outGeoInfos)
+	static internal void GatherAllAssetGeoInfos(HEU_SessionBase session, HAPI_AssetInfo assetInfo, HAPI_ObjectInfo objectInfo, bool bUseOutputNodes, ref List<HAPI_GeoInfo> outGeoInfos)
 	{
 	    if (objectInfo.nodeId < 0)
+	    {
+		return;
+	    }
+
+	    if (assetInfo.nodeId < 0)
+	    {
+		return;
+	    }
+
+	    bool bOutputTemplatedGeos = false; // TODO: Add this option in HoudiniAssetComponent
+
+	    // Get the Asset NodeInfo
+	    HAPI_NodeInfo assetNodeInfo = new HAPI_NodeInfo();
+	    if (!session.GetNodeInfo(assetInfo.nodeId, ref assetNodeInfo)) return;
+
+	    // In certain cases, such as PDG output processing we might end up with a SOP node instead of a
+	    // container. In that case, don't try to run child queries on this node. They will fail.
+	    bool bAssetHasChildren = !(assetNodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_SOP && assetNodeInfo.childNodeCount == 0);
+
+	    List<HAPI_GeoInfo> editableGeoInfos = new List<HAPI_GeoInfo>();
+
+	    // Get editable nodes, cook em, then create geo nodes for them
+	    HAPI_NodeId[] editableNodes = null;
+	    HEU_SessionManager.GetComposedChildNodeList(session, objectInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes);
+	    if (editableNodes != null)
+	    {
+		foreach (HAPI_NodeId editNodeID in editableNodes)
+		{
+		    HAPI_GeoInfo editGeoInfo = new HAPI_GeoInfo();
+		    if (session.GetGeoInfo(editNodeID, ref editGeoInfo))
+		    {
+			// Do not process the main display geo twice!
+		        if (editGeoInfo.isDisplayGeo) continue;
+
+			// We only handle editable curves for now
+			if (editGeoInfo.type != HAPI_GeoType.HAPI_GEOTYPE_CURVE) continue;
+
+			//session.CookNode(editNodeID, HEU_PluginSettings.CookTemplatedGeos);
+
+			// Add this geo to the geo info array
+			editableGeoInfos.Add(editGeoInfo);
+		    }
+		}
+	    }
+
+	    bool bIsSopAsset = assetInfo.nodeId != assetInfo.objectNodeId;
+	    bool bUseOutputFromSubnets = true;
+
+	    if (bAssetHasChildren)
+	    {
+	        if (HEU_HAPIUtility.ContainsSopNodes(session, assetInfo.nodeId))
+		{
+		    // This HDA contains immediate SOP nodes. Don't look for subnets to output.
+		    bUseOutputFromSubnets = false;
+		}
+		else
+		{
+		    // Assume we're using a subnet-based HDA
+		    bUseOutputFromSubnets = true;
+		}
+	    }
+	    else
+	    {
+		// This asset doesn't have any children. Don'y try to find subnets
+		bUseOutputFromSubnets = false;
+	    }
+
+	    // Need to get all object Ids just to determine visiblity
+	    HashSet<HAPI_NodeId> allObjectIds = new HashSet<HAPI_NodeId>();
+
+	    if (bUseOutputFromSubnets)
+	    {
+		HAPI_NodeId[] objectIds = null;
+		HEU_SessionManager.GetComposedChildNodeList(session, assetInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_OBJ, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_OBJ_SUBNET, true, out objectIds);
+
+		foreach (HAPI_NodeId objId in objectIds)
+		{
+		    allObjectIds.Add(objId);
+		}
+	    }
+	    else
+	    {
+		allObjectIds.Add(assetInfo.objectNodeId);
+	    }
+
+	    // Check visibility
+	    bool bObjectIsVisible = false;
+	    HAPI_NodeId gatherOutputsNodeId = -1;
+	    if (!bAssetHasChildren)
+	    {
+	        bObjectIsVisible = true;
+	        gatherOutputsNodeId = assetNodeInfo.parentId;
+	    }
+	    else if (bIsSopAsset && objectInfo.nodeId == assetInfo.objectNodeId)
+	    {
+	        bObjectIsVisible = true;
+	        gatherOutputsNodeId = assetInfo.nodeId;
+	    }
+	    else
+	    {
+	        bObjectIsVisible = HEU_HAPIUtility.IsObjNodeFullyVisible(session, allObjectIds, assetInfo.nodeId, objectInfo.nodeId);
+	        gatherOutputsNodeId = objectInfo.nodeId;
+	    }
+
+	    // Actually gather the geoInfo
+	    List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>(editableGeoInfos);
+	    if (bObjectIsVisible)
+	    {
+	        GatherAllAssetOutputs(session, gatherOutputsNodeId, objectInfo, bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
+	    }
+	}
+
+	// This is the version we use in Unreal
+	static internal void GatherAllObjectGeoInfos(HEU_SessionBase session, HAPI_NodeId assetId, bool bUseOutputNodes, ref List<HAPI_GeoInfo> outGeoInfos)
+	{
+	    if (assetId < 0)
 	    {
 		return;
 	    }
@@ -1613,7 +1729,7 @@ namespace HoudiniEngineUnity
 		List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>(editableGeoInfos);
 		if (bObjectIsVisible)
 		{
-		    GatherAllAssetOutputs(session, gatherOutputsNodeId, objectInfo, bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
+		    GatherAllAssetOutputs(session, gatherOutputsNodeId, objectInfos[objectIdx], bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
 		}
 
 	    }
