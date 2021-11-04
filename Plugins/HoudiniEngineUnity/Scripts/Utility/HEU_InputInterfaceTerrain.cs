@@ -397,6 +397,11 @@ namespace HoudiniEngineUnity
 		    bMaskSet = true;
 		    bMaskLayer = true;
 		    alphaLayerID = idt._maskNodeID;
+
+		    float[,] heights = idt._terrainData.GetHeights(0, 0, idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution);
+		    int heightsSizeX = heights.GetLength(0);
+		    int heightsSizeY = heights.GetLength(1);
+		    alphaMapsConverted[m] = HEU_TerrainUtility.ResampleData(alphaMapsConverted[m], sizeX, sizeY, heightsSizeX, heightsSizeY);
 		}
 		else
 		{
