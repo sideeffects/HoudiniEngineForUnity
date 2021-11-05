@@ -493,19 +493,11 @@ namespace HoudiniEngineUnity
 	    for (int i = 0; i < numParts; ++i)
 	    {
 		// Get the tile index, if it exists, for this part
-		HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
-		int[] tileAttrData = new int[0];
-		HEU_GeneralUtility.GetAttribute(session, ownerNode.GeoID, volumeParts[i].PartID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
-		if (tileAttrData == null || !tileAttrInfo.exists)
-		{
-		    HEU_GeneralUtility.GetAttribute(session, ownerNode.GeoID, 0, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
-		}
+		int tile = 0;
 
-		if (tileAttrData != null && tileAttrData.Length > 0)
+		if (HEU_TerrainUtility.GetAttributeTile(session, ownerNode.GeoID, volumeParts[i].PartID, out tile))
 		{
 		    //HEU_Logger.LogFormat("Tile: {0}", tileAttrData[0]);
-
-		    int tile = tileAttrData[0];
 		    HEU_VolumeCache volumeCache = null;
 
 		    // Find cache in updated list
@@ -633,19 +625,7 @@ namespace HoudiniEngineUnity
 	private void GetPartLayerAttributes(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_NodeId partID, HEU_VolumeLayer layer)
 	{
 	    // Get the tile index, if it exists, for this part
-	    HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
-	    int[] tileAttrData = new int[0];
-	    HEU_GeneralUtility.GetAttribute(session, geoID, partID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
-	    if (tileAttrData != null && tileAttrData.Length > 0)
-	    {
-		layer._tile = tileAttrData[0];
-		//HEU_Logger.LogFormat("Tile: {0}", tileAttrData[0]);
-	    }
-	    else
-	    {
-		layer._tile = 0;
-	    }
-
+	    HEU_TerrainUtility.GetAttributeTile(session, geoID, partID, out layer._tile);
 	    layer._hasLayerAttributes = HEU_TerrainUtility.VolumeLayerHasAttributes(session, geoID, partID);
 	}
 
