@@ -760,15 +760,8 @@ namespace HoudiniEngineUnity
 		}
 
 		// Get the tile index, if it exists, for this part
-		HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
-		int[] tileAttrData = new int[0];
-		HEU_GeneralUtility.GetAttribute(session, nodeID, volumeParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
-
 		int tileIndex = 0;
-		if (tileAttrInfo.exists && tileAttrData.Length == 1)
-		{
-		    tileIndex = tileAttrData[0];
-		}
+		HEU_TerrainUtility.GetAttributeTile(session, nodeID, volumeParts[i].id, out tileIndex);
 
 		// Add layer based on tile index
 		if (tileIndex >= 0)
@@ -918,19 +911,7 @@ namespace HoudiniEngineUnity
 	    {
 		// Find the terrain tile (use primitive attr). Assume 0 tile if not set (i.e. not split into tiles)
 		int terrainTile = 0;
-		HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
-		int[] tileAttrData = new int[0];
-		if (!HEU_GeneralUtility.GetAttribute(session, nodeID, scatterInstancerParts[i].id, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
-		{
-		    // Try part 0 (the height layer) to get the tile index.
-		    // For scatter points merged with HF, in some cases the part ID doesn't have the tile attribute.
-		    HEU_GeneralUtility.GetAttribute(session, nodeID, 0, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData);
-		}
-
-		if (tileAttrData != null && tileAttrData.Length > 0)
-		{
-		    terrainTile = tileAttrData[0];
-		}
+		HEU_TerrainUtility.GetAttributeTile(session, nodeID,  scatterInstancerParts[i].id, out terrainTile);
 
 		// Find the volume layer associated with this part using the terrain tile index
 		HEU_LoadBufferVolume volumeBuffer = GetLoadBufferVolumeFromTileIndex(terrainTile, volumeBuffers);
