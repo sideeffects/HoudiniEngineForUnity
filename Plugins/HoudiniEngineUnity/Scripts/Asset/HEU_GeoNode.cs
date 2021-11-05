@@ -1096,15 +1096,7 @@ namespace HoudiniEngineUnity
 	    {
 		// Find the terrain tile (use primitive attr). Assume 0 tile if not set (i.e. not split into tiles)
 		int terrainTile = 0;
-		HAPI_AttributeInfo tileAttrInfo = new HAPI_AttributeInfo();
-		int[] tileAttrData = new int[0];
-		if (HEU_GeneralUtility.GetAttribute(session, GeoID, _parts[i].PartID, HEU_Defines.HAPI_HEIGHTFIELD_TILE_ATTR, ref tileAttrInfo, ref tileAttrData, session.GetAttributeIntData))
-		{
-		    if (tileAttrData != null && tileAttrData.Length > 0)
-		    {
-			terrainTile = tileAttrData[0];
-		    }
-		}
+		HEU_TerrainUtility.GetAttributeTile(session, GeoID, _parts[i].PartID, out terrainTile);
 
 		// Find the volumecache associated with this part using the terrain tile index
 		HEU_VolumeCache volumeCache = GetVolumeCacheByTileIndex(terrainTile);
