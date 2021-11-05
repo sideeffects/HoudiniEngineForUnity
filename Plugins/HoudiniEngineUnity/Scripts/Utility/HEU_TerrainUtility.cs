@@ -1353,7 +1353,7 @@ namespace HoudiniEngineUnity
 		    float oldY = y * yScale;
 		    float oldX = x * xScale;
 		    int x0 = Mathf.FloorToInt(oldX);
-		    int x1 = Mathf.Min(Mathf.FloorToInt(oldY) + 1, oldWidth - 1);
+		    int x1 = Mathf.Min(Mathf.FloorToInt(oldX) + 1, oldWidth - 1);
 		    int y0 = Mathf.FloorToInt(oldY);
 		    int y1 = Mathf.Min(Mathf.FloorToInt(oldY), oldHeight - 1);
 
