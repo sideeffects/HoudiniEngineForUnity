@@ -63,7 +63,15 @@ namespace HoudiniEngineUnity
 
 	public bool Editable { get { return _geoInfo.isEditable; } }
 
-	public bool Displayable { get { return _geoInfo.isDisplayGeo; } }
+	public bool Displayable
+	{
+	    get
+	    {
+		if (ParentAsset && ParentAsset.UseOutputNodes == true) return true; // Trust that it is displayable if using output nodes
+
+		return _geoInfo.isDisplayGeo;
+	    }
+	}
 
 	public bool IsVisible() { return _containerObjectNode.IsVisible(); }
 
