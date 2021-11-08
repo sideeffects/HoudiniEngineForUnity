@@ -1758,13 +1758,18 @@ namespace HoudiniEngineUnity
 		    {
 			foreach (HAPI_GeoInfo outputGeoInfo in outputGeoInfos)
 			{
-			    int outputIndex = -1;
+			    // Gather all output nodes, regardless of index.
+			//    int outputIndex = -1;
 
-			    if (HEU_HAPIUtility.GetOutputIndex(session, outputGeoInfo.nodeId, ref outputIndex) && outputIndex == 0)
-			    {
-				geoInfos.Add(outputGeoInfo);
-				gatheredNodeIds.Add(outputGeoInfo.nodeId);
-			    }
+			//    if (HEU_HAPIUtility.GetOutputIndex(session, outputGeoInfo.nodeId, ref outputIndex) && outputIndex == 0)
+			//    {
+				if (!gatheredNodeIds.Contains(outputGeoInfo.nodeId))
+				{
+				    geoInfos.Add(outputGeoInfo);
+				    gatheredNodeIds.Add(outputGeoInfo.nodeId);
+				}
+
+			//    }
 
 			}
 		    }
