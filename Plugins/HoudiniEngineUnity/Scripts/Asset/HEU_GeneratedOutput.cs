@@ -87,7 +87,8 @@ namespace HoudiniEngineUnity
 	    }
 
 	    MeshRenderer meshRenderer = outputData._gameObject.GetComponent<MeshRenderer>();
-	    meshRenderer.sharedMaterials = outputData._renderMaterials;
+	    if (meshRenderer != null)
+		meshRenderer.sharedMaterials = outputData._renderMaterials;
 	}
 
 

@@ -450,7 +450,21 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 
 		if (!inputNode._usingSelectFromHierarchy)
 		{
-		    if (GUILayout.Button(new GUIContent("Select from Hierarchy (Locks Inspector)", "Locks the inspector and so you can select GameObjects from the Hierarchy. Once select, press Use Current Selection to add the specified objects as inputs.")))
+		    string title = "Select from Hierarchy (Locks Inspector)";
+		    float shortenLength = 420;
+		    float reallyShortLength = 320;
+
+		    float screenWidth = Screen.width;
+		    if (screenWidth < reallyShortLength)
+		    {
+			title = "From Hierarchy";
+		    }
+		    else if (screenWidth < shortenLength)
+		    {
+			title = "Select from Hierarchy";
+		    }
+		
+		    if (GUILayout.Button(new GUIContent(title, "Locks the inspector and so you can select GameObjects from the Hierarchy. Once select, press Use Current Selection to add the specified objects as inputs.")))
 		    {
 		        SetInspectorLock(true);
 			inputNode._usingSelectFromHierarchy = true;

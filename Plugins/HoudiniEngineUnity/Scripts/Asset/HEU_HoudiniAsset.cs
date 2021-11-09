@@ -2356,7 +2356,12 @@ namespace HoudiniEngineUnity
 	    else
 	    {
 #if UNITY_EDITOR && UNITY_2018_3_OR_NEWER
+#if UNITY_EDITOR_2021_2_OR_NEWER
+		var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+#else
 		var stage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+#endif
+		
 		if (stage != null)
 		{
 		    // Disable UI when HDA is in prefab stage

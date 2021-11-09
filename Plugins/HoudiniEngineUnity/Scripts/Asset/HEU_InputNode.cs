@@ -1159,26 +1159,27 @@ namespace HoudiniEngineUnity
 			{
 			    return true;
 			}
-		    }
 
-		    if (recursive)
-		    {
-			List<Matrix4x4> curMatrixTransforms = new List<Matrix4x4>();
-			HEU_InputUtility.GetChildrenTransforms(_inputObjects[i]._gameObject.transform, ref curMatrixTransforms);
-
-			if (curMatrixTransforms.Count != _inputObjects[i]._syncdChildTransforms.Count)
+			if (recursive)
 			{
-			    return true;
-			}
+			    List<Matrix4x4> curMatrixTransforms = new List<Matrix4x4>();
+			    HEU_InputUtility.GetChildrenTransforms(_inputObjects[i]._gameObject.transform, ref curMatrixTransforms);
 
-			int length = curMatrixTransforms.Count;
-			for (int j = 0; j < length; j++)
-			{
-			    if (curMatrixTransforms[j] != _inputObjects[j]._syncdChildTransforms[j])
+			    if (curMatrixTransforms.Count != _inputObjects[i]._syncdChildTransforms.Count)
 			    {
 				return true;
 			    }
+
+			    int length = curMatrixTransforms.Count;
+			    for (int j = 0; j < length; j++)
+			    {
+			        if (curMatrixTransforms[j] != _inputObjects[j]._syncdChildTransforms[j])
+			        {
+				    return true;
+			        }
+			    }
 			}
+
 		    }
 		}
 	    }
