@@ -1492,6 +1492,8 @@ namespace HoudiniEngineUnity
 
 	static internal void GatherAllAssetGeoInfos(HEU_SessionBase session, HAPI_AssetInfo assetInfo, HAPI_ObjectInfo objectInfo, bool bUseOutputNodes, ref List<HAPI_GeoInfo> outGeoInfos)
 	{
+	    if (outGeoInfos == null) outGeoInfos = new List<HAPI_GeoInfo>();
+
 	    if (objectInfo.nodeId < 0)
 	    {
 		return;
@@ -1530,7 +1532,7 @@ namespace HoudiniEngineUnity
 			// We only handle editable curves for now
 			if (editGeoInfo.type != HAPI_GeoType.HAPI_GEOTYPE_CURVE) continue;
 
-			//session.CookNode(editNodeID, HEU_PluginSettings.CookTemplatedGeos);
+			session.CookNode(editNodeID, HEU_PluginSettings.CookTemplatedGeos);
 
 			// Add this geo to the geo info array
 			editableGeoInfos.Add(editGeoInfo);
@@ -1598,7 +1600,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // Actually gather the geoInfo
-	    List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>(editableGeoInfos);
+	    outGeoInfos.AddRange(editableGeoInfos);
 	    if (bObjectIsVisible)
 	    {
 	        GatherAllAssetOutputs(session, gatherOutputsNodeId, bUseOutputNodes, bOutputTemplatedGeos, ref outGeoInfos);
