@@ -294,7 +294,7 @@ MonoBehaviour:
   m_Text: 'UnityScript Example:
 
 
-    Select the heu_example_unity_script3 GameObject and cook the asset.
+    Select the heu_instance_cubes_with_custom_attr1 GameObject and cook the asset.
 
 
     This example demonstrates showcases a simple HDA that adds a script HEU_ScriptCallbackExample
