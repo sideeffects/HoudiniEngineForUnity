@@ -1813,74 +1813,7 @@ namespace HoudiniEngineUnity
 			// Using default material as failsafe
 			submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
 
-			if (geoCache._unityMaterialAttrInfo.exists)
-			{
-			    // This face might have a Unity or Substance material attribute. 
-			    // Formulate the submesh ID by combining the material attributes.
-
-			    if (geoCache._singleFaceUnityMaterial)
-			    {
-				if (singleFaceUnityMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL && geoCache._unityMaterialInfos.Count > 0)
-				{
-				    // Use first material
-				    var unityMaterialMapEnumerator = geoCache._unityMaterialInfos.GetEnumerator();
-				    if (unityMaterialMapEnumerator.MoveNext())
-				    {
-					singleFaceUnityMaterialKey = unityMaterialMapEnumerator.Current.Key;
-				    }
-				}
-				submeshID = singleFaceUnityMaterialKey;
-			    }
-			    else
-			    {
-				int attrIndex = groupFace;
-				if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM || geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-				{
-				    if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-				    {
-					attrIndex = groupVertexList[vertexFaceIndex];
-				    }
-
-				    string unityMaterialName = "";
-				    string substanceName = "";
-				    int substanceIndex = -1;
-				    submeshID = HEU_GenerateGeoCache.GetMaterialKeyFromAttributeIndex(geoCache, attrIndex, out unityMaterialName, out substanceName, out substanceIndex);
-				}
-				else
-				{
-				    // (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL) should have been handled as geoCache._singleFaceMaterial above
-
-				    HEU_Logger.LogErrorFormat("Unity material attribute not supported for attribute type {0}!", geoCache._unityMaterialAttrInfo.owner);
-				}
-			    }
-			}
-
-			if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
-			{
-			    // Check if has Houdini material assignment
-
-			    if (geoCache._houdiniMaterialIDs.Length > 0)
-			    {
-				if (geoCache._singleFaceHoudiniMaterial)
-				{
-				    if (singleFaceHoudiniMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL)
-				    {
-					singleFaceHoudiniMaterialKey = geoCache._houdiniMaterialIDs[0];
-				    }
-				    submeshID = singleFaceHoudiniMaterialKey;
-				}
-				else if (faceMaterialID > 0)
-				{
-				    submeshID = faceMaterialID;
-				}
-			    }
-
-			    if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
-			    {
-				// Use default material
-				submeshID = defaultMaterialKey;
-			    }
-			}
+			GetSubmeshIDForFace(geoCache, faceMaterialID, groupFace, vertexFaceIndex, groupVertexList, defaultMaterialKey, ref submeshID, ref singleFaceUnityMaterialKey, ref singleFaceHoudiniMaterialKey);
 
 			// Find existing submesh for this vertex index or create new
 			subMeshData = null;
@@ -2251,7 +2184,7 @@ namespace HoudiniEngineUnity
 		    groupFace = groupFaces[faceIndex];
 		    faceCount = geoCache._faceCounts[groupFace];
 
-		    faceMaterialID = geoCache._houdiniMaterialIDs[faceIndex];
+		    faceMaterialID = geoCache._houdiniMaterialIDs[groupFace];
 
 		    for (int v = 0; v < faceCount; v++)
 		    {
@@ -2268,75 +2201,8 @@ namespace HoudiniEngineUnity
 			// Using default material as failsafe
 			submeshID = HEU_Defines.HEU_INVALID_MATERIAL;
 
-			if (geoCache._unityMaterialAttrInfo.exists)
-			{
-			    // This face might have a Unity or Substance material attribute. 
-			    // Formulate the submesh ID by combining the material attributes.
-
-			    if (geoCache._singleFaceUnityMaterial)
-			    {
-				if (singleFaceUnityMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL && geoCache._unityMaterialInfos.Count > 0)
-				{
-				    // Use first material
-				    var unityMaterialMapEnumerator = geoCache._unityMaterialInfos.GetEnumerator();
-				    if (unityMaterialMapEnumerator.MoveNext())
-				    {
-					singleFaceUnityMaterialKey = unityMaterialMapEnumerator.Current.Key;
-				    }
-				}
-				submeshID = singleFaceUnityMaterialKey;
-			    }
-			    else
-			    {
-				int attrIndex = faceIndex;
-				if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM || geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-				{
-				    if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
-				    {
-					attrIndex = groupVertexList[vertexFaceIndex];
-				    }
-
-				    string unityMaterialName = "";
-				    string substanceName = "";
-				    int substanceIndex = -1;
-				    submeshID = HEU_GenerateGeoCache.GetMaterialKeyFromAttributeIndex(geoCache, attrIndex, out unityMaterialName, out substanceName, out substanceIndex);
-				}
-				else
-				{
-				    // (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL) should have been handled as geoCache._singleFaceMaterial above
-
-				    HEU_Logger.LogErrorFormat("Unity material attribute not supported for attribute type {0}!", geoCache._unityMaterialAttrInfo.owner);
-				}
-			    }
-			}
-
-			if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
-			{
-			    // Check if has Houdini material assignment
-
-			    if (geoCache._houdiniMaterialIDs.Length > 0)
-			    {
-				if (geoCache._singleFaceHoudiniMaterial)
-				{
-				    if (singleFaceHoudiniMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL)
-				    {
-					singleFaceHoudiniMaterialKey = geoCache._houdiniMaterialIDs[0];
-				    }
-				    submeshID = singleFaceHoudiniMaterialKey;
-				}
-				else if (faceMaterialID > 0)
-				{
-				    submeshID = faceMaterialID;
-				}
-			    }
-
-			    if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
-			    {
-				// Use default material
-				submeshID = defaultMaterialKey;
-			    }
-			}
-
+			GetSubmeshIDForFace(geoCache, faceMaterialID, groupFace, vertexFaceIndex, groupVertexList, defaultMaterialKey, ref submeshID, ref singleFaceUnityMaterialKey, ref singleFaceHoudiniMaterialKey);
+			
 			// Find existing submesh for this vertex index or create new
 			subMeshData = null;
 			if (!currentLODGroup._subMeshesMap.TryGetValue(submeshID, out subMeshData))
@@ -2476,6 +2342,78 @@ namespace HoudiniEngineUnity
 #endif
 
 	    return true;
+	}
+
+	private static void GetSubmeshIDForFace(HEU_GenerateGeoCache geoCache, int faceMaterialID, int groupFace, int vertexFaceIndex, int[] groupVertexList, int defaultMaterialKey, ref int submeshID, ref int singleFaceUnityMaterialKey, ref int singleFaceHoudiniMaterialKey)
+	{
+	    if (geoCache._unityMaterialAttrInfo.exists)
+	    {
+		// This face might have a Unity or Substance material attribute. 
+		// Formulate the submesh ID by combining the material attributes.
+
+		if (geoCache._singleFaceUnityMaterial)
+		{
+		    if (singleFaceUnityMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL && geoCache._unityMaterialInfos.Count > 0)
+		    {
+			// Use first material
+			var unityMaterialMapEnumerator = geoCache._unityMaterialInfos.GetEnumerator();
+			if (unityMaterialMapEnumerator.MoveNext())
+			{
+			    singleFaceUnityMaterialKey = unityMaterialMapEnumerator.Current.Key;
+			}
+		    }
+		    submeshID = singleFaceUnityMaterialKey;
+		}
+		else
+		{
+		    int attrIndex = groupFace;
+		    if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM || geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
+		    {
+			if (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_POINT)
+			{
+			    attrIndex = groupVertexList[vertexFaceIndex];
+			}
+
+			string unityMaterialName = "";
+			string substanceName = "";
+			int substanceIndex = -1;
+			submeshID = HEU_GenerateGeoCache.GetMaterialKeyFromAttributeIndex(geoCache, attrIndex, out unityMaterialName, out substanceName, out substanceIndex);
+		    }
+		    else
+		    {
+			// (geoCache._unityMaterialAttrInfo.owner == HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL) should have been handled as geoCache._singleFaceMaterial above
+
+			HEU_Logger.LogErrorFormat("Unity material attribute not supported for attribute type {0}!", geoCache._unityMaterialAttrInfo.owner);
+		    }
+		}
+	    }
+
+	    if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
+	    {
+		// Check if has Houdini material assignment
+
+		if (geoCache._houdiniMaterialIDs.Length > 0)
+		{
+		    if (geoCache._singleFaceHoudiniMaterial)
+		    {
+			if (singleFaceHoudiniMaterialKey == HEU_Defines.HEU_INVALID_MATERIAL)
+			{
+			    singleFaceHoudiniMaterialKey = geoCache._houdiniMaterialIDs[0];
+			}
+			submeshID = singleFaceHoudiniMaterialKey;
+		    }
+		    else if (faceMaterialID > 0)
+		    {
+			submeshID = faceMaterialID;
+		    }
+		}
+
+		if (submeshID == HEU_Defines.HEU_INVALID_MATERIAL)
+		{
+		    // Use default material
+		    submeshID = defaultMaterialKey;
+		}
+	    }
 	}
 
 	public static MeshTopology CalculateGroupMeshTopology(List<int> groupFaces, int[] allFaceCounts)
