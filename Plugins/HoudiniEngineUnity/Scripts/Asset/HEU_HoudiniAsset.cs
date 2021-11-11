@@ -2697,25 +2697,29 @@ namespace HoudiniEngineUnity
 
 		bool ignoreError = false;
 		// Some heightfield nodes seem bugged in Houdini at the the moment, always producing an error
-		if (resultString.Contains("Invalid volume \"__temp_debris\" specified"))
+		if (!ignoreError && resultString.Contains("Invalid volume \"__temp_debris\" specified"))
 		{
 		    ignoreError = true;
 		}
 
 		// Depending on your OS, certain nodes, i.e. shader-related nodes may contain non-fatal errors (see Bug: 116237)
-		if (resultString.Contains("Unable to load shader"))
+		if (!ignoreError && resultString.Contains("Unable to load shader"))
+		{
+		    ignoreError = true;
+		}
+
+		if (!ignoreError && resultString.Contains("slump_water/make_tmp_planes/repeat_end"))
 		{
 		    ignoreError = true;
 		}
 
 		if (!ignoreError)
 		{
-		    HEU_Logger.LogErrorFormat(resultString);
+		    HEU_Logger.LogWarningFormat(resultString);
 		    return;
 		}
 		else
 		{
-		    //HEU_Logger.LogWarning(resultString);
 		    HEU_CookLogs.Instance.AppendCookLog(resultString);
 		}
 	    }
