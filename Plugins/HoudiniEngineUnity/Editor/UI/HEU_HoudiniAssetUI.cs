@@ -240,16 +240,25 @@ namespace HoudiniEngineUnity
 		// Check if any changes occurred, and if so, trigger a recook
 		if (EditorGUI.EndChangeCheck())
 		{
+		    // Check options that require a rebuild/recook if changed.
 		    bool oldUseOutputNodes = _houdiniAsset.UseOutputNodes;
+		    bool oldUsePoints = _houdiniAsset.GenerateMeshUsingPoints;
+
 		    _houdiniAssetSerializedObject.ApplyModifiedProperties();
 		    serializedObject.ApplyModifiedProperties();
 
 		    bool bNeedsRebuild = false;
+		    bool bNeedsRecook = false;
 
 		    // UseOutputNodes is a special parameter that requires us to rebuild in order to use it.
 		    if (_houdiniAsset.UseOutputNodes != oldUseOutputNodes)
 		    {
 			bNeedsRebuild = true;
+		    }
+
+		    if (_houdiniAsset.GenerateMeshUsingPoints != oldUsePoints)
+		    {
+			bNeedsRecook = true;
 		    }
 
 		    if (!bSkipAutoCook)
@@ -258,6 +267,10 @@ namespace HoudiniEngineUnity
 			if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && bNeedsRebuild)
 			{
 			    _houdiniAsset.RequestReload(true);
+			}
+			else if (bNeedsRecook)
+			{
+			    _houdiniAsset.RequestCook();
 			}
 			else if (HEU_PluginSettings.CookingEnabled && _houdiniAsset.AutoCookOnParameterChange && _houdiniAsset.DoesAssetRequireRecook())
 			{
