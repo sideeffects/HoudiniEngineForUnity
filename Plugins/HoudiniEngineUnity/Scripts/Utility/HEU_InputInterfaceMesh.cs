@@ -601,13 +601,20 @@ namespace HoudiniEngineUnity
 			}
 		    }
 
-		    if (!session.AddGroup(displayNodeID, 0, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, inputDataMeshes._inputMeshes[g]._meshName))
+		    string groupName = inputDataMeshes._inputMeshes[g]._meshName;
+		    if (!groupName.StartsWith(HEU_Defines.HEU_DEFAULT_LOD_NAME))
+		    {
+			groupName = HEU_Defines.HEU_DEFAULT_LOD_NAME + g + "_" + groupName;
+		    }
+		    groupName = HEU_HAPIUtility.ToHapiVariableName(groupName);
+
+		    if (!session.AddGroup(displayNodeID, 0, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, groupName))
 		    {
 			HEU_Logger.LogError("Failed to add input geometry LOD group name.");
 			return false;
 		    }
 
-		    if (!session.SetGroupMembership(displayNodeID, 0, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, inputDataMeshes._inputMeshes[g]._meshName, membership, 0, partInfo.faceCount))
+		    if (!session.SetGroupMembership(displayNodeID, 0, HAPI_GroupType.HAPI_GROUPTYPE_PRIM, groupName, membership, 0, partInfo.faceCount))
 		    {
 			HEU_Logger.LogError("Failed to set input geometry LOD group name.");
 			return false;
