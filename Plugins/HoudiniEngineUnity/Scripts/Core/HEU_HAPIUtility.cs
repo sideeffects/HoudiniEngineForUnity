@@ -1860,6 +1860,27 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Replaces invalid characters with _ to make a hapi variable name
+	public static string ToHapiVariableName(string name)
+	{
+	    char[] charArray = name.ToCharArray();
+
+	    for (int i = 0; i < charArray.Length; i++)
+	    {
+		if (charArray[i] == ';' ||
+		    charArray[i] == ';' ||
+		    charArray[i] == '<' ||
+		    charArray[i] == '>' ||
+		    charArray[i] == '?' ||
+		    charArray[i] == '|' ||
+		    charArray[i] == ' ')
+		{
+		    charArray[i] = '_';
+		}
+	    }
+
+	    return new string(charArray);
+	}
     }
 
 }   // HoudiniEngineUnity
