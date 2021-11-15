@@ -73,6 +73,10 @@ namespace HoudiniEngineUnity
 		"You can add and edit curve points similar to the Houdini Curve tool."
 		+ "\nSelect ADD or EDIT mode or switch to them using Space.";
 
+	private const string _curveViewHelp2 =
+		"You can add and edit curve points similar to the Houdini Curve tool."
+		+ "\nSelect ADD or EDIT mode or switch to them using F2.";
+
 	private const float _rayCastMaxDistance = 5000f;
 
 	GUIContent[] InteractionModeLabels = new GUIContent[]
@@ -407,7 +411,7 @@ namespace HoudiniEngineUnity
 		}
 		case EventType.KeyUp:
 		{
-		    if (!currentEvent.alt && currentEvent.keyCode == KeyCode.Space)
+		    if (!currentEvent.alt && currentEvent.keyCode == ToggleModeHotkey())
 		    {
 			// Toggle modes
 			SwitchToMode(HEU_Curve.Interaction.ADD);
@@ -478,7 +482,7 @@ namespace HoudiniEngineUnity
 		}
 		case EventType.KeyUp:
 		{
-		    if (currentEvent.keyCode == KeyCode.Space && !currentEvent.alt)
+		    if (currentEvent.keyCode == ToggleModeHotkey() && !currentEvent.alt)
 		    {
 			// Toggle modes
 			SwitchToMode(HEU_Curve.Interaction.EDIT);
@@ -1143,7 +1147,7 @@ namespace HoudiniEngineUnity
 			SwitchToMode(HEU_Curve.Interaction.VIEW);
 			currentEvent.Use();
 		    }
-		    else if (!currentEvent.alt && currentEvent.keyCode == KeyCode.Space)
+		    else if (!currentEvent.alt && currentEvent.keyCode == ToggleModeHotkey())
 		    {
 			// Toggle modes
 			SwitchToMode(HEU_Curve.Interaction.ADD);
@@ -1502,7 +1506,11 @@ namespace HoudiniEngineUnity
 		    // Help text
 		    if (_interactionMode == HEU_Curve.Interaction.VIEW)
 		    {
+#if UNITY_2021_2_OR_NEWER
+			GUILayout.Label(_curveViewHelp2);
+#else
 			GUILayout.Label(_curveViewHelp);
+#endif
 		    }
 		    else if (_interactionMode == HEU_Curve.Interaction.ADD)
 		    {
@@ -1510,7 +1518,7 @@ namespace HoudiniEngineUnity
 			DrawHelpLineGridBox("A", "Toggle where to add new point (Start, Inside, End).");
 			DrawHelpLineGridBox("Hold " + HEU_Defines.HEU_KEY_CTRL, "Grid snapping.");
 			DrawHelpLineGridBox("Backspace", "Delete last new point.");
-			DrawHelpLineGridBox("Space", "Edit mode.");
+			DrawToggleModeHotkey("Edit mode.");
 			DrawHelpLineGridBox("Esc / Enter", "View mode.");
 
 			GUILayout.Space(5);
@@ -1540,7 +1548,7 @@ namespace HoudiniEngineUnity
 			    DrawHelpLineGridBox(HEU_Defines.HEU_KEY_CTRL + " + Left Mouse", "Multi-select point.");
 			    DrawHelpLineGridBox(string.Format("Hold {0} + Left Mouse", HEU_Defines.HEU_KEY_CTRL), "Grid snapping when moving points.");
 			    DrawHelpLineGridBox("Backspace", "Delete selected points.");
-			    DrawHelpLineGridBox("Space", "Add mode.");
+			    DrawToggleModeHotkey("Add mode.");
 			    DrawHelpLineGridBox("F", "Frame the selected nodes or the curve itself.");
 			    if (HEU_PluginSettings.UseHybridCurveEditing)
 			    {
@@ -1877,6 +1885,23 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	internal void DrawToggleModeHotkey(string description)
+	{
+#if UNITY_2021_2_OR_NEWER
+	    DrawHelpLineGridBox("F2", description);
+#else
+	    DrawHelpLineGridBox("Space", description);
+#endif
+	}
+
+	internal KeyCode ToggleModeHotkey()
+	{
+#if UNITY_2021_2_OR_NEWER
+	    return KeyCode.F2;
+#else
+	    return KeyCode.Space;
+#endif
+	}
     }
 
 }   // HoudiniEngineUnity

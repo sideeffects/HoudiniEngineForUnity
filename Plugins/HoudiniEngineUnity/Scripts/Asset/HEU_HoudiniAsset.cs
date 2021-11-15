@@ -816,12 +816,17 @@ namespace HoudiniEngineUnity
 	    CleanUpHandles();
 
 	    // Delete children objects just in case.
-	    Transform[] transforms = this.GetComponentsInChildren<Transform>();
-	    foreach (Transform trans in transforms)
+	    // Don't delete children if part of a prefab. 
+	    bool isPrefab = HEU_EditorUtility.IsPrefabAsset(gameObject);
+	    if (!isPrefab)
 	    {
-		if (trans != this.transform)
+		Transform[] transforms = this.GetComponentsInChildren<Transform>();
+		foreach (Transform trans in transforms)
 		{
-		    DestroyImmediate(trans.gameObject);
+		    if (trans != this.transform)
+		    {
+		        DestroyImmediate(trans.gameObject);
+		    }
 		}
 	    }
 
