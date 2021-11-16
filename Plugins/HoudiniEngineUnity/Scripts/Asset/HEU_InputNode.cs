@@ -1144,18 +1144,18 @@ namespace HoudiniEngineUnity
 	    // Only need to check Mesh inputs, since HDA inputs don't upload transform
 	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
 	    {
-		for (int i = 0; i < _inputObjects.Count; ++i)
+		foreach (HEU_InputObjectInfo inputObject in _inputObjects)
 		{
-		    if (_inputObjects[i]._gameObject != null)
+		    if (inputObject._gameObject != null)
 		    {
-			if (_inputObjects[i]._useTransformOffset)
+			if (inputObject._useTransformOffset)
 			{
-			    if (!HEU_HAPIUtility.IsSameTransform(ref _inputObjects[i]._syncdTransform, ref _inputObjects[i]._translateOffset, ref _inputObjects[i]._rotateOffset, ref _inputObjects[i]._scaleOffset))
+			    if (!HEU_HAPIUtility.IsSameTransform(ref inputObject._syncdTransform, ref inputObject._translateOffset, ref inputObject._rotateOffset, ref inputObject._scaleOffset))
 			    {
 				return true;
 			    }
 			}
-			else if (_inputObjects[i]._gameObject.transform.localToWorldMatrix != _inputObjects[i]._syncdTransform)
+			else if (inputObject._gameObject.transform.localToWorldMatrix != inputObject._syncdTransform)
 			{
 			    return true;
 			}
@@ -1163,17 +1163,17 @@ namespace HoudiniEngineUnity
 			if (recursive)
 			{
 			    List<Matrix4x4> curMatrixTransforms = new List<Matrix4x4>();
-			    HEU_InputUtility.GetChildrenTransforms(_inputObjects[i]._gameObject.transform, ref curMatrixTransforms);
+			    HEU_InputUtility.GetChildrenTransforms(inputObject._gameObject.transform, ref curMatrixTransforms);
 
-			    if (curMatrixTransforms.Count != _inputObjects[i]._syncdChildTransforms.Count)
+			    if (curMatrixTransforms.Count != inputObject._syncdChildTransforms.Count)
 			    {
 				return true;
 			    }
 
 			    int length = curMatrixTransforms.Count;
-			    for (int j = 0; j < length; j++)
+			    for (int i = 0; i < length; i++)
 			    {
-			        if (curMatrixTransforms[j] != _inputObjects[j]._syncdChildTransforms[j])
+			        if (curMatrixTransforms[i] != inputObject._syncdChildTransforms[i])
 			        {
 				    return true;
 			        }
