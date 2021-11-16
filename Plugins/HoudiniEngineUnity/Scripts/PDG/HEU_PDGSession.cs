@@ -754,6 +754,25 @@ namespace HoudiniEngineUnity
 	// Checks whether or not an asset is a PDG asset, similar to the unreal plugin
 	public static bool IsPDGAsset(HEU_SessionBase session, HAPI_NodeId assetId)
 	{
+	
+	    if (assetId < 0) return false;
+
+	    // Get the list of all non-bypassed TOP nodes within the current network (ignoring schedulers)
+	    int TOPNodeCount = 0;
+
+	    if (!session.ComposeChildNodeList(assetId,
+		(int)HAPI_NodeType.HAPI_NODETYPE_TOP,
+		(int)(HAPI_NodeFlags.HAPI_NODEFLAGS_TOP_NONSCHEDULER | HAPI_NodeFlags.HAPI_NODEFLAGS_NON_BYPASS),
+		true,
+		ref TOPNodeCount))
+	    {
+		return false;
+	    }
+
+	    if (TOPNodeCount > 0) return true; 
+
+	    // Old method of determining if it is a PDG asset. Is too slow for certain HDAs
+	    /*
 	    HAPI_NodeId[] allNetworkNodeIds = GetNonBypassedNetworkIds(session, assetId);
 	    if (allNetworkNodeIds == null || allNetworkNodeIds.Length == 0)
 	    {
@@ -792,6 +811,8 @@ namespace HoudiniEngineUnity
 		    return true;
 		}
 	    }
+	    */
+
 
 	    // No valid TOP node found :(
 	    return false;
