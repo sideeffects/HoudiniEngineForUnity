@@ -478,7 +478,6 @@ namespace HoudiniEngineUnity
 			    string fileName = asset.AssetName;
 			    string filePattern = "heupreset";
 			    string newPath = EditorUtility.SaveFilePanel("Save HDA preset", "", fileName + "." + filePattern, filePattern);
-			    GUIUtility.ExitGUI();
 
 			    if (newPath != null && !string.IsNullOrEmpty(newPath))
 			    {
@@ -492,8 +491,7 @@ namespace HoudiniEngineUnity
 			    string fileName = asset.AssetName;
 			    string filePattern = "heupreset,preset";
 			    string newPath = EditorUtility.OpenFilePanel("Load HDA preset", "", filePattern);
-			    GUIUtility.ExitGUI();
-			    
+
 			    if (newPath != null && !string.IsNullOrEmpty(newPath))
 			    {
 				HEU_AssetPresetUtility.LoadPresetFileIntoAssetAndCook(asset, newPath);
