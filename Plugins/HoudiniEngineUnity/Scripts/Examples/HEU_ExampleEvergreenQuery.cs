@@ -121,13 +121,13 @@ public class HEU_ExampleEvergreenQuery
 	}
 
 	// The HEU_HoudiniAssetRoot should have a reference to HEU_HoudiniAsset which is the main HEU asset script.
-	if (heuRoot._houdiniAsset == null)
+	if (heuRoot.HoudiniAsset == null)
 	{
 	    HEU_Logger.LogWarningFormat("Unable to get the HEU_HoudiniAsset in root gameobject: {0}. Not a valid HDA.", rootGO.name);
 	    return null;
 	}
 
-	return heuRoot._houdiniAsset;
+	return heuRoot.HoudiniAsset;
     }
 
     /// <summary>

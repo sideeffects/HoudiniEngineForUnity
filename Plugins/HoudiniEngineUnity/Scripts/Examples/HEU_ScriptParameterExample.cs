@@ -55,7 +55,7 @@ public class HEU_ScriptParameterExample : MonoBehaviour
     public void Start()
     {
 	// Grab the HEU_HoduiniAsset
-	_evergreenAsset = _evergreenGameObject.GetComponent<HEU_HoudiniAssetRoot>() != null ? _evergreenGameObject.GetComponent<HEU_HoudiniAssetRoot>()._houdiniAsset : null;
+	_evergreenAsset = _evergreenGameObject.GetComponent<HEU_HoudiniAssetRoot>() != null ? _evergreenGameObject.GetComponent<HEU_HoudiniAssetRoot>().HoudiniAsset : null;
 
 	// Always get the latest parms after each cook
 	List<HEU_ParameterData> parms = _evergreenAsset.Parameters.GetParameters();
