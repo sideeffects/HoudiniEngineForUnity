@@ -219,6 +219,8 @@ namespace HoudiniEngineUnity
 	/// <inheritdoc />
 	public HEU_AssetCookStatusWrapper CookStatus { get { return AssetCookStatus_InternalToWrappper(_cookStatus); } }
 
+	public HEU_AssetCookResultWrapper LastCookResult { get { return AssetCookResult_InternalToWrapper(_lastCookResult); } }
+
 	/// <inheritdoc />
 	public long SessionID { get { return _sessionID; } }
 
@@ -390,6 +392,7 @@ namespace HoudiniEngineUnity
 
 	[SerializeField]
 	private AssetCookResult _lastCookResult;
+	internal AssetCookResult GetLastCookResult() { return _lastCookResult; }
 
 	[SerializeField]
 	private bool _isCookingAssetReloaded;
@@ -5173,6 +5176,36 @@ namespace HoudiniEngineUnity
 		    return HEU_HoudiniAsset.AssetCookStatus.SELECT_SUBASSET;
 		default:
 		    return HEU_HoudiniAsset.AssetCookStatus.NONE;
+	    }
+	}
+
+	internal static HEU_AssetCookResultWrapper AssetCookResult_InternalToWrapper(HEU_HoudiniAsset.AssetCookResult assetCookResult)
+	{
+	    switch (assetCookResult)
+	    {
+		case HEU_HoudiniAsset.AssetCookResult.NONE:
+		    return HEU_AssetCookResultWrapper.NONE;
+		case HEU_HoudiniAsset.AssetCookResult.ERRORED:
+		    return HEU_AssetCookResultWrapper.ERRORED;
+		case HEU_HoudiniAsset.AssetCookResult.SUCCESS:
+		    return HEU_AssetCookResultWrapper.SUCCESS;
+		default:
+		    return HEU_AssetCookResultWrapper.NONE;
+	    }
+	}
+
+	internal static HEU_HoudiniAsset.AssetCookResult AssetCookResult_WrapperToInternal(HEU_AssetCookResultWrapper assetCookResult)
+	{
+	    switch (assetCookResult)
+	    {
+		case HEU_AssetCookResultWrapper.NONE:
+		    return HEU_HoudiniAsset.AssetCookResult.NONE;
+		case HEU_AssetCookResultWrapper.ERRORED:
+		    return HEU_HoudiniAsset.AssetCookResult.ERRORED;
+		case HEU_AssetCookResultWrapper.SUCCESS:
+		    return HEU_HoudiniAsset.AssetCookResult.SUCCESS;
+		default:
+		    return HEU_HoudiniAsset.AssetCookResult.NONE;
 	    }
 	}
 

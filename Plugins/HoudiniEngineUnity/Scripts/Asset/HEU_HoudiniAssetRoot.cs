@@ -48,9 +48,13 @@ namespace HoudiniEngineUnity
     {
 	// Reference to the actual Houdini Engine asset gamebobject which contains
 	// all the data and logic to work with Houdini Engine
-	public HEU_HoudiniAsset _houdiniAsset;
+	[SerializeField]
+	internal HEU_HoudiniAsset _houdiniAsset;
+	public HEU_HoudiniAsset HoudiniAsset { get { return _houdiniAsset; } }
 
-	public List<GameObject> _bakeTargets = new List<GameObject>();
+	[SerializeField]
+	internal List<GameObject> _bakeTargets = new List<GameObject>();
+	public List<GameObject> BakeTargets { get { return _bakeTargets; } }
 
 	/// <summary>
 	/// Callback when asset is deleted. Removes assset from Houdini session if in Editor.

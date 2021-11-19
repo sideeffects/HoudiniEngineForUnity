@@ -63,6 +63,14 @@ namespace HoudiniEngineUnity
 	SELECT_SUBASSET
     };
 
+
+    public enum HEU_AssetCookResultWrapper
+    {
+	NONE,
+	SUCCESS,
+	ERRORED
+    };
+    
     /// <summary>
     /// A wrapper around the curve draw collision
     /// </summary>
@@ -235,6 +243,9 @@ namespace HoudiniEngineUnity
 
 	/// <summary>The asset cook status</summary>
 	HEU_AssetCookStatusWrapper CookStatus { get; }
+
+	/// <summary> The last asset cook result </summary>
+	HEU_AssetCookResultWrapper LastCookResult { get; }
 
 	/// <summary>The session ID.</summary>
 	long SessionID { get; }
