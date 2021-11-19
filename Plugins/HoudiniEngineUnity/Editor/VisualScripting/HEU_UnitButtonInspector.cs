@@ -20,7 +20,6 @@ namespace HoudiniEngineUnity
 
         protected override void OnGUI(Rect position, GUIContent label)
         {
-            //BeginBlock(metadata, position, GUIContent.none);
             var attribute = metadata.GetAttribute<HEU_UnitButtonAttribute>(true);
 	    if (attribute != null)
 	    {
@@ -40,8 +39,6 @@ namespace HoudiniEngineUnity
 		    if (attribute != null)
 		    {
 			object typeObject = metadata.parent.value;
-			    Debug.Log(typeObject.GetType().GetMethod(functionName).ToString());
-
 			GraphReference reference = GraphWindow.activeReference;
 			typeObject.GetType().GetMethod(functionName).Invoke(typeObject, new object[1] { reference });
 		    }

@@ -33,10 +33,14 @@ namespace HoudiniEngineUnity
 	[DoNotSerialize]
 	public ValueOutput outputHDAAsset;
 
+	[DoNotSerialize]
+	public ValueOutput outputSuccess;
+
 	// Data
 	private HEU_HoudiniAssetRoot hdaRoot;
 
 	private HEU_HoudiniAsset hdaAsset;
+	private bool bSuccess;
 
 	protected override void Definition()
 	{
@@ -49,6 +53,7 @@ namespace HoudiniEngineUnity
 	    // Output
 	    outputHDARoot = ValueOutput<HEU_HoudiniAssetRoot>("Output HDA Root", (flow) => { return hdaRoot; } );
 	    outputHDAAsset = ValueOutput<HEU_HoudiniAsset>("Output HDA", (flow) => { return hdaAsset; } );
+	    outputSuccess = ValueOutput<bool>("Success", (flow) => { return bSuccess; });
 	}
 
 	public void TriggerButton(GraphReference reference)
@@ -63,24 +68,56 @@ namespace HoudiniEngineUnity
 		flow.Invoke(trigger);
 	    };
 
-	    HEU_SessionBase session = HEU_SessionManager.GetOrCreateDefaultSession(true);
-	    if (session != null)
-	    {
- 		GameObject go = HEU_HAPIUtility.InstantiateHDA(hdaPath, hdaPosition, session, bBuildAsync:hdaAsync);
-		
-		hdaRoot = go.GetComponent<HEU_HoudiniAssetRoot>();
+	    bool hasErrored = false;
 
-		if (hdaRoot != null)
+	    try
+	    {
+		HEU_SessionBase session = HEU_SessionManager.GetOrCreateDefaultSession(true);
+		if (session != null)
 		{
-		    hdaAsset = hdaRoot.HoudiniAsset;
-		    if (hdaAsync)
-		    {
-			hdaAsset.ReloadDataEvent.AddListener((HEU_ReloadEventData data) => { ContinueFlow(); });
-		    }
+ 			GameObject go = HEU_HAPIUtility.InstantiateHDA(hdaPath, hdaPosition, session, bBuildAsync:hdaAsync);
+
+			hdaRoot = go.GetComponent<HEU_HoudiniAssetRoot>();
+
+			if (hdaRoot != null)
+			{
+			    hdaAsset = hdaRoot.HoudiniAsset;
+			    if (hdaAsync)
+			    {
+				hdaAsset.ReloadDataEvent.AddListener((HEU_ReloadEventData data) =>
+				{
+					bSuccess = data.CookSuccess;
+					ContinueFlow();
+				});
+			    }
+			    else
+			    {
+				bSuccess = hdaAsset.GetLastCookResult() != HEU_HoudiniAsset.AssetCookResult.ERRORED;
+			    }
+			}
+			else
+			{
+			    hasErrored = true;
+			}
+		}
+		else
+		{
+		    hasErrored = true;
 		}
 	    }
+	    catch(System.Exception e)
+	    {
+		Debug.LogError(e);
+		hasErrored = true;
+	    }
 
-	    if (!hdaAsync)
+
+	    if (hasErrored)
+	    {
+		bSuccess = false;
+		ContinueFlow();
+	    }
+	    else if (!hdaAsync)
 	    {
 		ContinueFlow();
 	    }
