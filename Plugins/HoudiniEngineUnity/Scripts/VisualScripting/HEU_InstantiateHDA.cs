@@ -92,7 +92,7 @@ namespace HoudiniEngineUnity
 			    }
 			    else
 			    {
-				bSuccess = hdaAsset.GetLastCookResult() != HEU_HoudiniAsset.AssetCookResult.ERRORED;
+				bSuccess = hdaAsset.LastCookResult != HEU_AssetCookResultWrapper.ERRORED;
 			    }
 			}
 			else

@@ -43,7 +43,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
 [assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
 [assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
-[assembly: InternalsVisibleTo("HoudiniEngineUnity.VisualScripting")]
 #endif
 
 
