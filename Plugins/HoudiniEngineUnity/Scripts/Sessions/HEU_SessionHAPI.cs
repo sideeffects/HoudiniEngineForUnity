@@ -254,8 +254,9 @@ namespace HoudiniEngineUnity
 		HAPI_ThriftServerOptions serverOptions = new HAPI_ThriftServerOptions();
 		serverOptions.autoClose = autoClose;
 		serverOptions.timeoutMs = timeout;
+                serverOptions.verbosity = HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ALL;
 
-		result = HEU_HAPIFunctions.HAPI_StartThriftSocketServer(ref serverOptions, serverPort, out processID);
+		result = HEU_HAPIFunctions.HAPI_StartThriftSocketServer(ref serverOptions, serverPort, out processID, null);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
 		    bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
@@ -399,8 +400,9 @@ namespace HoudiniEngineUnity
 		HAPI_ThriftServerOptions serverOptions = new HAPI_ThriftServerOptions();
 		serverOptions.autoClose = autoClose;
 		serverOptions.timeoutMs = timeout;
+                serverOptions.verbosity = HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ALL;
 
-		result = HEU_HAPIFunctions.HAPI_StartThriftNamedPipeServer(ref serverOptions, pipeName.AsByteArray(), out processID);
+		result = HEU_HAPIFunctions.HAPI_StartThriftNamedPipeServer(ref serverOptions, pipeName.AsByteArray(), out processID, null);
 		if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
 		{
 		    bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
