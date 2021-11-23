@@ -77,7 +77,8 @@ namespace HoudiniEngineUnity
         HAPI_StartThriftSocketServer(
                 ref HAPI_ThriftServerOptions options,
                 int port,
-                out HAPI_ProcessId process_id);
+                out HAPI_ProcessId process_id,
+                byte[] log_file);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
         HAPI_CreateThriftSocketSession(
@@ -89,7 +90,8 @@ namespace HoudiniEngineUnity
         HAPI_StartThriftNamedPipeServer(
                 ref HAPI_ThriftServerOptions options,
                 byte[] pipe_name,
-                out HAPI_ProcessId process_id);
+                out HAPI_ProcessId process_id,
+                byte[] log_file);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
         HAPI_CreateThriftNamedPipeSession(

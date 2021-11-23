@@ -119,6 +119,8 @@ namespace HoudiniEngineUnity
         [MarshalAs(UnmanagedType.R4)]
         public float timeoutMs;              //Timeout in milliseconds for waiting on the server tosignal that it ready to serve. If the server failsto signal within this time interval the start server call failsand the server process is terminated.
 
+        public HAPI_StatusVerbosity verbosity;              
+
     };
 
     [StructLayout(LayoutKind.Sequential)]
