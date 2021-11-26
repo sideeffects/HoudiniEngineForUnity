@@ -355,7 +355,7 @@ namespace HoudiniEngineUnity
 	    _curveName = name;
 	    if (_targetGameObject != null)
 	    {
-		_targetGameObject.name = name;
+		HEU_GeneralUtility.RenameGameObject(_targetGameObject, name);
 	    }
 	}
 

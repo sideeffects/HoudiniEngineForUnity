@@ -222,7 +222,7 @@ public class HEU_ScriptMeshInputUVLayoutExample
 	    if (outputMode == OutputMode.COPY)
 	    {
 		// For copy mode, create and set new gameobject as output
-		generatedOutput._outputData._gameObject = new GameObject(currentGO.name + "_HEU_modified");
+		generatedOutput._outputData._gameObject = HEU_GeneralUtility.CreateNewGameObject(currentGO.name + "_HEU_modified");
 	    }
 	    else if (outputMode == OutputMode.REPLACE)
 	    {

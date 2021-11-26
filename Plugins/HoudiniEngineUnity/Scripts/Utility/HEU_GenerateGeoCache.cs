@@ -999,7 +999,7 @@ namespace HoudiniEngineUnity
 			// No child output found, so setup new child output
 
 			childOutput = new HEU_GeneratedOutputData();
-			childOutput._gameObject = new GameObject(GeoGroupMeshes[l]._groupName);
+			childOutput._gameObject = HEU_GeneralUtility.CreateNewGameObject(GeoGroupMeshes[l]._groupName);
 			newGeneratedChildOutputs.Add(childOutput);
 
 			finalMaterials = newMaterials;

@@ -366,6 +366,7 @@ namespace HoudiniEngineUnity
 	// Instance Names
 	public const string HEU_INSTANCE = "_Instance";
 	public const string HEU_INSTANCE_PATTERN = HEU_INSTANCE + "\\d*\\z";
+	public const string HEU_INSTANCE_SPLIT_ATTR = "unity_split_attr";
 
 	// Geometry
 	public const string HEU_DEFAULT_GEO_GROUP_NAME = "main_geo";

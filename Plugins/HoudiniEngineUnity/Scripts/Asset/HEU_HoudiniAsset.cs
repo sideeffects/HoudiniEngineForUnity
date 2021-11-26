@@ -2159,7 +2159,7 @@ namespace HoudiniEngineUnity
 
 	    if (RootGameObject.name.Equals(HEU_Defines.HEU_DEFAULT_ASSET_NAME))
 	    {
-		RootGameObject.name = _assetName;
+		HEU_GeneralUtility.RenameGameObject(RootGameObject, _assetName);
 	    }
 
 	    // Add input connections
@@ -3913,7 +3913,7 @@ namespace HoudiniEngineUnity
 		// Children go under a common root
 		if (clonableParts.Count > 1)
 		{
-		    newRoot = new GameObject();
+		    newRoot =  HEU_GeneralUtility.CreateNewGameObject();
 		    newRootTransform = newRoot.transform;
 		    HEU_GeneralUtility.CopyWorldTransformValues(rootTransform, newRootTransform);
 		}
@@ -3944,7 +3944,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (numCreatedObjects != 0)
 		{
-		    newRoot.name = _assetName + HEU_Defines.HEU_BAKED_HDA;
+		    HEU_GeneralUtility.RenameGameObject(newRoot, _assetName + HEU_Defines.HEU_BAKED_HDA);
 		}
 		else
 		{
