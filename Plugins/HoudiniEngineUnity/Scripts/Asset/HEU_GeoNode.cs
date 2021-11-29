@@ -842,7 +842,7 @@ namespace HoudiniEngineUnity
 	    SetupGeoCurveGameObjectAndTransform(_geoCurve);
 	    _geoCurve.SetCurveName(curveName);
 
-	    _geoCurve.SyncFromParameters(session, parentAsset);
+	    _geoCurve.SyncFromParameters(session, parentAsset, bNewCurve);
 
 	    if (bNewCurve)
 	    {
