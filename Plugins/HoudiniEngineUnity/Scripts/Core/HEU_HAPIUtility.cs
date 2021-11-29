@@ -331,18 +331,18 @@ namespace HoudiniEngineUnity
 	    // allows to use a custom Inspector.
 	    if (rootGO == null)
 	    {
-	        rootGO = new GameObject(HEU_Defines.HEU_DEFAULT_ASSET_NAME);
+	        rootGO = HEU_GeneralUtility.CreateNewGameObject(HEU_Defines.HEU_DEFAULT_ASSET_NAME);
 	    }
 	    else
 	    {
-		rootGO.name = HEU_Defines.HEU_DEFAULT_ASSET_NAME;
+		HEU_GeneralUtility.RenameGameObject(rootGO, HEU_Defines.HEU_DEFAULT_ASSET_NAME);
 	    }
 
 	    HEU_HoudiniAssetRoot assetRoot = rootGO.AddComponent<HEU_HoudiniAssetRoot>();
 
 	    // Under the root, we'll add the HEU_HoudiniAsset onto another GameObject
 	    // This will be marked as EditorOnly to strip out for builds
-	    GameObject hdaGEO = new GameObject(HEU_PluginSettings.HDAData_Name);
+	    GameObject hdaGEO = HEU_GeneralUtility.CreateNewGameObject(HEU_PluginSettings.HDAData_Name);
 	    hdaGEO.transform.parent = rootGO.transform;
 
 	    // This holds all Houdini Engine data
@@ -670,7 +670,7 @@ namespace HoudiniEngineUnity
 	    // allows to use a custom Inspector.
 	    if (rootGO == null)
 	    {
-		rootGO = new GameObject();
+		rootGO = HEU_GeneralUtility.CreateNewGameObject();
 	    }
 
 	    // Set the game object's name to the asset's name
@@ -680,7 +680,7 @@ namespace HoudiniEngineUnity
 
 	    // Under the root, we'll add the HEU_HoudiniAsset onto another GameObject
 	    // This will be marked as EditorOnly to strip out for builds
-	    GameObject hdaGEO = new GameObject(HEU_PluginSettings.HDAData_Name);
+	    GameObject hdaGEO = HEU_GeneralUtility.CreateNewGameObject(HEU_PluginSettings.HDAData_Name);
 	    hdaGEO.transform.parent = rootGO.transform;
 
 	    // This holds all Houdini Engine data
@@ -759,11 +759,11 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // This will be the root GameObject.
-	    GameObject rootGO = new GameObject();
+	    GameObject rootGO = HEU_GeneralUtility.CreateNewGameObject();
 	    HEU_GeoSync geoSync = rootGO.AddComponent<HEU_GeoSync>();
 
 	    // Set the game object's name to the asset's name
-	    rootGO.name = string.Format("{0}{1}", "GeoSync", rootGO.GetInstanceID());
+	    HEU_GeneralUtility.RenameGameObject(rootGO, string.Format("{0}{1}", "GeoSync", rootGO.GetInstanceID()));
 
 	    geoSync._filePath = filePath;
 	    geoSync.StartSync();

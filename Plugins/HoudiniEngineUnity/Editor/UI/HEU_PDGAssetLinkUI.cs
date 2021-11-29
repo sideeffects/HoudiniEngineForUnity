@@ -574,7 +574,7 @@ namespace HoudiniEngineUnity
 		    {
 			string name = string.Format("{0}_PDGLink", assetRoot._houdiniAsset.AssetName);
 
-			GameObject go = new GameObject(name);
+			GameObject go = HEU_GeneralUtility.CreateNewGameObject(name);
 			HEU_PDGAssetLink assetLink = go.AddComponent<HEU_PDGAssetLink>();
 			assetLink.Setup(assetRoot._houdiniAsset);
 

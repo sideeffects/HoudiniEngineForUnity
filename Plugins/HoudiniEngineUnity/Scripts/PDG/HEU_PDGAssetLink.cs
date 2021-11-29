@@ -1035,7 +1035,7 @@ namespace HoudiniEngineUnity
 		// Get or create parent GO
 		if (topNode._workResultParentGO == null)
 		{
-		    topNode._workResultParentGO = new GameObject(topNode._nodeName);
+		    topNode._workResultParentGO = HEU_GeneralUtility.CreateNewGameObject(topNode._nodeName);
 		    HEU_GeneralUtility.SetParentWithCleanTransform(GetLoadRootTransform(), topNode._workResultParentGO.transform);
 		    topNode._workResultParentGO.SetActive(topNode._showResults);
 		}
@@ -1060,7 +1060,7 @@ namespace HoudiniEngineUnity
 
 		if (existingObjectIndex < 0)
 		{
-			newOrExistingGO = new GameObject(name);
+			newOrExistingGO = HEU_GeneralUtility.CreateNewGameObject(name);;
 			result._generatedGOs.Add(newOrExistingGO);
 		}
 
@@ -1085,7 +1085,7 @@ namespace HoudiniEngineUnity
 	{
 	    if (_loadRootGameObject == null)
 	    {
-		_loadRootGameObject = new GameObject(_assetName + "_OUTPUTS");
+		_loadRootGameObject = HEU_GeneralUtility.CreateNewGameObject(_assetName + " _OUTPUTS");
 	    }
 	    return _loadRootGameObject.transform;
 	}

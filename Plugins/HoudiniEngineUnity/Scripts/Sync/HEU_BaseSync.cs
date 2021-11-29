@@ -229,11 +229,11 @@ namespace HoudiniEngineUnity
 
 	    string outputPath = HEU_AssetDatabase.CreateUniqueBakePath(this.gameObject.name);
 
-	    GameObject parentObj = new GameObject(this.gameObject.name);
+	    GameObject parentObj = HEU_GeneralUtility.CreateNewGameObject(this.gameObject.name);
 
 	    foreach (HEU_GeneratedOutput generatedOutput in _generatedOutputs)
 	    {
-		GameObject obj = new GameObject(generatedOutput._outputData._gameObject.name);
+		GameObject obj = HEU_GeneralUtility.CreateNewGameObject(generatedOutput._outputData._gameObject.name);
 
 		generatedOutput.WriteOutputToAssetCache(obj, outputPath, generatedOutput.IsInstancer);
 
@@ -366,7 +366,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (terrainBuffers[t]._heightMap != null)
 		{
-		    GameObject newGameObject = new GameObject("heightfield_" + terrainBuffers[t]._tileIndex);
+		    GameObject newGameObject = HEU_GeneralUtility.CreateNewGameObject("heightfield_" + terrainBuffers[t]._tileIndex);
 
 		    HAPI_PartId partId = terrainBuffers[t]._id;
 
@@ -732,7 +732,7 @@ namespace HoudiniEngineUnity
 	    {
 		if (meshBuffers[m]._geoCache != null)
 		{
-		    GameObject newGameObject = new GameObject("mesh_" + meshBuffers[m]._geoCache._partName);
+		    GameObject newGameObject = HEU_GeneralUtility.CreateNewGameObject("mesh_" + meshBuffers[m]._geoCache._partName);
 
 		    HAPI_PartId partId = meshBuffers[m]._geoCache.PartID;
 
@@ -820,7 +820,7 @@ namespace HoudiniEngineUnity
 
 	    Transform parent = this.gameObject.transform;
 
-	    GameObject instanceRootGO = new GameObject("instance_" + instancerBuffer._name);
+	    GameObject instanceRootGO = HEU_GeneralUtility.CreateNewGameObject("instance_" + instancerBuffer._name);
 
 	    HAPI_PartId partId = instancerBuffer._id;
 
@@ -1016,7 +1016,7 @@ namespace HoudiniEngineUnity
 			    // Even though the source Unity object is not found, we should create an object instance info to track it
 			    if (tempGO == null)
 			    {
-				tempGO = new GameObject();
+				tempGO = HEU_GeneralUtility.CreateNewGameObject();
 			    }
 			    unitySrcGO = tempGO;
 			}
@@ -1083,7 +1083,7 @@ namespace HoudiniEngineUnity
 	    }
 
 	    // To get the instance output name, we pass in the instance index. The actual name will be +1 from this.
-	    newInstanceGO.name = HEU_GeometryUtility.GetInstanceOutputName(instanceName, instancePrefixes, instanceIndex);
+	    HEU_GeneralUtility.RenameGameObject(newInstanceGO, HEU_GeometryUtility.GetInstanceOutputName(instanceName, instancePrefixes, instanceIndex));
 
 	    HEU_GeneralUtility.CopyFlags(assetSourceGO, newInstanceGO, true);
 

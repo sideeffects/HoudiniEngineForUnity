@@ -725,7 +725,7 @@ namespace HoudiniEngineUnity
 	    // Set a valid gameobject for this part
 	    if (partData.OutputGameObject == null)
 	    {
-		partData.SetGameObject(new GameObject());
+		partData.SetGameObject(HEU_GeneralUtility.CreateNewGameObject());
 	    }
 
 	    // The parent is either the asset root, OR if this is instanced and not visible, then the HDA data is the parent
@@ -870,7 +870,7 @@ namespace HoudiniEngineUnity
 
 	    if (curve.TargetGameObject == null)
 	    {
-		curve.TargetGameObject = new GameObject();
+		curve.TargetGameObject = HEU_GeneralUtility.CreateNewGameObject();
 	    }
 
 	    // For geo curve, the parent is the HDA_Data

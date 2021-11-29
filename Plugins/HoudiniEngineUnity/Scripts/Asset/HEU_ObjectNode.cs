@@ -726,6 +726,7 @@ namespace HoudiniEngineUnity
 	    HAPI_AttributeInfo instanceAttrInfo = new HAPI_AttributeInfo();
 	    HAPI_AttributeInfo unityInstanceAttrInfo = new HAPI_AttributeInfo();
 	    HAPI_AttributeInfo instancePrefixAttrInfo = new HAPI_AttributeInfo();
+	    HAPI_AttributeInfo materialAttrInfo = new HAPI_AttributeInfo();
 
 	    int numGeos = _geoNodes.Count;
 	    for (int i = 0; i < numGeos; ++i)
@@ -753,11 +754,18 @@ namespace HoudiniEngineUnity
 			    instancePrefixes = HEU_GeneralUtility.GetAttributeStringData(session, _geoNodes[i].GeoID, parts[j].PartID, instancePrefixAttrName, ref instancePrefixAttrInfo);
 			}
 
+			string[] instanceMaterialPaths = null;
+			HEU_GeneralUtility.GetAttributeInfo(session, _geoNodes[i].GeoID, parts[j].PartID, HEU_PluginSettings.UnityMaterialAttribName, ref materialAttrInfo);
+			if (materialAttrInfo.exists)
+			{
+			    instanceMaterialPaths = HEU_GeneralUtility.GetAttributeStringData(session, _geoNodes[i].GeoID, parts[j].PartID, HEU_PluginSettings.UnityMaterialAttribName, ref materialAttrInfo);
+			}
+
 			if (instanceAttrInfo.exists)
 			{
 			    // Object instancing via Houdini instance attribute
 
-			    parts[j].GenerateInstancesFromObjectIds(session, instancePrefixes);
+			    parts[j].GenerateInstancesFromObjectIds(session, instancePrefixes, instanceMaterialPaths);
 			}
 			else if (unityInstanceAttrInfo.exists)
 			{
@@ -788,7 +796,7 @@ namespace HoudiniEngineUnity
 				continue;
 			    }
 
-			    parts[j].GenerateInstancesFromObjectID(session, _objectInfo.objectToInstanceId, instancePrefixes);
+			    parts[j].GenerateInstancesFromObjectID(session, _objectInfo.objectToInstanceId, instancePrefixes, instanceMaterialPaths);
 			}
 		    }
 		}
