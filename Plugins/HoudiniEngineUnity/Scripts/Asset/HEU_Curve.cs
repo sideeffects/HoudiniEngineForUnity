@@ -1557,7 +1557,7 @@ namespace HoudiniEngineUnity
 
 	}
 
-	internal void SyncFromParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
+	internal void SyncFromParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bNewCurve)
 	{
 	    HAPI_NodeInfo geoNodeInfo = new HAPI_NodeInfo();
 	    if (!session.GetNodeInfo(_geoID, ref geoNodeInfo))
@@ -1591,7 +1591,12 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    UpdatePoints(session);
+	    bool bDoUpdatePoints = true;
+
+	    // If reusing points, don't update them
+	    if (bDoUpdatePoints && _curveNodeData.Count != 0 && bNewCurve) bDoUpdatePoints = false;
+
+	    if (bDoUpdatePoints) UpdatePoints(session);
 
 	    // Since we just reset / created new our parameters and sync'd, we also need to 
 	    // get the preset from Houdini session

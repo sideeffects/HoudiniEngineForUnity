@@ -2167,7 +2167,7 @@ namespace HoudiniEngineUnity
 		_curve.UploadParameterPreset(session, _geoID, parentAsset);
 	    }
 
-	    _curve.SyncFromParameters(session, parentAsset);
+	    _curve.SyncFromParameters(session, parentAsset, bNewCurve);
 	    _curve.UpdateCurve(session, _partID);
 
 	    if (bNewCurve)
