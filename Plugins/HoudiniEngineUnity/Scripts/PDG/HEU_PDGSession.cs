@@ -764,7 +764,7 @@ namespace HoudiniEngineUnity
 		(int)HAPI_NodeType.HAPI_NODETYPE_TOP,
 		(int)(HAPI_NodeFlags.HAPI_NODEFLAGS_TOP_NONSCHEDULER | HAPI_NodeFlags.HAPI_NODEFLAGS_NON_BYPASS),
 		true,
-		ref TOPNodeCount))
+		ref TOPNodeCount, false))
 	    {
 		return false;
 	    }
