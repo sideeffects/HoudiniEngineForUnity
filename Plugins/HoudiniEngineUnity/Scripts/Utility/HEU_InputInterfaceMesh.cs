@@ -39,6 +39,15 @@ namespace HoudiniEngineUnity
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
 
+    [System.Serializable]
+    public class HEU_InputInterfaceMeshSettings
+    {
+	public bool ExportColliders { get { return _exportColliders; } set { _exportColliders = value; }}
+
+	[SerializeField]
+	private bool _exportColliders = false;
+    };
+
 
     /// <summary>
     /// This class provides functionality for uploading Unity mesh data from gameobjects
@@ -62,9 +71,16 @@ namespace HoudiniEngineUnity
 	}
 #endif
 
+	private HEU_InputInterfaceMeshSettings settings;
+
 	private HEU_InputInterfaceMesh() : base(priority: DEFAULT_PRIORITY)
 	{
 
+	}
+
+	public void Initialize(HEU_InputInterfaceMeshSettings settings)
+	{
+	    this.settings = settings;
 	}
 
 	/// <summary>
@@ -87,8 +103,10 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
+	    bool bExportColliders = settings != null && settings.ExportColliders == true;
+
 	    // Get upload meshes from input object
-	    HEU_InputDataMeshes inputMeshes = GenerateMeshDatasFromGameObject(inputObject);
+	    HEU_InputDataMeshes inputMeshes = GenerateMeshDatasFromGameObject(inputObject, bExportColliders);
 	    if (inputMeshes == null || inputMeshes._inputMeshes == null || inputMeshes._inputMeshes.Count == 0)
 	    {
 		HEU_Logger.LogError("No valid meshes found on input objects.");
@@ -106,13 +124,65 @@ namespace HoudiniEngineUnity
 
 	    inputNodeID = newNodeID;
 
-	    if (!session.CookNode(inputNodeID, false))
+	    if (!UploadData(session, inputNodeID, inputMeshes))
 	    {
-		HEU_Logger.LogError("New input node failed to cook!");
+		if (!session.CookNode(inputNodeID, false))
+		{
+		    HEU_Logger.LogError("New input node failed to cook!");
+		    return false;
+		}
+
 		return false;
 	    }
 
-	    return UploadData(session, inputNodeID, inputMeshes);
+	    bool createMergeNode = false;
+	    HAPI_NodeId mergeNodeId = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (bExportColliders)
+	    {
+		createMergeNode = true;
+	    }
+
+	    if (!createMergeNode)
+	    {
+		return true;
+	    }
+
+	    HAPI_NodeId parentId = HEU_HAPIUtility.GetParentNodeID(session, newNodeID);
+
+	    if (!session.CreateNode(parentId, "merge", null, false, out mergeNodeId))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
+		return false;
+	    }
+
+	    if (!session.ConnectNodeInput(mergeNodeId, 0, newNodeID))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to connect to input node!");
+		return false;
+	    }
+
+	    if (!session.SetNodeDisplay(mergeNodeId, 1))
+	    {
+		HEU_Logger.LogWarningFormat("Unable to set display flag!");
+	    }
+
+	    inputNodeID = mergeNodeId;
+
+	    if (bExportColliders)
+	    {
+		if (!UploadColliderData(session, mergeNodeId, inputMeshes, parentId))
+		{
+		    return false;
+		}
+	    }
+
+	    if (!session.CookNode(inputNodeID, false))
+	    {
+	        HEU_Logger.LogError("New input node failed to cook!");
+	        return false;
+	    }
+	    return true;
 	}
 
 	public override bool IsThisInputObjectSupported(GameObject inputObject)
@@ -625,6 +695,511 @@ namespace HoudiniEngineUnity
 	    return session.CommitGeo(displayNodeID);
 	}
 
+	internal bool UploadColliderData(HEU_SessionBase session, HAPI_NodeId mergeNodeID, HEU_InputDataMeshes inputData, HAPI_NodeId parentNodeId)
+	{
+	    // The input to put on
+	    int inputIndex = 1;
+
+	    foreach (HEU_InputDataMesh inputMesh in inputData._inputMeshes)
+	    {
+		if (inputMesh == null || inputMesh._colliders == null)
+		{
+		    continue;
+		}
+
+		foreach (HEU_InputDataCollider colliderData in inputMesh._colliders)
+		{
+		    if (colliderData == null || colliderData._collider == null || colliderData._colliderType == HEU_InputColliderType.NONE)
+		    {
+			continue;
+		    }
+		    HAPI_NodeId newInputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+		    switch (colliderData._colliderType)
+		    {
+			case HEU_InputColliderType.BOX:
+			    BoxCollider boxCollider = colliderData._collider as BoxCollider;
+			    if (!boxCollider || !UploadBoxColliderData(session, boxCollider, inputIndex, parentNodeId, out newInputNodeID))
+			    {
+				HEU_Logger.LogWarning("Invalid collider input!");
+				continue;
+			    }
+
+			    break;
+			case HEU_InputColliderType.SPHERE:
+			    SphereCollider sphereCollider = colliderData._collider as SphereCollider;
+			    if (!sphereCollider || !UploadSphereColliderData(session, sphereCollider, inputIndex, parentNodeId, out newInputNodeID))
+			    {
+				HEU_Logger.LogWarning("Invalid collider input!");
+				continue;
+			    }
+
+			    break;
+			case HEU_InputColliderType.CAPSULE:
+			    CapsuleCollider capsuleCollider = colliderData._collider as CapsuleCollider;
+			    if (!capsuleCollider || !UploadCapsuleColliderData(session, capsuleCollider, inputIndex, parentNodeId, out newInputNodeID))
+			    {
+				HEU_Logger.LogWarning("Invalid collider input!");
+				return false;
+			    }
+
+			    break;
+			case HEU_InputColliderType.MESH:
+			    MeshCollider meshCollider = colliderData._collider as MeshCollider;
+			    if (!meshCollider || !UploadMeshColliderData(session, meshCollider, inputIndex, parentNodeId, out newInputNodeID))
+			    {
+				HEU_Logger.LogWarning("Invalid collider input!");
+				return false;
+			    }
+
+			    break;
+			default:
+			    HEU_Logger.LogWarning("Invalid collider type!");
+			    return false;
+		    }
+
+		    if (newInputNodeID == HEU_Defines.HEU_INVALID_NODE_ID) continue;
+
+		    if (!session.ConnectNodeInput(mergeNodeID, inputIndex, newInputNodeID))
+		    {
+			HEU_Logger.LogErrorFormat("Unable to connect to input node!");
+			return false;
+		    }
+
+		    inputIndex++;
+		}
+	    }
+
+	    return true;
+	}
+
+	internal bool UploadBoxColliderData(HEU_SessionBase session, BoxCollider collider, int inputIndex, HAPI_NodeId parentNodeID, out HAPI_NodeId inputNodeID)
+	{
+	    
+	    inputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!collider) return false;
+
+	    HAPI_NodeId boxNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    string name = string.Format("Box{0}", inputIndex);
+
+	    Vector3 center = HEU_HAPIUtility.ConvertPositionUnityToHoudini(collider.center);
+	    Vector3 size = HEU_HAPIUtility.ConvertScaleUnityToHoudini(collider.size);
+
+	    if (!session.CreateNode(parentNodeID, "box", null, false, out boxNodeID))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to create merge box node for connecting input assets.");
+		return false;
+	    }
+
+	    string sizeParamName = "size";
+	    if (!session.SetParamFloatValue(boxNodeID, sizeParamName, 0, size.x))
+		return false;
+	    if (!session.SetParamFloatValue(boxNodeID, sizeParamName, 1, size.y))
+		return false;
+	    if (!session.SetParamFloatValue(boxNodeID, sizeParamName, 2, size.z))
+		return false;
+
+	    string transformParamName = "t";
+	    if (!session.SetParamFloatValue(boxNodeID, transformParamName, 0, center.x))
+		return false;
+	    if (!session.SetParamFloatValue(boxNodeID, transformParamName, 1, center.y))
+		return false;
+	    if (!session.SetParamFloatValue(boxNodeID, transformParamName, 2, center.z))
+		return false;
+
+	    if (!session.CookNode(boxNodeID, false))
+		return false;
+
+	    HAPI_NodeId groupNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    string groupName = string.Format("group{0}", inputIndex);
+
+	    if (!session.CreateNode(parentNodeID, "groupcreate", groupName, false, out groupNodeID))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to create group SOP node for connecting input assets.");
+		return false;
+	    }
+
+	    HAPI_NodeId groupParmID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!session.GetParmIDFromName(groupNodeID, "groupname", out groupParmID) || groupParmID == HEU_Defines.HEU_INVALID_NODE_ID) return false;
+
+	    string baseGroupName = GetColliderGroupBaseName(collider, bIsConvex: false, bIsSimple: true);
+	    string groupNameStr = string.Format("{0}_box{1}", baseGroupName, inputIndex);
+
+	    if (!session.SetParamStringValue(groupNodeID, groupNameStr, groupParmID, 0))
+		return false;
+
+	    if (!session.ConnectNodeInput(groupNodeID, 0, boxNodeID))
+		return false;
+
+	    inputNodeID = groupNodeID;
+
+	    return true;
+	}
+
+	internal bool UploadSphereColliderData(HEU_SessionBase session, SphereCollider collider, int inputIndex, HAPI_NodeId parentNodeID, out HAPI_NodeId inputNodeID)
+	{
+	    inputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!collider) return false;
+
+	    Vector3 center = HEU_HAPIUtility.ConvertPositionUnityToHoudini(collider.center);
+	    float radius = collider.radius;
+
+	    HAPI_NodeId sphereNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    string name = string.Format("Sphere{0}", inputIndex);
+
+	    if (!session.CreateNode(parentNodeID, "sphere", null, false, out sphereNodeID))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to create merge box node for connecting input assets.");
+		return false;
+	    }
+
+	    string radParamName = "rad";
+	    if (!session.SetParamFloatValue(sphereNodeID, radParamName, 0, radius))
+		return false;
+	    if (!session.SetParamFloatValue(sphereNodeID, radParamName, 1, radius))
+		return false;
+	    if (!session.SetParamFloatValue(sphereNodeID, radParamName, 2, radius))
+		return false;
+
+	    string transformParamName = "t";
+	    if (!session.SetParamFloatValue(sphereNodeID, transformParamName, 0, center.x))
+		return false;
+	    if (!session.SetParamFloatValue(sphereNodeID, transformParamName, 1, center.y))
+		return false;
+	    if (!session.SetParamFloatValue(sphereNodeID, transformParamName, 2, center.z))
+		return false;
+
+	    string typeParamName = "type";
+	    if (!session.SetParamIntValue(sphereNodeID, typeParamName, 0, 1))
+		return false;
+
+	    if (!session.CookNode(sphereNodeID, false))
+		return false;
+
+	    HAPI_NodeId groupNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    string groupName = string.Format("group{0}", inputIndex);
+
+	    if (!session.CreateNode(parentNodeID, "groupcreate", groupName, false, out groupNodeID))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to create group SOP node for connecting input assets.");
+		return false;
+	    }
+
+	    HAPI_NodeId groupParmID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!session.GetParmIDFromName(groupNodeID, "groupname", out groupParmID) || groupParmID == HEU_Defines.HEU_INVALID_NODE_ID) return false;
+
+	    string baseGroupName = GetColliderGroupBaseName(collider, bIsConvex: false, bIsSimple: true);
+	    string groupNameStr = string.Format("{0}_sphere{1}", baseGroupName, inputIndex);
+	    if (!session.SetParamStringValue(groupNodeID, groupNameStr, groupParmID, 0))
+		return false;
+
+	    if (!session.ConnectNodeInput(groupNodeID, 0, sphereNodeID))
+		return false;
+
+	    inputNodeID = groupNodeID;
+
+	    return true;
+	}
+
+	internal bool UploadCapsuleColliderData(HEU_SessionBase session, CapsuleCollider collider, int inputIndex, HAPI_NodeId parentNodeID, out HAPI_NodeId inputNodeID)
+	{
+	    inputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!collider) return false;
+
+	    // Copied from Unreal FKSphylElem::GetElemSolid because exact Unity capsule source code is not available
+	    Vector3 sphereCenter = collider.center;
+	    float sphereRadius = collider.radius;
+	    float sphereLength = collider.height;
+	    // Height in Unreal is only the line segment. Height in Unity is the total length, so to get the line length, subtract 2 * rad
+	    sphereLength = Mathf.Max(sphereLength - 2 * sphereRadius, 0);
+
+	    int direction = collider.direction; // 0 = X, 1 = Y, 2 = Z. Default is Y
+
+	    // Unreal Y -> Unity X, Unreal Z -> Unity Y
+	    int numSides = 6;
+	    int numRings = (numSides / 2) + 1;
+
+	    int numVerts = (numSides + 1) * (numRings + 1);
+
+	    // Calculate the vertices for one arc
+	    Vector3[] arcVertices = new Vector3[numRings + 1];
+	    for (int ringIdx = 0; ringIdx < numRings + 1; ringIdx++)
+	    {
+		float angle;
+		float zOffset;
+		if (ringIdx <= numSides / 4)
+		{
+		    angle = ((float) ringIdx / (numRings - 1)) * Mathf.PI;
+		    zOffset = 0.5f * sphereLength;
+		}
+		else
+		{
+		    angle = ((float)(ringIdx - 1) / (numRings - 1) ) * Mathf.PI;
+		    zOffset = -0.5f * sphereLength;
+		}
+
+		// Note- unit sphere, so position always has mag of one. We can just use it for normal!
+		Vector3 spherePos = new Vector3();
+		spherePos.x = sphereRadius * Mathf.Sin(angle);
+		spherePos.y = sphereRadius * Mathf.Cos(angle);
+		spherePos.z = 0;
+
+		arcVertices[ringIdx] = spherePos + new Vector3(0, zOffset, 0);
+	    }
+
+	    Vector3 directionRotationEuler = Vector3.zero;
+	    if (direction == 1)
+	    {
+		// Y axis - This is the default after Unity unit conversion
+		directionRotationEuler = Vector3.zero;
+	    }
+	    else if (direction == 0)
+	    {
+		// X axis - Rotate around Z
+		directionRotationEuler = new Vector3(0, 0, 90);
+	    }
+	    else if (direction == 2)
+	    {
+		// Z axis - Rotate around X
+		directionRotationEuler = new Vector3(90, 0, 0);
+	    }
+
+	    Quaternion directionRotation = Quaternion.Euler(directionRotationEuler);
+
+	    // Get the transform matrix for the rotation
+	    // Get the capsule vertices by rotating the arc NumSides+1 times
+
+	    float[] vertices = new float[numVerts * 3];
+	    for (int sideIdx = 0; sideIdx < numSides + 1; sideIdx++)
+	    {
+		Vector3 arcEuler = new Vector3(0, 360.0f *((float)sideIdx / (float)numSides), 0);
+		Quaternion arcRot = Quaternion.Euler(arcEuler);
+
+		for (int vertIdx = 0; vertIdx < numRings + 1; vertIdx++)
+		{
+		    int vIx = (numRings + 1) * sideIdx + vertIdx;
+		    Vector3 arcVertex = arcRot * arcVertices[vertIdx];
+		    arcVertex = directionRotation * arcVertex;
+
+		    Vector3 curPosition = sphereCenter + arcVertex;
+		    HEU_HAPIUtility.ConvertPositionUnityToHoudini(curPosition, out vertices[vIx * 3 + 0], out vertices[vIx * 3 + 1], out vertices[vIx * 3 + 2]);
+		}
+	    }
+
+	    int numIndices = numSides * numRings * 6;
+	    int[] indices = new int[numIndices];
+	    int curIndex = 0;
+
+	    for (int sideIdx = 0; sideIdx < numSides; sideIdx++)
+	    {
+		int a0start = (sideIdx + 0) * (numRings + 1);
+		int a1start = (sideIdx + 1) * (numRings + 1);
+		for (int ringIdx = 0; ringIdx < numRings; ringIdx++)
+		{
+		    // First tri (reverse winding)
+		    indices[curIndex+0] = a0start + ringIdx + 0;
+		    indices[curIndex+2] = a1start + ringIdx + 0;
+		    indices[curIndex+1] = a0start + ringIdx + 1;
+		    curIndex += 3;
+
+		    // Second Tri (reverse winding)
+		    indices[curIndex+0] = a1start + ringIdx + 0;
+		    indices[curIndex+2] = a1start + ringIdx + 1;
+		    indices[curIndex+1] = a0start + ringIdx + 1;
+		    curIndex += 3;
+		}
+	    }
+
+	    HAPI_NodeId sphereNodeID = -1;
+	    string sphereName = string.Format("Sphyl{0}", inputIndex);
+
+	    if (!CreateInputNodeForCollider(session, out sphereNodeID, parentNodeID, inputIndex, sphereName, vertices, indices))
+		return false;
+
+	    if (!session.CookNode(sphereNodeID, false)) return false;
+
+	    HAPI_NodeId groupNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    string groupName = string.Format("group{0}", inputIndex);
+
+	    if (!session.CreateNode(parentNodeID, "groupcreate", groupName, false, out groupNodeID))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to create group SOP node for connecting input assets.");
+		return false;
+	    }
+
+	    HAPI_NodeId groupParmID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!session.GetParmIDFromName(groupNodeID, "groupname", out groupParmID) || groupParmID == HEU_Defines.HEU_INVALID_NODE_ID)
+		return false;
+
+	    string baseGroupName = GetColliderGroupBaseName(collider, bIsConvex: false, bIsSimple: true);
+	    string groupNameStr = string.Format("{0}_capsule{1}", baseGroupName, inputIndex);
+
+	    if (!session.SetParamStringValue(groupNodeID, groupNameStr, groupParmID, 0))
+		return false;
+
+	    if (!session.ConnectNodeInput(groupNodeID, 0, sphereNodeID))
+		return false;
+
+	    inputNodeID = groupNodeID;
+
+	    return true;
+	}
+
+	internal bool UploadMeshColliderData(HEU_SessionBase session, MeshCollider collider, int inputIndex, HAPI_NodeId parentNodeID, out HAPI_NodeId inputNodeID)
+	{
+	    inputNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!collider) return false;
+
+
+	    Mesh mesh = collider.sharedMesh;
+	    Vector3[] vertices = mesh.vertices;
+
+	    int numSubmeshes = mesh.subMeshCount;
+	    List<int> indices = new List<int>();
+	    for (int i = 0; i < numSubmeshes; i++)
+	    {
+		int[] indicesForSubmesh = mesh.GetIndices(i);
+		indices.AddRange(indicesForSubmesh);
+	    }
+
+	    int[] indicesArr = indices.ToArray();
+
+	    float[] verticesArr = new float[vertices.Length * 3];
+	    for (int i = 0; i < vertices.Length; i++)
+	    {
+		HEU_HAPIUtility.ConvertPositionUnityToHoudini(vertices[i], out verticesArr[i * 3 + 0], out verticesArr[i * 3 + 1], out verticesArr[i * 3 + 2]);
+	    }
+
+	    HAPI_NodeId meshNodeID = -1;
+	    string meshName = string.Format("MeshCollider{0}", inputIndex);
+
+	    if (!CreateInputNodeForCollider(session, out meshNodeID, parentNodeID, inputIndex, meshName, verticesArr, indicesArr))
+		return false;
+
+	    if (!session.CookNode(meshNodeID, false)) return false;
+
+	    HAPI_NodeId groupNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+	    string groupName = string.Format("group{0}", inputIndex);
+
+	    if (!session.CreateNode(parentNodeID, "groupcreate", groupName, false, out groupNodeID))
+	    {
+		HEU_Logger.LogErrorFormat("Unable to create group SOP node for connecting input assets.");
+		return false;
+	    }
+
+	    HAPI_NodeId groupParmID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!session.GetParmIDFromName(groupNodeID, "groupname", out groupParmID) || groupParmID == HEU_Defines.HEU_INVALID_NODE_ID)
+		return false;
+
+	    bool isConvex = collider.convex;
+	    string baseGroupName = GetColliderGroupBaseName(collider, bIsConvex: isConvex, bIsSimple: false);
+
+	    string groupNameStr = string.Format("{0}_mesh{1}", baseGroupName, inputIndex);
+	    if (!session.SetParamStringValue(groupNodeID, groupNameStr, groupParmID, 0))
+		return false;
+
+	    if (!session.ConnectNodeInput(groupNodeID, 0, meshNodeID))
+		return false;
+
+	    inputNodeID = groupNodeID;
+
+	    return true;
+	}
+
+	internal string GetColliderGroupBaseName(Collider collider, bool bIsConvex = false, bool bIsSimple = false, bool bIsRendered = false)
+	{
+	    bool isTrigger = collider.isTrigger;
+	    string baseGroupName = "collision_geo";
+	    if (bIsConvex)
+	    {
+		baseGroupName = "convex_" + baseGroupName;
+	    }
+
+	    if (bIsRendered)
+	    {
+		baseGroupName = "rendered_" + baseGroupName;
+	    }
+
+	    if (bIsSimple)
+	    {
+		baseGroupName = baseGroupName + "_simple";
+	    }
+
+	    if (isTrigger)
+	    {
+		baseGroupName = baseGroupName + "_trigger";
+	    }
+
+	    return baseGroupName;
+	}
+
+	internal bool CreateInputNodeForCollider(HEU_SessionBase session, out HAPI_NodeId outNodeID, HAPI_NodeId parentNodeId, int colliderIndex, string colliderName, float[] colliderVertices, int[] colliderIndices)
+	{
+	    outNodeID = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    HAPI_NodeId colliderNodeId = HEU_Defines.HEU_INVALID_NODE_ID;
+
+	    if (!session.CreateNode(parentNodeId, "null", colliderName, false, out colliderNodeId))
+		return false;
+
+	    HAPI_PartInfo partInfo = new HAPI_PartInfo();
+	    partInfo.init();
+	    partInfo.id = 0;
+	    partInfo.nameSH = 0;
+	    partInfo.attributeCounts[(int)HAPI_AttributeOwner.HAPI_ATTROWNER_POINT] = 0;
+	    partInfo.attributeCounts[(int)HAPI_AttributeOwner.HAPI_ATTROWNER_PRIM] = 0;
+	    partInfo.attributeCounts[(int)HAPI_AttributeOwner.HAPI_ATTROWNER_VERTEX] = 0;
+	    partInfo.attributeCounts[(int)HAPI_AttributeOwner.HAPI_ATTROWNER_DETAIL] = 0;
+	    partInfo.vertexCount = colliderIndices.Length;
+	    partInfo.faceCount = colliderIndices.Length / 3;
+	    partInfo.pointCount = colliderVertices.Length / 3;
+	    partInfo.type = HAPI_PartType.HAPI_PARTTYPE_MESH;
+
+	    if (!session.SetPartInfo(colliderNodeId, 0, ref partInfo)) return false;
+
+	    HAPI_AttributeInfo attributeInfoPoint = new HAPI_AttributeInfo();
+	    attributeInfoPoint.count = colliderVertices.Length / 3;
+	    attributeInfoPoint.tupleSize = 3;
+	    attributeInfoPoint.exists = true;
+	    attributeInfoPoint.owner = HAPI_AttributeOwner.HAPI_ATTROWNER_POINT;
+	    attributeInfoPoint.storage = HAPI_StorageType.HAPI_STORAGETYPE_FLOAT;
+	    attributeInfoPoint.originalOwner = HAPI_AttributeOwner.HAPI_ATTROWNER_INVALID;
+
+	    if (!session.AddAttribute(colliderNodeId, 0, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref attributeInfoPoint))
+		return false;
+
+	    if (!session.SetAttributeFloatData(colliderNodeId, 0, HEU_HAPIConstants.HAPI_ATTRIB_POSITION, ref attributeInfoPoint, colliderVertices, 0, attributeInfoPoint.count))
+		return false;
+
+	    if (!session.SetVertexList(colliderNodeId, 0, colliderIndices, 0, colliderIndices.Length))
+		return false;
+
+	    int[] faceCounts = new int[partInfo.faceCount];
+	    for (int i = 0; i < faceCounts.Length; i++)
+	    {
+		faceCounts[i] = 3;
+	    }
+
+	    if (!session.SetFaceCount(colliderNodeId, 0, faceCounts, 0, faceCounts.Length))
+		return false;
+
+	    if (!session.CommitGeo(colliderNodeId))
+		return false;
+
+	    outNodeID = colliderNodeId;
+
+	    return true;
+	}
+
 	/// <summary>
 	/// Contains input geometry for multiple meshes.
 	/// </summary>
@@ -633,6 +1208,21 @@ namespace HoudiniEngineUnity
 	    public List<HEU_InputDataMesh> _inputMeshes = new List<HEU_InputDataMesh>();
 
 	    public bool _hasLOD;
+	}
+
+	public enum HEU_InputColliderType
+	{
+	    NONE,
+	    BOX,
+	    SPHERE,
+	    CAPSULE,
+	    MESH
+	}
+
+	public class HEU_InputDataCollider
+	{
+	    public Collider _collider;
+	    public HEU_InputColliderType _colliderType;
 	}
 
 	/// <summary>
@@ -656,6 +1246,8 @@ namespace HoudiniEngineUnity
 	    public float _LODScreenTransition;
 
 	    public Transform _transform;
+
+	    public List<HEU_InputDataCollider> _colliders;
 	}
 
 	/// <summary>
@@ -665,7 +1257,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="inputObject">GameObject containing mesh components</param>
 	/// <returns>A valid input data strcuture containing mesh data</returns>
-	public HEU_InputDataMeshes GenerateMeshDatasFromGameObject(GameObject inputObject)
+	public HEU_InputDataMeshes GenerateMeshDatasFromGameObject(GameObject inputObject, bool bExportColliders = false)
 	{
 	    HEU_InputDataMeshes inputMeshes = new HEU_InputDataMeshes();
 	    inputMeshes._inputObject = inputObject;
@@ -681,7 +1273,7 @@ namespace HoudiniEngineUnity
 		    if (lods[i].renderers != null && lods[i].renderers.Length > 0)
 		    {
 			GameObject childGO = lods[i].renderers[0].gameObject;
-			HEU_InputDataMesh meshData = CreateSingleMeshData(childGO);
+			HEU_InputDataMesh meshData = CreateSingleMeshData(childGO, bExportColliders);
 			if (meshData != null)
 			{
 			    meshData._LODScreenTransition = lods[i].screenRelativeTransitionHeight;
@@ -698,7 +1290,7 @@ namespace HoudiniEngineUnity
 		MeshFilter[] meshFilters = inputObject.GetComponentsInChildren<MeshFilter>();
 		foreach (MeshFilter filter in meshFilters)
 		{
-		    HEU_InputDataMesh meshData = CreateSingleMeshData(filter.gameObject);
+		    HEU_InputDataMesh meshData = CreateSingleMeshData(filter.gameObject, bExportColliders);
 		    if (meshData != null)
 		    {
 			inputMeshes._inputMeshes.Add(meshData);
@@ -710,7 +1302,7 @@ namespace HoudiniEngineUnity
 		
 		foreach (SkinnedMeshRenderer skinnedMeshRend in skinnedMeshRenderers)
 		{
-		    HEU_InputDataMesh meshData = CreateSingleMeshData(skinnedMeshRend.gameObject);
+		    HEU_InputDataMesh meshData = CreateSingleMeshData(skinnedMeshRend.gameObject, bExportColliders);
 		    if (meshData != null)
 		    {
 		        inputMeshes._inputMeshes.Add(meshData);
@@ -726,7 +1318,7 @@ namespace HoudiniEngineUnity
 	/// </summary>
 	/// <param name="meshGameObject">The GameObject to query mesh data from</param>
 	/// <returns>A valid HEU_UploadMeshData if mesh data found or null</returns>
-	public static HEU_InputDataMesh CreateSingleMeshData(GameObject meshGameObject)
+	public static HEU_InputDataMesh CreateSingleMeshData(GameObject meshGameObject, bool bExportColliders)
 	{
 	    HEU_InputDataMesh meshData = new HEU_InputDataMesh();
 
@@ -770,6 +1362,54 @@ namespace HoudiniEngineUnity
 	    }
 
 	    meshData._transform = meshGameObject.transform;
+
+	    if (bExportColliders && meshGameObject != null)
+	    {
+		meshData._colliders = new List<HEU_InputDataCollider>();
+
+		Collider[] colliders = meshGameObject.GetComponents<Collider>();
+		if (colliders != null)
+		{
+		    for (int i = 0; i < colliders.Length; i++)
+		    {
+			Collider collider = colliders[i];
+
+			if (collider == null) continue;
+
+			HEU_InputDataCollider newCollider = new HEU_InputDataCollider();
+			newCollider._collider = collider;
+
+			if (collider.GetType() == typeof(BoxCollider))
+			{
+			    newCollider._colliderType = HEU_InputColliderType.BOX;
+			}
+			else if (collider.GetType() == typeof(SphereCollider))
+			{
+			    newCollider._colliderType = HEU_InputColliderType.SPHERE;
+			}
+			else if (collider.GetType() == typeof(CapsuleCollider))
+			{
+			    newCollider._colliderType = HEU_InputColliderType.CAPSULE;
+			}
+			else if (collider.GetType() == typeof(MeshCollider))
+			{
+			    newCollider._colliderType = HEU_InputColliderType.MESH;
+			}
+			else
+			{
+			    HEU_Logger.LogWarningFormat("Collider type not supported: {0}", meshGameObject.name);
+			    newCollider._collider = null;
+			    newCollider._colliderType = HEU_InputColliderType.NONE;
+			}
+
+			if (newCollider._colliderType != HEU_InputColliderType.NONE)
+			{
+			    meshData._colliders.Add(newCollider);
+			}
+		    }
+		}
+	    }
+
 
 	    return meshData;
 	}

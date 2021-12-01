@@ -105,6 +105,9 @@ namespace HoudiniEngineUnity
 	/// <summary>Input node parameter</summary>
 	string ParamName { get; }
 
+	/// <summary>Mesh settings</summary>
+	HEU_InputInterfaceMeshSettings MeshSettings { get; }
+
 	/// <summary>Tilemap settings</summary>
 	HEU_InputInterfaceTilemapSettings TilemapSettings { get; }
 

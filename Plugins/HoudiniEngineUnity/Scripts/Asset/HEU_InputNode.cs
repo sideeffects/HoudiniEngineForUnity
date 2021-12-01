@@ -83,6 +83,9 @@ namespace HoudiniEngineUnity
 
 	/// <inheritdoc />
 	public string ParamName { get { return _paramName; } }
+	
+	/// <inheritdoc />
+	public HEU_InputInterfaceMeshSettings MeshSettings { get { return  _meshSettings; }}
 
 	/// <inheritdoc />
 	public HEU_InputInterfaceTilemapSettings TilemapSettings { get { return  _tilemapSettings; }}
@@ -209,6 +212,9 @@ namespace HoudiniEngineUnity
 	    INSERT
 	}
 
+	// Input Specific settings
+	[SerializeField]
+	private HEU_InputInterfaceMeshSettings _meshSettings = new HEU_InputInterfaceMeshSettings();
 
 	// Tilemap specific settings:
 	[SerializeField]
@@ -1722,6 +1728,7 @@ namespace HoudiniEngineUnity
 	public UnityEditor.SerializedProperty _inputObjectsProperty;
 
 	public UnityEditor.SerializedProperty _inputAssetsProperty;
+	public UnityEditor.SerializedProperty _meshSettingsProperty;
 	public UnityEditor.SerializedProperty _tilemapSettingsProperty;
 
 
