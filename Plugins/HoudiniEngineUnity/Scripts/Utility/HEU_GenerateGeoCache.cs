@@ -259,13 +259,17 @@ namespace HoudiniEngineUnity
 		if (!_unityMaterialAttrStringsMap.ContainsKey(strHandle))
 		{
 		    string materialName = HEU_SessionManager.GetString(strHandle, session);
-		    if (string.IsNullOrEmpty(materialName))
+		    if (!string.IsNullOrEmpty(materialName))
 		    {
-			// Warn user of empty string, but add it anyway to our map so we don't keep trying to parse it
-			HEU_Logger.LogWarningFormat("Found empty material attribute value for part {0}.", _partName);
+
+			 _unityMaterialAttrStringsMap.Add(strHandle, materialName);
 		    }
-		    _unityMaterialAttrStringsMap.Add(strHandle, materialName);
-		    //HEU_Logger.LogFormat("Added Unity material: " + materialName);
+		    else
+		    {
+			// There are some cases (e.g. LOD input), where a material attribute should be empty.
+			// Warn user of empty string, but add it anyway to our map so we don't keep trying to parse it
+			// HEU_Logger.LogWarningFormat("Found empty material attribute value for part {0}.", _partName);
+		    }
 		}
 	    }
 
@@ -1611,7 +1615,8 @@ namespace HoudiniEngineUnity
 		{
 		    if (numCollisionMeshes > 0)
 		    {
-			HEU_Logger.LogWarningFormat("More than 1 collision mesh detected for part {0}.\nOnly a single collision mesh is supported per part.", geoCache._partName);
+			// More than one collision mesh should work from my tests...
+			// HEU_Logger.LogWarningFormat("More than 1 collision mesh detected for part {0}.\nOnly a single collision mesh is supported per part.", geoCache._partName);
 		    }
 
 		    HEU_ColliderInfo colliderInfo = new HEU_ColliderInfo();
@@ -1674,19 +1679,36 @@ namespace HoudiniEngineUnity
 
 			HEU_ColliderInfo.ColliderType colliderType = HEU_ColliderInfo.ColliderType.MESH;
 
-			if (groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_COLLISION_GEO)
-				|| groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_COLLISION_GEO)
-				|| groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_CONVEX_COLLISION_GEO))
+			bool bSimpleColliderType = false;
+			
+			string groupType = groupName;
+			if (groupType.StartsWith(HEU_Defines.DEFAULT_SIMPLE_COLLISION_GEO))
 			{
-			    if (groupName.EndsWith("box"))
+			    groupType = groupType.Substring(groupType.IndexOf(HEU_Defines.DEFAULT_SIMPLE_COLLISION_GEO));
+			    bSimpleColliderType = true;
+			}
+			else if (groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_CONVEX_COLLISION_GEO))
+			{
+			    groupType = groupType.Substring(groupType.IndexOf(HEU_Defines.DEFAULT_SIMPLE_RENDERED_CONVEX_COLLISION_GEO));
+			    bSimpleColliderType = true;
+			}
+			else if (groupName.StartsWith(HEU_Defines.DEFAULT_SIMPLE_RENDERED_COLLISION_GEO))
+			{
+			    groupType = groupType.Substring(groupType.IndexOf(HEU_Defines.DEFAULT_SIMPLE_RENDERED_COLLISION_GEO));
+			    bSimpleColliderType = true;
+			}
+
+			if (bSimpleColliderType)
+			{
+			    if (groupType.Contains("box"))
 			    {
 				colliderType = HEU_ColliderInfo.ColliderType.SIMPLE_BOX;
 			    }
-			    else if (groupName.EndsWith("sphere"))
+			    else if (groupType.Contains("sphere"))
 			    {
 				colliderType = HEU_ColliderInfo.ColliderType.SIMPLE_SPHERE;
 			    }
-			    else if (groupName.EndsWith("capsule"))
+			    else if (groupType.Contains("capsule"))
 			    {
 				colliderType = HEU_ColliderInfo.ColliderType.SIMPLE_CAPSULE;
 			    }

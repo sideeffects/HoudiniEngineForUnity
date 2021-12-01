@@ -216,6 +216,11 @@ namespace HoudiniEngineUnity
 
 		// Apply settings based on the interface type.
 		System.Type inputInterfaceType = inputInterface.GetType();
+		if (inputInterfaceType == typeof(HEU_InputInterfaceMesh))
+		{
+		    HEU_InputInterfaceMesh meshInterface = inputInterface as HEU_InputInterfaceMesh;
+		    meshInterface.Initialize(inputNode.MeshSettings);
+		}
 		if (inputInterfaceType == typeof(HEU_InputInterfaceTilemap))
 		{
 		    HEU_InputInterfaceTilemap tilemapInterface = inputInterface as HEU_InputInterfaceTilemap;

@@ -1881,6 +1881,100 @@ namespace HoudiniEngineUnity
 
 	    return new string(charArray);
 	}
+
+	// Conversion helpers
+	// Scale is same as Houdini
+	public static void ConvertPositionUnityToHoudini(ref Vector3 position)
+	{
+	    position.x = -position.x;
+	}
+
+	public static void ConvertPositionUnityToHoudini(Vector3 position, out float outputX, out float outputY, out float outputZ)
+	{
+	    outputX = -position.x;
+	    outputY = position.y;
+	    outputZ = position.z;
+	}
+
+	public static Vector3 ConvertPositionUnityToHoudini(float inputX, float inputY, float inputZ)
+	{
+	    return new Vector3(-inputX, inputY, inputZ);
+	}
+
+	public static Vector3 ConvertPositionUnityToHoudini(Vector3 inputVec)
+	{
+	    inputVec.x = -inputVec.x;
+	    return inputVec;
+	}
+
+	public static void ConvertPositionUnityToHoudini(float inputX, float inputY, float inputZ, ref Vector3 outputVec)
+	{
+	    outputVec.x = -inputX;
+	    outputVec.y = inputY;
+	    outputVec.z = inputZ;
+	}
+
+	public static void ConvertRotationUnityToHoudini(ref Quaternion rotation)
+	{
+	    Vector3 euler = rotation.eulerAngles;
+	    euler.y = -euler.y;
+	    euler.z = -euler.z;
+	    rotation = Quaternion.Euler(euler);
+	}
+
+	public static void ConvertRotationUnityToHoudini(Quaternion rotation, out float outputX, out float outputY, out float outputZ, out float outputW)
+	{
+	    Vector3 euler = rotation.eulerAngles;
+	    euler.y = -euler.y;
+	    euler.z = -euler.z;
+	    rotation = Quaternion.Euler(euler);
+	    outputX = rotation[0];
+	    outputY = rotation[1];
+	    outputZ = rotation[2];
+	    outputW = rotation[3];
+	}
+
+	public static Quaternion ConvertRotationUnityToHoudini(float inputX, float inputY, float inputZ, float inputW)
+	{
+	    Quaternion quat = new Quaternion(inputX, inputY, inputZ, inputW);
+	    Vector3 euler = quat.eulerAngles;
+	    euler.y = -euler.y;
+	    euler.z = -euler.z;
+
+	    return Quaternion.Euler(euler);
+	}
+
+	public static Quaternion ConvertRotationUnityToHoudini(Quaternion inputQuat)
+	{
+	    Vector3 euler = inputQuat.eulerAngles;
+	    euler.y = -euler.y;
+	    euler.z = -euler.z;
+	    return Quaternion.Euler(euler);
+	}
+
+	public static void ConvertScaleUnityToHoudini(ref Vector3 position)
+	{
+	    // Scale is the same!
+	}
+
+	public static void ConvertScaleUnityToHoudini(Vector3 position, out float outputX, out float outputY, out float outputZ)
+	{
+	    // Scale is the same!
+	    outputX = position.x;
+	    outputY = position.y;
+	    outputZ = position.z;
+	}
+
+	public static Vector3 ConvertScaleUnityToHoudini(float inputX, float inputY, float inputZ)
+	{
+	    return new Vector3(inputX, inputY, inputZ);
+	}
+
+	public static Vector3 ConvertScaleUnityToHoudini(Vector3 inputVec)
+	{
+	    return inputVec;
+	}
+
     }
 
 }   // HoudiniEngineUnity

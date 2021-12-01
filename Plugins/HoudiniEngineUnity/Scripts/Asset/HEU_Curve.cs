@@ -773,9 +773,7 @@ namespace HoudiniEngineUnity
 	    _vertices = new Vector3[vertexCount];
 	    for (int i = 0; i < vertexCount; ++i)
 	    {
-		_vertices[i][0] = -posAttr[i * 3 + 0];
-		_vertices[i][1] = posAttr[i * 3 + 1];
-		_vertices[i][2] = posAttr[i * 3 + 2];
+		HEU_HAPIUtility.ConvertPositionUnityToHoudini(posAttr[i*3+0], posAttr[i*3+1], posAttr[i*3+2], ref _vertices[i]);
 	    }
 	}
 
@@ -1036,28 +1034,16 @@ namespace HoudiniEngineUnity
 	    float [] scaleArr = new float[positions.Count * 3];
 	    for (int i = 0; i < positions.Count; i++)
 	    {
-		posArr[i* 3 + 0] = -positions[i].x;
-		posArr[i* 3 + 1] = positions[i].y;
-		posArr[i* 3 + 2] = positions[i].z;
+		HEU_HAPIUtility.ConvertPositionUnityToHoudini(positions[i], out posArr[i* 3 + 0], out posArr[i* 3 + 1], out posArr[i* 3 + 2]);
 
 		if (hasRotations)
 		{
-		    Quaternion rotQuat = rotations[i];
-		    Vector3 euler = rotQuat.eulerAngles;
-		    euler.y = -euler.y;
-		    euler.z = -euler.z;
-		    rotQuat = Quaternion.Euler(euler);
-		    rotArr[i*4 + 0] = rotQuat[0];
-		    rotArr[i*4 + 1] = rotQuat[1];
-		    rotArr[i*4 + 2] = rotQuat[2];
-		    rotArr[i*4 + 3] = rotQuat[3];
+		    HEU_HAPIUtility.ConvertRotationUnityToHoudini(rotations[i], out rotArr[i*4 + 0], out rotArr[i*4 + 1], out rotArr[i*4 + 2], out rotArr[i*4 + 3]);
 		}
 
 		if (hasScales)
 		{
-		    scaleArr[i* 3 + 0] = scales[i].x;
-		    scaleArr[i* 3 + 1] = scales[i].y;
-		    scaleArr[i* 3 + 2] = scales[i].z;
+		    HEU_HAPIUtility.ConvertScaleUnityToHoudini(scales[i], out scaleArr[i* 3 + 0], out scaleArr[i* 3 + 1], out scaleArr[i* 3 + 2]);
 		}
 	    }
 
@@ -1501,16 +1487,7 @@ namespace HoudiniEngineUnity
 
 		    for (int i = 0; i < numberOfCVs; i++)
 		    {
-		        Quaternion rotQuat = rotations[i];
-		        Vector3 euler = rotQuat.eulerAngles;
-		        euler.y = -euler.y;
-		        euler.z = -euler.z;
-		        rotQuat = Quaternion.Euler(euler);
-
-		        curveRotations[i * 4 + 0] = rotQuat[0];
-		        curveRotations[i * 4 + 1] = rotQuat[1];
-		        curveRotations[i * 4 + 2] = rotQuat[2];
-		        curveRotations[i * 4 + 3] = rotQuat[3];
+			HEU_HAPIUtility.ConvertRotationUnityToHoudini(rotations[i], out curveRotations[i * 4 + 0], out curveRotations[i * 4 + 1], out curveRotations[i * 4 + 2], out curveRotations[i * 4 + 3]);
 		    }
 
 		    session.SetAttributeFloatData(curveIdNode, _partID, HEU_Defines.HAPI_ATTRIB_ROTATION, ref attributeInfoRotation, curveRotations, 0, attributeInfoRotation.count);
@@ -1532,10 +1509,7 @@ namespace HoudiniEngineUnity
 
 		    for (int i = 0; i < numberOfCVs; i++)
 		    {
-		        Vector3 scaleVector = scales[i];
-		        curveScales[i * 3 + 0] = scaleVector.x;
-		        curveScales[i * 3 + 1] = scaleVector.y;
-		        curveScales[i * 3 + 2] = scaleVector.z;
+			HEU_HAPIUtility.ConvertScaleUnityToHoudini(scales[i], out curveScales[i * 3 + 0], out curveScales[i * 3 + 1], out curveScales[i * 3 + 2]);
 		    }
 
 		    session.SetAttributeFloatData(curveIdNode, _partID, HEU_Defines.HAPI_ATTRIB_SCALE, ref attributeInfoScale, curveScales, 0, attributeInfoScale.count);
@@ -1552,9 +1526,7 @@ namespace HoudiniEngineUnity
 
 	    }
 
-
 	    return true;
-
 	}
 
 	internal void SyncFromParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bNewCurve)
@@ -1670,7 +1642,7 @@ namespace HoudiniEngineUnity
     
 			for (int i = 0; i < numPts; i++)
 			{
-			    positions.Add(new Vector3(-posAttr[i * 3 + 0], posAttr[i * 3 + 1], posAttr[i * 3 + 2]));
+			    positions.Add(HEU_HAPIUtility.ConvertPositionUnityToHoudini(posAttr[i * 3 + 0], posAttr[i * 3 + 1], posAttr[i * 3 + 2]));
 			}
 
 		    }
@@ -1684,7 +1656,7 @@ namespace HoudiniEngineUnity
 		    int numPositions = posAttrInfo.count;
 		    for (int i = 0; i < numPositions; i++)
 		    {
-		    	positions.Add(new Vector3(-_posAttr[i * 3 + 0], _posAttr[i * 3 + 1], _posAttr[i * 3 + 2]));
+			positions.Add(HEU_HAPIUtility.ConvertPositionUnityToHoudini(_posAttr[i * 3 + 0], _posAttr[i * 3 + 1], _posAttr[i * 3 + 2]));
 		    }
 		    break;
 	    }
@@ -1799,7 +1771,11 @@ namespace HoudiniEngineUnity
 	    StringBuilder sb = new StringBuilder();
 	    foreach (CurveNodeData pt in points)
 	    {
-		sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture, "{0},{1},{2} ", -pt.position[0], pt.position[1], pt.position[2]);
+		float x;
+		float y;
+		float z;
+		HEU_HAPIUtility.ConvertPositionUnityToHoudini(pt.position, out x, out y, out z);
+		sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture, "{0},{1},{2} ", x, y, z);
 	    }
 	    return sb.ToString();
 	}
@@ -1809,7 +1785,11 @@ namespace HoudiniEngineUnity
 	    StringBuilder sb = new StringBuilder();
 	    foreach (Vector3 pt in points)
 	    {
-		sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture, "{0},{1},{2} ", -pt[0], pt[1], pt[2]);
+		float x;
+		float y;
+		float z;
+		HEU_HAPIUtility.ConvertPositionUnityToHoudini(pt, out x, out y, out z);
+		sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture, "{0},{1},{2} ", x, y, z);
 	    }
 	    return sb.ToString();
 	}
