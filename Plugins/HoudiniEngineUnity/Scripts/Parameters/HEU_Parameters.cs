@@ -223,6 +223,12 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
+	    // For the auto-cook on mouse release option, ignore changed parameters until it has been released
+	    if (HEU_PluginSettings.CookOnMouseUp && ParentAsset != null && ParentAsset.PendingAutoCookOnMouseRelease)
+	    {
+		return false;
+	    }
+
 	    foreach (HEU_ParameterData parameterData in _parameterList)
 	    {
 		// Compare parameter data value against the value from arrays

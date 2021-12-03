@@ -1095,6 +1095,19 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	public static bool CookOnMouseUp
+	{
+	    get
+	    {
+		bool enabled = true;
+		HEU_PluginStorage.Instance.Get("HAPI_CookOnMouseUp", out enabled, enabled);
+		return enabled;
+	    }
+	    set
+	    {
+		HEU_PluginStorage.Instance.Set("HAPI_CookOnMouseUp", value);
+	    }
+	}
 
     }
 

@@ -278,7 +278,7 @@ namespace HoudiniEngineUnity
 			    bool isDragging = (EditorGUIUtility.hotControl != 0);
 			    bool blockAutoCook =  _houdiniAsset.PendingAutoCookOnMouseRelease == true || (isDragging && Event.current != null && _delayAutoCookStrings.Contains(Event.current.commandName));
 
-			    if (blockAutoCook)
+			    if (HEU_PluginSettings.CookOnMouseUp && blockAutoCook)
 			    {
 				_houdiniAsset.PendingAutoCookOnMouseRelease = true;
 			    }
@@ -1362,6 +1362,11 @@ namespace HoudiniEngineUnity
 				{
 				    dirtyProperty.boolValue = true;
 				    bChanged = true;
+				}
+
+				if (HEU_PluginSettings.CookOnMouseUp && _houdiniAsset != null && !HEU_EditorUtility.ReleasedMouse())
+				{
+				    _houdiniAsset.PendingAutoCookOnMouseRelease = true;
 				}
 			    }
 

@@ -1127,6 +1127,14 @@ namespace HoudiniEngineUnity
 			    value = Mathf.Min(parameterData.IntMax, value);
 			}
 
+			if (value != intsValue[0])
+			{
+			    if (HEU_PluginSettings.CookOnMouseUp && _parameters != null && _parameters.ParentAsset != null && !HEU_EditorUtility.ReleasedMouse())
+			    {
+				_parameters.ParentAsset.PendingAutoCookOnMouseRelease = true;
+			    }
+			}
+
 			intsValue[0] = value;
 		    }
 		    else
@@ -1166,6 +1174,14 @@ namespace HoudiniEngineUnity
 		    if (parameterData.HasMax())
 		    {
 			value = Mathf.Min(parameterData.FloatMax, value);
+		    }
+
+		    if (value != floatsValue[0])
+		    {
+			if (HEU_PluginSettings.CookOnMouseUp && _parameters != null && _parameters.ParentAsset != null && !HEU_EditorUtility.ReleasedMouse())
+			{
+			    _parameters.ParentAsset.PendingAutoCookOnMouseRelease = true;
+			}
 		    }
 
 		    floatsValue[0] = value;
