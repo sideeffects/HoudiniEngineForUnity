@@ -523,6 +523,19 @@ namespace HoudiniEngineUnity
 		}
 	    }
 
+	    HEU_EditorUI.DrawSeparator();
+	    {
+		bool oldValue = HEU_PluginSettings.CookOnMouseUp;
+		bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue, 
+		    "Cook on Mouse Up",
+		    "Certain parameters (e.g. Sliders, gradients, or animation curves) will cook excessively if we cook immedately. If on, will only cook on mouse up, improving UX.");
+		if (newValue != oldValue)
+		{
+		    HEU_PluginSettings.CookOnMouseUp = newValue;
+		    bChanged = true;
+		}
+	    }
+
 	    // Setting for unit tests only
 	    //HEU_EditorUI.DrawSeparator();
 	    //{
