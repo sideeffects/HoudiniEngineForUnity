@@ -1529,9 +1529,6 @@ namespace HoudiniEngineUnity
 			// Do not process the main display geo twice!
 		        if (editGeoInfo.isDisplayGeo) continue;
 
-			// We only handle editable curves for now
-			if (editGeoInfo.type != HAPI_GeoType.HAPI_GEOTYPE_CURVE) continue;
-
 			session.CookNode(editNodeID, HEU_PluginSettings.CookTemplatedGeos);
 
 			// Add this geo to the geo info array
