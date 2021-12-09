@@ -1531,8 +1531,12 @@ namespace HoudiniEngineUnity
 
 			session.CookNode(editNodeID, HEU_PluginSettings.CookTemplatedGeos);
 
-			// Add this geo to the geo info array
-			editableGeoInfos.Add(editGeoInfo);
+			// Get updated geo info after cooking
+			if (session.GetGeoInfo(editNodeID, ref editGeoInfo))
+			{
+			    // Add this geo to the geo info array
+			    editableGeoInfos.Add(editGeoInfo);
+			}
 		    }
 		}
 	    }
