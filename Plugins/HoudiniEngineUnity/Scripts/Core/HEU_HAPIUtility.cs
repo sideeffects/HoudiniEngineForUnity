@@ -1518,7 +1518,7 @@ namespace HoudiniEngineUnity
 
 	    // Get editable nodes, cook em, then create geo nodes for them
 	    HAPI_NodeId[] editableNodes = null;
-	    HEU_SessionManager.GetComposedChildNodeList(session, objectInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes);
+	    HEU_SessionManager.GetComposedChildNodeList(session, assetInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes);
 	    if (editableNodes != null)
 	    {
 		foreach (HAPI_NodeId editNodeID in editableNodes)
