@@ -32,6 +32,7 @@ using System.Text;
 using System.Collections.Generic;
 
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace HoudiniEngineUnity
 {
@@ -39,6 +40,20 @@ namespace HoudiniEngineUnity
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
     using HAPI_PartId = System.Int32;
+
+    public class HEU_SyncedEventData
+    {
+	public bool CookSuccess;
+	public HEU_ThreadedTaskLoadGeo.HEU_LoadData TopNodeData;
+	public HEU_BaseSync OutputObject;
+
+	public HEU_SyncedEventData(bool bSuccess, HEU_ThreadedTaskLoadGeo.HEU_LoadData bTopNodeData, HEU_BaseSync bOutputObject)
+	{
+	    CookSuccess = bSuccess;
+	    TopNodeData = bTopNodeData;
+	    OutputObject = bOutputObject;
+	}
+    }
 
     [ExecuteInEditMode] // Needed to get OnDestroy callback when deleted in Editor
     public class HEU_BaseSync : MonoBehaviour
@@ -306,6 +321,12 @@ namespace HoudiniEngineUnity
 
 	    _firstSyncComplete = true;
 	    _syncing = false;
+
+	    bool bSuccess = loadData._loadStatus == HEU_ThreadedTaskLoadGeo.HEU_LoadData.LoadStatus.SUCCESS;
+	    if (_onSynced != null)
+	    {
+		_onSynced.Invoke(new HEU_SyncedEventData(bSuccess, loadData, this));
+	    }
 	}
 
 	public virtual void GenerateObjects(HEU_ThreadedTaskLoadGeo.HEU_LoadData loadData)
@@ -346,6 +367,10 @@ namespace HoudiniEngineUnity
 
 	    Log(loadData._logStr.ToString());
 	    _cookNodeID = loadData._cookNodeID;
+	    if (_onSynced != null)
+	    {
+		_onSynced.Invoke(new HEU_SyncedEventData(false, null, this));
+	    }
 	}
 
 	#endregion
@@ -1214,6 +1239,9 @@ namespace HoudiniEngineUnity
 	public StringBuilder _error = new StringBuilder();
 
 	public bool _sessionSyncAutoCook = true;
+
+	private System.Action<HEU_SyncedEventData> _onSynced;
+	public System.Action<HEU_SyncedEventData> OnSynced { get { return _onSynced; } set { _onSynced = value; } }
 
 	protected HEU_ThreadedTaskLoadGeo _loadTask;
 

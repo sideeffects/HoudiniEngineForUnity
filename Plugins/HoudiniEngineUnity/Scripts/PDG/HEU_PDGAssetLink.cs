@@ -31,6 +31,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -47,6 +48,28 @@ namespace HoudiniEngineUnity
     using HAPI_PDG_GraphContextId = System.Int32;
     using HAPI_AssetLibraryId = System.Int32;
 
+
+    /// <summary>
+    /// Callback when asset is cooked.
+    /// <param name="CookedEventData">The reload data.</param>
+    /// </summary>
+    [System.Serializable]
+    public class HEU_PDGCookedDataEvent : UnityEvent<HEU_PDGCookedEventData>
+    {
+
+    }
+
+    public class HEU_PDGCookedEventData
+    {
+	public bool CookSuccess;
+	public HEU_TOPNodeData TopNodeData;
+
+	public HEU_PDGCookedEventData(bool bSuccess, HEU_TOPNodeData bTopNodeData)
+	{
+	    CookSuccess = bSuccess;
+	    TopNodeData = bTopNodeData;
+	}
+    }
 
     /// <summary>
     /// Connects to an instanced HDA containing TOP networks and TOP nodes, manages PDG graph cook, and keeps in sync.
@@ -99,6 +122,11 @@ namespace HoudiniEngineUnity
 
 	// The root directory for generated output
 	public string OutputCachePathRoot { get { return _outputCachePathRoot; } }
+
+	[SerializeField]
+	private HEU_PDGCookedDataEvent _cookedDataEvent = new HEU_PDGCookedDataEvent();
+
+	public HEU_PDGCookedDataEvent CookedDataEvent { get { return _cookedDataEvent; } }
 
 	// ==========================================================================================================
 
@@ -387,7 +415,7 @@ namespace HoudiniEngineUnity
 		HEU_PDGSession pdgSession = HEU_PDGSession.GetPDGSession();
 		if (pdgSession != null)
 		{
-		    pdgSession.CookTOPNetworkOutputNode(topNetwork);
+		    pdgSession.CookTOPNetworkOutputNode(topNetwork, OnSyncComplete);
 		}
 	    }
 	}
@@ -982,7 +1010,7 @@ namespace HoudiniEngineUnity
 	/// <param name="workItemInfo">Work item whose results to load</param>
 	/// <param name="resultInfos">Results data</param>
 	/// <param name="workItemID">The work item's ID. Required for clearning its results.</param>
-	internal void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos, HAPI_PDG_WorkitemId workItemID)
+	internal void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos, HAPI_PDG_WorkitemId workItemID, System.Action<HEU_TOPNodeData, HEU_SyncedEventData> OnSynced)
 	{
 	    // Create HEU_GeoSync objects, set results, and sync it
 
@@ -1077,6 +1105,21 @@ namespace HoudiniEngineUnity
 
 		geoSync._filePath = path;
 		geoSync.SetOutputCacheDirectory(_outputCachePathRoot);
+
+		if (geoSync != null && OnSynced != null)
+		{
+		    System.Action<HEU_SyncedEventData> OnSyncedCallback = (HEU_SyncedEventData Data) => 
+		    {
+			OnSynced(topNode, Data);
+			if (geoSync)
+			{
+			    geoSync.OnSynced = null;
+			}
+		    };
+
+		    geoSync.OnSynced = OnSyncedCallback;
+
+		}
 		geoSync.StartSync();
 	    }
 	}
@@ -1233,6 +1276,14 @@ namespace HoudiniEngineUnity
 		topNetwork._topNodeNames[i] = displayNodeNames[i].Value._nodeName;
 	    }
         }
+
+	private void OnSyncComplete(HEU_PDGCookedEventData Data)
+	{
+	    if (_cookedDataEvent != null && Data != null)
+	    {
+		_cookedDataEvent.Invoke(Data);
+	    }
+	}
 
 	internal static HEU_LinkStateWrapper LinkState_InternalToWrapper(LinkState linkState)
 	{

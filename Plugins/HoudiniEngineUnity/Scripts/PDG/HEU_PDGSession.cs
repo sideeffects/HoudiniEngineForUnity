@@ -283,6 +283,7 @@ namespace HoudiniEngineUnity
 
 		if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_WORKITEM_ADD)
 		{
+		    _totalNumItems++;
 		    NotifyTOPNodeTotalWorkItem(assetLink, topNode, 1);
 		}
 		else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_WORKITEM_REMOVE)
@@ -352,7 +353,7 @@ namespace HoudiniEngineUnity
 				    return;
 				}
 
-				assetLink.LoadResults(session, topNode, workItemInfo, resultInfos, eventInfo.workitemId);
+				assetLink.LoadResults(session, topNode, workItemInfo, resultInfos, eventInfo.workitemId, OnWorkItemLoadResults);
 			    }
 			}
 		    }
@@ -400,8 +401,27 @@ namespace HoudiniEngineUnity
 			    eventMsg));
 		}
 	    }
+	    CheckCallback(topNode);
 #endif
 	}
+
+	private delegate void OnWorkItemLoadResultsDelegate(HEU_SyncedEventData OnSynced);
+	private void  OnWorkItemLoadResults(HEU_TOPNodeData topNode, HEU_SyncedEventData OnSynced)
+	{
+	    _numItemsCompleted++;
+	    CheckCallback(topNode);
+	}
+
+	private void CheckCallback(HEU_TOPNodeData topNode)
+	{
+	    if (_cookedDataEvent != null && _pendingCallback && _numItemsCompleted >= _totalNumItems)
+	    {
+		_cookedDataEvent.Invoke(new HEU_PDGCookedEventData(_callbackSuccess, topNode));
+		ResetCallbackVariables();
+	    }
+	}
+	
+
 
 	/// <summary>
 	/// Returns the HEU_PDGAssetLink and HEU_TOPNodeData associated with this TOP node ID
@@ -431,6 +451,13 @@ namespace HoudiniEngineUnity
 	{
 	    topNode._pdgState = pdgState;
 	    assetLink.RepaintUI();
+
+	    if (_cookedDataEvent != null && (pdgState == HEU_TOPNodeData.PDGState.COOK_COMPLETE || pdgState == HEU_TOPNodeData.PDGState.COOK_FAILED))
+	    {
+		bool bSuccess = pdgState == HEU_TOPNodeData.PDGState.COOK_COMPLETE;
+		_callbackSuccess &= bSuccess;
+		_pendingCallback = true;
+	    }
 	}
 
 	private void NotifyTOPNodePDGStateClear(HEU_PDGAssetLink assetLink, HEU_TOPNodeData topNode)
@@ -525,7 +552,7 @@ namespace HoudiniEngineUnity
 	/// Cook the PDG graph of the specified TOP network
 	/// </summary>
 	/// <param name="topNetwork"></param>
-	public void CookTOPNetworkOutputNode(HEU_TOPNetworkData topNetwork)
+	public void CookTOPNetworkOutputNode(HEU_TOPNetworkData topNetwork, System.Action<HEU_PDGCookedEventData> OnCook = null)
 	{
 #if HOUDINIENGINEUNITY_ENABLED
 	    ClearEventMessages();
@@ -550,6 +577,11 @@ namespace HoudiniEngineUnity
 	    {
 		HEU_Logger.LogErrorFormat("Cook node failed!");
 	    }
+
+	    _cookedDataEvent = OnCook;
+
+	    ResetCallbackVariables();
+
 #endif
 	}
 
@@ -662,6 +694,7 @@ namespace HoudiniEngineUnity
 	{
 #if HOUDINIENGINEUNITY_ENABLED
 	    ClearEventMessages();
+	    ResetCallbackVariables();
 
 	    HEU_SessionBase session = GetHAPIPDGSession();
 	    if (session != null && session.IsSessionValid())
@@ -818,6 +851,14 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	private void ResetCallbackVariables()
+	{
+	    _pendingCallback = false;
+	    _numItemsCompleted = 0;
+	    _totalNumItems = 0;
+	    _callbackSuccess = true;
+	}
+
 	//	DATA ------------------------------------------------------------------------------------------------------
 
 	// Global PDG session object
@@ -839,6 +880,15 @@ namespace HoudiniEngineUnity
 	public string _errorMsg;
 
 	public HAPI_PDG_State _pdgState = HAPI_PDG_State.HAPI_PDG_STATE_READY;
+
+	private System.Action<HEU_PDGCookedEventData> _cookedDataEvent;
+
+	public System.Action<HEU_PDGCookedEventData> CookedDataEvent { get { return _cookedDataEvent; } set { _cookedDataEvent = value; }}
+
+	private bool _pendingCallback = false;
+	private int _numItemsCompleted = 0;
+	private int _totalNumItems = 0;
+	private bool _callbackSuccess = true;
 
 	// PDG event messages generated during cook
 	[SerializeField]
