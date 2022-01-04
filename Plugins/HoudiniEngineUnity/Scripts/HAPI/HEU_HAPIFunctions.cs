@@ -2132,6 +2132,13 @@ namespace HoudiniEngineUnity
                 int blocking);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
+        HAPI_CookPDGAllOutputs(
+                ref HAPI_Session session,
+                HAPI_NodeId cook_node_id,
+                int generate_only,
+                int blocking);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
         HAPI_GetPDGEvents(
                 ref HAPI_Session session,
                 HAPI_PDG_GraphContextId graph_context_id,
