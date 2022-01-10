@@ -205,6 +205,9 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private string _topOutputFilter;
 
+	private int _numLoadingResults = 0;
+	private int _numTotalResults = 0;
+
 	// PUBLIC FUNCTIONS =========================================================================================
 
 
@@ -1037,6 +1040,8 @@ namespace HoudiniEngineUnity
 
 	    // Load each result geometry
 	    int numResults = resultInfos.Length;
+	    _numTotalResults = numResults;
+	    _numLoadingResults = 0;
 	    for (int i = 0; i < numResults; ++i)
 	    {
 		if (resultInfos[i].resultTagSH <= 0 || resultInfos[i].resultSH <= 0)
@@ -1100,7 +1105,7 @@ namespace HoudiniEngineUnity
 
 		if (geoSync == null)
 		{
-			geoSync = newOrExistingGO.AddComponent<HEU_GeoSync>();
+		    geoSync = newOrExistingGO.AddComponent<HEU_GeoSync>();
 		}
 
 		geoSync._filePath = path;
@@ -1110,7 +1115,11 @@ namespace HoudiniEngineUnity
 		{
 		    System.Action<HEU_SyncedEventData> OnSyncedCallback = (HEU_SyncedEventData Data) => 
 		    {
-			OnSynced(topNode, Data);
+			_numLoadingResults++;
+			if (_numLoadingResults >= _numTotalResults)
+			{
+			    OnSynced(topNode, Data);
+			}
 			if (geoSync)
 			{
 			    geoSync.OnSynced = null;
