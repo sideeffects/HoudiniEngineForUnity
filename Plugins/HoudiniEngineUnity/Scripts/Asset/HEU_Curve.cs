@@ -678,9 +678,10 @@ namespace HoudiniEngineUnity
 
 	    if (bIsRebuild && _parentAsset != null && _parentAsset.SerializedMetaData.SavedCurveNodeData != null)
 	    {
-		_parentAsset.SerializedMetaData.SavedCurveNodeData.Add(_curveName, _curveNodeData);
+		_parentAsset.SerializedMetaData.SavedCurveNodeData.AddOrSet(_curveName, _curveNodeData);
+
 		if (_inputCurveInfo != null)
-		    _parentAsset.SerializedMetaData.SavedInputCurveInfo.Add(_curveName, _inputCurveInfo);
+		    _parentAsset.SerializedMetaData.SavedInputCurveInfo.AddOrSet(_curveName, _inputCurveInfo);
 	    }
 
 	    if (_targetGameObject != null && _curveDataType != HEU_CurveDataType.GEO_COORDS_PARAM)

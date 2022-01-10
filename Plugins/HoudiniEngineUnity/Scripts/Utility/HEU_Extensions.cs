@@ -244,4 +244,20 @@ namespace HoudiniEngineUnity
 	}
     }
 
+    public static class DictionaryExtensions
+    {
+	public static void AddOrSet<T, U>(this Dictionary<T, U> dict, T key, U value)
+	{
+	    if (dict.ContainsKey(key))
+	    {
+		dict[key] = value;
+	    }
+	    else
+	    {
+		dict.Add(key, value);
+	    }
+	}
+
+    }
+
 }

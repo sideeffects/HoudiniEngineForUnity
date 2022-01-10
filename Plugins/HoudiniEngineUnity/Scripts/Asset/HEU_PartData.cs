@@ -1309,7 +1309,7 @@ namespace HoudiniEngineUnity
 	internal void CalculateColliderState()
 	{
 	    // Using visiblity to figure out collider state, for now
-	    bool bEnabled = false;
+	    bool bEnabled = true;
 
 	    if (HEU_GeneratedOutput.HasLODGroup(_generatedOutput))
 	    {
