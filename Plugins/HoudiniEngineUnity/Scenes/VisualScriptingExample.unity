@@ -1928,7 +1928,12 @@ MonoBehaviour:
 
 
     Note:
-    Visual scripting support is in beta, and we would appreciate any suggestions
+    This feature will only work for Unity 2021.1+, and requires some setup as described
+    in the documentation: https://www.sidefx.com/docs/unity/_visual_scripting.html
+
+
+    Additionally,
+    Visual Scripting support is in beta, and we would appreciate any suggestions
     to improve it :)'
 --- !u!222 &1138814760
 CanvasRenderer:
@@ -2036,7 +2041,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 4.11}
-  m_SizeDelta: {x: 1000, y: 621.13}
+  m_SizeDelta: {x: 1000, y: 729.7}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1162345906
 GameObject:

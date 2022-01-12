@@ -718,8 +718,6 @@ namespace HoudiniEngineUnity
 		return;
 	    }
 
-	    bool bShouldUseHDA = ShouldUseHDA(inputObjects);
-
 	    HEU_HoudiniAssetRoot assetRoot = go.GetComponent<HEU_HoudiniAssetRoot>();
 	    if (assetRoot != null)
 	    {
@@ -740,6 +738,8 @@ namespace HoudiniEngineUnity
 		    int minInputCount = Mathf.Min(inputNodes.Count, numInputs);
 		    for (int i = 0; i < minInputCount; ++i)
 		    {
+			bool bShouldUseHDA = IsValidInputHDA(inputObjects[i]);
+
 			if (!bShouldUseHDA &&!IsValidInputMesh(inputObjects[i]))
 			{
 			    continue;
