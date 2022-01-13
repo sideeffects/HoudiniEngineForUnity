@@ -337,7 +337,7 @@ namespace HoudiniEngineUnity
 		return false;
 	    }
 
-	    if (atIndex >= paramData._floatValues.Length)
+	    if (paramData._floatValues == null || atIndex >= paramData._floatValues.Length)
 	    {
 	        HEU_Logger.LogWarningFormat("Parameter tuple index {0} is out of range (tuple size == {0}).", atIndex, paramData._floatValues.Length);
 	        return false;

@@ -82,6 +82,51 @@ namespace HoudiniEngineUnity
 
 		bResult = aF.ApproximatelyEquals(bF);
 	    }
+	    else if (a.GetType() == typeof(Vector2))
+	    {
+	    	Vector2 aV = (Vector2)((object)a);
+	    	Vector2 bV = (Vector2)((object)b);
+	    	for (int j = 0; j < 2; j++)
+	    	{
+	    	     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+	    	}
+	    }
+	    else if (a.GetType() == typeof(Vector3))
+	    {
+	    	Vector3 aV = (Vector3)((object)a);
+	    	Vector3 bV = (Vector3)((object)b);
+	    	for (int j = 0; j < 3; j++)
+	    	{
+	    	     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+	    	}
+	    }
+	    else if (a.GetType() == typeof(Vector4))
+	    {
+	    	Vector4 aV = (Vector4)((object)a);
+	    	Vector4 bV = (Vector4)((object)b);
+	    	for (int j = 0; j < 4; j++)
+	    	{
+	    	     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+	    	}
+	    }
+	    else if (a.GetType() == typeof(Matrix4x4))
+	    {
+	    	Matrix4x4 aV = (Matrix4x4)((object)a);
+	    	Matrix4x4 bV = (Matrix4x4)((object)b);
+	    	for (int j = 0; j < 16; j++)
+	    	{
+	    	     bResult &= aV[j].ApproximatelyEquals(bV[j]);
+	    	}
+	    }
+	    else if (a.GetType() == typeof(Color))
+	    {
+	    	Color aV = (Color)((object)a);
+	    	Color bV = (Color)((object)b);
+	    	bResult &= aV.r.ApproximatelyEquals(bV.r);
+	    	bResult &= aV.g.ApproximatelyEquals(bV.g);
+	    	bResult &= aV.b.ApproximatelyEquals(bV.b);
+	    	bResult &= aV.a.ApproximatelyEquals(bV.a);
+	    }
 	    else
 	    {
 		bResult = a.Equals(b);
@@ -279,6 +324,15 @@ namespace HoudiniEngineUnity
 			{
 			     bResult &= aV[j].ApproximatelyEquals(bV[j]);
 			}
+		    }
+		    else if (a[i].GetType() == typeof(Color))
+		    {
+			Color aV = (Color)((object)a[i]);
+			Color bV = (Color)((object)b[i]);
+			bResult &= aV.r.ApproximatelyEquals(bV.r);
+			bResult &= aV.g.ApproximatelyEquals(bV.g);
+			bResult &= aV.b.ApproximatelyEquals(bV.b);
+			bResult &= aV.a.ApproximatelyEquals(bV.a);
 		    }
 		    else
 		    {
