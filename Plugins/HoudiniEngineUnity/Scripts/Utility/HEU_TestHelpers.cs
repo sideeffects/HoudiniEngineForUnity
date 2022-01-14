@@ -29,6 +29,16 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+// Expose internal classes/functions
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityPlayModeTests")]
+[assembly: InternalsVisibleTo("HoudiniEngineUnityTestUtils")]
+#endif
+
 namespace HoudiniEngineUnity
 {
 
