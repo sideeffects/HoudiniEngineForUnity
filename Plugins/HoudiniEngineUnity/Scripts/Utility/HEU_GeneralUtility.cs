@@ -467,10 +467,9 @@ namespace HoudiniEngineUnity
 	// If the attribute is not a string attribute, then it will convert it into a string attribute.
 	public static string[] GetAttributeDataAsString(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string name, ref HAPI_AttributeInfo attrInfo)
 	{
-	    int[] stringHandles = new int[0];
-	    if (GetAttribute(session, geoID, partID, name, ref attrInfo, ref stringHandles, session.GetAttributeStringData))
+	    if (!GetAttributeInfo(session, geoID, partID, name, ref attrInfo))
 	    {
-		return HEU_SessionManager.GetStringValuesFromStringIndices(stringHandles);
+		return null;
 	    }
 
 	    if (!attrInfo.exists)
@@ -478,7 +477,17 @@ namespace HoudiniEngineUnity
 		return null;
 	    }
 
-	    if (attrInfo.storage == HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
+	    if (attrInfo.storage == HAPI_StorageType.HAPI_STORAGETYPE_STRING)
+	    {
+		int[] stringHandles = new int[0];
+		if (GetAttribute(session, geoID, partID, name, ref attrInfo, ref stringHandles, session.GetAttributeStringData))
+		{
+		    return HEU_SessionManager.GetStringValuesFromStringIndices(stringHandles);
+		}
+
+		return null;
+	    }
+	    else if (attrInfo.storage == HAPI_StorageType.HAPI_STORAGETYPE_FLOAT)
 	    {
 		float[] floatData = new float[attrInfo.count * attrInfo.tupleSize];
 		if (session.GetAttributeFloatData(geoID, partID, name, ref attrInfo, floatData, 0, attrInfo.count))
