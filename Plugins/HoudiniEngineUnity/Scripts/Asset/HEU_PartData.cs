@@ -1672,25 +1672,41 @@ namespace HoudiniEngineUnity
 		    }
 		    else
 		    {
-
-			// pdg has a slightly different folder path:
-			// e.g. "Assets/HoudiniEngineAssetCache/Working/simple_PDG/PDGCache/Terrain/Terrain/Tile0/Terrain/TerrainData.asset"
-			 string pattern_pdg = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}(\w+){0}({1}{0}{2}[0-9]+){0}(\w+){0}TerrainData{3}",
+			// Sometimes path can have 3 layers (one is the node)
+			string pattern_extrapart = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+.*){0}(\w+.*){0}({1}{0}{2}[0-9]+){0}TerrainData{3}",
 				    HEU_Platform.DirectorySeparatorStr,
 				    HEU_Defines.HEU_FOLDER_TERRAIN,
 				    HEU_Defines.HEU_FOLDER_TILE,
 				    HEU_Defines.HEU_EXT_ASSET);
+			reg = new Regex(pattern_extrapart);
+			match = reg.Match(sourceAssetPath);
 
-			Regex reg_pdg = new Regex(pattern_pdg);
-			Match match_pdg = reg_pdg.Match(sourceAssetPath);
-			if (match_pdg.Success)
+			if (match.Success && match.Groups.Count == 6)
 			{
-			    bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[2].Value, match_pdg.Groups[3].Value, match_pdg.Groups[5].Value);
+			    bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[2].Value, match.Groups[3].Value, match.Groups[4].Value, match.Groups[5].Value);
 			}
-			else{
-			    string supposedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
-			    HEU_Logger.LogErrorFormat("Invalid build path format\nSource: {0}\nPattern1: {1}\nPattern2: {2}", sourceAssetPath, pattern, pattern_pdg);
+			else
+			{
+			    // pdg has a slightly different folder path:
+			    // e.g. "Assets/HoudiniEngineAssetCache/Working/simple_PDG/PDGCache/Terrain/Terrain/Tile0/Terrain/TerrainData.asset"
+			     string pattern_pdg = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}(\w+){0}({1}{0}{2}[0-9]+){0}(\w+){0}TerrainData{3}",
+			    	    HEU_Platform.DirectorySeparatorStr,
+			    	    HEU_Defines.HEU_FOLDER_TERRAIN,
+			    	    HEU_Defines.HEU_FOLDER_TILE,
+			    	    HEU_Defines.HEU_EXT_ASSET);
+			    Regex reg_pdg = new Regex(pattern_pdg);
+			    Match match_pdg = reg_pdg.Match(sourceAssetPath);
+			    if (match_pdg.Success)
+			    {
+			        bakedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[2].Value, match_pdg.Groups[3].Value, match_pdg.Groups[5].Value);
+			    }
+			    else{
+			        string supposedTerrainPath = HEU_Platform.BuildPath(bakedTerrainPath, match.Groups[3].Value, match.Groups[4].Value);
+			        HEU_Logger.LogErrorFormat("Invalid build path format\nSource: {0}\nPattern1: {1}\nPattern2: {2}", sourceAssetPath, pattern, pattern_pdg);
+			    }
 			}
+
+
 		    }
 
 		    // We're going to copy the source terrain data asset file, then load the copy and assign to the target

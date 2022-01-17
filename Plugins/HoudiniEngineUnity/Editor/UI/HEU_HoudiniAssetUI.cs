@@ -105,7 +105,7 @@ namespace HoudiniEngineUnity
 	private static GUIContent _loadPresetButton = new GUIContent("Load HDA Preset", "Load a HDA preset file into this asset and cook it.");
 
 	private static GUIContent _useCurveScaleRotContent = new GUIContent("Disable Curve scale/rot", "Disables the usage of scale/rot attributes. Useful if the scale/rot attribute values are causing issues with your curve.");
-	private static GUIContent _cookCurveOnDragContent = new GUIContent("Cook Curve on Drag", "Cooks the cook while you are dragging the curve point. Useful if you need responsiveness over performance. Disable this option to improve performance.");
+	private static GUIContent _cookCurveOnDragContent = new GUIContent("Cook Curve on Drag", "Cooks the curve while you are dragging the curve point. Useful if you need responsiveness over performance. Disable this option to improve performance.");
 	private static GUIContent _curveFrameSelectedNodesContent = new GUIContent("Frame Selected Nodes Only", "Frames only the currently selected nodes when you press the F hotkey instead of the whole curve.");
 	private static GUIContent _curveFrameSelectedNodeDistanceContent = new GUIContent("Frame Selected Node Distance", "The distance between the selected node and the editor camera when you frame the selected node.");
 	
