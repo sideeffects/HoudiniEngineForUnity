@@ -1644,7 +1644,7 @@ namespace HoudiniEngineUnity
 
 		    // Find the geo name and terrain tile index
 		    //	@"/(Working)/(\w+)/(\w+)/(Terrain/Tile[0-9]+)/TerrainData.asset$"
-		    string pattern = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}({1}{0}{2}[0-9]+){0}TerrainData{3}",
+		    string pattern = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}({1}{0}{2}[0-9]+){0}\w.*{3}",
 			    HEU_Platform.DirectorySeparatorStr,
 			    HEU_Defines.HEU_FOLDER_TERRAIN,
 			    HEU_Defines.HEU_FOLDER_TILE,
@@ -1673,7 +1673,7 @@ namespace HoudiniEngineUnity
 		    else
 		    {
 			// Sometimes path can have 3 layers (one is the node)
-			string pattern_extrapart = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+.*){0}(\w+.*){0}({1}{0}{2}[0-9]+){0}TerrainData{3}",
+			string pattern_extrapart = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+.*){0}(\w+.*){0}({1}{0}{2}[0-9]+){0}\w.*{3}",
 				    HEU_Platform.DirectorySeparatorStr,
 				    HEU_Defines.HEU_FOLDER_TERRAIN,
 				    HEU_Defines.HEU_FOLDER_TILE,
@@ -1689,7 +1689,7 @@ namespace HoudiniEngineUnity
 			{
 			    // pdg has a slightly different folder path:
 			    // e.g. "Assets/HoudiniEngineAssetCache/Working/simple_PDG/PDGCache/Terrain/Terrain/Tile0/Terrain/TerrainData.asset"
-			     string pattern_pdg = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}(\w+){0}({1}{0}{2}[0-9]+){0}(\w+){0}TerrainData{3}",
+			     string pattern_pdg = string.Format(@"{0}(Working){0}(\w+.*){0}(\w+){0}(\w+){0}({1}{0}{2}[0-9]+){0}(\w+){0}\w.*{3}",
 			    	    HEU_Platform.DirectorySeparatorStr,
 			    	    HEU_Defines.HEU_FOLDER_TERRAIN,
 			    	    HEU_Defines.HEU_FOLDER_TILE,
