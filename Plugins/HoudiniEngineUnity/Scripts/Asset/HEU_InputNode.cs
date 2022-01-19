@@ -698,7 +698,7 @@ namespace HoudiniEngineUnity
 	    ChangeInputType(session, InputObjectType.UNITY_MESH);
 	}
 
-
+	// Add a new entry to the end (for UNITY_MESH)
 	internal HEU_InputObjectInfo AddInputEntryAtEndMesh(GameObject newEntryGameObject)
 	{
 	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.UNITY_MESH)
@@ -709,6 +709,7 @@ namespace HoudiniEngineUnity
 	    return null;
 	}
 
+	// Add a new entry to the end (for HDAs)
 	internal HEU_InputHDAInfo AddInputEntryAtEndHDA(GameObject newEntryGameObject)
 	{
 	    if (GetInternalObjectType(_inputObjectType) == InternalObjectType.HDA)
@@ -719,6 +720,7 @@ namespace HoudiniEngineUnity
 	    return null;
 	}
 
+	// Change the input type
 	internal void ChangeInputType(HEU_SessionBase session, InputObjectType newType)
 	{
 	    if (newType == _inputObjectType)
@@ -805,6 +807,7 @@ namespace HoudiniEngineUnity
 	    ClearUICache();
 	}
 
+	// Actually uploads the HDA input to Houdini
 	private void UploadHDAInput(HEU_SessionBase session)
 	{
 	    // Connect HDAs
@@ -836,6 +839,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Actually uploads the Unity input to Houdini
 	private void UploadUnityInput(HEU_SessionBase session)
 	{
 	    // Connect regular gameobjects
@@ -946,6 +950,7 @@ namespace HoudiniEngineUnity
 	    return newInputInfo;
 	}
 
+	// Helper for adding a new input object the end
 	private HEU_InputObjectInfo InternalAddInputObjectAtEnd(GameObject newInputGameObject)
 	{
 	    HEU_InputObjectInfo inputObject = CreateInputObjectInfo(newInputGameObject);
@@ -953,6 +958,7 @@ namespace HoudiniEngineUnity
 	    return inputObject;
 	}
 
+	// Helper for adding a new input object the end
 	private HEU_InputHDAInfo InternalAddInputHDAAtEnd(GameObject newInputHDA)
 	{
 	    HEU_InputHDAInfo inputInfo = CreateInputHDAInfo(newInputHDA);
@@ -1143,6 +1149,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
+	// Check if the input node has changed.
 	internal bool HasInputNodeTransformChanged()
 	{
 	    bool recursive = HEU_PluginSettings.ChildTransformChangeTriggersCooks;
@@ -1193,6 +1200,7 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	// Upload input object transforms
 	internal void UploadInputObjectTransforms(HEU_SessionBase session)
 	{
 	    // Only need to upload Mesh inputs, since HDA inputs don't upload transform
@@ -1254,6 +1262,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Helper to copy input values
 	internal void CopyInputValuesTo(HEU_SessionBase session, HEU_InputNode destInputNode)
 	{
 	    destInputNode._pendingInputObjectType = _inputObjectType;

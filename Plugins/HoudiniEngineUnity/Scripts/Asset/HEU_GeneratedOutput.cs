@@ -339,6 +339,7 @@ namespace HoudiniEngineUnity
 	    BakeGameObjectComponents(_outputData._gameObject, parentObject, _outputData._gameObject.name, outputPath, bIsInstancer);
 	}
 
+	// Bakes GameObject components (Used for both standard pipeline and PDG)
 	internal static void BakeGameObjectComponents(GameObject sourceGO, GameObject targetGO, string assetName, string outputPath, bool bIsInstancer)
 	{
 	    UnityEngine.Object assetDBObject = null;
