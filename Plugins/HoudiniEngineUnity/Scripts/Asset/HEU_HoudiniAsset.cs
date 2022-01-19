@@ -2661,6 +2661,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Sets the asset cook status
 	private void SetCookStatus(AssetCookStatus status, AssetCookResult result)
 	{
 	    _cookStatus = status;
@@ -2696,6 +2697,7 @@ namespace HoudiniEngineUnity
 	 	}
 	    }
 
+	    // Output or suppress errors
 	    string nodeStatusError = session.ComposeNodeCookResult(_assetID, HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ERRORS);
 	    if (nodeStatusError != "")
 	    {
@@ -2809,6 +2811,7 @@ namespace HoudiniEngineUnity
 #endif
 	}
 
+	// Actually Cooks the node using HAPI
 	private bool StartHoudiniCookNode(HEU_SessionBase session)
 	{
 	    bool bResult = session.CookNode(AssetID, HEU_PluginSettings.CookTemplatedGeos, SplitGeosByGroup);
@@ -2819,6 +2822,7 @@ namespace HoudiniEngineUnity
 	    return bResult;
 	}
 
+	// Processes the cook status. This is where we block on async, and process post cook events
 	private void ProcessHoudiniCookStatus(bool bAsync)
 	{
 	    HAPI_State statusCode = HAPI_State.HAPI_STATE_STARTING_LOAD;
@@ -2964,7 +2968,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-
+	// Remove input nodes
 	private void CleanUpInputNodes()
 	{
 	    if (_inputNodes != null && _inputNodes.Count > 0)
@@ -3219,6 +3223,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
+	// Creates and cooks assets (on recook)
 	private bool CreateAndCookAsset(HEU_SessionBase session, int subassetIndex, out HAPI_NodeId newAssetID, bool bCookTemplatedGeos)
 	{
 	    newAssetID = HEU_Defines.HEU_INVALID_NODE_ID;
@@ -3352,6 +3357,7 @@ namespace HoudiniEngineUnity
 	    _showInputNodesSection = (_assetType == HEU_AssetType.TYPE_INPUT) || (updatedAssetInputCount > 0);
 	}
 
+	// Upload curve parameters
 	private void UploadCurvesParameters(HEU_SessionBase session, bool bCheckParamsChanged)
 	{
 	    bool bNeedsRebuild = false;
@@ -3652,6 +3658,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Creates a new object node
 	private HEU_ObjectNode CreateObjectNode(HEU_SessionBase session, ref HAPI_ObjectInfo objectInfo, ref HAPI_Transform objectTranform)
 	{
 	    HEU_ObjectNode objectNode = ScriptableObject.CreateInstance<HEU_ObjectNode>();
@@ -3998,6 +4005,7 @@ namespace HoudiniEngineUnity
 	    upstreamAsset.RemoveDownstreamConnection(this.NotifyUpstreamCooked);
 	}
 
+	// Adds a downstream connection (If an HDA references this as input)
 	private void AddDownstreamConnection(UnityEngine.Events.UnityAction<HEU_CookedEventData> receiver)
 	{
 	    // Doing remove first makes sure we don't have duplicate entries for the receiver
@@ -4786,6 +4794,7 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
+	// Updates the total cook count (important for session sync)
 	internal void UpdateTotalCookCount()
 	{
 	    HEU_SessionBase session = GetAssetSession(true);
@@ -4804,6 +4813,7 @@ namespace HoudiniEngineUnity
 		    true, out _totalCookCount);
 	}
 
+	// On GameObject.Instantiate(), setup and copy the parameter values 
 	private void ResetAndCopyInstantiatedProperties(HEU_HoudiniAsset newAsset)
 	{
 	    InvalidateAsset();
@@ -4839,6 +4849,7 @@ namespace HoudiniEngineUnity
 	    newAsset.DuplicateAsset(_rootGameObject);
 	}
 
+	// Gets the instantiation method (undo, default, duplicated)
 	private AssetInstantiationMethod GetInstantiationMethod()
 	{
 	    if (this._serializedMetaData.SoftDeleted)
@@ -4869,6 +4880,7 @@ namespace HoudiniEngineUnity
 	    return AssetInstantiationMethod.DEFAULT;
 	}
 
+	// Gets the original object, if it has been duplicated
 	private HEU_HoudiniAsset GetInstantiatedObject()
 	{
 	    if (this._objectNodes == null || this._objectNodes.Count == 0)
@@ -4885,6 +4897,7 @@ namespace HoudiniEngineUnity
 	    return this._objectNodes[0].ParentAsset;
 	}
 
+	// Clear invalid curve lists. Mostly for undo safety
 	private void ClearInvalidLists()
 	{
 	    // Lists can be broken in Undo
@@ -4893,7 +4906,7 @@ namespace HoudiniEngineUnity
 	    _materialCache = _materialCache.Filter((HEU_MaterialData data) => data != null);
 	}
 
-
+	// Copy all values from this asset to the new asset
 	private void CopyPropertiesTo(HEU_HoudiniAsset newAsset)
 	{
 	    HEU_SessionBase session = GetAssetSession(true);

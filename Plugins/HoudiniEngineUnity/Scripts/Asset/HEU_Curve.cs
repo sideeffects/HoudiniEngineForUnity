@@ -605,6 +605,7 @@ namespace HoudiniEngineUnity
 	    return newCurve;
 	}
 
+	// Use previous curve data (often after rebuild)
 	private void UsePreviousCurveData(string curveName)
 	{
 	    if (_parentAsset == null || _parentAsset.SerializedMetaData == null || _parentAsset.SerializedMetaData.SavedCurveNodeData == null
@@ -623,6 +624,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Determine whether or not we are using curve::2.0, input curves, or non-editable curves
 	private  HEU_CurveDataType GetCurveDataType(HEU_SessionBase session)
 	{
 	    // Determine if it is a legacy curve (curve::1.0)
@@ -644,6 +646,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Whether or not we should keep thie HEU_Curve as an output when generating mesh
 	internal bool ShouldKeepNode(HEU_SessionBase session)
 	{
 	    // We only need to keep information about geo curves at the moment.
@@ -662,6 +665,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
+	// Called on destroy
 	internal void DestroyAllData(bool bIsRebuild = false)
 	{
 	    if (_parameters != null)
@@ -694,7 +698,7 @@ namespace HoudiniEngineUnity
 	}
 
 
-
+	// Upload parameter preset to Houdini
 	internal void UploadParameterPreset(HEU_SessionBase session, HAPI_NodeId geoID, HEU_HoudiniAsset parentAsset)
 	{
 	    // TODO FIXME
@@ -727,6 +731,7 @@ namespace HoudiniEngineUnity
 	    OnPresyncParameters(session, parentAsset);
 	}
 
+	// Resets curve parameters and preset data
 	internal void ResetCurveParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	    if (_parameters != null)
@@ -739,6 +744,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Set curve parameter preset
 	internal void SetCurveParameterPreset(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, byte[] parameterPreset)
 	{
 	    if (_parameters != null)
@@ -751,6 +757,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Updates the curve guides by getting the P attribute
 	internal void UpdateCurve(HEU_SessionBase session, HAPI_PartId partId)
 	{
 	    int vertexCount = 0;
@@ -778,6 +785,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Helper to get curve counts (for curves with multiple lines)
 	private static int[] GetCurveCounts(HEU_SessionBase session, HAPI_NodeId geoId, HAPI_PartId partID)
 	{
 	    if (IsMeshCurve(session, geoId, partID))
@@ -824,6 +832,7 @@ namespace HoudiniEngineUnity
 	    return curveCounts;
 	}
 
+	// Generates the curve helper mesh
 	internal void GenerateMesh(GameObject inGameObject, HEU_SessionBase session)
 	{
 	    _targetGameObject = inGameObject;
@@ -833,12 +842,14 @@ namespace HoudiniEngineUnity
 	    int[] curveCounts = null; 
 
 	    bool useCurveCounts = false;
+	    // If ccurve node data <= 1, mark as generated
 	    if (_curveNodeData.Count <= 1)
 	    {
 		SetEditState(CurveEditState.GENERATED);
 		return;
 	    }
 
+	    // If more than one curve count, then compose one object for each child, and then mark "useCurveCounts"
 	    if (_curveDataType != HEU_CurveDataType.GEO_COORDS_PARAM && !IsMeshCurve(session, _geoID, _partID))
 	    {
 		curveCounts = GetCurveCounts(session, _geoID, _partID);
@@ -857,6 +868,7 @@ namespace HoudiniEngineUnity
 		childGameObjects.Add(_targetGameObject);
 	    }
 
+	    // Add the vertices to the vertex list
 	    List<Vector3[]> vertexList = new List<Vector3[]>();
 	    if (!useCurveCounts)
 	    {
@@ -877,6 +889,7 @@ namespace HoudiniEngineUnity
 		    DestroyImmediate(meshRenderer);
 		}
 
+		// Iterate through the vertex list for each curve
 		int startingIndex = 0;
 		for (int i = 0; i < curveCounts.Length; i++)
 		{
@@ -894,16 +907,20 @@ namespace HoudiniEngineUnity
 	    }
 
 
+	    // For each object, generate the mesh
 	    for (int i = 0; i < childGameObjects.Count; i++)
 	    {
 		GenerateMeshForSingleObject(childGameObjects[i], vertexList[i]);
 	    }
 
+	    // Set to generated
 	    SetEditState(CurveEditState.GENERATED);
 	}
 
+	// Generates the curve display mesh using targetObject, with the given vertexList
 	internal void GenerateMeshForSingleObject(GameObject targetObject, Vector3[] vertexList)
 	{
+	    // Get Unity components
 	    MeshFilter meshFilter = targetObject.GetComponent<MeshFilter>();
 	    if (meshFilter == null)
 	    {
@@ -916,6 +933,7 @@ namespace HoudiniEngineUnity
 		meshRenderer = targetObject.AddComponent<MeshRenderer>();
 	    }
 
+	    // Attach the line shader and set the color.
 	    Shader shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultCurveShader);
 	    meshRenderer.sharedMaterial = new Material(shader);
 	    meshRenderer.sharedMaterial.SetColor("_Color", HEU_PluginSettings.LineColor);
@@ -927,6 +945,7 @@ namespace HoudiniEngineUnity
 	        mesh = meshFilter.sharedMesh;
 	    }
 
+	    // Upload mesh data
 	    if (_curveNodeData.Count <= 1)
 	    {
 		if (mesh != null)
@@ -961,6 +980,8 @@ namespace HoudiniEngineUnity
 	    meshRenderer.enabled = HEU_PluginSettings.Curves_ShowInSceneView;
 	}
 
+	// Upload data before syncing
+	// Does work regarding rot/scale, or input curves here
 	internal void OnPresyncParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	    if (!_isEditable)
@@ -995,6 +1016,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Updates the curve data for input curves (for input curves only)
 	internal bool UpdateCurveInputForCurveParts(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	
@@ -1068,7 +1090,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
-
+	// Updates the curve data for rot/scale (for curve::1.0 only)
 	internal bool UpdateCurveInputForCustomAttributes(HEU_SessionBase session, HEU_HoudiniAsset parentAsset)
 	{
 	    // Stop now just to be safe (Everything will be done Houdini-side) and we just fetch from there
@@ -1530,6 +1552,7 @@ namespace HoudiniEngineUnity
 	    return true;
 	}
 
+	// Sync curve from parameters
 	internal void SyncFromParameters(HEU_SessionBase session, HEU_HoudiniAsset parentAsset, bool bNewCurve)
 	{
 	    HAPI_NodeInfo geoNodeInfo = new HAPI_NodeInfo();
@@ -1580,10 +1603,9 @@ namespace HoudiniEngineUnity
 	    // single_curve_operation/order set_up_prims/order round_corners/order rounded_corner_setup/order
 	}
 
-
+	// Actually Update curveNodeData based on parameter/input curve information
 	private void UpdatePoints(HEU_SessionBase session)
 	{
-	    //
 	    if (_bIsPartCurve && _curveDataType == HEU_CurveDataType.HAPI_COORDS_PARAM)
 	    {
 		UpdateCachedCurveInfo(session, false);
@@ -1781,6 +1803,7 @@ namespace HoudiniEngineUnity
 	    return sb.ToString();
 	}
 
+	// Returns points array as string given a list of  vector 3
 	public static string GetPointsString(List<Vector3> points)
 	{
 	    StringBuilder sb = new StringBuilder();
@@ -1795,31 +1818,37 @@ namespace HoudiniEngineUnity
 	    return sb.ToString();
 	}
 
+	// Set curve edit state
 	internal void SetEditState(CurveEditState editState)
 	{
 	    _editState = editState;
 	}
 
+	// Gets the transformed position (transformed point =  gameobject.transform * inPosition )
 	internal Vector3 GetTransformedPosition(Vector3 inPosition)
 	{
 	    return this._targetGameObject.transform.TransformPoint(inPosition);
 	}
 
+	// Gets the (inverted transform position = gameobject.transform^-1 * inPosition ) 
 	internal Vector3 GetInvertedTransformedPosition(Vector3 inPosition)
 	{
 	    return this._targetGameObject.transform.InverseTransformPoint(inPosition);
 	}
 
+	// Gets the inverted transform direction
 	internal Vector3 GetInvertedTransformedDirection(Vector3 inPosition)
 	{
 	    return this._targetGameObject.transform.InverseTransformVector(inPosition);
 	}
 
+	// Gets vertices
 	internal Vector3[] GetVertices()
 	{
 	    return _vertices;
 	}
 
+	// Sets curve geometry visibility
 	internal void SetCurveGeometryVisibilityInternal(bool bVisible)
 	{
 	    if (_targetGameObject != null)
@@ -1832,6 +1861,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Fetches the preset data for the parameters
 	internal void DownloadPresetData(HEU_SessionBase session)
 	{
 	    if (_parameters != null)
@@ -1840,6 +1870,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Uploads preset data to Houdini
 	internal void UploadPresetData(HEU_SessionBase session)
 	{
 	    if (_parameters != null)
@@ -1848,6 +1879,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Downloads default preset data
 	internal void DownloadAsDefaultPresetData(HEU_SessionBase session)
 	{
 	    if (_parameters != null)
@@ -1856,6 +1888,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Update cached curve info
 	private void UpdateCachedCurveInfo(HEU_SessionBase session, bool copyCurveSettings)
 	{
 
@@ -1896,6 +1929,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
+	// Helper for getting curve count index from position index
 	internal int GetCurveCountIndexFromPositionIndex(int positionIndex)
 	{
 	    if (_cachedCurveCountSums == null)
@@ -1929,6 +1963,7 @@ namespace HoudiniEngineUnity
 	    return _cachedCurveCountSums.Length - 1;
 	}
 
+	// Is the curve a mesh curve?
 	private static bool IsMeshCurve(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID)
 	{
 	    HAPI_PartInfo partInfos = new HAPI_PartInfo();
