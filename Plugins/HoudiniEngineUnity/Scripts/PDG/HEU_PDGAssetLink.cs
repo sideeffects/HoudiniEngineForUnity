@@ -44,7 +44,7 @@ namespace HoudiniEngineUnity
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_StringHandle = System.Int32;
     using HAPI_NodeId = System.Int32;
-    using HAPI_PDG_WorkitemId = System.Int32;
+    using HAPI_PDG_WorkItemId = System.Int32;
     using HAPI_PDG_GraphContextId = System.Int32;
     using HAPI_AssetLibraryId = System.Int32;
 
@@ -939,7 +939,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	internal static void ClearWorkItemResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
+	internal static void ClearWorkItemResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkItemId workItemID)
 	{
 	    HEU_TOPWorkResult result = GetWorkResultByID(topNode, workItemID);
 	    ClearWorkItemResult(topNode, result);
@@ -963,7 +963,7 @@ namespace HoudiniEngineUnity
 	    }
 	}
 
-	private static HEU_TOPWorkResult GetWorkResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkitemId workItemID)
+	private static HEU_TOPWorkResult GetWorkResultByID(HEU_TOPNodeData topNode, HAPI_PDG_WorkItemId workItemID)
 	{
 	    HEU_TOPWorkResult result = null;
 	    foreach (HEU_TOPWorkResult res in topNode._workResults)
@@ -1013,7 +1013,7 @@ namespace HoudiniEngineUnity
 	/// <param name="workItemInfo">Work item whose results to load</param>
 	/// <param name="resultInfos">Results data</param>
 	/// <param name="workItemID">The work item's ID. Required for clearning its results.</param>
-	internal void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkitemInfo workItemInfo, HAPI_PDG_WorkitemResultInfo[] resultInfos, HAPI_PDG_WorkitemId workItemID, System.Action<HEU_TOPNodeData, HEU_SyncedEventData> OnSynced)
+	internal void LoadResults(HEU_SessionBase session, HEU_TOPNodeData topNode, HAPI_PDG_WorkItemInfo workItemInfo, HAPI_PDG_WorkItemOutputFile[] resultInfos, HAPI_PDG_WorkItemId workItemID, System.Action<HEU_TOPNodeData, HEU_SyncedEventData> OnSynced)
 	{
 	    // Create HEU_GeoSync objects, set results, and sync it
 

@@ -39,7 +39,7 @@ namespace HoudiniEngineUnity
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_StringHandle = System.Int32;
     using HAPI_NodeId = System.Int32;
-    using HAPI_PDG_WorkitemId = System.Int32;
+    using HAPI_PDG_WorkItemId = System.Int32;
     using HAPI_PDG_GraphContextId = System.Int32;
 
 
@@ -80,95 +80,95 @@ namespace HoudiniEngineUnity
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool CreateWorkitem(this HEU_SessionBase session, HAPI_NodeId node_id, out HAPI_PDG_WorkitemId workitem_id, string name, int index)
+	public static bool CreateWorkItem(this HEU_SessionBase session, HAPI_NodeId node_id, out HAPI_PDG_WorkItemId workitem_id, string name, int index)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateWorkitem(ref session.GetSessionData()._HAPISession, node_id, out workitem_id, name.AsByteArray(), index);
-	    session.HandleStatusResult(result, "Creating Workitem", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateWorkItem(ref session.GetSessionData()._HAPISession, node_id, out workitem_id, name.AsByteArray(), index);
+	    session.HandleStatusResult(result, "Creating work item", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool GetWorkItemInfo(this HEU_SessionBase session, HAPI_PDG_GraphContextId graph_context_id, HAPI_PDG_WorkitemId workitem_id, ref HAPI_PDG_WorkitemInfo workitem_info)
+	public static bool GetWorkItemInfo(this HEU_SessionBase session, HAPI_PDG_GraphContextId graph_context_id, HAPI_PDG_WorkItemId workitem_id, ref HAPI_PDG_WorkItemInfo workitem_info)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkitemInfo(ref session.GetSessionData()._HAPISession, graph_context_id, workitem_id, out workitem_info);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkItemInfo(ref session.GetSessionData()._HAPISession, graph_context_id, workitem_id, out workitem_info);
 	    session.HandleStatusResult(result, "Getting WorkItem", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool SetWorkitemIntData(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, string data_name, int[] values_array, int length)
+	public static bool SetWorkItemIntAttribute(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, string data_name, int[] values_array, int length)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetWorkitemIntData(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
-	    session.HandleStatusResult(result, "Setting Workitem Int Data", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetWorkItemIntAttribute(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
+	    session.HandleStatusResult(result, "Setting work item int attribute", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool SetWorkitemFloatData(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, string data_name, float[] values_array, int length)
+	public static bool SetWorkItemFloatAttribute(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, string data_name, float[] values_array, int length)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetWorkitemFloatData(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
-	    session.HandleStatusResult(result, "Setting Workitem Float Data", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetWorkItemFloatAttribute(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
+	    session.HandleStatusResult(result, "Setting work item float attribute", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool SetWorkitemStringData(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, string data_name, int data_index, string value)
+	public static bool SetWorkItemStringAttribute(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, string data_name, int data_index, string value)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetWorkitemStringData(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), data_index, value.AsByteArray());
-	    session.HandleStatusResult(result, "Setting Workitem String Data", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_SetWorkItemStringAttribute(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), data_index, value.AsByteArray());
+	    session.HandleStatusResult(result, "Setting work item string attribute", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool CommitWorkitems(this HEU_SessionBase session, HAPI_NodeId node_id)
+	public static bool CommitWorkItems(this HEU_SessionBase session, HAPI_NodeId node_id)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CommitWorkitems(ref session.GetSessionData()._HAPISession, node_id);
-	    session.HandleStatusResult(result, "Committing Workitems", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_CommitWorkItems(ref session.GetSessionData()._HAPISession, node_id);
+	    session.HandleStatusResult(result, "Committing work items", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
 	public static bool GetNumWorkItems(this HEU_SessionBase session, HAPI_NodeId node_id, out int num)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetNumWorkitems(ref session.GetSessionData()._HAPISession, node_id, out num);
-	    session.HandleStatusResult(result, "Getting Number of Workitems", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetNumWorkItems(ref session.GetSessionData()._HAPISession, node_id, out num);
+	    session.HandleStatusResult(result, "Getting number of work items", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool GetWorkitems(this HEU_SessionBase session, HAPI_NodeId node_id, [Out] HAPI_PDG_WorkitemId[] workitem_ids, int length)
+	public static bool GetWorkItems(this HEU_SessionBase session, HAPI_NodeId node_id, [Out] HAPI_PDG_WorkItemId[] workitem_ids, int length)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkitems(ref session.GetSessionData()._HAPISession, node_id, workitem_ids, length);
-	    session.HandleStatusResult(result, "Getting Workitems", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkItems(ref session.GetSessionData()._HAPISession, node_id, workitem_ids, length);
+	    session.HandleStatusResult(result, "Getting work items", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool GetWorkitemsDataLength(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, string data_name, out int length)
+	public static bool GetWorkItemAttributeSize(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, string data_name, out int length)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkitemDataLength(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), out length);
-	    session.HandleStatusResult(result, "Getting Workitem Data Length", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkItemAttributeSize(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), out length);
+	    session.HandleStatusResult(result, "Getting work item attribute size", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool GetWorkitemIntData(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, string data_name, [Out] int[] values_array, int length)
+	public static bool GetWorkItemIntAttribute(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, string data_name, [Out] int[] values_array, int length)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkitemIntData(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
-	    session.HandleStatusResult(result, "Getting Workitem Int Data", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkItemIntAttribute(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
+	    session.HandleStatusResult(result, "Getting work item int attribute", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool GetWorkitemFloatData(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, string data_name, [Out] float[] values_array, int length)
+	public static bool GetWorkItemFloatAttribute(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, string data_name, [Out] float[] values_array, int length)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkitemFloatData(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
-	    session.HandleStatusResult(result, "Getting Workitem Float Data", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkItemFloatAttribute(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values_array, length);
+	    session.HandleStatusResult(result, "Getting work item float attribute", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool GetWorkitemStringData(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, string data_name, [Out] HAPI_StringHandle[] values, int length)
+	public static bool GetWorkItemStringAttribute(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, string data_name, [Out] HAPI_StringHandle[] values, int length)
 	{
 	    Debug.AssertFormat(values.Length >= length, "StringBuilder must be atleast of size {0}.", length);
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkitemStringData(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values, length);
-	    session.HandleStatusResult(result, "Getting Workitem String Data", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkItemStringAttribute(ref session.GetSessionData()._HAPISession, node_id, workitem_id, data_name.AsByteArray(), values, length);
+	    session.HandleStatusResult(result, "Getting work item string attribute", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
-	public static bool GetWorkitemResultInfo(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, [Out] HAPI_PDG_WorkitemResultInfo[] resultinfo_array, int resultinfo_count)
+	public static bool GetWorkItemOutputFiles(this HEU_SessionBase session, HAPI_NodeId node_id, HAPI_PDG_WorkItemId workitem_id, [Out] HAPI_PDG_WorkItemOutputFile[] resultinfo_array, int resultinfo_count)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkitemResultInfo(ref session.GetSessionData()._HAPISession, node_id, workitem_id, resultinfo_array, resultinfo_count);
-	    session.HandleStatusResult(result, "Getting Workitem Result Info", false, true);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetWorkItemOutputFiles(ref session.GetSessionData()._HAPISession, node_id, workitem_id, resultinfo_array, resultinfo_count);
+	    session.HandleStatusResult(result, "Getting work item output file", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 

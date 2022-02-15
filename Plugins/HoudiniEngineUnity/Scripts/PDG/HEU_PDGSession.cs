@@ -43,7 +43,7 @@ namespace HoudiniEngineUnity
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_StringHandle = System.Int32;
     using HAPI_NodeId = System.Int32;
-    using HAPI_PDG_WorkitemId = System.Int32;
+    using HAPI_PDG_WorkItemId = System.Int32;
     using HAPI_PDG_GraphContextId = System.Int32;
     using HAPI_SessionId = System.Int64;
 
@@ -226,8 +226,8 @@ namespace HoudiniEngineUnity
 	    HEU_TOPNodeData topNode = null;
 
 	    HAPI_PDG_EventType evType = (HAPI_PDG_EventType)eventInfo.eventType;
-	    HAPI_PDG_WorkitemState currentState = (HAPI_PDG_WorkitemState)eventInfo.currentState;
-	    HAPI_PDG_WorkitemState lastState = (HAPI_PDG_WorkitemState)eventInfo.lastState;
+	    HAPI_PDG_WorkItemState currentState = (HAPI_PDG_WorkItemState)eventInfo.currentState;
+	    HAPI_PDG_WorkItemState lastState = (HAPI_PDG_WorkItemState)eventInfo.lastState;
 
 	    GetTOPAssetLinkAndNode(eventInfo.nodeId, out assetLink, out topNode);
 
@@ -293,50 +293,50 @@ namespace HoudiniEngineUnity
 		else if (evType == HAPI_PDG_EventType.HAPI_PDG_EVENT_WORKITEM_STATE_CHANGE)
 		{
 		    // Last states
-		    if (lastState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_WAITING && currentState != HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_WAITING)
+		    if (lastState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_WAITING && currentState != HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_WAITING)
 		    {
 			NotifyTOPNodeWaitingWorkItem(assetLink, topNode, -1);
 		    }
-		    else if (lastState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKING && currentState != HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKING)
+		    else if (lastState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_COOKING && currentState != HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_COOKING)
 		    {
 			NotifyTOPNodeCookingWorkItem(assetLink, topNode, -1);
 		    }
-		    else if (lastState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_SCHEDULED && currentState != HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_SCHEDULED)
+		    else if (lastState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_SCHEDULED && currentState != HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_SCHEDULED)
 		    {
 			NotifyTOPNodeScheduledWorkItem(assetLink, topNode, -1);
 		    }
 
 		    // New states
-		    if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_WAITING)
+		    if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_WAITING)
 		    {
 			NotifyTOPNodeWaitingWorkItem(assetLink, topNode, 1);
 		    }
-		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_UNCOOKED)
+		    else if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_UNCOOKED)
 		    {
 
 		    }
-		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_DIRTY)
+		    else if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_DIRTY)
 		    {
 			//HEU_Logger.LogFormat("Dirty: id={0}", eventInfo.workitemId);
 
 			ClearWorkItemResult(session, contextID, eventInfo, topNode);
 		    }
-		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_SCHEDULED)
+		    else if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_SCHEDULED)
 		    {
 			NotifyTOPNodeScheduledWorkItem(assetLink, topNode, 1);
 		    }
-		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKING)
+		    else if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_COOKING)
 		    {
 			NotifyTOPNodeCookingWorkItem(assetLink, topNode, 1);
 		    }
-		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_SUCCESS || currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_CACHE)
+		    else if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_COOKED_SUCCESS || currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_COOKED_CACHE)
 		    {
 			NotifyTOPNodeCookedWorkItem(assetLink, topNode);
 
 			// On cook success, handle results
 			if (topNode._tags._autoload)
 			{
-			    HAPI_PDG_WorkitemInfo workItemInfo = new HAPI_PDG_WorkitemInfo();
+			    HAPI_PDG_WorkItemInfo workItemInfo = new HAPI_PDG_WorkItemInfo();
 			    if (!session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
 			    {
 				HEU_Logger.LogErrorFormat("Failed to get work item {1} info for {0}", topNode._nodeName, eventInfo.workitemId);
@@ -345,25 +345,25 @@ namespace HoudiniEngineUnity
 
 			    if (workItemInfo.numResults > 0)
 			    {
-				HAPI_PDG_WorkitemResultInfo[] resultInfos = new HAPI_PDG_WorkitemResultInfo[workItemInfo.numResults];
+				HAPI_PDG_WorkItemOutputFile[] outputFiles = new HAPI_PDG_WorkItemOutputFile[workItemInfo.numResults];
 				int resultCount = workItemInfo.numResults;
-				if (!session.GetWorkitemResultInfo(topNode._nodeID, eventInfo.workitemId, resultInfos, resultCount))
+				if (!session.GetWorkItemOutputFiles(topNode._nodeID, eventInfo.workitemId, outputFiles, resultCount))
 				{
 				    HEU_Logger.LogErrorFormat("Failed to get work item {1} result info for {0}", topNode._nodeName, eventInfo.workitemId);
 				    return;
 				}
 
-				assetLink.LoadResults(session, topNode, workItemInfo, resultInfos, eventInfo.workitemId, OnWorkItemLoadResults);
+				assetLink.LoadResults(session, topNode, workItemInfo, outputFiles, eventInfo.workitemId, OnWorkItemLoadResults);
 			    }
 			}
 		    }
-		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_FAIL)
+		    else if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_COOKED_FAIL)
 		    {
 			// TODO: on cook failure, get log path?
 			NotifyTOPNodeErrorWorkItem(assetLink, topNode);
 			msgColor = EventMessageColor.ERROR;
 		    }
-		    else if (currentState == HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_COOKED_CANCEL)
+		    else if (currentState == HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_COOKED_CANCEL)
 		    {
 			// Ignore it because in-progress cooks can be cancelled when automatically recooking graph
 		    }
@@ -509,8 +509,8 @@ namespace HoudiniEngineUnity
 	    eventInfo.nodeId = HEU_Defines.HEU_INVALID_NODE_ID;
 	    eventInfo.workitemId = -1;
 	    eventInfo.dependencyId = -1;
-	    eventInfo.currentState = (int)HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_UNDEFINED;
-	    eventInfo.lastState = (int)HAPI_PDG_WorkitemState.HAPI_PDG_WORKITEM_UNDEFINED;
+	    eventInfo.currentState = (int)HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_UNDEFINED;
+	    eventInfo.lastState = (int)HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_UNDEFINED;
 	    eventInfo.eventType = (int)HAPI_PDG_EventType.HAPI_PDG_EVENT_NULL;
 	}
 
