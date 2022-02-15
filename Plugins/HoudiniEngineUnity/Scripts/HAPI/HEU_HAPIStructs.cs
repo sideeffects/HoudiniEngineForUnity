@@ -52,6 +52,7 @@ namespace HoudiniEngineUnity
     using HAPI_NodeId = System.Int32;
     using HAPI_ParmId = System.Int32;
     using HAPI_PartId = System.Int32;
+    using HAPI_PDG_WorkItemId = System.Int32;
     using HAPI_PDG_WorkitemId = System.Int32;
     using HAPI_PDG_GraphContextId = System.Int32;
     using HAPI_HIPFileId = System.Int32;
@@ -802,15 +803,15 @@ namespace HoudiniEngineUnity
     {
         public HAPI_NodeId nodeId;              //id of related node
 
-        public HAPI_PDG_WorkitemId workitemId;              //id of related workitem
+        public HAPI_PDG_WorkItemId workitemId;              //id of related workitem
 
-        public HAPI_PDG_WorkitemId dependencyId;              //id of related workitem dependency
-
-        [MarshalAs(UnmanagedType.I4)]
-        public int currentState;              //HAPI_PDG_WorkitemState value of current state for state change
+        public HAPI_PDG_WorkItemId dependencyId;              //id of related workitem dependency
 
         [MarshalAs(UnmanagedType.I4)]
-        public int lastState;              //HAPI_PDG_WorkitemState value of last state for state change
+        public int currentState;              //HAPI_PDG_WorkItemState value of current state for state change
+
+        [MarshalAs(UnmanagedType.I4)]
+        public int lastState;              //HAPI_PDG_WorkItemState value of last state for state change
 
         [MarshalAs(UnmanagedType.I4)]
         public int eventType;              //HAPI_PDG_EventType event type
@@ -820,7 +821,7 @@ namespace HoudiniEngineUnity
     };
 
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct HAPI_PDG_WorkitemInfo          //Info for a PDG Workitem
+    public partial struct HAPI_PDG_WorkItemInfo          //Info for a PDG work item
     {
         [MarshalAs(UnmanagedType.I4)]
         public int index;              //index of the workitem
@@ -833,7 +834,7 @@ namespace HoudiniEngineUnity
     };
 
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct HAPI_PDG_WorkitemResultInfo          //Data for a PDG file result
+    public partial struct HAPI_PDG_WorkItemOutputFile          //Data for a PDG file result
     {
         [MarshalAs(UnmanagedType.I4)]
         public int resultSH;              //result string data

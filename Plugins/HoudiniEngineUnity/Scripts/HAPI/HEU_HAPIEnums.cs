@@ -51,6 +51,7 @@ namespace HoudiniEngineUnity
     using HAPI_NodeId = System.Int32;
     using HAPI_ParmId = System.Int32;
     using HAPI_PartId = System.Int32;
+    using HAPI_PDG_WorkItemId = System.Int32;
     using HAPI_PDG_WorkitemId = System.Int32;
     using HAPI_PDG_GraphContextId = System.Int32;
     using HAPI_HIPFileId = System.Int32;
@@ -611,7 +612,7 @@ namespace HoudiniEngineUnity
         HAPI_PDG_CONTEXT_EVENTS,        
     };
 
-    public enum HAPI_PDG_WorkitemState          //Used with PDG functions
+    public enum HAPI_PDG_WorkItemState          //Used with PDG functions
     {
         HAPI_PDG_WORKITEM_UNDEFINED,        
         HAPI_PDG_WORKITEM_UNCOOKED,        
