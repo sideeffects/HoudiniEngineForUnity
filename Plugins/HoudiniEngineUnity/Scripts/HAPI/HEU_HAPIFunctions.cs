@@ -2161,6 +2161,109 @@ namespace HoudiniEngineUnity
                 out int pdg_state);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
+        HAPI_CreateWorkitem(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                out HAPI_PDG_WorkItemId workitem_id,
+                byte[] name,
+                int index);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetWorkitemInfo(
+                ref HAPI_Session session,
+                HAPI_PDG_GraphContextId graph_context_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                out HAPI_PDG_WorkItemInfo workitem_info);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_SetWorkitemIntData(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                byte[] data_name,
+                int[] values_array,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_SetWorkitemFloatData(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                byte[] data_name,
+                float[] values_array,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_SetWorkitemStringData(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                byte[] data_name,
+                int data_index,
+                byte[] value);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_CommitWorkitems(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetNumWorkitems(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                out int num);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetWorkitems(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                [Out] int[] workitem_ids_array,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetWorkitemDataLength(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                byte[] data_name,
+                out int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetWorkitemIntData(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                byte[] data_name,
+                [Out] int[] data_array,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetWorkitemFloatData(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                byte[] data_name,
+                [Out] float[] data_array,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetWorkitemStringData(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                byte[] data_name,
+                [Out] HAPI_StringHandle[] data_array,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetWorkitemResultInfo(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PDG_WorkItemId workitem_id,
+                [Out] HAPI_PDG_WorkItemOutputFile[] resultinfo_array,
+                int resultinfo_count);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
         HAPI_CreateWorkItem(
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
@@ -2180,7 +2283,7 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
                 HAPI_PDG_WorkItemId work_item_id,
-                byte[] data_name,
+                byte[] attribute_name,
                 int[] values_array,
                 int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -2189,7 +2292,7 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
                 HAPI_PDG_WorkItemId work_item_id,
-                byte[] data_name,
+                byte[] attribute_name,
                 float[] values_array,
                 int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -2198,7 +2301,7 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
                 HAPI_PDG_WorkItemId work_item_id,
-                byte[] data_name,
+                byte[] attribute_name,
                 int data_index,
                 byte[] value);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -2225,7 +2328,7 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
                 HAPI_PDG_WorkItemId work_item_id,
-                byte[] data_name,
+                byte[] attribute_name,
                 out int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
@@ -2233,7 +2336,7 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
                 HAPI_PDG_WorkItemId work_item_id,
-                byte[] data_name,
+                byte[] attribute_name,
                 [Out] int[] data_array,
                 int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -2242,7 +2345,7 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
                 HAPI_PDG_WorkItemId work_item_id,
-                byte[] data_name,
+                byte[] attribute_name,
                 [Out] float[] data_array,
                 int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -2251,7 +2354,7 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
                 HAPI_PDG_WorkItemId work_item_id,
-                byte[] data_name,
+                byte[] attribute_name,
                 [Out] HAPI_StringHandle[] data_array,
                 int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]

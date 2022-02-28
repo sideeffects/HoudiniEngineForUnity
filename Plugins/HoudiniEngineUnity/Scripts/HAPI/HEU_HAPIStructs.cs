@@ -801,22 +801,22 @@ namespace HoudiniEngineUnity
     [StructLayout(LayoutKind.Sequential)]
     public partial struct HAPI_PDG_EventInfo          //Data associated with a PDG Event
     {
-        public HAPI_NodeId nodeId;              //id of related node
+        public HAPI_NodeId nodeId;              //id of related node.
 
-        public HAPI_PDG_WorkItemId workitemId;              //id of related workitem
+        public HAPI_PDG_WorkItemId workItemId;              //id of related work item.
 
-        public HAPI_PDG_WorkItemId dependencyId;              //id of related workitem dependency
-
-        [MarshalAs(UnmanagedType.I4)]
-        public int currentState;              //HAPI_PDG_WorkItemState value of current state for state change
+        public HAPI_PDG_WorkItemId dependencyId;              //id of related work item dependency.
 
         [MarshalAs(UnmanagedType.I4)]
-        public int lastState;              //HAPI_PDG_WorkItemState value of last state for state change
+        public int currentState;              //HAPI_PDG_WorkItemState value of current state for state change.
 
         [MarshalAs(UnmanagedType.I4)]
-        public int eventType;              //HAPI_PDG_EventType event type
+        public int lastState;              //HAPI_PDG_WorkItemState value of last state for state change.
 
-        public HAPI_StringHandle msgSH;              //String handle of the event message > 0 if there is a message
+        [MarshalAs(UnmanagedType.I4)]
+        public int eventType;              //HAPI_PDG_EventType event type.
+
+        public HAPI_StringHandle msgSH;              //String handle of the event message > 0 if there is a message.
 
     };
 
@@ -824,25 +824,25 @@ namespace HoudiniEngineUnity
     public partial struct HAPI_PDG_WorkItemInfo          //Info for a PDG work item
     {
         [MarshalAs(UnmanagedType.I4)]
-        public int index;              //index of the workitem
+        public int index;              //The work item index
 
         [MarshalAs(UnmanagedType.I4)]
-        public int numResults;              //number of results reported
+        public int outputFileCount;              //The number of output files reported by the work item.
 
-        public HAPI_StringHandle nameSH;              //name of the workitem
+        public HAPI_StringHandle nameSH;              //Name of the work item
 
     };
 
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct HAPI_PDG_WorkItemOutputFile          //Data for a PDG file result
+    public partial struct HAPI_PDG_WorkItemOutputFile          //Data for a PDG output file
     {
         [MarshalAs(UnmanagedType.I4)]
-        public int resultSH;              //result string data
+        public int filePathSH;              //The file path of the output.
 
         [MarshalAs(UnmanagedType.I4)]
-        public int resultTagSH;              //result tag
+        public int tagSH;              //The file tag of the output.
 
-        public HAPI_Int64 resultHash;              //hash value of result
+        public HAPI_Int64 hash;              //Hash of the output file. Properties such as the file path andmodification time of the file are typical inputs to the hash functionbut this will vary based on the node that is producing the output file.
 
     };
 
