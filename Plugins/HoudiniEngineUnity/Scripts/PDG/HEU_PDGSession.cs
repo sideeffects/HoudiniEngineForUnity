@@ -337,23 +337,23 @@ namespace HoudiniEngineUnity
 			if (topNode._tags._autoload)
 			{
 			    HAPI_PDG_WorkItemInfo workItemInfo = new HAPI_PDG_WorkItemInfo();
-			    if (!session.GetWorkItemInfo(contextID, eventInfo.workitemId, ref workItemInfo))
+			    if (!session.GetWorkItemInfo(contextID, eventInfo.workItemId, ref workItemInfo))
 			    {
-				HEU_Logger.LogErrorFormat("Failed to get work item {1} info for {0}", topNode._nodeName, eventInfo.workitemId);
+				HEU_Logger.LogErrorFormat("Failed to get work item {1} info for {0}", topNode._nodeName, eventInfo.workItemId);
 				return;
 			    }
 
-			    if (workItemInfo.numResults > 0)
+			    if (workItemInfo.outputFileCount > 0)
 			    {
-				HAPI_PDG_WorkItemOutputFile[] outputFiles = new HAPI_PDG_WorkItemOutputFile[workItemInfo.numResults];
-				int resultCount = workItemInfo.numResults;
-				if (!session.GetWorkItemOutputFiles(topNode._nodeID, eventInfo.workitemId, outputFiles, resultCount))
+				HAPI_PDG_WorkItemOutputFile[] outputFiles = new HAPI_PDG_WorkItemOutputFile[workItemInfo.outputFileCount];
+				int resultCount = workItemInfo.outputFileCount;
+				if (!session.GetWorkItemOutputFiles(topNode._nodeID, eventInfo.workItemId, outputFiles, resultCount))
 				{
-				    HEU_Logger.LogErrorFormat("Failed to get work item {1} result info for {0}", topNode._nodeName, eventInfo.workitemId);
+				    HEU_Logger.LogErrorFormat("Failed to get work item {1} result info for {0}", topNode._nodeName, eventInfo.workItemId);
 				    return;
 				}
 
-				assetLink.LoadResults(session, topNode, workItemInfo, outputFiles, eventInfo.workitemId, OnWorkItemLoadResults);
+				assetLink.LoadResults(session, topNode, workItemInfo, outputFiles, eventInfo.workItemId, OnWorkItemLoadResults);
 			    }
 			}
 		    }
@@ -507,7 +507,7 @@ namespace HoudiniEngineUnity
 	private static void ResetPDGEventInfo(ref HAPI_PDG_EventInfo eventInfo)
 	{
 	    eventInfo.nodeId = HEU_Defines.HEU_INVALID_NODE_ID;
-	    eventInfo.workitemId = -1;
+	    eventInfo.workItemId = -1;
 	    eventInfo.dependencyId = -1;
 	    eventInfo.currentState = (int)HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_UNDEFINED;
 	    eventInfo.lastState = (int)HAPI_PDG_WorkItemState.HAPI_PDG_WORKITEM_UNDEFINED;
@@ -645,7 +645,7 @@ namespace HoudiniEngineUnity
 #if HOUDINIENGINEUNITY_ENABLED
 	    session.LogErrorOverride = false;
 
-	    HEU_PDGAssetLink.ClearWorkItemResultByID(topNode, eventInfo.workitemId);
+	    HEU_PDGAssetLink.ClearWorkItemResultByID(topNode, eventInfo.workItemId);
 
 	    session.LogErrorOverride = true;
 #endif

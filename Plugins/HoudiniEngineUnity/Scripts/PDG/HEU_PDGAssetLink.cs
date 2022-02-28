@@ -1044,13 +1044,13 @@ namespace HoudiniEngineUnity
 	    _numLoadingResults = 0;
 	    for (int i = 0; i < numResults; ++i)
 	    {
-		if (resultInfos[i].resultTagSH <= 0 || resultInfos[i].resultSH <= 0)
+		if (resultInfos[i].tagSH <= 0 || resultInfos[i].filePathSH <= 0)
 		{
 		    continue;
 		}
 
-		string tag = HEU_SessionManager.GetString(resultInfos[i].resultTagSH, session);
-		string path = HEU_SessionManager.GetString(resultInfos[i].resultSH, session);
+		string tag = HEU_SessionManager.GetString(resultInfos[i].tagSH, session);
+		string path = HEU_SessionManager.GetString(resultInfos[i].filePathSH, session);
 
 
 		//HEU_Logger.LogFormat("Result for work item {0}: result={1}, tag={2}, path={3}", result._workItemIndex, i, tag, path);
