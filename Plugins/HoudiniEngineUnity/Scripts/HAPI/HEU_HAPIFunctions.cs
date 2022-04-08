@@ -2120,10 +2120,15 @@ namespace HoudiniEngineUnity
         public static extern HAPI_Result
         HAPI_GetPDGGraphContexts(
                 ref HAPI_Session session,
-                out int num_contexts,
                 [Out] HAPI_StringHandle[] context_names_array,
                 [Out] HAPI_PDG_GraphContextId[] context_id_array,
-                int count);
+                int start,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetPDGGraphContextsCount(
+                ref HAPI_Session session,
+                out int num_contexts);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
         HAPI_GetPDGGraphContextId(
