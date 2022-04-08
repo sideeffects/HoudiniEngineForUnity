@@ -185,31 +185,28 @@ namespace HoudiniEngineUnity
 	    HEU_SessionBase session = GetHAPIPDGSession(false);
 	    if (session == null || !session.IsSessionValid())
 	    {
-		_pdgContextIDs = null;
-		return;
+			_pdgContextIDs = null;
+			return;
 	    }
 
 	    int numContexts = 0;
-	    HAPI_StringHandle[] contextNames = new HAPI_StringHandle[_pdgContextSize];
-	    HAPI_PDG_GraphContextId[] contextIDs = new HAPI_PDG_GraphContextId[_pdgContextSize];
-	    if (!session.GetPDGGraphContexts(out numContexts, contextNames, contextIDs, _pdgContextSize, false) || numContexts <= 0)
-	    {
-		_pdgContextIDs = null;
-		return;
-	    }
+		if (session.GetPDGGraphContextsCount(out numContexts) && numContexts > 0)
+		{
+			HAPI_StringHandle[] contextNames = new HAPI_StringHandle[numContexts];
+			if (_pdgContextIDs == null || numContexts != _pdgContextIDs.Length)
+			{
+				_pdgContextIDs = new HAPI_PDG_GraphContextId[numContexts];
+			}
 
-	    if (_pdgContextIDs == null || numContexts != _pdgContextIDs.Length)
-	    {
-		_pdgContextIDs = new HAPI_PDG_GraphContextId[numContexts];
-	    }
-
-	    // TODO: might be okay to just use _pdgContextIDs above instead of doing a copy here
-	    for (int i = 0; i < numContexts; ++i)
-	    {
-		_pdgContextIDs[i] = contextIDs[i];
-		//string cname = HEU_SessionManager.GetString(contextNames[i], session);
-		//HEU_Logger.LogFormat("PDG Context: {0} - {1}", HEU_SessionManager.GetString(cname, session), contextIDs[i]);
-	    }
+			if (!session.GetPDGGraphContexts(contextNames, _pdgContextIDs, 0, numContexts, false))
+			{
+				_pdgContextIDs = null;
+			}
+		}
+		else 
+		{
+			_pdgContextIDs = null;
+		}
 #endif
 	}
 
@@ -873,7 +870,6 @@ namespace HoudiniEngineUnity
 	public HAPI_PDG_EventInfo[] _pdgQueryEvents;
 
 	// Storage of latest PDG graph context data
-	public int _pdgContextSize = 20;
 	public HAPI_PDG_GraphContextId[] _pdgContextIDs;
 
 	public bool _errored;

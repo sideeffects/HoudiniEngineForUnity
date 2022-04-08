@@ -52,10 +52,17 @@ namespace HoudiniEngineUnity
 
 	// SESSION ----------------------------------------------------------------------------------------------------
 
-	public static bool GetPDGGraphContexts(this HEU_SessionBase session, out int num_contexts, [Out] HAPI_StringHandle[] context_names_array, [Out] HAPI_PDG_GraphContextId[] context_id_array, int count, bool bLogError)
+	public static bool GetPDGGraphContexts(this HEU_SessionBase session, [Out] HAPI_StringHandle[] context_names_array, [Out] HAPI_PDG_GraphContextId[] context_id_array, int start, int length, bool bLogError)
 	{
-	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetPDGGraphContexts(ref session.GetSessionData()._HAPISession, out num_contexts, context_names_array, context_id_array, count);
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetPDGGraphContexts(ref session.GetSessionData()._HAPISession, context_names_array, context_id_array, start, length);
 	    session.HandleStatusResult(result, "Getting PDG Graph Contexts", false, bLogError);
+	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+	}
+
+	public static bool GetPDGGraphContextsCount(this HEU_SessionBase session, out int num_contexts )
+	{
+	    HAPI_Result result = HEU_HAPIFunctions.HAPI_GetPDGGraphContextsCount(ref session.GetSessionData()._HAPISession, out num_contexts);
+	    session.HandleStatusResult(result, "Getting number of PDG Graph Contexts", false, true);
 	    return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
 	}
 
