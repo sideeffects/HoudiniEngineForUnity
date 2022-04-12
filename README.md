@@ -38,3 +38,11 @@ Currently, the supported Unity versions are:
 1. Copy the Plugins/HoudiniEngineUnity folder from the cloned repository from step 2, and paste it into your Unity project's Assets/Plugins folder. If the Plugins folder exists, you can simply merge with it.
 1. Restart Unity.
 1. Ensure Houdini Engine loaded successfully by going to the "HoudiniEngine" top menu and selecting "Installation Info" and making sure all the versions match.
+
+## Installing from GitHub
+
+Note: Installing Unity packages directly from Git requires a git binary to be installed on the system and is only supported in Unity 2019.1 or newer. The process is described in detail in [Unity's documentation](https://docs.unity3d.com/2021.3/Documentation/Manual/upm-git.html).
+
+1. Open package manager window in Unity 'Windows -> Package Manager'
+2. Click the + icon in the top-left corner, choose the 'Add package from git URL...' option
+3. Enter the appropriate URL for the repository/branch/revision you'd like to add to the project - see Unity's docs for all available options. E.g. to add the latest official version of the plugin for Houdini 19, enter the URL 'https://github.com/sideeffects/HoudiniEngineForUnity.git#Houdini19.0'. If you've forked the repo, replace the base URL with your own repository.

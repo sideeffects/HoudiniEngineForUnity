@@ -1,0 +1,8 @@
+{
+  "name": "com.sesi.houdiniengineforunity",
+  "version": "19.0.505",
+  "unity": "2019.1",
+  "displayName": "Houdini Engine",
+  "description": "Houdini Engine for Unity is a Unity plug-in that allows deep integration of Houdini technology into Unity through the use of Houdini Engine.",
+  "dependencies": {}
+}
