@@ -136,6 +136,10 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
+        HAPI_Shutdown(
+                ref HAPI_Session session);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
         HAPI_GetEnvInt(
                 HAPI_EnvIntType int_type,
                 out int value);
@@ -533,6 +537,19 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 out HAPI_NodeId node_id,
                 byte[] name);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_CreateHeightfieldInputNode(
+                ref HAPI_Session session,
+                HAPI_NodeId parent_node_id,
+                byte[] name,
+                int xsize,
+                int ysize,
+                float voxelsize,
+                out HAPI_NodeId heightfield_node_id,
+                out HAPI_NodeId height_node_id,
+                out HAPI_NodeId mask_node_id,
+                out HAPI_NodeId merge_node_id);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
         HAPI_CreateHeightFieldInput(
@@ -972,6 +989,15 @@ namespace HoudiniEngineUnity
                 ref HAPI_Session session,
                 HAPI_NodeId object_node_id,
                 [Out] HAPI_NodeId[] instanced_node_id_array,
+                int start,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetInstanceTransforms(
+                ref HAPI_Session session,
+                HAPI_NodeId object_node_id,
+                HAPI_RSTOrder rst_order,
+                [Out] HAPI_Transform[] transforms_array,
                 int start,
                 int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
