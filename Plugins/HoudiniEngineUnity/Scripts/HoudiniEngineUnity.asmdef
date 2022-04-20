@@ -1,5 +1,6 @@
 {
     "name": "HoudiniEngineUnity",
+    "rootNamespace": "",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
