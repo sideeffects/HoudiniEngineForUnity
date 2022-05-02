@@ -873,7 +873,7 @@ namespace HoudiniEngineUnity
 	public HAPI_PDG_EventInfo[] _pdgQueryEvents;
 
 	// Storage of latest PDG graph context data
-	public int _pdgContextSize = 20;
+	public int _pdgContextSize = 200;
 	public HAPI_PDG_GraphContextId[] _pdgContextIDs;
 
 	public bool _errored;
