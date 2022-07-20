@@ -414,7 +414,12 @@ namespace HoudiniEngineUnity
 			HEU_Logger.LogError("Failed to create input volume node for layer " + layerName);
 			break;
 		    }
-		}
+
+            float[,] heights = idt._terrainData.GetHeights(0, 0, idt._terrainData.heightmapResolution, idt._terrainData.heightmapResolution);
+            int heightsSizeX = heights.GetLength(0);
+            int heightsSizeY = heights.GetLength(1);
+            alphaMapsConverted[m] = HEU_TerrainUtility.ResampleData(alphaMapsConverted[m], sizeX, sizeY, heightsSizeX, heightsSizeY);
+        }
 
 		//HEU_Logger.Log("Uploading terrain layer: " + layerName);
 
