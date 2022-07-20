@@ -231,6 +231,9 @@ namespace HoudiniEngineUnity
         [MarshalAs(UnmanagedType.U1)]
         public HAPI_Bool cacheMeshTopology;              //This toggle lets you enable the caching of the mesh topology.By default this is false. If this is set to true cooking a meshgeometry will update only the topology if the number of points changed.Use this to get better performance on deforming meshes.
 
+        [MarshalAs(UnmanagedType.U1)]
+        public HAPI_Bool preferOutputNodes;              //If enabled calls to HAPI_CookNode on an OBJ node will cook the outputnodes of any nested SOP nodes. If none exist or the option is disabledHAPI will instead cook the display nodes of any nested SOP nodes.
+
         [MarshalAs(UnmanagedType.I4)]
         public int extraFlags;              //For internal use only. :
 
