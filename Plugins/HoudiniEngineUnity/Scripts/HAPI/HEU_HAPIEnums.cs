@@ -609,6 +609,8 @@ namespace HoudiniEngineUnity
         HAPI_PDG_EVENT_SCHEDULER_REMOVED,        //Sent when a scheduler is removed from the graph
         HAPI_PDG_EVENT_SET_SCHEDULER,        //Deprecated
         HAPI_PDG_EVENT_SERVICE_MANAGER_ALL,        //Deprecated
+        HAPI_PDG_EVENT_NODE_COOKED,        //Sent when a node finishes cooking
+        HAPI_PDG_EVENT_NODE_GENERATED,        //Sent when a node finished generating
         HAPI_PDG_CONTEXT_EVENTS,        
     };
 
