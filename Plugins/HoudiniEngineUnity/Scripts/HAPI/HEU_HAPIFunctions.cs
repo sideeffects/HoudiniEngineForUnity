@@ -447,6 +447,24 @@ namespace HoudiniEngineUnity
                 int choice_length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
+        HAPI_GetLoadedAssetLibraryCount(
+                ref HAPI_Session session,
+                out int count);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetAssetLibraryIds(
+                ref HAPI_Session session,
+                [Out] HAPI_AssetLibraryId[] asset_library_ids_array,
+                int start,
+                int length);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetAssetLibraryFilePath(
+                ref HAPI_Session session,
+                HAPI_AssetLibraryId asset_library_id,
+                out HAPI_StringHandle file_path_sh);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
         HAPI_LoadHIPFile(
                 ref HAPI_Session session,
                 byte[] file_name,
@@ -1628,7 +1646,7 @@ namespace HoudiniEngineUnity
                 out HAPI_MaterialInfo material_info);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
-        HAPI_RenderCOPToImage(
+        HAPI_RenderCOP2ToImage(
                 ref HAPI_Session session,
                 HAPI_NodeId cop_node_id);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
