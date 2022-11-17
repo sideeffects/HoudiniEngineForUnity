@@ -1342,7 +1342,7 @@ namespace HoudiniEngineUnity
 	    return false;
 	}
 
-	public virtual bool RenderCOPToImage(HAPI_NodeId copNodeID)
+	public virtual bool RenderCOP2ToImage(HAPI_NodeId copNodeID)
 	{
 	    return false;
 	}
