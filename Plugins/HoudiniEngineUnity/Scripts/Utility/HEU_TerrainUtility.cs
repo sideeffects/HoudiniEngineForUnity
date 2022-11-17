@@ -181,6 +181,9 @@ namespace HoudiniEngineUnity
 		if (terrainResizedDelta < 0)
 		{
 		    HEU_Logger.LogWarningFormat("Note that Unity automatically resized terrain resolution to {0} from {1}. Use terrain size of power of two plus 1, and grid spacing of 2.", heightMapResolution, terrainData.heightmapResolution);
+		    float[] resampledHeights = HEU_TerrainUtility.ResampleData(normalizedHeights, heightMapResolution, heightMapResolution, terrainData.heightmapResolution, terrainData.heightmapResolution);
+
+		    normalizedHeights = resampledHeights;
 		    heightMapResolution = terrainData.heightmapResolution;
 		}
 		else if (terrainResizedDelta > 0)
