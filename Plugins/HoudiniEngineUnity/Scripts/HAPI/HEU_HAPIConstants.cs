@@ -96,8 +96,8 @@ namespace HoudiniEngineUnity
         public const string HAPI_ENV_HIP = "HIP";
         public const string HAPI_ENV_JOB = "JOB";
         public const string HAPI_ENV_CLIENT_NAME = "HAPI_CLIENT_NAME";
-        public const string HAPI_CACHE_COP_COOK = "COP Cook Cache";
-        public const string HAPI_CACHE_COP_FLIPBOOK = "COP Flipbook Cache";
+        public const string HAPI_CACHE_COP2_COOK = "COP Cook Cache";
+        public const string HAPI_CACHE_COP2_FLIPBOOK = "COP Flipbook Cache";
         public const string HAPI_CACHE_IMAGE = "Image Cache";
         public const string HAPI_CACHE_OBJ = "Object Transform Cache";
         public const string HAPI_CACHE_GL_TEXTURE = "OpenGL Texture Cache";
