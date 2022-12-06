@@ -498,11 +498,19 @@ namespace HoudiniEngineUnity
 		int numPostCookGeoInfos = postCookGeoInfos.Count;
 		for (int i = 0; i < numPostCookGeoInfos; i++)
 		{
+		    string geoName = HEU_SessionManager.GetString(postCookGeoInfos[i].nameSH, session);
+
 		    bool bFound = false;
 		    for (int j = 0; j < _geoNodes.Count; j++)
 		    {
-			string geoName = HEU_SessionManager.GetString(postCookGeoInfos[i].nameSH, session);
-			if (geoName.Equals(_geoNodes[j].GeoName))
+			string oldGeoName = _geoNodes[j].GeoName;
+
+			if (geoName.Equals(oldGeoName)
+			    // Fixes Bug #124004
+			    // Newly created curves all use "curve" for their geo name, 
+			    // but loaded curves use "curveX", this caused loaded curves to disappear if recooked
+			    // due to the saved name for the geo being "curve" and the newly created node name to be "curveX"
+			    || (oldGeoName.Equals("curve") && geoName.StartsWith("curve")))
 			{
 			    _geoNodes[j].SetGeoInfo(postCookGeoInfos[i]);
 
