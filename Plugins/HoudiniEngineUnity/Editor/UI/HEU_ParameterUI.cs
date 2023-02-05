@@ -945,6 +945,10 @@ namespace HoudiniEngineUnity
 
 		    GUILayout.BeginHorizontal();
 		    {
+			var indentLevel = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+            var labelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 12;
 			for (int i = 0; i < numElements; ++i)
 			{
 			    if (i > 0 && i % maxElementsPerRow == 0)
@@ -955,6 +959,8 @@ namespace HoudiniEngineUnity
 
 			    intsValue[i] = EditorGUILayout.DelayedIntField(intsValue[i]);
 			}
+			EditorGUI.indentLevel = indentLevel;
+            EditorGUIUtility.labelWidth = labelWidth;
 		    }
 		    GUILayout.EndHorizontal();
 		}
@@ -976,6 +982,10 @@ namespace HoudiniEngineUnity
 
 		    EditorGUILayout.BeginHorizontal();
 		    {
+			var indentLevel = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+            var labelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 12;
 			for (int i = 0; i < numElements; ++i)
 			{
 			    if (i > 0 && i % maxElementsPerRow == 0)
@@ -986,6 +996,8 @@ namespace HoudiniEngineUnity
 
 			    floatsValue[i] = EditorGUILayout.DelayedFloatField(floatsValue[i]);
 			}
+			EditorGUI.indentLevel = indentLevel;
+            EditorGUIUtility.labelWidth = labelWidth;
 		    }
 		    EditorGUILayout.EndHorizontal();
 		}
