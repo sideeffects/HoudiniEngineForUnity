@@ -439,6 +439,7 @@ namespace HoudiniEngineUnity
 			    HEU_Logger.LogErrorFormat("Unable to get PartInfo for geo node {0} and part {1}.", GeoID, i);
 			    continue;
 			}
+			string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
 
 			// Find the old part for this new part.
 			HEU_PartData part = null;
@@ -446,10 +447,10 @@ namespace HoudiniEngineUnity
 
 			foreach (HEU_PartData oldPart in oldParts)
 			{
-			    string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
 			    if (oldPart.PartName.Equals(partName))
 			    {
 				oldMatchedPart = oldPart;
+				break;
 			    }
 			}
 
