@@ -727,14 +727,6 @@ namespace HoudiniEngineUnity
 	    if (newType == _inputObjectType)
 			return;
 
-        if (newType == InputObjectType.SPLINE)
-        {
-            if (!HEU_SplinesPacakageManager.IsInstalled() && HEU_SplinesPacakageManager.PromptUserForInstall())
-                HEU_SplinesPacakageManager.Add();
-            else
-                return;
-        }
-
         DisconnectAndDestroyInputs(session);
 
 	    _inputObjectType = newType;
