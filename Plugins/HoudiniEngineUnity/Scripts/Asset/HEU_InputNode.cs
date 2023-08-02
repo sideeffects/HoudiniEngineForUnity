@@ -116,8 +116,9 @@ namespace HoudiniEngineUnity
 	    CURVE,
 	    TERRAIN,
 	    BOUNDING_BOX,
-	    TILEMAP
-	}
+	    TILEMAP,
+        SPLINE
+    }
 
 
 	// I don't want to break backwards compatibility, but I want some options to map onto others to avoid duplication of tested code
@@ -724,11 +725,17 @@ namespace HoudiniEngineUnity
 	internal void ChangeInputType(HEU_SessionBase session, InputObjectType newType)
 	{
 	    if (newType == _inputObjectType)
-	    {
-		return;
-	    }
+			return;
 
-	    DisconnectAndDestroyInputs(session);
+        if (newType == InputObjectType.SPLINE)
+        {
+            if (!HEU_SplinesPacakageManager.IsInstalled() && HEU_SplinesPacakageManager.PromptUserForInstall())
+                HEU_SplinesPacakageManager.Add();
+            else
+                return;
+        }
+
+        DisconnectAndDestroyInputs(session);
 
 	    _inputObjectType = newType;
 	    _pendingInputObjectType = _inputObjectType;
@@ -1520,7 +1527,8 @@ namespace HoudiniEngineUnity
 		case InputObjectType.TERRAIN:
 		case InputObjectType.BOUNDING_BOX:
 		case InputObjectType.TILEMAP:
-		    return InternalObjectType.UNITY_MESH;
+		case InputObjectType.SPLINE:
+            return InternalObjectType.UNITY_MESH;
 		default:
 		    return InternalObjectType.UNKNOWN;
 	    }
@@ -1570,6 +1578,8 @@ namespace HoudiniEngineUnity
 		    return HEU_InputObjectTypeWrapper.BOUNDING_BOX;
 		case HEU_InputNode.InputObjectType.TILEMAP:
 		    return HEU_InputObjectTypeWrapper.TILEMAP;
+		case HEU_InputNode.InputObjectType.SPLINE:
+		    return HEU_InputObjectTypeWrapper.SPLINE;
 		default:
 		    return HEU_InputObjectTypeWrapper.UNITY_MESH;
 	    }
@@ -1589,6 +1599,8 @@ namespace HoudiniEngineUnity
 		    return HEU_InputNode.InputObjectType.BOUNDING_BOX;
 		case HEU_InputObjectTypeWrapper.TILEMAP:
 		    return HEU_InputNode.InputObjectType.TILEMAP;
+        case HEU_InputObjectTypeWrapper.SPLINE:
+		    return HEU_InputNode.InputObjectType.SPLINE;
 		default:
 		    return HEU_InputNode.InputObjectType.UNITY_MESH;
 	    }

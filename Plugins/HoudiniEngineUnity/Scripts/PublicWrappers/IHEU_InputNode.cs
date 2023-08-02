@@ -66,7 +66,8 @@ namespace HoudiniEngineUnity
 	CURVE,
 	TERRAIN,
 	BOUNDING_BOX,
-	TILEMAP
+	TILEMAP,
+    SPLINE
     };
 
     /// <summary>
