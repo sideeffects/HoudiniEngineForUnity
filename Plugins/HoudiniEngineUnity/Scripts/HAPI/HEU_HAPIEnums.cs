@@ -591,6 +591,7 @@ namespace HoudiniEngineUnity
         HAPI_PDG_EVENT_NODE_RENAME,        //Sent when a node was renamed
         HAPI_PDG_EVENT_NODE_CONNECT,        //Sent when a node was connected to another node
         HAPI_PDG_EVENT_NODE_DISCONNECT,        //Sent when a node is disconnected from another node
+        HAPI_PDG_EVENT_NODE_FIRST_COOK,        //Sent when a node cooks for the first time
         HAPI_PDG_EVENT_WORKITEM_SET_INT,        //Deprecated
         HAPI_PDG_EVENT_WORKITEM_SET_FLOAT,        //Deprecated
         HAPI_PDG_EVENT_WORKITEM_SET_STRING,        //Deprecated
