@@ -114,11 +114,13 @@ namespace HoudiniEngineUnity
 	    HDA,
 	    UNITY_MESH,
 	    CURVE,
-	    TERRAIN,
+#if UNITY_2022_1_OR_NEWER
+		SPLINE,
+#endif
+        TERRAIN,
 	    BOUNDING_BOX,
-	    TILEMAP,
-        SPLINE
-    }
+	    TILEMAP
+		}
 
 
 	// I don't want to break backwards compatibility, but I want some options to map onto others to avoid duplication of tested code
@@ -1516,10 +1518,12 @@ namespace HoudiniEngineUnity
 		case InputObjectType.CURVE:
 		    return InternalObjectType.HDA;
 		case InputObjectType.UNITY_MESH:
+#if UNITY_2022_1_OR_NEWER
+		case InputObjectType.SPLINE:
+#endif
 		case InputObjectType.TERRAIN:
 		case InputObjectType.BOUNDING_BOX:
 		case InputObjectType.TILEMAP:
-		case InputObjectType.SPLINE:
             return InternalObjectType.UNITY_MESH;
 		default:
 		    return InternalObjectType.UNKNOWN;
@@ -1566,12 +1570,14 @@ namespace HoudiniEngineUnity
 		    return HEU_InputObjectTypeWrapper.UNITY_MESH;
 		case HEU_InputNode.InputObjectType.CURVE:
 		    return HEU_InputObjectTypeWrapper.CURVE;
+#if UNITY_2022_1_OR_NEWER
+		case HEU_InputNode.InputObjectType.SPLINE:
+		    return HEU_InputObjectTypeWrapper.SPLINE;
+#endif
 		case HEU_InputNode.InputObjectType.BOUNDING_BOX:
 		    return HEU_InputObjectTypeWrapper.BOUNDING_BOX;
 		case HEU_InputNode.InputObjectType.TILEMAP:
 		    return HEU_InputObjectTypeWrapper.TILEMAP;
-		case HEU_InputNode.InputObjectType.SPLINE:
-		    return HEU_InputObjectTypeWrapper.SPLINE;
 		default:
 		    return HEU_InputObjectTypeWrapper.UNITY_MESH;
 	    }
@@ -1587,12 +1593,14 @@ namespace HoudiniEngineUnity
 		    return HEU_InputNode.InputObjectType.UNITY_MESH;
 		case HEU_InputObjectTypeWrapper.CURVE:
 		    return HEU_InputNode.InputObjectType.CURVE;
+#if UNITY_2022_1_OR_NEWER
+        case HEU_InputObjectTypeWrapper.SPLINE:
+		    return HEU_InputNode.InputObjectType.SPLINE;
+#endif
 		case HEU_InputObjectTypeWrapper.BOUNDING_BOX:
 		    return HEU_InputNode.InputObjectType.BOUNDING_BOX;
 		case HEU_InputObjectTypeWrapper.TILEMAP:
 		    return HEU_InputNode.InputObjectType.TILEMAP;
-        case HEU_InputObjectTypeWrapper.SPLINE:
-		    return HEU_InputNode.InputObjectType.SPLINE;
 		default:
 		    return HEU_InputNode.InputObjectType.UNITY_MESH;
 	    }

@@ -64,11 +64,13 @@ namespace HoudiniEngineUnity
 	HDA,
 	UNITY_MESH,
 	CURVE,
-	TERRAIN,
+#if UNITY_2022_1_OR_NEWER
+	SPLINE,
+#endif
+    TERRAIN,
 	BOUNDING_BOX,
-	TILEMAP,
-    SPLINE
-    };
+	TILEMAP
+	};
 
     /// <summary>
     /// Holds all parameter data for an asset.
