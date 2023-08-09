@@ -284,6 +284,20 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 			    }
 			    EditorGUI.indentLevel--;
 			}
+#if UNITY_2022_1_OR_NEWER
+			else if (inputObjectType == HEU_InputNode.InputObjectType.SPLINE)
+			{
+				if (!HEU_SplinesPacakageManager.IsInstalled())
+				{
+					HEU_EditorUI.DrawWarningLabel("Unity.Splines Package Required");
+                    EditorGUILayout.LabelField("The 'Spline' Input Type requires the Unity.Splines package to be installed. " +
+						"Would you like to install the package?");
+
+                    if (GUILayout.Button("Install"))
+                        HEU_SplinesPacakageManager.Add();
+                }
+			}
+#endif
 
 			if (!bSkipElements)
 			{

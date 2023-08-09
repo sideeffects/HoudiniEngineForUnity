@@ -45,13 +45,6 @@ namespace HoudiniEngineUnity
 #endif
         }
 
-        public static bool PromptUserForInstall()
-        {
-            return EditorUtility.DisplayDialog("Splines Package Required",
-                "The 'Spline' Input Type requires the Unity.Splines package to be installed. Would you like to install the package?", 
-                "Install", "Cancel");
-        }
-
         public static void Add()
         {
             // Add the Untiy.Splines package to the project
