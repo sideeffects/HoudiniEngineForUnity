@@ -307,8 +307,8 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 				{
 					EditorGUI.indentLevel++;
 					{
-						// UnityEditor.SerializedProperty samplingResolution = inputNode._uiCache._tilemapSettingsProperty.FindPropertyRelative("_samplingResolution");
-						// samplingResolution.floatValue = EditorGUILayout.Slider("Sampling Resolution", samplingResolution.floatValue, 0.0f, 1.0f);
+						UnityEditor.SerializedProperty samplingResolution = inputNode._uiCache._splineSettingsProperty.FindPropertyRelative("_samplingResolution");
+						samplingResolution.floatValue = EditorGUILayout.Slider("Sampling Resolution", samplingResolution.floatValue, 0.0f, 1.0f);
 					}
 					EditorGUI.indentLevel--;
 				}
