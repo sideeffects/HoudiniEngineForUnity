@@ -226,6 +226,13 @@ namespace HoudiniEngineUnity
 		    HEU_InputInterfaceTilemap tilemapInterface = inputInterface as HEU_InputInterfaceTilemap;
 		    tilemapInterface.Initialize(inputNode.TilemapSettings);
 		}
+#if UNITY_2022_1_OR_NEWER
+		if (inputInterfaceType == typeof(HEU_InputInterfaceSpline))
+		{
+            HEU_InputInterfaceSpline splineInterface = inputInterface as HEU_InputInterfaceSpline;
+            splineInterface.Initialize(inputNode.SplineSettings);
+		}
+#endif
 
 		bool bResult = inputInterface.CreateInputNodeWithDataUpload(session, connectMergeID, inputObjects[i]._gameObject, out newConnectInputID);
 		if (!bResult || newConnectInputID == HEU_Defines.HEU_INVALID_NODE_ID)

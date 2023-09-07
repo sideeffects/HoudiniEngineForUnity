@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Splines;
+using Unity.Mathematics;
 
 
 namespace HoudiniEngineUnity
@@ -37,6 +38,15 @@ namespace HoudiniEngineUnity
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
+
+    [System.Serializable]
+    public class HEU_InputInterfaceSplineSettings
+    {
+        public float SamplingResolution { get { return _samplingResolution; } set { _samplingResolution = value; } }
+
+        [SerializeField]
+        private float _samplingResolution = 0.5f;
+    };
 
     /// <summary>
     /// This class provides functionality for uploading Unity spline data from gameobjects
@@ -58,9 +68,17 @@ namespace HoudiniEngineUnity
 			HEU_InputUtility.RegisterInputInterface(inputInterface);
 		}
 #endif
+
+        private HEU_InputInterfaceSplineSettings settings;
+
         private HEU_InputInterfaceSpline() : base(priority: DEFAULT_PRIORITY)
         {
 
+        }
+
+        public void Initialize(HEU_InputInterfaceSplineSettings settings)
+        {
+            this.settings = settings;
         }
 
         /// <summary>
@@ -145,6 +163,7 @@ namespace HoudiniEngineUnity
 
             public bool _closed;
             public int _count;
+            public float _length;
             public BezierKnot[] _knots;
         }
 
@@ -174,6 +193,7 @@ namespace HoudiniEngineUnity
                 inputSpline._spline = spline;
                 inputSpline._closed = spline.Closed;
                 inputSpline._count = spline.Count;
+                inputSpline._length = spline.GetLength();
                 inputSpline._knots = spline.Knots.ToArray<BezierKnot>();
 
                 splineData._inputSplines.Add(inputSpline);
@@ -199,20 +219,50 @@ namespace HoudiniEngineUnity
 
             // Curve always goes through the specified points
             inputCurveInfo.inputMethod = HAPI_InputCurveMethod.HAPI_CURVEMETHOD_BREAKPOINTS;
+            inputCurveInfo.breakpointParameterization = HAPI_InputCurveParameterization.HAPI_CURVEPARAMETERIZATION_UNIFORM;
             if (!session.SetInputCurveInfo(inputNodeID, 0, ref inputCurveInfo))
             {
                 HEU_Logger.LogError("Failed to initialize input curve info.");
                 return false;
             }
 
-            float[] posArr = new float[inputSpline._count * 3];
-            float[] rotArr = new float[inputSpline._count * 4];
-            float[] scaleArr = new float[inputSpline._count * 3];
-            for (int i = 0; i < inputSpline._knots.Count(); i++)
+            // Calculate the number of refined point we want
+            int numControlPoints = inputSpline._knots.Count();
+            float splineLength = inputSpline._length;
+            float splineResolution = settings != null ? settings.SamplingResolution : 0.5f;
+
+            int numRefinedSplinePoints = splineResolution > 0.0f ? Mathf.CeilToInt(splineLength / splineResolution) + 1 : numControlPoints;
+
+            float[] posArr;
+            float[] rotArr;
+            float[] scaleArr;
+            if (numRefinedSplinePoints < numControlPoints)
             {
-                BezierKnot knot = inputSpline._knots[i];
-                HEU_HAPIUtility.ConvertPositionUnityToHoudini(knot.Position, out posArr[i * 3 + 0], out posArr[i * 3 + 1], out posArr[i * 3 + 2]);
-                HEU_HAPIUtility.ConvertRotationUnityToHoudini(knot.Rotation, out rotArr[i * 4 + 0], out rotArr[i * 4 + 1], out rotArr[i * 4 + 2], out rotArr[i * 4 + 3]);
+                // There's not enough refined points, so we'll use the control points instead
+                posArr = new float[numControlPoints * 3];
+                rotArr = new float[numControlPoints * 4];
+                scaleArr = new float[numControlPoints * 3];
+                for (int i = 0; i < numControlPoints; i++)
+                {
+                    BezierKnot knot = inputSpline._knots[i];
+                    HEU_HAPIUtility.ConvertPositionUnityToHoudini(knot.Position, out posArr[i * 3 + 0], out posArr[i * 3 + 1], out posArr[i * 3 + 2]);
+                    HEU_HAPIUtility.ConvertRotationUnityToHoudini(knot.Rotation, out rotArr[i * 4 + 0], out rotArr[i * 4 + 1], out rotArr[i * 4 + 2], out rotArr[i * 4 + 3]);
+                }
+            }
+            else
+            {
+                // Calculate the refined spline component
+                posArr = new float[numRefinedSplinePoints * 3];
+                rotArr = new float[numRefinedSplinePoints * 4];
+                scaleArr = new float[numRefinedSplinePoints * 3];
+                float currentDistance = 0.0f;
+                for (int i = 0; i < numRefinedSplinePoints; i++)
+                {
+                    float3 pos = SplineUtility.EvaluatePosition<Spline>(inputSpline._spline, currentDistance / splineLength);
+                    HEU_HAPIUtility.ConvertPositionUnityToHoudini(pos, out posArr[i * 3 + 0], out posArr[i * 3 + 1], out posArr[i * 3 + 2]);
+                    
+                    currentDistance += splineResolution;
+                }
             }
 
             bool hapi_result = session.SetInputCurvePositionsRotationsScales(

@@ -44,6 +44,10 @@ namespace HoudiniEngineUnity
 	private static GUIContent _tilemapColorContent = new GUIContent("Apply Tile color", "If checked, will output a Cd color attribute to point.");
 	private static GUIContent _tilemapOrientationContent = new GUIContent("Apply Tilemap Orientation", "If checked, will offset position by the tilemap position offset, and produce orient/pscale attributes to the points.");
 
+#if UNITY_2022_1_OR_NEWER
+	private static GUIContent _samplingResolutionContent = new GUIContent("Sampling Resolution", "Defines the granularity at which a spline's positional data is sampled and marshalled to Houdini. The lower the value, the closer the fit.");
+#endif
+
 	/// <summary>
 	/// Populate the UI cache for the given input node
 	/// </summary>
@@ -64,6 +68,10 @@ namespace HoudiniEngineUnity
 
 		inputNode._uiCache._meshSettingsProperty = HEU_EditorUtility.GetSerializedProperty(inputNode._uiCache._inputNodeSerializedObject, "_meshSettings");
 		inputNode._uiCache._tilemapSettingsProperty = HEU_EditorUtility.GetSerializedProperty(inputNode._uiCache._inputNodeSerializedObject, "_tilemapSettings");
+
+#if UNITY_2022_1_OR_NEWER
+		inputNode._uiCache._splineSettingsProperty = HEU_EditorUtility.GetSerializedProperty(inputNode._uiCache._inputNodeSerializedObject, "_splineSettings");
+#endif
 
 		int inputCount = inputNode._uiCache._inputObjectsProperty.arraySize;
 		for (int i = 0; i < inputCount; ++i)
@@ -285,17 +293,25 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
 			    EditorGUI.indentLevel--;
 			}
 #if UNITY_2022_1_OR_NEWER
-			else if (inputObjectType == HEU_InputNode.InputObjectType.SPLINE)
+			else if (inputObjectType == HEU_InputNode.InputObjectType.SPLINE && inputNode.SplineSettings != null)
 			{
 				if (!HEU_SplinesPacakageManager.IsInstalled())
 				{
-					HEU_EditorUI.DrawWarningLabel("Unity.Splines Package Required");
-                    EditorGUILayout.LabelField("The 'Spline' Input Type requires the Unity.Splines package to be installed. " +
-						"Would you like to install the package?");
+					HEU_EditorUI.DrawWarningLabel("Unity.Splines Package Missing");
+                    EditorGUILayout.LabelField("The 'Spline' Input Type requires the Unity.Splines package to be installed.");
 
                     if (GUILayout.Button("Install"))
                         HEU_SplinesPacakageManager.Add();
                 }
+				else
+				{
+					EditorGUI.indentLevel++;
+					{
+						// UnityEditor.SerializedProperty samplingResolution = inputNode._uiCache._tilemapSettingsProperty.FindPropertyRelative("_samplingResolution");
+						// samplingResolution.floatValue = EditorGUILayout.Slider("Sampling Resolution", samplingResolution.floatValue, 0.0f, 1.0f);
+					}
+					EditorGUI.indentLevel--;
+				}
 			}
 #endif
 
