@@ -126,7 +126,7 @@ namespace HoudiniEngineUnity
             }
 
             // Get spline data from the input object
-            HEU_InputDataSplines inputSplines = GenerateSplineDataFromGameObject(inputObject);
+            HEU_InputDataSplineContainer inputSplines = GenerateSplineDataFromGameObject(inputObject);
             if (inputSplines == null || inputSplines._inputSplines == null || inputSplines._inputSplines.Count() == 0)
             {
                 HEU_Logger.LogError("No valid splines found on input objects.");
@@ -144,7 +144,7 @@ namespace HoudiniEngineUnity
             inputNodeID = newNodeID;
 
             HEU_InputDataSpline inputSpline = inputSplines._inputSplines[0];
-            if (!UploadData(session, inputNodeID, inputSpline))
+            if (!UploadData(session, inputNodeID, inputSpline, Matrix4x4.identity))
             {
                 if (!session.CookNode(inputNodeID, false))
                 {
@@ -155,21 +155,16 @@ namespace HoudiniEngineUnity
                 return false;
             }
 
-            if (!session.CookNode(inputNodeID, false))
-            {
-                HEU_Logger.LogError("New input node failed to cook!");
-                return false;
-            }
-
+            // The spline is made up of branching sub-splines.
+            // Create an input node for each branching spline and object-merge it to the root spline.
             bool createMergeNode = inputSplines._inputSplines.Count() > 1;
             if (!createMergeNode)
                 return true;
 
-            // Create merge node to merge branching splines
             HAPI_NodeId mergeNodeId = HEU_Defines.HEU_INVALID_NODE_ID;
             HAPI_NodeId parentId = HEU_HAPIUtility.GetParentNodeID(session, inputNodeID);
 
-            if (!session.CreateNode(parentId, "merge", "rajat-merge", false, out mergeNodeId))
+            if (!session.CreateNode(parentId, "merge", null, false, out mergeNodeId))
             {
                 HEU_Logger.LogErrorFormat("Unable to create merge SOP node for connecting input assets.");
                 return false;
@@ -187,13 +182,12 @@ namespace HoudiniEngineUnity
             }
             inputNodeID = mergeNodeId;
 
+            Matrix4x4 localToWorld = inputSplines._transform.localToWorldMatrix;
             HAPI_NodeId branchNodeID;
-            string branchName = inputObject.name;
             HEU_InputDataSpline branchSpline;
-            int inputNodeIndex = 1;
             for (int i = 1; i < inputSplines._inputSplines.Count(); i++)
             {
-                session.CreateInputCurveNode(out branchNodeID, branchName + "_" + i);
+                session.CreateInputCurveNode(out branchNodeID, inputObject.name + "_" + i);
                 if (branchNodeID == HEU_Defines.HEU_INVALID_NODE_ID || !HEU_HAPIUtility.IsNodeValidInHoudini(session, branchNodeID))
                 {
                     HEU_Logger.LogError("Failed to create new input cruve node in Houdini session!");
@@ -201,7 +195,7 @@ namespace HoudiniEngineUnity
                 }
 
                 branchSpline = inputSplines._inputSplines[i];
-                if (!UploadData(session, branchNodeID, branchSpline, true))
+                if (!UploadData(session, branchNodeID, branchSpline, localToWorld))
                 {
                     if (!session.CookNode(branchNodeID, false))
                     {
@@ -216,7 +210,6 @@ namespace HoudiniEngineUnity
                     HEU_Logger.LogErrorFormat("Unable to connect to input node!");
                     return false;
                 }
-                inputNodeIndex++;
             }
 
             if (!session.CookNode(inputNodeID, false))
@@ -234,7 +227,6 @@ namespace HoudiniEngineUnity
         public class HEU_InputDataSpline
         {
             public Spline _spline;
-            public Transform _transform;
             public bool _closed;
             public int _count;
             public float _length;
@@ -244,9 +236,10 @@ namespace HoudiniEngineUnity
         /// <summary>
         /// Contains input geometry for multiple splines.
         /// </summary>
-        public class HEU_InputDataSplines : HEU_InputData
+        public class HEU_InputDataSplineContainer : HEU_InputData
         {
             public List<HEU_InputDataSpline> _inputSplines = new List<HEU_InputDataSpline>();
+            public Transform _transform;
         }
 
         /// <summary>
@@ -255,25 +248,26 @@ namespace HoudiniEngineUnity
         /// </summary>
         /// <param name="inputObject">GameObject containing a Spline component</param>
         /// <returns>A valid input data strcuture containing spline data</returns>
-        public HEU_InputDataSplines GenerateSplineDataFromGameObject(GameObject inputObject)
+        public HEU_InputDataSplineContainer GenerateSplineDataFromGameObject(GameObject inputObject)
         {
             SplineContainer splineContainer = inputObject.GetComponent<SplineContainer>();
             IReadOnlyList<Spline> splines = splineContainer.Splines;
 
-            HEU_InputDataSplines splineData = new HEU_InputDataSplines();
+            HEU_InputDataSplineContainer splineContainerData = new HEU_InputDataSplineContainer();
             foreach (Spline spline in splines)
             {
-                HEU_InputDataSpline inputSpline = new HEU_InputDataSpline();
-                inputSpline._spline = spline;
-                inputSpline._transform = inputObject.transform;
-                inputSpline._closed = spline.Closed;
-                inputSpline._count = spline.Count;
-                inputSpline._length = spline.GetLength();
-                inputSpline._knots = spline.Knots.ToArray<BezierKnot>();
+                HEU_InputDataSpline splineData = new HEU_InputDataSpline();
+                splineData._spline = spline;
+                splineData._closed = spline.Closed;
+                splineData._count = spline.Count;
+                splineData._length = spline.GetLength();
+                splineData._knots = spline.Knots.ToArray<BezierKnot>();
 
-                splineData._inputSplines.Add(inputSpline);
+                splineContainerData._inputSplines.Add(splineData);
             }
-            return splineData;
+            splineContainerData._transform = inputObject.transform;
+
+            return splineContainerData;
         }
 
         /// <summary>
@@ -283,16 +277,14 @@ namespace HoudiniEngineUnity
         /// <param name="inputNodeID">ID of the input node</param>
         /// <param name="inputData">Container of the mesh geometry</param>
         /// <returns>True if successfully uploaded data</returns>
-        public bool UploadData(HEU_SessionBase session, HAPI_NodeId inputNodeID, HEU_InputDataSpline inputSpline, bool toWorld = false)
+        public bool UploadData(HEU_SessionBase session, HAPI_NodeId inputNodeID, HEU_InputDataSpline inputSpline, Matrix4x4 localToWorld)
         {
             // Set the input curve info of the newly created input curve
             HAPI_InputCurveInfo inputCurveInfo = new HAPI_InputCurveInfo();
             inputCurveInfo.curveType = HAPI_CurveType.HAPI_CURVETYPE_BEZIER;
-            inputCurveInfo.order = 4; // Recommended default
+            inputCurveInfo.order = 4;
             inputCurveInfo.closed = inputSpline._closed;
             inputCurveInfo.reverse = false;
-
-            // Curve always goes through the specified points
             inputCurveInfo.inputMethod = HAPI_InputCurveMethod.HAPI_CURVEMETHOD_BREAKPOINTS;
             inputCurveInfo.breakpointParameterization = HAPI_InputCurveParameterization.HAPI_CURVEPARAMETERIZATION_UNIFORM;
             if (!session.SetInputCurveInfo(inputNodeID, 0, ref inputCurveInfo))
@@ -301,18 +293,16 @@ namespace HoudiniEngineUnity
                 return false;
             }
 
-            // Calculate the number of refined point we want
+            // Calculate the number of refined points we want
             int numControlPoints = inputSpline._knots.Count();
             float splineLength = inputSpline._length;
-            float splineResolution = settings != null ? settings.SamplingResolution : 0.5f;
-
+            float splineResolution = settings != null ? settings.SamplingResolution : 0.0f;
             int numRefinedSplinePoints = splineResolution > 0.0f ? Mathf.CeilToInt(splineLength / splineResolution) + 1 : numControlPoints;
-            Matrix4x4 localToWorld = inputSpline._transform.localToWorldMatrix;
 
             float[] posArr;
             float[] rotArr;
             float[] scaleArr;
-            if (numRefinedSplinePoints < numControlPoints)
+            if (numRefinedSplinePoints <= numControlPoints)
             {
                 // There's not enough refined points, so we'll use the control points instead
                 posArr = new float[numControlPoints * 3];
@@ -321,7 +311,10 @@ namespace HoudiniEngineUnity
                 for (int i = 0; i < numControlPoints; i++)
                 {
                     BezierKnot knot = inputSpline._knots[i];
-                    float3 pos = toWorld ? localToWorld.MultiplyPoint(knot.Position) : knot.Position;
+
+                    // For branching sub-splines, apply local transform on vertices to get the merged spline
+                    float3 pos = localToWorld.MultiplyPoint(knot.Position);
+                    
                     HEU_HAPIUtility.ConvertPositionUnityToHoudini(pos, out posArr[i * 3 + 0], out posArr[i * 3 + 1], out posArr[i * 3 + 2]);
                     HEU_HAPIUtility.ConvertRotationUnityToHoudini(knot.Rotation, out rotArr[i * 4 + 0], out rotArr[i * 4 + 1], out rotArr[i * 4 + 2], out rotArr[i * 4 + 3]);
                 }
@@ -336,22 +329,32 @@ namespace HoudiniEngineUnity
                 for (int i = 0; i < numRefinedSplinePoints; i++)
                 {
                     float3 pos = SplineUtility.EvaluatePosition<Spline>(inputSpline._spline, currentDistance / splineLength);
-                    if (toWorld)
-                    {
-                        pos = localToWorld.MultiplyPoint(pos);
-                    }
-                    HEU_HAPIUtility.ConvertPositionUnityToHoudini(pos, out posArr[i * 3 + 0], out posArr[i * 3 + 1], out posArr[i * 3 + 2]);
+
+                    // For branching sub-splines, apply local transform on vertices to get the merged spline
+                    pos = localToWorld.MultiplyPoint(pos);
                     
+                    HEU_HAPIUtility.ConvertPositionUnityToHoudini(pos, out posArr[i * 3 + 0], out posArr[i * 3 + 1], out posArr[i * 3 + 2]);
                     currentDistance += splineResolution;
                 }
             }
 
-            bool hapi_result = session.SetInputCurvePositionsRotationsScales(
-                inputNodeID, 0,
-                posArr, 0, posArr.Length,
-                rotArr, 0, rotArr.Length,
-                scaleArr, 0, 0
-            );
+            bool hasRotations = rotArr.Length == posArr.Length;
+            bool hasScales = scaleArr.Length == posArr.Length;
+            bool hapi_result = false;
+            if (!hasRotations && !hasScales)
+            {
+                hapi_result = session.SetInputCurvePositions(inputNodeID, 0, posArr, 0, posArr.Length);
+            }
+            else
+            {
+                hapi_result = session.SetInputCurvePositionsRotationsScales(
+                    inputNodeID, 0,
+                    posArr, 0, posArr.Length,
+                    rotArr, 0, rotArr.Length,
+                    scaleArr, 0, 0
+                );
+            }
+
             if (!hapi_result)
             {
                 HEU_Logger.LogError("Failed to set input curve positions.");
