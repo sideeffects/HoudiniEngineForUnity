@@ -1050,7 +1050,7 @@ namespace HoudiniEngineUnity
 
 	    // Probably not necessary, but just in case
 	    hasRotations &= rotations.Count == positions.Count;
-	    hasScales &= scales.Count == scales.Count;
+	    hasScales &= scales.Count == positions.Count;
 
 	    float [] posArr = new float[positions.Count * 3];
 	    float [] rotArr = new float[positions.Count * 4];
