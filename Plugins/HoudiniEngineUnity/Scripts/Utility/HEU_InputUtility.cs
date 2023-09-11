@@ -226,7 +226,7 @@ namespace HoudiniEngineUnity
 		    HEU_InputInterfaceTilemap tilemapInterface = inputInterface as HEU_InputInterfaceTilemap;
 		    tilemapInterface.Initialize(inputNode.TilemapSettings);
 		}
-#if UNITY_2022_1_OR_NEWER
+#if UNITY_SPLINES_INSTALLED
 		if (inputInterfaceType == typeof(HEU_InputInterfaceSpline))
 		{
             HEU_InputInterfaceSpline splineInterface = inputInterface as HEU_InputInterfaceSpline;

@@ -24,13 +24,17 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#if UNITY_SPLINES_INSTALLED
 
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
+#if UNITY_SPLINES_INSTALLED
+
 using UnityEngine.Splines;
 using Unity.Mathematics;
+
+#endif
 
 
 namespace HoudiniEngineUnity
@@ -48,6 +52,7 @@ namespace HoudiniEngineUnity
         private float _samplingResolution = 0.5f;
     };
 
+#if UNITY_SPLINES_INSTALLED
     /// <summary>
     /// This class provides functionality for uploading Unity spline data from gameobjects
     /// into Houdini through an input node.
@@ -78,6 +83,11 @@ namespace HoudiniEngineUnity
 
         public void Initialize(HEU_InputInterfaceSplineSettings settings)
         {
+            if (settings == null)
+            {
+                settings = new HEU_InputInterfaceSplineSettings();
+            }
+
             this.settings = settings;
         }
 
@@ -280,6 +290,6 @@ namespace HoudiniEngineUnity
             return session.CommitGeo(inputNodeID);
         }
     }
-}   // HoudiniEngineUnity
-
 #endif
+
+}   // HoudiniEngineUnity

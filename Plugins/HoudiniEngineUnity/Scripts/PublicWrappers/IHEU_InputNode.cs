@@ -114,6 +114,11 @@ namespace HoudiniEngineUnity
 	/// <summary>Tilemap settings</summary>
 	HEU_InputInterfaceTilemapSettings TilemapSettings { get; }
 
+#if UNITY_2022_1_OR_NEWER
+	/// <summary>Spline settings</summary>
+	HEU_InputInterfaceSplineSettings SplineSettings { get; }
+#endif
+
 	/// <summary>
 	/// Whether or not this is an asset input
 	/// </summary>
