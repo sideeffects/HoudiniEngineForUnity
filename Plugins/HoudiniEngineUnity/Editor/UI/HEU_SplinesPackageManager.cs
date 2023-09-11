@@ -48,7 +48,7 @@ namespace HoudiniEngineUnity
         public static void Add()
         {
             // Add the Untiy.Splines package to the project
-            Request = Client.Add("com.unity.splines");
+            Request = Client.Add("com.unity.splines@2.1.0");
             EditorApplication.update += Progress;
         }
 
