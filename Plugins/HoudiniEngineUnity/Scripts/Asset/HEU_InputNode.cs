@@ -90,10 +90,8 @@ namespace HoudiniEngineUnity
 	/// <inheritdoc />
 	public HEU_InputInterfaceTilemapSettings TilemapSettings { get { return  _tilemapSettings; }}
 
-#if UNITY_2022_1_OR_NEWER
 	/// <inheritdoc />
     public HEU_InputInterfaceSplineSettings SplineSettings { get { return  _splineSettings; }}
-#endif
 
 	// ========================================================================
 
@@ -122,7 +120,7 @@ namespace HoudiniEngineUnity
 #if UNITY_2022_1_OR_NEWER
 		SPLINE,
 #endif
-        TERRAIN,
+		TERRAIN,
 	    BOUNDING_BOX,
 	    TILEMAP
 		}
@@ -228,11 +226,9 @@ namespace HoudiniEngineUnity
 	[SerializeField]
 	private HEU_InputInterfaceTilemapSettings _tilemapSettings = new HEU_InputInterfaceTilemapSettings();
 
-#if UNITY_2022_1_OR_NEWER
 	// Spline specific settings:
 	[SerializeField]
 	private HEU_InputInterfaceSplineSettings _splineSettings = new HEU_InputInterfaceSplineSettings();
-#endif
 
 	// Field used in UI only.
 	[SerializeField]
@@ -1763,9 +1759,7 @@ namespace HoudiniEngineUnity
 	public UnityEditor.SerializedProperty _meshSettingsProperty;
 	public UnityEditor.SerializedProperty _tilemapSettingsProperty;
 
-#if UNITY_2022_1_OR_NEWER
     public UnityEditor.SerializedProperty _splineSettingsProperty;
-#endif
 
 #endif
 

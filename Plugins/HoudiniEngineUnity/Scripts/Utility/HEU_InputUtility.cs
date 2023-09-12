@@ -229,8 +229,8 @@ namespace HoudiniEngineUnity
 #if UNITY_SPLINES_INSTALLED
 		if (inputInterfaceType == typeof(HEU_InputInterfaceSpline))
 		{
-            HEU_InputInterfaceSpline splineInterface = inputInterface as HEU_InputInterfaceSpline;
-            splineInterface.Initialize(inputNode.SplineSettings);
+			HEU_InputInterfaceSpline splineInterface = inputInterface as HEU_InputInterfaceSpline;
+			splineInterface.Initialize(inputNode.SplineSettings);
 		}
 #endif
 
