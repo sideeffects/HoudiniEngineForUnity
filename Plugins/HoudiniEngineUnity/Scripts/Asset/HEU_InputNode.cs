@@ -1601,8 +1601,8 @@ namespace HoudiniEngineUnity
 		case HEU_InputObjectTypeWrapper.CURVE:
 		    return HEU_InputNode.InputObjectType.CURVE;
 #if UNITY_2022_1_OR_NEWER
-        case HEU_InputObjectTypeWrapper.SPLINE:
-		    return HEU_InputNode.InputObjectType.SPLINE;
+		case HEU_InputObjectTypeWrapper.SPLINE:
+			return HEU_InputNode.InputObjectType.SPLINE;
 #endif
 		case HEU_InputObjectTypeWrapper.BOUNDING_BOX:
 		    return HEU_InputNode.InputObjectType.BOUNDING_BOX;
