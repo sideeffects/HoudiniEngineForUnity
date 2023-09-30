@@ -49,7 +49,7 @@ namespace HoudiniEngineUnity
         public float SamplingResolution { get { return _samplingResolution; } set { _samplingResolution = value; } }
 
         [SerializeField]
-        private float _samplingResolution = 0.5f;
+        private float _samplingResolution = 25.0f;
     };
 
 #if UNITY_SPLINES_INSTALLED

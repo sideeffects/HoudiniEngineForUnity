@@ -44,7 +44,7 @@ namespace HoudiniEngineUnity
 	private static GUIContent _tilemapColorContent = new GUIContent("Apply Tile color", "If checked, will output a Cd color attribute to point.");
 	private static GUIContent _tilemapOrientationContent = new GUIContent("Apply Tilemap Orientation", "If checked, will offset position by the tilemap position offset, and produce orient/pscale attributes to the points.");
 
-	private static GUIContent _samplingResolutionContent = new GUIContent("Sampling Resolution", "Defines the granularity at which a spline's positional data is sampled and marshalled to Houdini. The lower the value, the closer the fit.");
+	private static GUIContent _samplingResolutionContent = new GUIContent("Unity Spline Resolution", "Resolution used when marshalling Unity Splines to Houdini Engine (step in m between control points). Set this to 0 to only export the control points.");
 
 	/// <summary>
 	/// Populate the UI cache for the given input node
@@ -301,10 +301,11 @@ The UNITY_MESH type can accept any GameObject (Including Terrain, HEU_BoundingVo
                 }
 				else
 				{
+					HEU_EditorUI.DrawHeadingLabel("Spline settings");
 					EditorGUI.indentLevel++;
 					{
 						UnityEditor.SerializedProperty samplingResolution = inputNode._uiCache._splineSettingsProperty.FindPropertyRelative("_samplingResolution");
-						samplingResolution.floatValue = EditorGUILayout.Slider(_samplingResolutionContent.text, samplingResolution.floatValue, 0.0f, 4.0f);
+						samplingResolution.floatValue = EditorGUILayout.Slider(_samplingResolutionContent.text, samplingResolution.floatValue, 0.0f, 100.0f);
 					}
 					EditorGUI.indentLevel--;
 				}
