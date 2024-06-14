@@ -129,6 +129,10 @@ namespace HoudiniEngineUnity
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = HEU_HAPIConstants.HAPI_MAX_NUM_CONNECTIONS, ArraySubType = UnmanagedType.I4)]
         public int[] ports;              //Specifies a list of port numbers
 
+        public HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;              
+
+        public HAPI_Int64 sharedMemoryBufferSize;              
+
     };
 
     [StructLayout(LayoutKind.Sequential)]
@@ -141,6 +145,10 @@ namespace HoudiniEngineUnity
         public float timeoutMs;              //Timeout in milliseconds for waiting on the server tosignal that it ready to serve. If the server failsto signal within this time interval the start server call failsand the server process is terminated.
 
         public HAPI_StatusVerbosity verbosity;              
+
+        public HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;              
+
+        public HAPI_Int64 sharedMemoryBufferSize;              
 
     };
 

@@ -90,6 +90,13 @@ namespace HoudiniEngineUnity
         HAPI_STATUSVERBOSITY_MESSAGES = HAPI_STATUSVERBOSITY_2,        //Used for Results. Equivalent to HAPI_STATUSVERBOSITY_2
     };
 
+    public enum HAPI_JobStatus          
+    {
+        HAPI_JOB_STATUS_RUNNING,        
+        HAPI_JOB_STATUS_IDLE,        
+        HAPI_JOB_STATUS_MAX,        
+    };
+
     public enum HAPI_Result          
     {
         HAPI_RESULT_SUCCESS = 0,        
@@ -638,6 +645,12 @@ namespace HoudiniEngineUnity
         HAPI_TCP_PORT_ANY,        
         HAPI_TCP_PORT_RANGE,        
         HAPI_TCP_PORT_LIST,        
+    };
+
+    public enum HAPI_ThriftSharedMemoryBufferType          
+    {
+        HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER,        
+        HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER,        
     };
 
 
