@@ -103,7 +103,7 @@ namespace HoudiniEngineUnity
         public static void ConnectSocketSession()
         {
             bool bResult = HEU_SessionManager.ConnectThriftSocketSession(HEU_PluginSettings.Session_Localhost,
-                HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Port);
+                HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout);
             if (!bResult)
             {
                 HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");
