@@ -83,6 +83,9 @@ namespace HoudiniEngineUnity
 
             _port = HEU_PluginSettings.Session_Port;
             _pipeName = HEU_PluginSettings.Session_PipeName;
+            _sharedMemoryName = HEU_PluginSettings.Session_SharedMemoryName;
+            _sharedMemoryBufferType = HEU_PluginSettings.Session_SharedMemoryBufferType;
+            _sharedMemoryBufferSize = HEU_PluginSettings.Session_SharedMemoryBufferSize;
 
             _log = new StringBuilder();
 
@@ -212,6 +215,46 @@ namespace HoudiniEngineUnity
                     {
                         HEU_PluginSettings.Session_Port = newPort;
                         _port = newPort;
+                    }
+                }
+                else if (_sessionMode == SessionMode.SharedMemory)
+                {
+                    string newSharedMemoryName =
+                        EditorGUILayout.DelayedTextField("Name", _sharedMemoryName);
+                    if (_sharedMemoryName != newSharedMemoryName)
+                    {
+                        HEU_PluginSettings.Session_SharedMemoryName = newSharedMemoryName;
+                        _sharedMemoryName = newSharedMemoryName;
+                    }
+
+                    string[] bufferTypeOptions = {"Ring Buffer", "Fixed Length Buffer"};
+                    int oldValueInt = 0;
+                    if (_sharedMemoryBufferType == HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER)
+                        oldValueInt = 0;
+                    else if (_sharedMemoryBufferType == HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER)
+                        oldValueInt = 1;
+                    int newValueInt = EditorGUILayout.Popup("Buffer Type",
+                        oldValueInt, bufferTypeOptions);
+
+                    HAPI_ThriftSharedMemoryBufferType newSharedMemoryBufferType = 
+                        HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER;
+                    if (newValueInt == 0)
+                        newSharedMemoryBufferType = HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER;
+                    else if (newValueInt == 1)
+                        newSharedMemoryBufferType = HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;
+
+                    if (_sharedMemoryBufferType != newSharedMemoryBufferType)
+                    {
+                        HEU_PluginSettings.Session_SharedMemoryBufferType = newSharedMemoryBufferType;
+                        _sharedMemoryBufferType = newSharedMemoryBufferType;
+                    }
+
+                    int newSharedMemoryBufferSize =
+                        EditorGUILayout.DelayedIntField("Buffer Size", _sharedMemoryBufferSize);
+                    if (_sharedMemoryBufferSize != newSharedMemoryBufferSize)
+                    {
+                        HEU_PluginSettings.Session_SharedMemoryBufferSize = newSharedMemoryBufferSize;
+                        _sharedMemoryBufferSize = newSharedMemoryBufferSize;
                     }
                 }
 
@@ -345,6 +388,7 @@ namespace HoudiniEngineUnity
 
             bool result = InternalConnect(_sessionMode, _pipeName,
                 HEU_PluginSettings.Session_Localhost, _port,
+                _sharedMemoryName, _sharedMemoryBufferType, _sharedMemoryBufferSize,
                 HEU_PluginSettings.Session_AutoClose,
                 HEU_PluginSettings.Session_Timeout,
                 true);
@@ -379,8 +423,10 @@ namespace HoudiniEngineUnity
         /// </summary>
         private bool InternalConnect(
             SessionMode sessionType, string pipeName,
-            string ip, int port, bool autoClose, float timeout,
-            bool logError)
+            string ip, int port, string sharedMemoryName,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
+            int sharedMemoryBufferSize,
+            bool autoClose, float timeout, bool logError)
         {
             if (sessionType == SessionMode.Pipe)
             {
@@ -390,7 +436,7 @@ namespace HoudiniEngineUnity
                     timeout,
                     logError);
             }
-            else
+            else if (sessionType == SessionMode.Socket)
             {
                 return HEU_SessionManager.ConnectSessionSyncUsingThriftSocket(
                     ip,
@@ -398,6 +444,12 @@ namespace HoudiniEngineUnity
                     autoClose,
                     timeout,
                     logError);
+            }
+            else
+            {
+                return HEU_SessionManager.ConnectSessionSyncUsingThriftSharedMemory(
+                    sharedMemoryName, sharedMemoryBufferType,
+                    sharedMemoryBufferSize, autoClose, timeout, logError);
             }
         }
 
@@ -436,9 +488,30 @@ namespace HoudiniEngineUnity
             {
                 args = string.Format("-hess=pipe:{0}", _pipeName);
             }
-            else
+            else if (_sessionMode == SessionMode.Socket)
             {
                 args = string.Format("-hess=port:{0}", _port);
+            }
+            else
+            {
+                if (_sharedMemoryBufferType ==
+                    HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER)
+                {
+                    args = string.Format("-hess=shared:{0}:{1}:{2}",
+                        "ring", _sharedMemoryBufferSize, _sharedMemoryName);
+                }
+                else if (_sharedMemoryBufferType ==
+                         HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER)
+                {
+                    args = string.Format("-hess=shared:{0}:{1}:{2}",
+                        "fixed", _sharedMemoryBufferSize, _sharedMemoryName);
+                }
+                else
+                {
+                    Log(@"Failed to start Houdini because an invalid shared 
+                          memory buffer type was provided.");
+                    return false;
+                }
             }
 
             Log("Opening Houdini...");
@@ -535,6 +608,9 @@ namespace HoudiniEngineUnity
             {
                 if (InternalConnect(_sessionMode, _pipeName,
                         HEU_PluginSettings.Session_Localhost, _port,
+                        _sharedMemoryName,
+                        _sharedMemoryBufferType,
+                        _sharedMemoryBufferSize,
                         HEU_PluginSettings.Session_AutoClose,
                         HEU_PluginSettings.Session_Timeout, false))
                 {
@@ -936,6 +1012,15 @@ namespace HoudiniEngineUnity
 
         // Pipe name
         public string _pipeName = "";
+
+        // Shared memory name
+        public string _sharedMemoryName = "";
+
+        // Shared memory buffer type
+        public HAPI_ThriftSharedMemoryBufferType _sharedMemoryBufferType;
+
+        // Shared memory buffer size
+        public int _sharedMemoryBufferSize = 0;
 
         // Seconds between connection attempts while Houdini launches
         private const float CONNECTION_ATTEMPT_RATE = 5f;

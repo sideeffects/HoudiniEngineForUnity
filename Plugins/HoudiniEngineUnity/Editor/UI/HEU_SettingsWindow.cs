@@ -781,6 +781,51 @@ namespace HoudiniEngineUnity
             }
             HEU_EditorUI.DrawSeparator();
             {
+                string oldValue = HEU_PluginSettings.Session_SharedMemoryName;
+                string newValue = EditorGUILayout.DelayedTextField("Shared Memory Session Name", oldValue);
+                if (oldValue != newValue && !string.IsNullOrEmpty(newValue))
+                {
+                    HEU_PluginSettings.Session_SharedMemoryName = newValue;
+                    bChanged = true;
+                }
+            }
+            HEU_EditorUI.DrawSeparator();
+            {
+                int oldValue = HEU_PluginSettings.Session_SharedMemoryBufferSize;
+                int newValue = EditorGUILayout.DelayedIntField("Shared Memory Session Buffer Size", oldValue);
+                if (oldValue != newValue)
+                {
+                    HEU_PluginSettings.Session_SharedMemoryBufferSize = newValue;
+                    bChanged = true;
+                }
+            }
+            HEU_EditorUI.DrawSeparator();
+            {
+                string[] bufferTypeOptions = 
+                    {"Ring Buffer", "Fixed Length Buffer"};
+                HAPI_ThriftSharedMemoryBufferType oldValue = HEU_PluginSettings.Session_SharedMemoryBufferType;
+                int selectedIndex = 0;
+                if (oldValue == HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER)
+                    selectedIndex = 0;
+                else if (oldValue == HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER)
+                    selectedIndex = 1;
+                int newValueInt =
+                    EditorGUILayout.Popup("Shared Memory Session Buffer Type", selectedIndex, bufferTypeOptions);
+
+                HAPI_ThriftSharedMemoryBufferType newValue;
+                if (newValueInt == 0)
+                    newValue = HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER;
+                else
+                    newValue = HAPI_ThriftSharedMemoryBufferType.HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER;
+
+                if (oldValue != newValue)
+                {
+                    HEU_PluginSettings.Session_SharedMemoryBufferType = newValue;
+                    bChanged = true;
+                }
+            }
+            HEU_EditorUI.DrawSeparator();
+            {
                 float oldValue = HEU_PluginSettings.Session_Timeout;
                 float newValue = EditorGUILayout.DelayedFloatField("Session Timeout", oldValue);
                 if (oldValue != newValue)

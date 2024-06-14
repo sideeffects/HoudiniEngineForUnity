@@ -433,6 +433,39 @@ namespace HoudiniEngineUnity
             set => HEU_PluginStorage.Instance.Set("HAPI_SessionPort", value);
         }
 
+        public static string Session_SharedMemoryName
+        {
+            get
+            {
+                string attrValue = HEU_Defines.HEU_SESSION_SHARED_MEMORY_NAME;
+                HEU_PluginStorage.Instance.Get("HAPI_SharedMemoryName", out attrValue, attrValue);
+                return attrValue;
+            }
+            set => HEU_PluginStorage.Instance.Set("HAPI_SharedMemoryName", value);
+        }
+
+        public static int Session_SharedMemoryBufferSize
+        {
+            get
+            {
+                int attrValue = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_SIZE;
+                HEU_PluginStorage.Instance.Get("HAPI_SharedMemoryBufferSize", out attrValue, attrValue);
+                return attrValue;
+            }
+            set => HEU_PluginStorage.Instance.Set("HAPI_SharedMemoryBufferSize", value);
+        }
+
+        public static HAPI_ThriftSharedMemoryBufferType Session_SharedMemoryBufferType
+        {
+            get
+            {
+                int attrValue = (int)HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_TYPE;
+                HEU_PluginStorage.Instance.Get("HAPI_SharedMemoryBufferType", out attrValue, attrValue);
+                return (HAPI_ThriftSharedMemoryBufferType)attrValue;
+            }
+            set => HEU_PluginStorage.Instance.Set("HAPI_SharedMemoryBufferType", (int)value);
+        }
+
         public static float Session_Timeout
         {
             get

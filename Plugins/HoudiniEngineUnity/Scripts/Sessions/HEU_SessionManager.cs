@@ -324,6 +324,23 @@ namespace HoudiniEngineUnity
         }
 
         /// <summary>
+        /// Create shared memory session for Houdini Engine.
+        /// </summary>
+        /// <param name="sharedMemoryName"></param>
+        /// <param name="sharedMemoryBufferType"></param>
+        /// <param name="sharedMemoryBufferSize"></param>
+        /// <param name="autoClose"></param>
+        /// <param name="timeout"></param>
+        /// <returns>True if successfully created session.</returns>
+        public static bool CreateThriftSharedMemorySession(string sharedMemoryName, HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType, int sharedMemoryBufferSize, bool autoClose, float timeout, bool logError)
+        {
+            CheckAndCloseExistingSession();
+
+            _defaultSession = CreateSessionObject();
+            return _defaultSession.CreateThriftSharedMemorySession(true, sharedMemoryName, sharedMemoryBufferType, sharedMemoryBufferSize, autoClose, timeout, logError);
+        }
+
+        /// <summary>
         /// Create custom Houdini Engine session.
         /// </summary>
         /// <returns>True if session was created successfully.</returns>
@@ -349,6 +366,18 @@ namespace HoudiniEngineUnity
 
             _defaultSession = CreateSessionObject();
             return _defaultSession.ConnectThriftPipeSession(true, pipeName, autoClose, timeout);
+        }
+
+        public static bool ConnectThriftSharedMemorySession(string sharedMemoryName,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
+            int sharedMemoryBufferSize, bool autoClose, float timeout)
+        {
+            CheckAndCloseExistingSession();
+
+            _defaultSession = CreateSessionObject();
+            return _defaultSession.ConnectThriftSharedMemorySession(true,
+                sharedMemoryName, sharedMemoryBufferType, sharedMemoryBufferSize,
+                autoClose, timeout);
         }
 
         public static void RecreateDefaultSessionData()
@@ -383,6 +412,22 @@ namespace HoudiniEngineUnity
             return _defaultSession.ConnectThriftPipeSession(
                 true, pipeName, autoClose, timeout,
                 logError, false);
+        }
+
+        public static bool ConnectSessionSyncUsingThriftSharedMemory(
+            string sharedMemoryName,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
+            int sharedMemoryBufferSize, bool autoClose, float timeout,
+            bool logError)
+        {
+            if (_defaultSession == null)
+            {
+                RecreateDefaultSessionData();
+            }
+
+            return _defaultSession.ConnectThriftSharedMemorySession(
+                true, sharedMemoryName, sharedMemoryBufferType,
+                sharedMemoryBufferSize, autoClose, timeout, logError, false);
         }
 
         public static bool InitializeDefaultSession()

@@ -39,6 +39,7 @@ namespace HoudiniEngineUnity
         public const string INPROCESS_SESSION = "In-Process Session";
         public const string RPC_PIPE_SESSION = "Pipe Session";
         public const string RPC_SOCKET_SESSION = "Socket Session";
+        public const string RPC_SHARED_MEMORY_SESSION = "Shared Memory Session";
         public const string GET_SESSION_INFO = "Session Info";
         public const string CLOSE_DEFAULT_SESSION = "Close Default Session";
         public const string CLOSE_ALL_SESSIONS = "Close All Sessions";

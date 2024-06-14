@@ -279,6 +279,17 @@ namespace HoudiniEngineUnity
             return false;
         }
 
+        public virtual bool CreateThriftSharedMemorySession(bool bIsDefaultSession,
+            string sharedMemoryName,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_TYPE,
+            int sharedMemoryBufferSize = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_SIZE,
+            bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
+            float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
+            bool bLogError = true)
+        {
+            return false;
+        }
+
         public virtual bool CreateCustomSession(bool bIsDefaultSession)
         {
             return false;
@@ -297,6 +308,19 @@ namespace HoudiniEngineUnity
 
         public virtual bool ConnectThriftPipeSession(bool bIsDefaultSession,
             string pipeName = HEU_Defines.HEU_SESSION_PIPENAME,
+            bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
+            float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
+            bool logError = true,
+            bool autoInitialize = true)
+        {
+            return false;
+        }
+
+        public virtual bool ConnectThriftSharedMemorySession(
+            bool bIsDefaultSession,
+            string sharedMemoryName = HEU_Defines.HEU_SESSION_SHARED_MEMORY_NAME,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_TYPE,
+            int sharedMemoryBufferSize = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_SIZE,
             bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
             float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
             bool logError = true,

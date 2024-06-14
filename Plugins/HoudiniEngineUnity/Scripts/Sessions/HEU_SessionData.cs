@@ -45,7 +45,8 @@ namespace HoudiniEngineUnity
     public enum SessionMode
     {
         Socket,
-        Pipe
+        Pipe,
+        SharedMemory
     }
 
     /// <summary>
@@ -71,6 +72,12 @@ namespace HoudiniEngineUnity
         [SerializeField] private string _pipeName;
 
         [SerializeField] private int _port;
+
+        [SerializeField] private string _sharedMemoryName;
+
+        [SerializeField] private HAPI_ThriftSharedMemoryBufferType _sharedMemoryBufferType;
+
+        [SerializeField] private int _sharedMemoryBufferSize;
 #pragma warning restore 0414
 
         // ID for the HEU_SessionBase class type
@@ -188,6 +195,34 @@ namespace HoudiniEngineUnity
             get => _port;
 
             set => _port = value;
+        }
+
+        public string SharedMemoryName
+        {
+            get
+            {
+#if HOUDINIENGINEUNITY_ENABLE
+                return _sharedMemoryName;
+#else
+                return "";
+#endif
+            }
+
+            set => _sharedMemoryName = value;
+        }
+
+        public HAPI_ThriftSharedMemoryBufferType SharedMemoryBufferType
+        {
+            get => _sharedMemoryBufferType;
+
+            set => _sharedMemoryBufferType = value;
+        }
+
+        public int SharedMemoryBufferSize
+        {
+            get => _sharedMemoryBufferSize;
+
+            set => _sharedMemoryBufferSize = value;
         }
 
         public System.Type SessionClassType

@@ -475,6 +475,162 @@ namespace HoudiniEngineUnity
             return true;
         }
 
+        /// <summary>
+        /// Create and connect shared memory session for Houdini Engine.
+        /// </summary>
+        /// <param name="sharedMemoryName"></param>
+        /// <param name="sharedMemoryBufferType"></param>
+        /// <param name="sharedMemoryBufferSize"></param>
+        /// <param name="autoClose"></param>
+        /// <param name="timeout"></param>
+        /// <returns>True if successfully created session.</returns>
+        public override bool CreateThriftSharedMemorySession(
+            bool bIsDefaultSession, string sharedMemoryName,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
+            int sharedMemoryBufferSize, bool autoClose, float timeout,
+            bool logError)
+        {
+            try
+            {
+                return InternalCreateThriftSharedMemorySession(true,
+                    sharedMemoryName, sharedMemoryBufferType,
+                    sharedMemoryBufferSize, autoClose, timeout,
+                    bIsDefaultSession, logError: logError,
+                    autoInitialize: true);
+            }
+            catch (System.Exception ex)
+            {
+                if (ex is System.DllNotFoundException || ex is System.EntryPointNotFoundException)
+                {
+                    SetLibraryErrorMsg(logError);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Connect to shared memory session for Houdini Engine.
+        /// Create session first if specified.
+        /// </summary>
+        /// <param name="bCreateSession">Create the session if specified.</param>
+        /// <param name="sharedMemoryName"></param>
+        /// <param name="sharedMemoryBufferType"></param>
+        /// <param name="sharedMemoryBufferSize"></param>
+        /// <param name="autoClose"></param>
+        /// <param name="timeout"></param>
+        private bool InternalCreateThriftSharedMemorySession(
+            bool bCreateSession, string sharedMemoryName,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
+            int sharedMemoryBufferSize, bool autoClose, float timeout,
+            bool bIsDefaultSession, bool logError, bool autoInitialize)
+        {
+            CheckAndCloseExistingSession();
+            if (!CreateSessionData(true, bIsDefaultSession))
+            {
+                return false;
+            }
+
+            int processID = 0;
+            HAPI_Result result;
+
+            _sessionData.SharedMemoryName = sharedMemoryName;
+            _sessionData.SharedMemoryBufferType = sharedMemoryBufferType;
+            _sessionData.SharedMemoryBufferSize = sharedMemoryBufferSize;
+            _sessionData.ThisSessionMode = SessionMode.SharedMemory;
+
+            // Start at failed since this is several steps. Once connected, we can set it as such.
+            ConnectionState = SessionConnectionState.FAILED_TO_CONNECT;
+
+            HEU_SessionManager.ClearConnectionError();
+
+            if (bCreateSession)
+            {
+                // First create the shared memory server
+                HAPI_ThriftServerOptions serverOptions = new HAPI_ThriftServerOptions();
+                serverOptions.autoClose = autoClose;
+                serverOptions.timeoutMs = timeout;
+                serverOptions.verbosity = HAPI_StatusVerbosity.HAPI_STATUSVERBOSITY_ALL;
+                serverOptions.sharedMemoryBufferType = sharedMemoryBufferType;
+                serverOptions.sharedMemoryBufferSize = sharedMemoryBufferSize;
+
+                result = HEU_HAPIFunctions.HAPI_StartThriftSharedMemoryServer(ref serverOptions,
+                    sharedMemoryName.AsByteArray(), out processID, null);
+                if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
+                {
+                    bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
+                    SetSessionConnectionErrorMsg("Unable to start the Houdini Engine server (shared memory mode).",
+                        result, bIsHARSRunning, logError);
+
+                    HandleSessionConnectionFailure();
+                    return false;
+                }
+            }
+
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            Assembly[] assemblies = currentDomain.GetAssemblies();
+            string assemblyList = "";
+            foreach (Assembly assembly in assemblies)
+            {
+                if (!String.IsNullOrEmpty(assemblyList))
+                {
+                    assemblyList = String.Concat(assemblyList, ";");
+                }
+
+                assemblyList = String.Concat(assemblyList, assembly.GetName().Name);
+            }
+
+            HEU_HARCImports.harcSetManagedHostLibrariesList(assemblyList);
+
+            _sessionData.ProcessID = processID;
+
+            // Then create the session
+            _sessionData._HAPISession.type = HAPI_SessionType.HAPI_SESSION_THRIFT;
+            HAPI_SessionInfo sessionInfo = new HAPI_SessionInfo();
+            sessionInfo.sharedMemoryBufferType = sharedMemoryBufferType;
+            sessionInfo.sharedMemoryBufferSize = sharedMemoryBufferSize;
+            result = HEU_HAPIFunctions.HAPI_CreateThriftSharedMemorySession(
+                out _sessionData._HAPISession, sharedMemoryName.AsByteArray(),
+                ref sessionInfo);
+            if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
+            {
+                string harsMsg = "";
+                if (!bCreateSession)
+                {
+                    harsMsg = "\n\nMake sure you started the HARS server located in Houdini.";
+                }
+
+                bool bIsHARSRunning = HEU_SessionManager.IsHARSProcessRunning(processID);
+                SetSessionConnectionErrorMsg(
+                    "Unable to connect to the Houdini Engine server (shared memory mode)." + harsMsg,
+                    result, bIsHARSRunning, logError);
+
+                HandleSessionConnectionFailure();
+                return false;
+            }
+
+            HEU_Logger.LogFormat(
+                "Houdini Engine: Created shared memory session with name '{0}'.", sharedMemoryName);
+
+            // Make sure API version matches with plugin version
+            if (!CheckVersionMatch())
+            {
+                HandleSessionConnectionFailure();
+                return false;
+            }
+
+            if (autoInitialize)
+            {
+                return InitializeSession(_sessionData);
+            }
+
+            return true;
+        }
+
         public override bool CreateCustomSession(bool bIsDefaultSession)
         {
             throw new System.NotImplementedException();
@@ -507,6 +663,22 @@ namespace HoudiniEngineUnity
             bool logError, bool autoInitialize)
         {
             return InternalCreateThriftPipeSession(false, pipeName, autoClose, timeout, bIsDefaultSession, logError, autoInitialize);
+        }
+
+        public override bool ConnectThriftSharedMemorySession(
+            bool bIsDefaultSession,
+            string sharedMemoryName,
+            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
+            int sharedMemoryBufferSize,
+            bool autoClose,
+            float timeout,
+            bool logError,
+            bool autoInitialize)
+        {
+            return InternalCreateThriftSharedMemorySession(false,
+                sharedMemoryName, sharedMemoryBufferType,
+                sharedMemoryBufferSize, autoClose, timeout, bIsDefaultSession,
+                logError, autoInitialize);
         }
 
         /// <summary>

@@ -76,6 +76,18 @@ namespace HoudiniEngineUnity
             }
         }
 
+        [MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Create/" + HEU_EditorStrings.RPC_SHARED_MEMORY_SESSION, false, 0)]
+        public static void CreateSharedMemorySession()
+        {
+            bool bResult = HEU_SessionManager.CreateThriftSharedMemorySession(HEU_PluginSettings.Session_SharedMemoryName,
+                HEU_PluginSettings.Session_SharedMemoryBufferType, HEU_PluginSettings.Session_SharedMemoryBufferSize,
+                HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
+            if (!bResult)
+            {
+                HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
+            }
+        }
+
         [MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect/" + HEU_EditorStrings.RPC_PIPE_SESSION, false, 0)]
         public static void ConnectPipeSession()
         {
@@ -92,6 +104,19 @@ namespace HoudiniEngineUnity
         {
             bool bResult = HEU_SessionManager.ConnectThriftSocketSession(HEU_PluginSettings.Session_Localhost,
                 HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Port);
+            if (!bResult)
+            {
+                HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");
+            }
+        }
+
+        [MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect/" + HEU_EditorStrings.RPC_SHARED_MEMORY_SESSION, false, 0)]
+        public static void ConnectSharedMemorySession()
+        {
+            bool bResult = HEU_SessionManager.ConnectThriftSharedMemorySession(
+                HEU_PluginSettings.Session_SharedMemoryName, HEU_PluginSettings.Session_SharedMemoryBufferType,
+                HEU_PluginSettings.Session_SharedMemoryBufferSize, HEU_PluginSettings.Session_AutoClose,
+                HEU_PluginSettings.Session_Timeout);
             if (!bResult)
             {
                 HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");
