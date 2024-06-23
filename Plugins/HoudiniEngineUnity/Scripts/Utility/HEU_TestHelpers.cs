@@ -306,78 +306,91 @@ namespace HoudiniEngineUnity
         public static bool AssertTrueLogEquivalent<T>(T[] a, T[] b, ref bool result, string header, string subject,
             string optional1 = "", string optional2 = "", string optional3 = "") where T : struct
         {
-            bool bResult = true;
+            bool bTotalResult = true;
+            if (!ShouldBeTested(a, b, ref bTotalResult, header, subject))
+                return true;
 
-            if (ShouldBeTested(a, b, ref bResult, header, subject))
+            int errorCount = 0;
+
+            for (int i = 0; i < a.Length; i++)
             {
-                for (int i = 0; i < a.Length; i++)
-                {
-                    if (a[i].GetType() == typeof(float))
-                    {
-                        float aF = (float)((object)a[i]);
-                        float bF = (float)((object)b[i]);
 
-                        bResult &= aF.ApproximatelyEquals(bF);
-                        if (bResult == false)
-                        {
-                            HEU_Logger.Log(aF + " " + bF);
-                        }
-                    }
-                    else if (a[i].GetType() == typeof(Vector2))
+                bool bResult = true;
+
+                if (a[i].GetType() == typeof(float))
+                {
+                    float aF = (float)((object)a[i]);
+                    float bF = (float)((object)b[i]);
+
+                    bResult &= aF.ApproximatelyEquals(bF);
+                    if (bResult == false)
                     {
-                        Vector2 aV = (Vector2)((object)a[i]);
-                        Vector2 bV = (Vector2)((object)b[i]);
-                        for (int j = 0; j < 2; j++)
-                        {
-                            bResult &= aV[j].ApproximatelyEquals(bV[j]);
-                        }
-                    }
-                    else if (a[i].GetType() == typeof(Vector3))
-                    {
-                        Vector3 aV = (Vector3)((object)a[i]);
-                        Vector3 bV = (Vector3)((object)b[i]);
-                        for (int j = 0; j < 3; j++)
-                        {
-                            bResult &= aV[j].ApproximatelyEquals(bV[j]);
-                        }
-                    }
-                    else if (a[i].GetType() == typeof(Vector4))
-                    {
-                        Vector4 aV = (Vector4)((object)a[i]);
-                        Vector4 bV = (Vector4)((object)b[i]);
-                        for (int j = 0; j < 4; j++)
-                        {
-                            bResult &= aV[j].ApproximatelyEquals(bV[j]);
-                        }
-                    }
-                    else if (a[i].GetType() == typeof(Matrix4x4))
-                    {
-                        Matrix4x4 aV = (Matrix4x4)((object)a[i]);
-                        Matrix4x4 bV = (Matrix4x4)((object)b[i]);
-                        for (int j = 0; j < 16; j++)
-                        {
-                            bResult &= aV[j].ApproximatelyEquals(bV[j]);
-                        }
-                    }
-                    else if (a[i].GetType() == typeof(Color))
-                    {
-                        Color aV = (Color)((object)a[i]);
-                        Color bV = (Color)((object)b[i]);
-                        bResult &= aV.r.ApproximatelyEquals(bV.r);
-                        bResult &= aV.g.ApproximatelyEquals(bV.g);
-                        bResult &= aV.b.ApproximatelyEquals(bV.b);
-                        bResult &= aV.a.ApproximatelyEquals(bV.a);
-                    }
-                    else
-                    {
-                        bResult &= a[i].Equals(b[i]);
+                        HEU_Logger.Log(aF + " " + bF);
                     }
                 }
+                else if (a[i].GetType() == typeof(Vector2))
+                {
+                    Vector2 aV = (Vector2)((object)a[i]);
+                    Vector2 bV = (Vector2)((object)b[i]);
+                    for (int j = 0; j < 2; j++)
+                    {
+                        bResult &= aV[j].ApproximatelyEquals(bV[j]);
+                    }
+                }
+                else if (a[i].GetType() == typeof(Vector3))
+                {
+                    Vector3 aV = (Vector3)((object)a[i]);
+                    Vector3 bV = (Vector3)((object)b[i]);
+                    for (int j = 0; j < 3; j++)
+                    {
+                        bResult &= aV[j].ApproximatelyEquals(bV[j]);
+                    }
+                }
+                else if (a[i].GetType() == typeof(Vector4))
+                {
+                    Vector4 aV = (Vector4)((object)a[i]);
+                    Vector4 bV = (Vector4)((object)b[i]);
+                    for (int j = 0; j < 4; j++)
+                    {
+                        bResult &= aV[j].ApproximatelyEquals(bV[j]);
+                    }
+                }
+                else if (a[i].GetType() == typeof(Matrix4x4))
+                {
+                    Matrix4x4 aV = (Matrix4x4)((object)a[i]);
+                    Matrix4x4 bV = (Matrix4x4)((object)b[i]);
+                    for (int j = 0; j < 16; j++)
+                    {
+                        bResult &= aV[j].ApproximatelyEquals(bV[j]);
+                    }
+                }
+                else if (a[i].GetType() == typeof(Color))
+                {
+                    Color aV = (Color)((object)a[i]);
+                    Color bV = (Color)((object)b[i]);
+                    bResult &= aV.r.ApproximatelyEquals(bV.r);
+                    bResult &= aV.g.ApproximatelyEquals(bV.g);
+                    bResult &= aV.b.ApproximatelyEquals(bV.b);
+                    bResult &= aV.a.ApproximatelyEquals(bV.a);
+                }
+                else
+                {
+                    bResult &= a[i].Equals(b[i]);
+                }
 
-                PrintTestLogAndSetResult(bResult, ref result, header, subject, optional1, optional2, optional3);
+                if (bResult == false && errorCount < 10)
+                {
+                    string errorString = string.Format("mismatch on {0} : a {1} b {2}", i, a[i].ToString(), b[i].ToString());
+                    HEU_Logger.LogError(errorString);
+                    errorCount++;
+
+                }
+                bTotalResult &= bResult;
             }
 
-            return bResult;
+            PrintTestLogAndSetResult(bTotalResult, ref result, header, subject, optional1, optional2, optional3);
+
+            return bTotalResult;
         }
 
         public static bool AssertTrueLogEquivalent(string[] a, string[] b, ref bool result, string header,
