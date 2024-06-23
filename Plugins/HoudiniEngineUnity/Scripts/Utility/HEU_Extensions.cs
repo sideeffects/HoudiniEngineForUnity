@@ -96,7 +96,7 @@ namespace HoudiniEngineUnity
             return self.Cast<IEquivable<T>>().ToArray();
         }
 
-        public static bool ApproximatelyEquals(this float self, float other, float epsilon = 1E-06F)
+        public static bool ApproximatelyEquals(this float self, float other, float epsilon = 1E-03F)
         {
             return Mathf.Abs(self - other) < epsilon;
         }
