@@ -161,12 +161,12 @@ namespace HoudiniEngineUnity
             HDA,
             UNITY_MESH,
             CURVE,
-#if UNITY_2022_1_OR_NEWER
-            SPLINE,
-#endif
             TERRAIN,
             BOUNDING_BOX,
-            TILEMAP
+            TILEMAP,
+#if UNITY_2022_1_OR_NEWER
+            SPLINE
+#endif
         }
 
 
