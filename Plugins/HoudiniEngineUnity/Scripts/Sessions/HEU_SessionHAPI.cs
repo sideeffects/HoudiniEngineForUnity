@@ -1077,7 +1077,7 @@ namespace HoudiniEngineUnity
                 HEU_HAPIFunctions.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_CALL_RESULT, out resultID);
             if (statusResult != HAPI_Result.HAPI_RESULT_SUCCESS)
             {
-                SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed!"));
+                SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed! {0}", statusResult.ToString()));
             }
 
             result = (HAPI_Result)resultID;
@@ -1091,7 +1091,7 @@ namespace HoudiniEngineUnity
                 HEU_HAPIFunctions.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_COOK_RESULT, out resultID);
             if (statusResult != HAPI_Result.HAPI_RESULT_SUCCESS)
             {
-                SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed!"));
+                SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed! {0}", statusResult.ToString()));
             }
 
             result = (HAPI_Result)resultID;
@@ -1104,7 +1104,7 @@ namespace HoudiniEngineUnity
             HAPI_Result result = HEU_HAPIFunctions.HAPI_GetStatus(ref _sessionData._HAPISession, HAPI_StatusType.HAPI_STATUS_COOK_STATE, out stateID);
             if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
             {
-                SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed!"));
+                SetSessionErrorMsg(string.Format("HAPI_GetStatus for cook state failed! {0}", result.ToString()));
             }
 
             state = (HAPI_State)stateID;
