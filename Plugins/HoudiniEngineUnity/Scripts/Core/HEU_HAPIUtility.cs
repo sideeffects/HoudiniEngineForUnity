@@ -1876,25 +1876,9 @@ namespace HoudiniEngineUnity
 
                 if (info.partCount <= 0) requiresCook = true;
 
-                // Not sure if this is necessary. TODO: Remove if not needed
-                //if (!requiresCook)
-                //{
-                //    // Recook assets with invalid parts
-                //    int numParts = info.partCount;
-                //    for (int i = 0; i < numParts; ++i)
-                //    {
-                //        HAPI_PartInfo partInfo = new HAPI_PartInfo();
-                //        if (!session.GetPartInfo(info.nodeId, i, ref partInfo))
-                //        {
-                //            continue;
-                //        }
-                //	if (partInfo.id < 0 || partInfo.type == HAPI_PartType.HAPI_PARTTYPE_INVALID)
-                //	{
-                //	    requiresCook = true;
-                //	    break;
-                //	}
-                //    }
-                //}
+                // #Bug:137052. info.hasGeoChanged can be false when this is called as the info has already been
+                // read elsewhere. So without a big architecture change, we need to cook the node here too.
+                requiresCook = true;
 
                 if (requiresCook)
                 {
