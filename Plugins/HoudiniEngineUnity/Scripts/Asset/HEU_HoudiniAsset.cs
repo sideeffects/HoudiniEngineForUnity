@@ -763,7 +763,13 @@ namespace HoudiniEngineUnity
         internal bool PendingAutoCookOnMouseRelease
         {
             get { return _pendingAutoCookOnMouseRelease; }
-            set { _pendingAutoCookOnMouseRelease = value; }
+            set
+            {
+                if (_autoCookOnParameterChange)
+                    _pendingAutoCookOnMouseRelease = value;
+                else
+                    _pendingAutoCookOnMouseRelease = false;
+            }
         }
 
         // Enum to guess how Unity instantiated this object (because Unity doesn't provide instantiation callbacks)
