@@ -237,7 +237,7 @@ namespace HoudiniEngineUnity
         }
 
         internal void Initialize(HEU_SessionBase session, HAPI_ObjectInfo objectInfo, HAPI_Transform objectTranform,
-            HEU_HoudiniAsset parentAsset, bool bUseOutputNodes)
+            HEU_HoudiniAsset parentAsset, bool bUseOutputNodes, bool bGetEditableNodes)
         {
             _objectInfo = objectInfo;
             _objectTransform = objectTranform;
@@ -248,7 +248,7 @@ namespace HoudiniEngineUnity
             // Translate transform to Unity (TODO)
             List<HAPI_GeoInfo> geoInfos = new List<HAPI_GeoInfo>();
 
-            HEU_HAPIUtility.GatherAllAssetGeoInfos(session, parentAsset.AssetInfo, objectInfo, bUseOutputNodes,
+            HEU_HAPIUtility.GatherAllAssetGeoInfos(session, parentAsset.AssetInfo, objectInfo, bUseOutputNodes, bGetEditableNodes,
                 ref geoInfos);
             int numGeoInfos = geoInfos.Count;
             for (int i = 0; i < numGeoInfos; ++i)
@@ -418,9 +418,15 @@ namespace HoudiniEngineUnity
 
 
                 bool useOutputNodes = true;
-                if (ParentAsset) useOutputNodes = ParentAsset.UseOutputNodes;
+                bool getEditableNodes = true;
 
-                HEU_HAPIUtility.GatherAllAssetGeoInfos(session, ParentAsset.AssetInfo, _objectInfo, useOutputNodes,
+                if (ParentAsset)
+                {
+                    useOutputNodes = ParentAsset.UseOutputNodes;
+                    getEditableNodes = ParentAsset.EditableNodesToolsEnabled;
+                }
+
+                HEU_HAPIUtility.GatherAllAssetGeoInfos(session, ParentAsset.AssetInfo, _objectInfo, useOutputNodes, getEditableNodes,
                     ref postCookGeoInfos);
 
                 // Now for each geo node that are present after cooking, we check if its

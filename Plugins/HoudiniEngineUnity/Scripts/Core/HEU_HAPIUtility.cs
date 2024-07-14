@@ -1535,8 +1535,12 @@ namespace HoudiniEngineUnity
             return false;
         }
 
-        static internal void GatherAllAssetGeoInfos(HEU_SessionBase session, HAPI_AssetInfo assetInfo, HAPI_ObjectInfo objectInfo,
-            bool bUseOutputNodes, ref List<HAPI_GeoInfo> outGeoInfos)
+        static internal void GatherAllAssetGeoInfos(HEU_SessionBase session, 
+            HAPI_AssetInfo assetInfo, 
+            HAPI_ObjectInfo objectInfo,
+            bool bUseOutputNodes, 
+            bool bGetEditableNodes,
+            ref List<HAPI_GeoInfo> outGeoInfos)
         {
             if (outGeoInfos == null) outGeoInfos = new List<HAPI_GeoInfo>();
 
@@ -1564,8 +1568,17 @@ namespace HoudiniEngineUnity
 
             // Get editable nodes, cook em, then create geo nodes for them
             HAPI_NodeId[] editableNodes = null;
-            HEU_SessionManager.GetComposedChildNodeList(session, assetInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP,
-                (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes, false);
+            if (bGetEditableNodes)
+            {
+                HEU_SessionManager.GetComposedChildNodeList(session, assetInfo.nodeId, (int)HAPI_NodeType.HAPI_NODETYPE_SOP,
+                    (int)HAPI_NodeFlags.HAPI_NODEFLAGS_EDITABLE, true, out editableNodes, false);
+
+                if (editableNodes == null || editableNodes.Length == 0)
+                {
+                    HEU_Logger.LogWarning("Edit tools are enabled but no editable nodes were found in the HDA. Ensure the HDA is unlocked in Houdini and recook.");
+                }
+            }
+
             if (editableNodes != null)
             {
                 foreach (HAPI_NodeId editNodeID in editableNodes)

@@ -3876,7 +3876,7 @@ namespace HoudiniEngineUnity
         private HEU_ObjectNode CreateObjectNode(HEU_SessionBase session, ref HAPI_ObjectInfo objectInfo, ref HAPI_Transform objectTranform)
         {
             HEU_ObjectNode objectNode = ScriptableObject.CreateInstance<HEU_ObjectNode>();
-            objectNode.Initialize(session, objectInfo, objectTranform, this, _useOutputNodes);
+            objectNode.Initialize(session, objectInfo, objectTranform, this, _useOutputNodes, _editableNodesToolsEnabled);
             return objectNode;
         }
 

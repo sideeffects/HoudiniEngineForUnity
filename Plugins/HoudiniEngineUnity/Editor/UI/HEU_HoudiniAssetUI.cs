@@ -505,18 +505,14 @@ namespace HoudiniEngineUnity
 
                     EditorGUILayout.EndHorizontal();
 
-                    if (asset.NumAttributeStores() > 0)
-                    {
-                        HEU_EditorUI.DrawPropertyField(assetObject, "_editableNodesToolsEnabled",
-                            "Enable Editable Node Tools",
-                            "Displays Editable Node Tools and generates the node's geometry, if asset has editable nodes.");
-                    }
+                    HEU_EditorUI.DrawPropertyField(assetObject, "_editableNodesToolsEnabled",
+                        "Enable Editable Node Tools",
+                        "Displays Editable Node Tools and generates the node's geometry, if asset has editable nodes.");
 
-                    if (asset.NumHandles() > 0)
-                    {
+                    GUI.enabled = (asset.NumHandles() > 0);
                         HEU_EditorUI.DrawPropertyField(assetObject, "_handlesEnabled", "Enable Handles",
                             "Creates Houdini Handles if asset has them.");
-                    }
+                    GUI.enabled = true;
 
                     EditorGUILayout.Space();
 
