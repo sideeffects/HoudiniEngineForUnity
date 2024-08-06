@@ -71,16 +71,14 @@ namespace HoudiniEngineUnity
 
         public Dictionary<int, HEU_UnityMaterialInfo> _unityMaterialInfos;
         public HAPI_AttributeInfo _unityMaterialAttrInfo;
-        public HAPI_StringHandle[] _unityMaterialAttrName;
+        public int[] _unityMaterialAttrName;
 
-        public Dictionary<HAPI_StringHandle, string> _unityMaterialAttrStringsMap =
-            new Dictionary<HAPI_StringHandle, string>();
+        public List<string> _unityMaterialAttrStringsMap = new List<string>();
 
         public HAPI_AttributeInfo _substanceMaterialAttrNameInfo;
-        public HAPI_StringHandle[] _substanceMaterialAttrName;
+        public int[] _substanceMaterialAttrName;
 
-        public Dictionary<HAPI_StringHandle, string> _substanceMaterialAttrStringsMap =
-            new Dictionary<HAPI_StringHandle, string>();
+        public List<string> _substanceMaterialAttrStringsMap = new List<string>();
 
         public HAPI_AttributeInfo _substanceMaterialAttrIndexInfo;
         public int[] _substanceMaterialAttrIndex;
@@ -246,6 +244,37 @@ namespace HoudiniEngineUnity
             return geoCache;
         }
 
+        public void GetStringAttributes(HEU_SessionBase session, HAPI_NodeId geoID, HAPI_PartId partID, string name,
+            ref HAPI_AttributeInfo info, ref int[] stringIndices, ref List<string> stringTable)
+        {
+            // This a wrapper around HEU_GeneralUtility.GetAttribute(..., session.GetAttributeStringData)
+            // which returns the strings in stringTable and an array stringIndices which reference these strings.
+            // This is safer than storing HAPI string handles which can be transient in nature.
+
+            var stringHandles = new HAPI_StringHandle[0]; 
+            HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, name, ref info, ref stringHandles, session.GetAttributeStringData);
+
+            var stringLookup = new Dictionary<HAPI_StringHandle, int>();
+
+            stringIndices = new int[info.count * info.tupleSize];
+
+            for (int index = 0; index < stringHandles.Length; index++)
+            {
+                HAPI_StringHandle strHandle = stringHandles[index];
+
+                // if we haven't encountered the string before, store it in the table and handle->string lookup dictionary.
+                if (!stringLookup.ContainsKey(strHandle))
+                {
+                    string hapString = HEU_SessionManager.GetString(strHandle, session);
+                    int nextFreeIndex = stringTable.Count;
+                    stringTable.Add(hapString);
+                    stringLookup[strHandle] = nextFreeIndex;
+                }
+
+                stringIndices[index] = stringLookup[strHandle];
+            }
+        }
+
         /// <summary>
         /// Parse and populate materials in use by part.
         /// </summary>
@@ -255,55 +284,20 @@ namespace HoudiniEngineUnity
             // We fill up the following dictionary with unique Unity + Substance material information
             _unityMaterialInfos = new Dictionary<int, HEU_UnityMaterialInfo>();
 
-            _unityMaterialAttrInfo = new HAPI_AttributeInfo();
-            _unityMaterialAttrName = new HAPI_StringHandle[0];
-            HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_PluginSettings.UnityMaterialAttribName,
-                ref _unityMaterialAttrInfo, ref _unityMaterialAttrName, session.GetAttributeStringData);
+            GetStringAttributes(session, 
+                GeoID, PartID, 
+                HEU_PluginSettings.UnityMaterialAttribName,
+                ref _unityMaterialAttrInfo, ref _unityMaterialAttrName, ref _unityMaterialAttrStringsMap);
 
-            // Store a local copy of the actual string values since the indices get overwritten by the next call to session.GetAttributeStringData.
-            // Using a dictionary to only query the unique strings, as doing all of them is very slow and unnecessary.
-            _unityMaterialAttrStringsMap = new Dictionary<HAPI_StringHandle, string>();
-            foreach (HAPI_StringHandle strHandle in _unityMaterialAttrName)
-            {
-                if (!_unityMaterialAttrStringsMap.ContainsKey(strHandle))
-                {
-                    string materialName = HEU_SessionManager.GetString(strHandle, session);
-                    if (!string.IsNullOrEmpty(materialName))
-                    {
-                        _unityMaterialAttrStringsMap.Add(strHandle, materialName);
-                    }
-                    else
-                    {
-                        // There are some cases (e.g. LOD input), where a material attribute should be empty.
-                        // Warn user of empty string, but add it anyway to our map so we don't keep trying to parse it
-                        // HEU_Logger.LogWarningFormat("Found empty material attribute value for part {0}.", _partName);
-                    }
-                }
-            }
+            GetStringAttributes(session,
+                GeoID, PartID,
+                HEU_PluginSettings.UnitySubMaterialAttribName,
+                ref _substanceMaterialAttrNameInfo, ref _substanceMaterialAttrName, ref _substanceMaterialAttrStringsMap);
 
             _substanceMaterialAttrNameInfo = new HAPI_AttributeInfo();
             _substanceMaterialAttrName = new HAPI_StringHandle[0];
             HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, HEU_PluginSettings.UnitySubMaterialAttribName,
                 ref _substanceMaterialAttrNameInfo, ref _substanceMaterialAttrName, session.GetAttributeStringData);
-
-            _substanceMaterialAttrStringsMap = new Dictionary<HAPI_StringHandle, string>();
-            foreach (HAPI_StringHandle strHandle in _substanceMaterialAttrName)
-            {
-                if (!_substanceMaterialAttrStringsMap.ContainsKey(strHandle))
-                {
-                    string substanceName = HEU_SessionManager.GetString(strHandle, session);
-                    if (string.IsNullOrEmpty(substanceName))
-                    {
-                        // Warn user of empty string, but add it anyway to our map so we don't keep trying to parse it
-                        HEU_Logger.LogWarningFormat(
-                            "Found invalid substance material attribute value ({0}) for part {1}.",
-                            _partName, substanceName);
-                    }
-
-                    _substanceMaterialAttrStringsMap.Add(strHandle, substanceName);
-                    //HEU_Logger.LogFormat("Added Substance material: " + substanceName);
-                }
-            }
 
             _substanceMaterialAttrIndexInfo = new HAPI_AttributeInfo();
             _substanceMaterialAttrIndex = new int[0];
@@ -323,7 +317,7 @@ namespace HoudiniEngineUnity
                 }
                 else
                 {
-                    for (HAPI_StringHandle i = 0; i < _unityMaterialAttrName.Length; ++i)
+                    for (int i = 0; i < _unityMaterialAttrName.Length; ++i)
                     {
                         CreateMaterialInfoEntryFromAttributeIndex(this, i);
                     }
@@ -337,14 +331,13 @@ namespace HoudiniEngineUnity
             unityMaterialName = null;
             substanceName = null;
             substanceIndex = -1;
-            if (attributeIndex < geoCache._unityMaterialAttrName.Length &&
-                geoCache._unityMaterialAttrStringsMap.TryGetValue(geoCache._unityMaterialAttrName[attributeIndex],
-                    out unityMaterialName))
+            if (attributeIndex < geoCache._unityMaterialAttrName.Length)
             {
+                unityMaterialName = geoCache._unityMaterialAttrStringsMap[geoCache._unityMaterialAttrName[attributeIndex]];
+
                 if (geoCache._substanceMaterialAttrNameInfo.exists && geoCache._substanceMaterialAttrName.Length > 0)
                 {
-                    geoCache._substanceMaterialAttrStringsMap.TryGetValue(
-                        geoCache._substanceMaterialAttrName[attributeIndex], out substanceName);
+                    substanceName = geoCache._substanceMaterialAttrStringsMap[geoCache._substanceMaterialAttrName[attributeIndex]];
                 }
 
                 if (geoCache._substanceMaterialAttrIndexInfo.exists && string.IsNullOrEmpty(substanceName) &&
@@ -353,8 +346,7 @@ namespace HoudiniEngineUnity
                     substanceIndex = geoCache._substanceMaterialAttrIndex[attributeIndex];
                 }
 
-                return HEU_MaterialFactory.GetUnitySubstanceMaterialKey(unityMaterialName, substanceName,
-                    substanceIndex);
+                return HEU_MaterialFactory.GetUnitySubstanceMaterialKey(unityMaterialName, substanceName, substanceIndex);
             }
 
             return HEU_Defines.HEU_INVALID_MATERIAL;
@@ -366,8 +358,7 @@ namespace HoudiniEngineUnity
             string unityMaterialName = null;
             string substanceName = null;
             int substanceIndex = -1;
-            int materialKey = GetMaterialKeyFromAttributeIndex(geoCache, materialAttributeIndex, out unityMaterialName,
-                out substanceName, out substanceIndex);
+            int materialKey = GetMaterialKeyFromAttributeIndex(geoCache, materialAttributeIndex, out unityMaterialName, out substanceName, out substanceIndex);
             if (!geoCache._unityMaterialInfos.ContainsKey(materialKey))
             {
                 geoCache._unityMaterialInfos.Add(materialKey,

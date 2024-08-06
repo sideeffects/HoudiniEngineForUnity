@@ -347,6 +347,13 @@ namespace HoudiniEngineUnity
         {
             int maxArraySize = HEU_Defines.HAPI_MAX_PAGE_SIZE / (Marshal.SizeOf(typeof(T)) * info.tupleSize);
 
+            if (getFunc.GetInvocationList()[0].Method.Name == nameof(GetAttributeStringData))
+            {
+                // Disable paging on strings because multiple calls to HAPI to get strings can result in string handles changing
+                // between each call.
+                maxArraySize = count;
+            }
+
             int localCount = count;
             int currentIndex = 0;
 
