@@ -411,6 +411,9 @@ namespace HoudiniEngineUnity
 
             if (!bResult || !info.exists)
             {
+                info.exists = false;
+                info.count = 0;
+                info.tupleSize = 0;
                 return false;
             }
 

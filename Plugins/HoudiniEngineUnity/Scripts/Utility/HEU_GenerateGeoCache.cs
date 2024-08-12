@@ -251,10 +251,18 @@ namespace HoudiniEngineUnity
             // which returns the strings in stringTable and an array stringIndices which reference these strings.
             // This is safer than storing HAPI string handles which can be transient in nature.
 
-            var stringHandles = new HAPI_StringHandle[0]; 
-            HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, name, ref info, ref stringHandles, session.GetAttributeStringData);
-
+            var stringHandles = new HAPI_StringHandle[0];
             var stringLookup = new Dictionary<HAPI_StringHandle, int>();
+
+            bool bResult = HEU_GeneralUtility.GetAttribute(session, GeoID, PartID, name, ref info, ref stringHandles, session.GetAttributeStringData);
+            if (!bResult)
+            {
+                stringIndices = new int[0];
+                info.exists = false;
+                return;
+
+            }
+
 
             stringIndices = new int[info.count * info.tupleSize];
 
