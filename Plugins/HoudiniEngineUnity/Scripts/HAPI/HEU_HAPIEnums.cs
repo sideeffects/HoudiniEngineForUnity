@@ -67,6 +67,8 @@ namespace HoudiniEngineUnity
         HAPI_LICENSE_HOUDINI_ENGINE_INDIE,        
         HAPI_LICENSE_HOUDINI_INDIE,        
         HAPI_LICENSE_HOUDINI_ENGINE_UNITY_UNREAL,        
+        HAPI_LICENSE_HOUDINI_EDUCATION,        
+        HAPI_LICENSE_HOUDINI_ENGINE_EDUCATION,        
         HAPI_LICENSE_MAX,        
     };
 
@@ -316,7 +318,7 @@ namespace HoudiniEngineUnity
         HAPI_NODEFLAGS_SOP_CURVE = 1 << 11,        //SOP Node Specific FlagsLooks for "curve"
         HAPI_NODEFLAGS_SOP_GUIDE = 1 << 12,        //Looks for Guide Geometry
         HAPI_NODEFLAGS_TOP_NONSCHEDULER = 1 << 13,        //TOP Node Specific FlagsAll TOP nodes except schedulers
-        HAPI_NODEFLAGS_NON_BYPASS = 1 << 14 ,        //Nodes that are not bypassed
+        HAPI_NODEFLAGS_NON_BYPASS = 1 << 14,        //Recursive FlagNodes that are not bypassed
     };
 
     public enum HAPI_GroupType          

@@ -500,6 +500,24 @@ namespace HoudiniEngineUnity
                 int choice_length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
+        HAPI_GetAssetDefinitionParmTagName(
+                ref HAPI_Session session,
+                HAPI_AssetLibraryId library_id,
+                byte[] asset_name,
+                HAPI_ParmId parm_id,
+                int tag_index,
+                out HAPI_StringHandle tag_name);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetAssetDefinitionParmTagValue(
+                ref HAPI_Session session,
+                HAPI_AssetLibraryId library_id,
+                byte[] asset_name,
+                HAPI_ParmId parm_id,
+                byte[] tag_name,
+                out HAPI_StringHandle tag_value);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
         HAPI_GetLoadedAssetLibraryCount(
                 ref HAPI_Session session,
                 out int count);
