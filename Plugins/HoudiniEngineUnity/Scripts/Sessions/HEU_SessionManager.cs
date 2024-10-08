@@ -735,6 +735,10 @@ namespace HoudiniEngineUnity
             {
                 fileExt = "hiplc";
             }
+            else if (license == HAPI_License.HAPI_LICENSE_HOUDINI_EDUCATION || license == HAPI_License.HAPI_LICENSE_HOUDINI_ENGINE_EDUCATION)
+            {
+                fileExt = "hipnc";
+            }
 
             string filePath = UnityEditor.EditorUtility.SaveFilePanel("Save HIP File", "", "hscene", fileExt);
             if (!string.IsNullOrEmpty(filePath))

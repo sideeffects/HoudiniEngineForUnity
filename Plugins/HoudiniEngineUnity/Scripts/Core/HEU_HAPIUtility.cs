@@ -129,6 +129,12 @@ namespace HoudiniEngineUnity
                     case HAPI_License.HAPI_LICENSE_HOUDINI_ENGINE_UNITY_UNREAL:
                         sb.Append("Houdini Engine for Unity/Unreal\n");
                         break;
+                    case HAPI_License.HAPI_LICENSE_HOUDINI_EDUCATION:
+                        sb.Append("Houdini Education\n");
+                        break;
+                    case HAPI_License.HAPI_LICENSE_HOUDINI_ENGINE_EDUCATION:
+                        sb.Append("Houdini Engine Education\n");
+                        break;
                     default:
                         sb.Append("Unknown\n");
                         break;
