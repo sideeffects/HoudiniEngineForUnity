@@ -822,7 +822,7 @@ namespace HoudiniEngineUnity
             }
 
             // Copy by value
-            for (int i = 0; i < paramData._intValues.Length; i++)
+            for (int i = 0; i < paramData._stringValues.Length; i++)
             {
                 paramData._stringValues[i] = values[i];
             }

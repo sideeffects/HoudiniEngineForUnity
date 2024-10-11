@@ -484,16 +484,17 @@ namespace HoudiniEngineUnity
                             continue;
                         }
 
+                        string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
+
                         // Find the old part for this new part.
                         HEU_PartData part = null;
                         HEU_PartData oldMatchedPart = null;
-
                         foreach (HEU_PartData oldPart in oldParts)
                         {
-                            string partName = HEU_SessionManager.GetString(partInfo.nameSH, session);
                             if (oldPart.PartName.Equals(partName))
                             {
                                 oldMatchedPart = oldPart;
+                                break;
                             }
                         }
 

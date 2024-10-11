@@ -80,7 +80,7 @@ namespace HoudiniEngineUnity
                     {
                         if (_inputInterfaces[i] != null && _inputInterfaces[i].Priority <= inputInterface.Priority)
                         {
-                            _inputInterfaces.Add(inputInterface);
+                            _inputInterfaces.Insert(i, inputInterface);
                             //HEU_Logger.LogFormat("Registered {0} at {1}. Total of {2}", inputInterface.GetType(), i, _inputInterfaces.Count);
                             break;
                         }

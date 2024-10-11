@@ -1274,11 +1274,15 @@ namespace HoudiniEngineUnity
 
                 detailPrototype.renderMode = (DetailRenderMode)heuDetail._renderMode;
 
+#if UNITY_2021_2_OR_NEWER
+            if( detailPrototype.usePrototypeMesh )
+                detailPrototype.useInstancing = true;
+#endif
+
                 detailPrototypes.Add(detailPrototype);
             }
 
             // Set the DetailPrototypes
-
             if (detailPrototypes.Count > 0)
             {
                 terrainData.detailPrototypes = detailPrototypes.ToArray();
@@ -1289,6 +1293,11 @@ namespace HoudiniEngineUnity
             {
                 terrainData.SetDetailLayer(0, 0, i, convertedDetailMaps[i]);
             }
+#endif
+
+#if UNITY_2022_2_OR_NEWER
+            // Force the detail scatter mode to instance until we add support support for the other scatter mode.
+            terrainData.SetDetailScatterMode( DetailScatterMode.InstanceCountMode );
 #endif
         }
 
