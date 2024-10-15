@@ -101,10 +101,18 @@ namespace HoudiniEngineUnity
         public static HEU_PipelineType GetPipeline()
         {
 #if UNITY_2019_1_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
+            if (GraphicsSettings.defaultRenderPipeline != null)
+#else
             if (GraphicsSettings.renderPipelineAsset != null)
+#endif
             {
                 // SRP
+#if UNITY_6000_0_OR_NEWER
+                var srpType = GraphicsSettings.defaultRenderPipeline.GetType().ToString();
+#else
                 var srpType = GraphicsSettings.renderPipelineAsset.GetType().ToString();
+#endif
                 if (srpType.Contains("HDRenderPipelineAsset"))
                 {
                     return HEU_PipelineType.HDRP;
@@ -159,12 +167,17 @@ namespace HoudiniEngineUnity
         public static List<string> GetDefines()
         {
 #if UNITY_EDITOR
-            var target = EditorUserBuildSettings.activeBuildTarget;
+            var target = EditorUserBuildSettings.activeBuildTarget;                        
             var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(target);
+#if UNITY_6000_0_OR_NEWER
+            var defines = PlayerSettings.GetScriptingDefineSymbols(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup));
+#else       
             var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+#endif
+
             return defines.Split(';').ToList();
 #else
-        return new List<string>();
+            return new List<string>();
 #endif
         }
 
@@ -174,7 +187,12 @@ namespace HoudiniEngineUnity
             var target = EditorUserBuildSettings.activeBuildTarget;
             var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(target);
             var defines = string.Join(";", definesList.ToArray());
+#if UNITY_6000_0_OR_NEWER
+            PlayerSettings.SetScriptingDefineSymbols(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup), defines);
+#else
             PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defines);
+#endif
+
 #endif
         }
     }

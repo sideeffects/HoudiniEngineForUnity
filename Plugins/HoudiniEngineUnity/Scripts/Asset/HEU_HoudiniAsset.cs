@@ -4672,7 +4672,11 @@ namespace HoudiniEngineUnity
         /// <param name="bShow">True to show</param>
         internal static void SetCurvesVisibilityInScene(bool bShow)
         {
+#if UNITY_6000_0_OR_NEWER
+            HEU_HoudiniAsset[] houdiniAssets = GameObject.FindObjectsByType<HEU_HoudiniAsset>(FindObjectsSortMode.None);
+#else
             HEU_HoudiniAsset[] houdiniAssets = GameObject.FindObjectsOfType<HEU_HoudiniAsset>();
+#endif
             foreach (HEU_HoudiniAsset asset in houdiniAssets)
             {
                 List<HEU_Curve> curves = asset.Curves;

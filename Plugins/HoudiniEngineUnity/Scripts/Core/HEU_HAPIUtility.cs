@@ -892,7 +892,11 @@ namespace HoudiniEngineUnity
         public static HEU_HoudiniAssetRoot GetAssetInScene(HAPI_NodeId assetID)
         {
             HEU_HoudiniAssetRoot foundAsset = null;
+#if UNITY_6000_0_OR_NEWER
+            HEU_HoudiniAssetRoot[] houdiniAssets = GameObject.FindObjectsByType<HEU_HoudiniAssetRoot>(FindObjectsSortMode.None);
+#else
             HEU_HoudiniAssetRoot[] houdiniAssets = GameObject.FindObjectsOfType<HEU_HoudiniAssetRoot>();
+#endif
 
             foreach (HEU_HoudiniAssetRoot assetRoot in houdiniAssets)
             {
