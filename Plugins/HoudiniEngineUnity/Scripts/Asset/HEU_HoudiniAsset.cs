@@ -279,7 +279,6 @@ namespace HoudiniEngineUnity
             set { _editableNodesToolsEnabled = value; }
         }
 
-
         // Read only ====
 
         /// <inheritdoc />
@@ -1927,6 +1926,8 @@ namespace HoudiniEngineUnity
                 HEU_Logger.LogWarning("Undoing a deleted HDA may also remove its parameter undo stack.");
                 RequestReload(false);
             }
+
+            _editableNodesToolsEnabled = HEU_PluginSettings.EditableNodesToolsEnabled;
 
             // If there are curves they need to be cooked.
             if (Curves != null)

@@ -549,6 +549,19 @@ namespace HoudiniEngineUnity
                 }
             }
 
+            HEU_EditorUI.DrawSeparator();
+            {
+                bool oldValue = HEU_PluginSettings.EditableNodesToolsEnabled;
+                bool newValue = HEU_EditorUI.DrawToggleLeft(oldValue,
+                    "Enable Editable Node Tools",
+                    "Displays Editable Node Tools and generates the node's geometry, if asset has editable nodes.");
+                if (newValue != oldValue)
+                {
+                    HEU_PluginSettings.EditableNodesToolsEnabled = newValue;
+                    bChanged = true;
+                }
+            }
+
             // Setting for unit tests only
             //HEU_EditorUI.DrawSeparator();
             //{
