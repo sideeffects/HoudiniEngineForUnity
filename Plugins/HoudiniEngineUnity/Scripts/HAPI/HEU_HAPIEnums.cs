@@ -293,10 +293,11 @@ namespace HoudiniEngineUnity
         HAPI_NODETYPE_CHOP = 1 << 2,        
         HAPI_NODETYPE_ROP = 1 << 3,        
         HAPI_NODETYPE_SHOP = 1 << 4,        
-        HAPI_NODETYPE_COP = 1 << 5,        
+        HAPI_NODETYPE_COP2 = 1 << 5,        
         HAPI_NODETYPE_VOP = 1 << 6,        
         HAPI_NODETYPE_DOP = 1 << 7,        
         HAPI_NODETYPE_TOP = 1 << 8,        
+        HAPI_NODETYPE_COP = 1 << 9,        
     };
 
     [Flags]
@@ -624,6 +625,7 @@ namespace HoudiniEngineUnity
         HAPI_PDG_EVENT_SERVICE_MANAGER_ALL,        //Deprecated
         HAPI_PDG_EVENT_NODE_COOKED,        //Sent when a node finishes cooking
         HAPI_PDG_EVENT_NODE_GENERATED,        //Sent when a node finished generating
+        HAPI_PDG_EVENT_WORKITEM_FRAME,        //Sent when a work item frame changes
         HAPI_PDG_CONTEXT_EVENTS,        
     };
 
