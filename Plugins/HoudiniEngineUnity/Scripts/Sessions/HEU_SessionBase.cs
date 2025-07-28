@@ -547,12 +547,12 @@ namespace HoudiniEngineUnity
 
         // TIME -----------------------------------------------------------------------------------------------------
 
-        public virtual float GetTime()
+        public virtual double GetTime()
         {
             return 0;
         }
 
-        public virtual bool SetTime(float time)
+        public virtual bool SetTime(double time)
         {
             return false;
         }
