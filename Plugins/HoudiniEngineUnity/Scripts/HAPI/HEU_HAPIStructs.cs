@@ -133,6 +133,9 @@ namespace HoudiniEngineUnity
 
         public HAPI_Int64 sharedMemoryBufferSize;              
 
+        [MarshalAs(UnmanagedType.U1)]
+        public HAPI_Bool enableSharedMemoryDataTransfer;              
+
     };
 
     [StructLayout(LayoutKind.Sequential)]
@@ -155,14 +158,14 @@ namespace HoudiniEngineUnity
     [StructLayout(LayoutKind.Sequential)]
     public partial struct HAPI_TimelineOptions          //Data for global timeline used with HAPI_SetTimelineOptions
     {
-        [MarshalAs(UnmanagedType.R4)]
-        public float fps;              
+        [MarshalAs(UnmanagedType.R8)]
+        public double fps;              
 
-        [MarshalAs(UnmanagedType.R4)]
-        public float startTime;              
+        [MarshalAs(UnmanagedType.R8)]
+        public double startTime;              
 
-        [MarshalAs(UnmanagedType.R4)]
-        public float endTime;              
+        [MarshalAs(UnmanagedType.R8)]
+        public double endTime;              
 
     };
 
@@ -786,16 +789,16 @@ namespace HoudiniEngineUnity
     [StructLayout(LayoutKind.Sequential)]
     public partial struct HAPI_InputCurveInfo          
     {
-        public HAPI_CurveType curveType;              //The desired curve type of the curveNote that this is NOT necessarily equal to the value in HAPI_CurveInfoin the case of curve refinement
+        public HAPI_CurveType curveType;              //The desired curve type of the curve.Note that this is NOT necessarily equal to the value in HAPI_CurveInfoin the case of curve refinement.
 
         [MarshalAs(UnmanagedType.I4)]
-        public int order;              //The desired order for your input curveThis is your desired order which may differ from HAPI_CurveInfoas it will do range checks and adjust the actual order accordingly
+        public int order;              //The desired order for your input curve.This is your desired order which may differ from HAPI_CurveInfoas it will do range checks and adjust the actual order accordingly.
 
         [MarshalAs(UnmanagedType.U1)]
-        public HAPI_Bool closed;              //Whether or not the curve is closedMay differ from HAPI_CurveInfo::isPeriodic depending on the curveTypee.g. A NURBs curve is never technically closed according to HAPI_CurveInfo
+        public HAPI_Bool closed;              //Whether or not the curve is closed.May differ from HAPI_CurveInfo::isPeriodic depending on the curveTypee.g. A NURBs curve is never technically closed according to HAPI_CurveInfo.
 
         [MarshalAs(UnmanagedType.U1)]
-        public HAPI_Bool reverse;              //Whether or not to reverse the curve input
+        public HAPI_Bool reverse;              //Whether or not to reverse the curve input.
 
         public HAPI_InputCurveMethod inputMethod;              
 
