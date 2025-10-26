@@ -285,6 +285,7 @@ namespace HoudiniEngineUnity
 	    {
 		Vector3[] meshVertices = inputDataMeshes._inputMeshes[i]._mesh.vertices;
 		Matrix4x4 localToWorld = rootInvertTransformMatrix * inputDataMeshes._inputMeshes[i]._transform.localToWorldMatrix;
+		Matrix4x4 worldToLocalTransposed = localToWorld.inverse.transpose;
 
 		List<Vector3> uniqueVertices = new List<Vector3>();
 
@@ -366,7 +367,11 @@ namespace HoudiniEngineUnity
 
 			if (meshNormals != null && (originalIndex < meshNormals.Length))
 			{
-			    normals.Add(meshNormals[originalIndex]);
+				Vector3 normalLocalSpace = meshNormals[originalIndex];
+				Vector3 normalWorldSpace = worldToLocalTransposed * normalLocalSpace;
+				if (normalWorldSpace.sqrMagnitude > 0f)
+					normalWorldSpace.Normalize();
+				normals.Add(normalWorldSpace);
 			}
 
 			for (int u = 0; u < NumUVSets; ++u)
