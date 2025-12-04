@@ -595,7 +595,7 @@ namespace HoudiniEngineUnity
 
         [SerializeField] private HEU_InstanceInputUIState _instanceInputUIState;
 
-        [field: SerializeField]
+		//! No attribute needed here (explicit field already serialized above)
         internal HEU_InstanceInputUIState InstanceInputUIState
         {
             get { return _instanceInputUIState; }
@@ -5680,3 +5680,4 @@ namespace HoudiniEngineUnity
         }
     }
 } // HoudiniEngineUnity
+
