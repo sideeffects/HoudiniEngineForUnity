@@ -155,7 +155,13 @@ namespace HoudiniEngineUnity
             // Note: intentionly ignoring any errors as sometimes there aren't any textures
             if (session.RenderTextureToImage(materialInfo.nodeId, textureParmID, false))
             {
-                texture = HEU_MaterialFactory.ExtractHoudiniImageToTextureRaw(session, materialInfo, "C A");
+                // Attempt to extract the texture as PNG/JPEG for COPS
+                texture = HEU_MaterialFactory.ExtractHoudiniImageToTexturePNGJPEG(session, materialInfo, "C A");
+
+                // .. if it fails, use RAW formats instead
+                if(texture == null)
+                    texture = HEU_MaterialFactory.ExtractHoudiniImageToTextureRaw(session, materialInfo, "C A");
+
                 if (texture != null)
                 {
                     texture.name = textureName;
@@ -175,7 +181,6 @@ namespace HoudiniEngineUnity
 
                         texture.Apply();
                     }
-
 
                     // Get the Textures folder in the assetCacheFolderPath. Make sure it exists.
                     assetCacheFolderPath = HEU_AssetDatabase.AppendTexturesPathToAssetFolder(assetCacheFolderPath);
@@ -237,26 +242,34 @@ namespace HoudiniEngineUnity
             HAPI_ImageInfo imageInfo = new HAPI_ImageInfo();
             if (!session.GetImageInfo(materialInfo.nodeId, ref imageInfo))
             {
-                return textureResult;
+                return null;
             }
 
             // This will return null if the current imageInfo file format is supported by Unity, otherwise
             // returns a Unity supported file format.
             string desiredFileFormatName = HEU_MaterialData.GetSupportedFileFormat(session, ref imageInfo);
 
+            // Use floats for COP outputs
+            imageInfo.dataFormat = HAPI_ImageDataFormat.HAPI_IMAGE_DATA_FLOAT32;
+            imageInfo.interleaved = true;
+            imageInfo.packing = HAPI_ImagePacking.HAPI_IMAGE_PACKING_RGBA;
             imageInfo.gamma = HEU_PluginSettings.ImageGamma;
             session.SetImageInfo(materialInfo.nodeId, ref imageInfo);
 
+
             // Download the image into memory buffer
             byte[] imageData = null;
+            // if (!session.ExtractImageToMemory(materialInfo.nodeId, "PNG", imagePlanes, out imageData))
             if (!session.ExtractImageToMemory(materialInfo.nodeId, desiredFileFormatName, imagePlanes, out imageData))
             {
-                return textureResult;
+                HEU_Logger.LogError("Failed to extract image using non-raw format.");
+                return null;
             }
 
             // Upload to Unity
-            textureResult = new Texture2D(1, 1);
-            textureResult.LoadImage(imageData);
+            textureResult = new Texture2D(2, 2);
+            if (!textureResult.LoadImage(imageData))
+                HEU_Logger.LogError("Failed to load image data into Texture2D.");
 
             return textureResult;
         }

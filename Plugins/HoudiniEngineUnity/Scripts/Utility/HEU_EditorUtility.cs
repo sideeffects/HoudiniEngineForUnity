@@ -1370,7 +1370,11 @@ namespace HoudiniEngineUnity
         {
             string targetAssetPath = "";
 #if UNITY_EDITOR
+#if UNITY_6000_3_OR_NEWER
+            string currentObjectPath = AssetDatabase.GetAssetPath((EntityId)instanceID);
+#else
             string currentObjectPath = AssetDatabase.GetAssetPath(instanceID);
+#endif
             if (HEU_Platform.DoesFileExist(currentObjectPath))
             {
                 string combinedPath = HEU_Platform.GetParentDirectory(HEU_Platform.GetParentDirectory(currentObjectPath));
