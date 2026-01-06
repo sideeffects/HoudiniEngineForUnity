@@ -2589,7 +2589,8 @@ namespace HoudiniEngineUnity
                 [MarshalAs(UnmanagedType.U1)] HAPI_Bool flip_y,
                 float[] data_array,
                 int start,
-                int length);
+                int length,
+                out HAPI_NodeId new_node_id);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
         HAPI_SetAnimCurve(
