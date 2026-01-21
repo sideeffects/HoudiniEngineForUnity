@@ -248,6 +248,8 @@ namespace HoudiniEngineUnity
             // This will return null if the current imageInfo file format is supported by Unity, otherwise
             // returns a Unity supported file format.
             string desiredFileFormatName = HEU_MaterialData.GetSupportedFileFormat(session, ref imageInfo);
+            if(desiredFileFormatName == null)
+                desiredFileFormatName = HEU_SessionManager.GetString(imageInfo.imageFileFormatNameSH, session);
 
             // Use floats for COP outputs
             imageInfo.dataFormat = HAPI_ImageDataFormat.HAPI_IMAGE_DATA_FLOAT32;
@@ -708,13 +710,19 @@ namespace HoudiniEngineUnity
                 materialName = HEU_SessionManager.GetUniqueMaterialShopName(assetID, materialID);
             }
 
-            HEU_MaterialData materialData = ScriptableObject.CreateInstance<HEU_MaterialData>();
-            materialData._materialSource = HEU_MaterialData.Source.HOUDINI;
-            materialData._materialKey = materialID;
+            // Before creating a new material
+            // Make sure we have not created it already!
+            HEU_MaterialData materialData = HEU_MaterialFactory.GetMaterialDataFromCache(materialID, materialCache);
+            if(materialData == null)
+            {
+                materialData = ScriptableObject.CreateInstance<HEU_MaterialData>();
+                materialData._materialSource = HEU_MaterialData.Source.HOUDINI;
+                materialData._materialKey = materialID;
 
-            materialData._material =
-                HEU_MaterialFactory.CreateNewHoudiniStandardMaterial(assetCacheFolderPath, materialName, true);
-            materialData._material.name = materialName;
+                materialData._material =
+                    HEU_MaterialFactory.CreateNewHoudiniStandardMaterial(assetCacheFolderPath, materialName, true);
+                materialData._material.name = materialName;
+            }
 
             //HEU_Logger.LogFormat("New Material ID: {0} - {1}", materialID, materialName);
 

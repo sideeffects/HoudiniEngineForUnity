@@ -294,6 +294,9 @@ namespace HoudiniEngineUnity
 #if UNITY_6000_0_OR_NEWER
             // Disconnected prefabs are no longer supported
             return false;
+#elif UNITY_2022_1_OR_NEWER
+            // Disconnected prefabs are no longer supported
+            return false;
 #elif UNITY_2018_3_OR_NEWER
             return PrefabUtility.IsDisconnectedFromPrefabAsset(go);
 #elif UNITY_2018_2_OR_NEWER
