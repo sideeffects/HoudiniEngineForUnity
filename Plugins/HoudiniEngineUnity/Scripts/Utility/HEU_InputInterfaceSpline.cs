@@ -233,6 +233,7 @@ namespace HoudiniEngineUnity
             public int _count;
             public float _length;
             public BezierKnot[] _knots;
+            public bool _allKnotsLinear;
         }
 
         /// <summary>
@@ -265,6 +266,18 @@ namespace HoudiniEngineUnity
                 splineData._length = spline.GetLength();
                 splineData._knots = spline.Knots.ToArray<BezierKnot>();
 
+                // Check if all knots use linear tangent mode
+                bool allLinear = spline.Count > 0;
+                for (int i = 0; i < spline.Count; i++)
+                {
+                    if (spline.GetTangentMode(i) != TangentMode.Linear)
+                    {
+                        allLinear = false;
+                        break;
+                    }
+                }
+                splineData._allKnotsLinear = allLinear;
+
                 splineContainerData._inputSplines.Add(splineData);
             }
             splineContainerData._transform = inputObject.transform;
@@ -283,8 +296,16 @@ namespace HoudiniEngineUnity
         {
             // Set the input curve info of the newly created input curve
             HAPI_InputCurveInfo inputCurveInfo = new HAPI_InputCurveInfo();
-            inputCurveInfo.curveType = HAPI_CurveType.HAPI_CURVETYPE_BEZIER;
-            inputCurveInfo.order = 4;
+            if (inputSpline._allKnotsLinear)
+            {
+                inputCurveInfo.curveType = HAPI_CurveType.HAPI_CURVETYPE_LINEAR;
+                inputCurveInfo.order = 2;
+            }
+            else
+            {
+                inputCurveInfo.curveType = HAPI_CurveType.HAPI_CURVETYPE_BEZIER;
+                inputCurveInfo.order = 4;
+            }
             inputCurveInfo.closed = inputSpline._closed;
             inputCurveInfo.reverse = false;
             inputCurveInfo.inputMethod = HAPI_InputCurveMethod.HAPI_CURVEMETHOD_BREAKPOINTS;
