@@ -1302,7 +1302,11 @@ namespace HoudiniEngineUnity
             }
             else
             {
+#if UNITY_6000_4_OR_NEWER
+                assetPath += "::id::" + obj.GetEntityId();
+#else
                 assetPath += "::id::" + obj.GetInstanceID();
+#endif
             }
 
             return assetPath;
@@ -1361,7 +1365,11 @@ namespace HoudiniEngineUnity
                                     return obj as T;
                                 }
                             }
+#if UNITY_6000_4_OR_NEWER
+                            else if (obj.GetEntityId() == assetID)
+#else
                             else if (obj.GetInstanceID() == assetID)
+#endif
                             {
                                 return obj as T;
                             }

@@ -42,7 +42,11 @@ namespace HoudiniEngineUnity
         /// </summary>
         static HEU_EditorApp()
         {
+#if UNITY_6000_4_OR_NEWER
+            EditorApplication.hierarchyWindowItemByEntityIdOnGUI += HierarchyWindowItemByEntityIdOnGUI;
+#else
             EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
+#endif
 
 #if UNITY_2018_1_OR_NEWER
             EditorApplication.quitting += EditorQuit;
@@ -55,10 +59,17 @@ namespace HoudiniEngineUnity
 #endif
         }
 
+#if UNITY_6000_4_OR_NEWER
+        private static void HierarchyWindowItemByEntityIdOnGUI(EntityId entityId, Rect selectionRect)
+        {
+            ProcessDragEvent(Event.current, null);
+        }
+#else
         private static void HierarchyWindowItemOnGUI(int instanceID, Rect selectionRect)
         {
             ProcessDragEvent(Event.current, null);
         }
+#endif
 
         private static void OnSceneGUIDelegate(SceneView sceneView)
         {

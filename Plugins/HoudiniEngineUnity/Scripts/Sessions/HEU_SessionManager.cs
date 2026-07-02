@@ -226,7 +226,9 @@ namespace HoudiniEngineUnity
         private static void InternalValidateSceneAssets()
         {
             // Go through each asset, and validate in session
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
+            HEU_HoudiniAsset[] assets = GameObject.FindObjectsByType<HEU_HoudiniAsset>();
+#elif UNITY_6000_0_OR_NEWER
             HEU_HoudiniAsset[] assets = GameObject.FindObjectsByType<HEU_HoudiniAsset>(FindObjectsSortMode.None);
 #else
             HEU_HoudiniAsset[] assets = GameObject.FindObjectsOfType<HEU_HoudiniAsset>();
