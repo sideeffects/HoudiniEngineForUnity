@@ -1854,8 +1854,8 @@ namespace HoudiniEngineUnity
                 HAPI_PartId part_id,
                 byte[] name,
                 ref HAPI_AttributeInfo attr_info,
-                string[] string_array,
-                int string_count,
+                string[] string_fixed_array,
+                int string_fixed_length,
                 int[] indices_array,
                 int indices_start,
                 int indices_length);
