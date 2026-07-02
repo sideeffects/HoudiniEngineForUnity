@@ -1719,6 +1719,42 @@ namespace HoudiniEngineUnity
                 int length);
         [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         public static extern HAPI_Result
+        HAPI_GetCameraInfo(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PartId part_id,
+                out HAPI_CameraInfo camera_info);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_GetCameraTransform(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_PartId part_id,
+                out HAPI_Transform transform);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_CreateInputCameraNode(
+                ref HAPI_Session session,
+                HAPI_NodeId parent_node_id,
+                out HAPI_NodeId node_id,
+                byte[] camera_name,
+                byte[] node_label);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_SetInputCameraInfo(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                ref HAPI_CameraInfo camera_info);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
+        HAPI_SetInputCameraTransform(
+                ref HAPI_Session session,
+                HAPI_NodeId node_id,
+                HAPI_RSTOrder rst_order,
+                HAPI_XYZOrder rot_order,
+                ref HAPI_Transform transform);
+        [DllImport(HEU_HoudiniVersion.HAPI_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        public static extern HAPI_Result
         HAPI_SetPartInfo(
                 ref HAPI_Session session,
                 HAPI_NodeId node_id,
@@ -1854,8 +1890,8 @@ namespace HoudiniEngineUnity
                 HAPI_PartId part_id,
                 byte[] name,
                 ref HAPI_AttributeInfo attr_info,
-                string[] string_array,
-                int string_count,
+                string[] string_fixed_array,
+                int string_fixed_length,
                 int[] indices_array,
                 int indices_start,
                 int indices_length);

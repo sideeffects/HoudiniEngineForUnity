@@ -832,6 +832,65 @@ namespace HoudiniEngineUnity
     };
 
     [StructLayout(LayoutKind.Sequential)]
+    public partial struct HAPI_CameraInfo          //Data for SOP camera primitives
+    {
+        [MarshalAs(UnmanagedType.R8)]
+        public double focal;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double aperture;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double pixelAspect;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double focusDistance;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double fStop;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double imagingDistance;              
+
+        public HAPI_Int64 resX;              
+
+        public HAPI_Int64 resY;              
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.R8)]
+        public double[] cropX;              
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.R8)]
+        public double[] cropY;              
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.R8)]
+        public double[] winX;              
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.R8)]
+        public double[] winY;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double clipNear;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double clipFar;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double shutterOpen;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double shutterClose;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double orthoZoom;              
+
+        [MarshalAs(UnmanagedType.R8)]
+        public double guideScale;              
+
+        public HAPI_CameraProjectionType projection;              
+
+    };
+
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct HAPI_PDG_EventInfo          //Data associated with a PDG Event
     {
         public HAPI_NodeId nodeId;              //id of related node.

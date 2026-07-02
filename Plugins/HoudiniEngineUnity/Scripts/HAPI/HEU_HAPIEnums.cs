@@ -82,9 +82,10 @@ namespace HoudiniEngineUnity
 
     public enum HAPI_StatusVerbosity          
     {
-        HAPI_STATUSVERBOSITY_0,        
-        HAPI_STATUSVERBOSITY_1,        
-        HAPI_STATUSVERBOSITY_2,        
+        HAPI_STATUSVERBOSITY_NONE = -1,        
+        HAPI_STATUSVERBOSITY_0 = 0,        
+        HAPI_STATUSVERBOSITY_1 = 1,        
+        HAPI_STATUSVERBOSITY_2 = 2,        
         HAPI_STATUSVERBOSITY_ALL = HAPI_STATUSVERBOSITY_2,        //Used for Results. Equivalent to HAPI_STATUSVERBOSITY_2
         HAPI_STATUSVERBOSITY_ERRORS = HAPI_STATUSVERBOSITY_0,        //Used for Results. Equivalent to HAPI_STATUSVERBOSITY_0
         HAPI_STATUSVERBOSITY_WARNINGS = HAPI_STATUSVERBOSITY_1,        //Used for Results. Equivalent to HAPI_STATUSVERBOSITY_1
@@ -370,6 +371,14 @@ namespace HoudiniEngineUnity
         HAPI_CURVEPARAMETERIZATION_MAX,        
     };
 
+    public enum HAPI_CameraProjectionType          
+    {
+        HAPI_CAMERAPROJECTIONTYPE_INVALID = -1,        
+        HAPI_CAMERAPROJECTIONTYPE_PERSPECTIVE,        
+        HAPI_CAMERAPROJECTIONTYPE_ORTHO,        
+        HAPI_CAMERAPROJECTIONTYPE_MAX,        
+    };
+
     public enum HAPI_VolumeType          
     {
         HAPI_VOLUMETYPE_INVALID = -1,        
@@ -452,6 +461,7 @@ namespace HoudiniEngineUnity
         HAPI_PARTTYPE_INSTANCER,        
         HAPI_PARTTYPE_BOX,        
         HAPI_PARTTYPE_SPHERE,        
+        HAPI_PARTTYPE_CAMERA,        
         HAPI_PARTTYPE_MAX,        
     };
 
