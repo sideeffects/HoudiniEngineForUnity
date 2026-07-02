@@ -55,7 +55,9 @@ public class HEU_BoundingVolume : MonoBehaviour
         }
 
         List<GameObject> intersectingObjects = new List<GameObject>();
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
+        GameObject[] allObjects = UnityEngine.Object.FindObjectsByType<GameObject>();
+#elif UNITY_6000_0_OR_NEWER
         GameObject[] allObjects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
 #else
         GameObject[] allObjects = UnityEngine.Object.FindObjectsOfType<GameObject>();

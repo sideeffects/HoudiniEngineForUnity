@@ -1051,7 +1051,9 @@ namespace HoudiniEngineUnity
         /// <returns>List of all Houdini asset root components in the scene (HEU_HoudiniAssetRoot)</returns>
         public static HEU_HoudiniAssetRoot[] GetAllAssetRoots()
         {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
+            return GameObject.FindObjectsByType<HEU_HoudiniAssetRoot>();
+#elif UNITY_6000_0_OR_NEWER
             return GameObject.FindObjectsByType<HEU_HoudiniAssetRoot>(FindObjectsSortMode.None);
 #else
             return GameObject.FindObjectsOfType<HEU_HoudiniAssetRoot>();
@@ -1310,7 +1312,11 @@ namespace HoudiniEngineUnity
                 {
                     if (meshFilter.sharedMesh != null)
                     {
+#if UNITY_6000_4_OR_NEWER
+                        string possibleObjectPath = GetObjectParentFolderHelper(meshFilter.sharedMesh.GetEntityId());
+#else
                         string possibleObjectPath = GetObjectParentFolderHelper(meshFilter.sharedMesh.GetInstanceID());
+#endif
                         if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
                         {
                             possiblePaths.Add(possibleObjectPath);
@@ -1331,8 +1337,12 @@ namespace HoudiniEngineUnity
                         {
                             continue;
                         }
-
+#if UNITY_6000_4_OR_NEWER
+                        string possibleObjectPath = GetObjectParentFolderHelper(materials[i].GetEntityId());
+#else
                         string possibleObjectPath = GetObjectParentFolderHelper(materials[i].GetInstanceID());
+#endif
+
                         if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
                         {
                             possiblePaths.Add(possibleObjectPath);
@@ -1348,7 +1358,11 @@ namespace HoudiniEngineUnity
                 {
                     if (terrain.terrainData != null)
                     {
+#if UNITY_6000_4_OR_NEWER
+                        string possibleObjectPath = GetObjectParentFolderHelper(terrain.terrainData.GetEntityId());
+#else
                         string possibleObjectPath = GetObjectParentFolderHelper(terrain.terrainData.GetInstanceID());
+#endif
                         if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
                         {
                             possiblePaths.Add(possibleObjectPath);
@@ -1366,18 +1380,30 @@ namespace HoudiniEngineUnity
             }
 #endif
 
-            return targetAssetPath;
+                        return targetAssetPath;
         }
+
+#if UNITY_6000_4_OR_NEWER
+        private static string GetObjectParentFolderHelper(EntityId EntityID)
+        {
+            string currentObjectPath = AssetDatabase.GetAssetPath(EntityID);
+            return GetObjectParentFolderHelper(currentObjectPath);
+        }
+#endif
 
         private static string GetObjectParentFolderHelper(int instanceID)
         {
-            string targetAssetPath = "";
-#if UNITY_EDITOR
 #if UNITY_6000_3_OR_NEWER
             string currentObjectPath = AssetDatabase.GetAssetPath((EntityId)instanceID);
 #else
             string currentObjectPath = AssetDatabase.GetAssetPath(instanceID);
 #endif
+            return GetObjectParentFolderHelper(currentObjectPath);
+        }
+        private static string GetObjectParentFolderHelper(string currentObjectPath)
+        {
+            string targetAssetPath = "";
+#if UNITY_EDITOR
             if (HEU_Platform.DoesFileExist(currentObjectPath))
             {
                 string combinedPath = HEU_Platform.GetParentDirectory(HEU_Platform.GetParentDirectory(currentObjectPath));

@@ -4672,7 +4672,9 @@ namespace HoudiniEngineUnity
         /// <param name="bShow">True to show</param>
         internal static void SetCurvesVisibilityInScene(bool bShow)
         {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
+            HEU_HoudiniAsset[] houdiniAssets = GameObject.FindObjectsByType<HEU_HoudiniAsset>();
+#elif UNITY_6000_0_OR_NEWER
             HEU_HoudiniAsset[] houdiniAssets = GameObject.FindObjectsByType<HEU_HoudiniAsset>(FindObjectsSortMode.None);
 #else
             HEU_HoudiniAsset[] houdiniAssets = GameObject.FindObjectsOfType<HEU_HoudiniAsset>();

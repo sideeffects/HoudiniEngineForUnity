@@ -708,7 +708,11 @@ namespace HoudiniEngineUnity
             }
 
             // Set the game object's name to the asset's name
+#if UNITY_6000_4_OR_NEWER
+            rootGO.name = string.Format("{0}{1}", rootName, rootGO.GetEntityId());
+#else
             rootGO.name = string.Format("{0}{1}", rootName, rootGO.GetInstanceID());
+#endif
             HEU_HoudiniAssetRoot assetRoot = rootGO.AddComponent<HEU_HoudiniAssetRoot>();
 
 
@@ -800,8 +804,11 @@ namespace HoudiniEngineUnity
             HEU_GeoSync geoSync = rootGO.AddComponent<HEU_GeoSync>();
 
             // Set the game object's name to the asset's name
+#if UNITY_6000_4_OR_NEWER
+            HEU_GeneralUtility.RenameGameObject(rootGO, string.Format("{0}{1}", "GeoSync", rootGO.GetEntityId()));
+#else
             HEU_GeneralUtility.RenameGameObject(rootGO, string.Format("{0}{1}", "GeoSync", rootGO.GetInstanceID()));
-
+#endif
             geoSync._filePath = filePath;
             geoSync.StartSync();
 
@@ -892,7 +899,9 @@ namespace HoudiniEngineUnity
         public static HEU_HoudiniAssetRoot GetAssetInScene(HAPI_NodeId assetID)
         {
             HEU_HoudiniAssetRoot foundAsset = null;
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
+            HEU_HoudiniAssetRoot[] houdiniAssets = GameObject.FindObjectsByType<HEU_HoudiniAssetRoot>();
+#elif UNITY_6000_0_OR_NEWER
             HEU_HoudiniAssetRoot[] houdiniAssets = GameObject.FindObjectsByType<HEU_HoudiniAssetRoot>(FindObjectsSortMode.None);
 #else
             HEU_HoudiniAssetRoot[] houdiniAssets = GameObject.FindObjectsOfType<HEU_HoudiniAssetRoot>();
