@@ -1261,7 +1261,7 @@ namespace HoudiniEngineUnity
 #if UNITY_2020_2_OR_NEWER
                 // _bendFactor is deprecated
 #else
-		detailPrototype.bendFactor = heuDetail._bendFactor;
+		        detailPrototype.bendFactor = heuDetail._bendFactor;
 #endif
 
                 detailPrototype.dryColor = heuDetail._dryColor;
@@ -1275,8 +1275,8 @@ namespace HoudiniEngineUnity
                 detailPrototype.renderMode = (DetailRenderMode)heuDetail._renderMode;
 
 #if UNITY_2021_2_OR_NEWER
-            if( detailPrototype.usePrototypeMesh )
-                detailPrototype.useInstancing = true;
+                if( detailPrototype.usePrototypeMesh )
+                    detailPrototype.useInstancing = true;
 #endif
 
                 detailPrototypes.Add(detailPrototype);
@@ -1288,16 +1288,19 @@ namespace HoudiniEngineUnity
                 terrainData.detailPrototypes = detailPrototypes.ToArray();
             }
 
+#if UNITY_2022_2_OR_NEWER
+            // Must be called BEFORE SetDetailLayer — calling after wipes all detail data in 2022.2+
+            // Force the detail scatter mode to instance until we add support support for the other scatter mode.
+            errainData.SetDetailScatterMode(DetailScatterMode.InstanceCountMode);
+#endif
             // Set the DetailLayers
             for (int i = 0; i < numDetailLayers; ++i)
             {
                 terrainData.SetDetailLayer(0, 0, i, convertedDetailMaps[i]);
             }
-#endif
 
-#if UNITY_2022_2_OR_NEWER
-            // Force the detail scatter mode to instance until we add support support for the other scatter mode.
-            terrainData.SetDetailScatterMode( DetailScatterMode.InstanceCountMode );
+            terrainData.RefreshPrototypes();
+            terrain.Flush();
 #endif
         }
 
