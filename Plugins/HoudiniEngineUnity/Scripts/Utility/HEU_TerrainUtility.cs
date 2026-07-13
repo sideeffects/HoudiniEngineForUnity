@@ -1291,7 +1291,7 @@ namespace HoudiniEngineUnity
 #if UNITY_2022_2_OR_NEWER
             // Must be called BEFORE SetDetailLayer — calling after wipes all detail data in 2022.2+
             // Force the detail scatter mode to instance until we add support support for the other scatter mode.
-            errainData.SetDetailScatterMode(DetailScatterMode.InstanceCountMode);
+            terrainData.SetDetailScatterMode(DetailScatterMode.InstanceCountMode);
 #endif
             // Set the DetailLayers
             for (int i = 0; i < numDetailLayers; ++i)
