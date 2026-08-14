@@ -273,7 +273,8 @@ namespace HoudiniEngineUnity
                 // Try creating it if we haven't tried yet
                 bNotifyUserError &= !CreateThriftPipeSession(HEU_PluginSettings.Session_PipeName,
                     HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout,
-                    bNotifyUserError);
+                    bNotifyUserError, HEU_PluginSettings.Session_UseSharedMemoryDataTransfer,
+                    HEU_PluginSettings.Session_SharedMemoryBufferSize);
             }
 
             if (bNotifyUserError && !_defaultSession.UserNotifiedSessionInvalid)
@@ -307,12 +308,13 @@ namespace HoudiniEngineUnity
         /// <param name="autoClose"></param>
         /// <param name="timeout"></param>
         /// <returns>True if successfully created session.</returns>
-        public static bool CreateThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout, bool logError)
+        public static bool CreateThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout, bool logError,
+                bool useSharedMemoryDataTransfer, int sharedMemoryBufferSize)
         {
             CheckAndCloseExistingSession();
 
             _defaultSession = CreateSessionObject();
-            return _defaultSession.CreateThriftSocketSession(true, hostName, serverPort, autoClose, timeout, logError);
+            return _defaultSession.CreateThriftSocketSession(true, hostName, serverPort, autoClose, timeout, logError, useSharedMemoryDataTransfer, sharedMemoryBufferSize);
         }
 
         /// <summary>
@@ -322,29 +324,13 @@ namespace HoudiniEngineUnity
         /// <param name="autoClose"></param>
         /// <param name="timeout"></param>
         /// <returns>True if successfully created session.</returns>
-        public static bool CreateThriftPipeSession(string pipeName, bool autoClose, float timeout, bool logError)
+        public static bool CreateThriftPipeSession(string pipeName, bool autoClose, float timeout, bool logError,
+                bool useSharedMemoryDataTransfer, int sharedMemoryBufferSize)
         {
             CheckAndCloseExistingSession();
 
             _defaultSession = CreateSessionObject();
-            return _defaultSession.CreateThriftPipeSession(true, pipeName, autoClose, timeout, logError);
-        }
-
-        /// <summary>
-        /// Create shared memory session for Houdini Engine.
-        /// </summary>
-        /// <param name="sharedMemoryName"></param>
-        /// <param name="sharedMemoryBufferType"></param>
-        /// <param name="sharedMemoryBufferSize"></param>
-        /// <param name="autoClose"></param>
-        /// <param name="timeout"></param>
-        /// <returns>True if successfully created session.</returns>
-        public static bool CreateThriftSharedMemorySession(string sharedMemoryName, HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType, int sharedMemoryBufferSize, bool autoClose, float timeout, bool logError)
-        {
-            CheckAndCloseExistingSession();
-
-            _defaultSession = CreateSessionObject();
-            return _defaultSession.CreateThriftSharedMemorySession(true, sharedMemoryName, sharedMemoryBufferType, sharedMemoryBufferSize, autoClose, timeout, logError);
+            return _defaultSession.CreateThriftPipeSession(true, pipeName, autoClose, timeout, logError, useSharedMemoryDataTransfer, sharedMemoryBufferSize);
         }
 
         /// <summary>
@@ -359,32 +345,26 @@ namespace HoudiniEngineUnity
             return _defaultSession.CreateCustomSession(true);
         }
 
-        public static bool ConnectThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout)
+        public static bool ConnectThriftSocketSession(string hostName, int serverPort, bool autoClose, float timeout,
+                bool useSharedMemoryDataTransfer, int sharedMemoryBufferSize)
         {
             CheckAndCloseExistingSession();
 
             _defaultSession = CreateSessionObject();
-            return _defaultSession.ConnectThriftSocketSession(true, hostName, serverPort, autoClose, timeout);
+            return _defaultSession.ConnectThriftSocketSession(true, hostName, serverPort, autoClose, timeout,
+                    useSharedMemoryDataTransfer: useSharedMemoryDataTransfer,
+                    sharedMemoryBufferSize: sharedMemoryBufferSize);
         }
 
-        public static bool ConnectThriftPipeSession(string pipeName, bool autoClose, float timeout)
+        public static bool ConnectThriftPipeSession(string pipeName, bool autoClose, float timeout,
+                bool useSharedMemoryDataTransfer, int sharedMemoryBufferSize)
         {
             CheckAndCloseExistingSession();
 
             _defaultSession = CreateSessionObject();
-            return _defaultSession.ConnectThriftPipeSession(true, pipeName, autoClose, timeout);
-        }
-
-        public static bool ConnectThriftSharedMemorySession(string sharedMemoryName,
-            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
-            int sharedMemoryBufferSize, bool autoClose, float timeout)
-        {
-            CheckAndCloseExistingSession();
-
-            _defaultSession = CreateSessionObject();
-            return _defaultSession.ConnectThriftSharedMemorySession(true,
-                sharedMemoryName, sharedMemoryBufferType, sharedMemoryBufferSize,
-                autoClose, timeout);
+            return _defaultSession.ConnectThriftPipeSession(true, pipeName, autoClose, timeout,
+                    useSharedMemoryDataTransfer: useSharedMemoryDataTransfer,
+                    sharedMemoryBufferSize: sharedMemoryBufferSize);
         }
 
         public static void RecreateDefaultSessionData()
@@ -395,7 +375,8 @@ namespace HoudiniEngineUnity
 
         public static bool ConnectSessionSyncUsingThriftSocket(
             string hostName, int serverPort, bool autoClose,
-            float timeout, bool logError)
+            float timeout, bool logError,
+            bool useSharedMemoryDataTransfer, int sharedMemoryBufferSize)
         {
             if (_defaultSession == null)
             {
@@ -404,12 +385,14 @@ namespace HoudiniEngineUnity
 
             return _defaultSession.ConnectThriftSocketSession(
                 true, hostName, serverPort, autoClose, timeout,
-                logError, false);
+                logError, false,
+                useSharedMemoryDataTransfer, sharedMemoryBufferSize);
         }
 
         public static bool ConnectSessionSyncUsingThriftPipe(
             string pipeName, bool autoClose,
-            float timeout, bool logError)
+            float timeout, bool logError,
+            bool useSharedMemoryDataTransfer, int sharedMemoryBufferSize)
         {
             if (_defaultSession == null)
             {
@@ -418,23 +401,8 @@ namespace HoudiniEngineUnity
 
             return _defaultSession.ConnectThriftPipeSession(
                 true, pipeName, autoClose, timeout,
-                logError, false);
-        }
-
-        public static bool ConnectSessionSyncUsingThriftSharedMemory(
-            string sharedMemoryName,
-            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType,
-            int sharedMemoryBufferSize, bool autoClose, float timeout,
-            bool logError)
-        {
-            if (_defaultSession == null)
-            {
-                RecreateDefaultSessionData();
-            }
-
-            return _defaultSession.ConnectThriftSharedMemorySession(
-                true, sharedMemoryName, sharedMemoryBufferType,
-                sharedMemoryBufferSize, autoClose, timeout, logError, false);
+                logError, false,
+                useSharedMemoryDataTransfer, sharedMemoryBufferSize);
         }
 
         public static bool InitializeDefaultSession()

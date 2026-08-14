@@ -46,7 +46,6 @@ namespace HoudiniEngineUnity
     {
         Socket,
         Pipe,
-        SharedMemory
     }
 
     /// <summary>
@@ -73,9 +72,7 @@ namespace HoudiniEngineUnity
 
         [SerializeField] private int _port;
 
-        [SerializeField] private string _sharedMemoryName;
-
-        [SerializeField] private HAPI_ThriftSharedMemoryBufferType _sharedMemoryBufferType;
+        [SerializeField] private bool _useSharedMemoryDataTransfer;
 
         [SerializeField] private int _sharedMemoryBufferSize;
 #pragma warning restore 0414
@@ -197,25 +194,11 @@ namespace HoudiniEngineUnity
             set => _port = value;
         }
 
-        public string SharedMemoryName
+        public bool UseSharedMemoryDataTransfer
         {
-            get
-            {
-#if HOUDINIENGINEUNITY_ENABLE
-                return _sharedMemoryName;
-#else
-                return "";
-#endif
-            }
+            get => _useSharedMemoryDataTransfer;
 
-            set => _sharedMemoryName = value;
-        }
-
-        public HAPI_ThriftSharedMemoryBufferType SharedMemoryBufferType
-        {
-            get => _sharedMemoryBufferType;
-
-            set => _sharedMemoryBufferType = value;
+            set => _useSharedMemoryDataTransfer = value;
         }
 
         public int SharedMemoryBufferSize

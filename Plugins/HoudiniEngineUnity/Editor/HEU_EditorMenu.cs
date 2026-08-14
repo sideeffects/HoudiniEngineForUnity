@@ -58,7 +58,8 @@ namespace HoudiniEngineUnity
             bool bResult = HEU_SessionManager.CreateThriftPipeSession(
                 HEU_PluginSettings.Session_PipeName,
                 HEU_PluginSettings.Session_AutoClose,
-                HEU_PluginSettings.Session_Timeout, true);
+                HEU_PluginSettings.Session_Timeout, true,
+                HEU_PluginSettings.Session_UseSharedMemoryDataTransfer, HEU_PluginSettings.Session_SharedMemoryBufferSize);
             if (!bResult)
             {
                 HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
@@ -69,19 +70,8 @@ namespace HoudiniEngineUnity
         public static void CreateSocketSession()
         {
             bool bResult = HEU_SessionManager.CreateThriftSocketSession(HEU_PluginSettings.Session_Localhost, HEU_PluginSettings.Session_Port,
-                HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
-            if (!bResult)
-            {
-                HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
-            }
-        }
-
-        [MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Create/" + HEU_EditorStrings.RPC_SHARED_MEMORY_SESSION, false, 0)]
-        public static void CreateSharedMemorySession()
-        {
-            bool bResult = HEU_SessionManager.CreateThriftSharedMemorySession(HEU_PluginSettings.Session_SharedMemoryName,
-                HEU_PluginSettings.Session_SharedMemoryBufferType, HEU_PluginSettings.Session_SharedMemoryBufferSize,
-                HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
+                HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true,
+                HEU_PluginSettings.Session_UseSharedMemoryDataTransfer, HEU_PluginSettings.Session_SharedMemoryBufferSize);
             if (!bResult)
             {
                 HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
@@ -92,7 +82,8 @@ namespace HoudiniEngineUnity
         public static void ConnectPipeSession()
         {
             bool bResult = HEU_SessionManager.ConnectThriftPipeSession(HEU_PluginSettings.Session_PipeName,
-                HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout);
+                HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout,
+                HEU_PluginSettings.Session_UseSharedMemoryDataTransfer, HEU_PluginSettings.Session_SharedMemoryBufferSize);
             if (!bResult)
             {
                 HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");
@@ -103,20 +94,8 @@ namespace HoudiniEngineUnity
         public static void ConnectSocketSession()
         {
             bool bResult = HEU_SessionManager.ConnectThriftSocketSession(HEU_PluginSettings.Session_Localhost,
-                HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout);
-            if (!bResult)
-            {
-                HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");
-            }
-        }
-
-        [MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Connect/" + HEU_EditorStrings.RPC_SHARED_MEMORY_SESSION, false, 0)]
-        public static void ConnectSharedMemorySession()
-        {
-            bool bResult = HEU_SessionManager.ConnectThriftSharedMemorySession(
-                HEU_PluginSettings.Session_SharedMemoryName, HEU_PluginSettings.Session_SharedMemoryBufferType,
-                HEU_PluginSettings.Session_SharedMemoryBufferSize, HEU_PluginSettings.Session_AutoClose,
-                HEU_PluginSettings.Session_Timeout);
+                HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout,
+                HEU_PluginSettings.Session_UseSharedMemoryDataTransfer, HEU_PluginSettings.Session_SharedMemoryBufferSize);
             if (!bResult)
             {
                 HEU_EditorUtility.DisplayErrorDialog("Connect Session", HEU_SessionManager.GetLastSessionError(), "OK");

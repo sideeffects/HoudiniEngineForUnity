@@ -433,15 +433,15 @@ namespace HoudiniEngineUnity
             set => HEU_PluginStorage.Instance.Set("HAPI_SessionPort", value);
         }
 
-        public static string Session_SharedMemoryName
+        public static bool Session_UseSharedMemoryDataTransfer
         {
             get
             {
-                string attrValue = HEU_Defines.HEU_SESSION_SHARED_MEMORY_NAME;
-                HEU_PluginStorage.Instance.Get("HAPI_SharedMemoryName", out attrValue, attrValue);
+                bool attrValue = HEU_Defines.HEU_SESSION_USE_SHARED_MEMORY_DATA_TRANSFER;
+                HEU_PluginStorage.Instance.Get("HAPI_UseSharedMemoryDataTransfer", out attrValue, attrValue);
                 return attrValue;
             }
-            set => HEU_PluginStorage.Instance.Set("HAPI_SharedMemoryName", value);
+            set => HEU_PluginStorage.Instance.Set("HAPI_UseSharedMemoryDataTransfer", value);
         }
 
         public static int Session_SharedMemoryBufferSize
@@ -453,17 +453,6 @@ namespace HoudiniEngineUnity
                 return attrValue;
             }
             set => HEU_PluginStorage.Instance.Set("HAPI_SharedMemoryBufferSize", value);
-        }
-
-        public static HAPI_ThriftSharedMemoryBufferType Session_SharedMemoryBufferType
-        {
-            get
-            {
-                int attrValue = (int)HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_TYPE;
-                HEU_PluginStorage.Instance.Get("HAPI_SharedMemoryBufferType", out attrValue, attrValue);
-                return (HAPI_ThriftSharedMemoryBufferType)attrValue;
-            }
-            set => HEU_PluginStorage.Instance.Set("HAPI_SharedMemoryBufferType", (int)value);
         }
 
         public static float Session_Timeout

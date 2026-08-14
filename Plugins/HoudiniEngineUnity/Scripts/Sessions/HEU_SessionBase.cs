@@ -265,7 +265,9 @@ namespace HoudiniEngineUnity
             int serverPort = HEU_Defines.HEU_SESSION_PORT,
             bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
             float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
-            bool bLogError = true)
+            bool bLogError = true,
+            bool useSharedMemoryDataTransfer = false,
+            int sharedMemoryBufferSize = 100)
         {
             return false;
         }
@@ -274,18 +276,9 @@ namespace HoudiniEngineUnity
             string pipeName = HEU_Defines.HEU_SESSION_PIPENAME,
             bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
             float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
-            bool bLogError = true)
-        {
-            return false;
-        }
-
-        public virtual bool CreateThriftSharedMemorySession(bool bIsDefaultSession,
-            string sharedMemoryName,
-            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_TYPE,
-            int sharedMemoryBufferSize = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_SIZE,
-            bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
-            float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
-            bool bLogError = true)
+            bool bLogError = true,
+            bool useSharedMemoryDataTransfer = false,
+            int sharedMemoryBufferSize = 100)
         {
             return false;
         }
@@ -301,7 +294,9 @@ namespace HoudiniEngineUnity
             bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
             float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
             bool logError = true,
-            bool autoInitialize = true)
+            bool autoInitialize = true,
+            bool useSharedMemoryDataTransfer = false,
+            int sharedMemoryBufferSize = 100)
         {
             return false;
         }
@@ -311,20 +306,9 @@ namespace HoudiniEngineUnity
             bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
             float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
             bool logError = true,
-            bool autoInitialize = true)
-        {
-            return false;
-        }
-
-        public virtual bool ConnectThriftSharedMemorySession(
-            bool bIsDefaultSession,
-            string sharedMemoryName = HEU_Defines.HEU_SESSION_SHARED_MEMORY_NAME,
-            HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_TYPE,
-            int sharedMemoryBufferSize = HEU_Defines.HEU_SESSION_SHARED_MEMORY_BUFFER_SIZE,
-            bool autoClose = HEU_Defines.HEU_SESSION_AUTOCLOSE,
-            float timeout = HEU_Defines.HEU_SESSION_TIMEOUT,
-            bool logError = true,
-            bool autoInitialize = true)
+            bool autoInitialize = true,
+            bool useSharedMemoryDataTransfer = false,
+            int sharedMemoryBufferSize = 100)
         {
             return false;
         }
