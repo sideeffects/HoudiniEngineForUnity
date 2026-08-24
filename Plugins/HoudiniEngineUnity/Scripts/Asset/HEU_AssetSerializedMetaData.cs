@@ -43,7 +43,8 @@ namespace HoudiniEngineUnity
     // Super hacky way to force save data when access is limited such as undo deletion events
     internal class HEU_AssetSerializedMetaData : ScriptableObject, IEquivable<HEU_AssetSerializedMetaData>
     {
-        [SerializeField] private bool _softDeleted = false;
+        [SerializeField] 
+        private bool _softDeleted = false;
 
         public bool SoftDeleted
         {
@@ -52,12 +53,14 @@ namespace HoudiniEngineUnity
         }
 
         // Map of (Curve name) -> List of curve node data for saving scale/rotation values between rebuilds.
-        [SerializeField] private Dictionary<string, List<CurveNodeData>> _savedCurveNodeData =
+        [SerializeField] 
+        private Dictionary<string, List<CurveNodeData>> _savedCurveNodeData =
             new Dictionary<string, List<CurveNodeData>>();
 
         public Dictionary<string, List<CurveNodeData>> SavedCurveNodeData => _savedCurveNodeData;
 
-        [SerializeField] private Dictionary<string, HEU_InputCurveInfo> _savedInputCurveInfo =
+        [SerializeField]
+        private Dictionary<string, HEU_InputCurveInfo> _savedInputCurveInfo =
             new Dictionary<string, HEU_InputCurveInfo>();
 
         public Dictionary<string, HEU_InputCurveInfo> SavedInputCurveInfo => _savedInputCurveInfo;

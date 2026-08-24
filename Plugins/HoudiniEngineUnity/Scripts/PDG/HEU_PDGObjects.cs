@@ -41,6 +41,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Meta data container for filtering when displaying TOP networks and nodes
     /// </summary>
+    [System.Serializable]
     public class TOPNodeTags
     {
         // True if should show the TOP node in dropdown
@@ -74,7 +75,7 @@ namespace HoudiniEngineUnity
         public int _selectedTOPIndex;
 
         public string _parentName;
-
+        
         public TOPNodeTags _tags = new TOPNodeTags();
     }
 

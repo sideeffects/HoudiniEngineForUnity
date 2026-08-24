@@ -62,7 +62,8 @@ namespace HoudiniEngineUnity
         public int _xLength;
         public int _yLength;
 
-        [System.NonSerialized] public bool _hasLayerAttributes;
+        [System.NonSerialized]
+        public bool _hasLayerAttributes;
 
 #if UNITY_2018_3_OR_NEWER
         // Keeping reference to the TerrainLayer being used for this
@@ -75,10 +76,12 @@ namespace HoudiniEngineUnity
 #endif
 
         public HFLayerType _layerType;
-
+        
+        [System.NonSerialized]
         public HEU_DetailPrototype _detailPrototype;
 
-        [SerializeField] internal HEU_PartData _part;
+        [SerializeField] 
+        internal HEU_PartData _part;
 
         public bool IsEquivalentTo(HEU_VolumeLayer other)
         {
@@ -116,6 +119,7 @@ namespace HoudiniEngineUnity
     /// Container for TreePrototypes and TreeInstances
     /// specified in a heightfield for a Unity terrain.
     /// </summary>
+    [System.Serializable]
     public class HEU_VolumeScatterTrees : IEquivable<HEU_VolumeScatterTrees>
     {
         // Data for creating TreePrototypes
@@ -171,6 +175,7 @@ namespace HoudiniEngineUnity
     /// Since unable to load the prefab in a non-main thread,
     /// this holds the prefab path until we can load it.
     /// </summary>
+    [System.Serializable]
     public class HEU_TreePrototypeInfo : IEquivable<HEU_TreePrototypeInfo>
     {
         public string _prefabPath;
@@ -200,6 +205,7 @@ namespace HoudiniEngineUnity
     /// <summary>
     /// Terrain detail properties
     /// </summary>
+    [System.Serializable]
     public class HEU_DetailProperties : IEquivable<HEU_DetailProperties>
     {
         public float _detailDistance = -1;

@@ -83,12 +83,11 @@ namespace HoudiniEngineUnity
                 material = new Material(shader);
                 if (materialName == null || materialName.Length == 0)
                 {
-                    material.name = shaderName;
+                    materialName = shaderName;
                 }
-                else
-                {
-                    material.name = materialName;
-                }
+
+                materialName = materialName.Replace("/", "_");
+                material.name = materialName;
 
                 if (bWriteToFile && !string.IsNullOrEmpty(assetCacheFolderPath))
                 {
@@ -721,7 +720,11 @@ namespace HoudiniEngineUnity
 
                 materialData._material =
                     HEU_MaterialFactory.CreateNewHoudiniStandardMaterial(assetCacheFolderPath, materialName, true);
-                materialData._material.name = materialName;
+
+                if (materialName != null && materialName.Length > 0)
+                {
+                    materialData._material.name = materialName;
+                }
             }
 
             //HEU_Logger.LogFormat("New Material ID: {0} - {1}", materialID, materialName);

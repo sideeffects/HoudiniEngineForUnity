@@ -2871,7 +2871,7 @@ namespace HoudiniEngineUnity
         /// <summary>
         /// After cook has finished in Houdini, process the output and update/generate Unity side.
         /// </summary>
-        private void ProcessPoskCook()
+        private void ProcessPostCook()
         {
 #if HEU_PROFILER_ON
 	    _postCookStartTime = Time.realtimeSinceStartup;
@@ -3093,7 +3093,7 @@ namespace HoudiniEngineUnity
 
                     try
                     {
-                        ProcessPoskCook();
+                        ProcessPostCook();
                     }
                     catch (System.Exception ex)
                     {

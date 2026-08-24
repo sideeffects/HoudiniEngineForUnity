@@ -1310,8 +1310,10 @@ namespace HoudiniEngineUnity
 
         public HEU_GenerateOptions _generateOptions = new HEU_GenerateOptions();
 
+        [System.NonSerialized]
         public StringBuilder _log = new StringBuilder();
 
+        [System.NonSerialized]
         public StringBuilder _error = new StringBuilder();
 
         public bool _sessionSyncAutoCook = true;
