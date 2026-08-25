@@ -1490,7 +1490,7 @@ namespace HoudiniEngineUnity
         }
 
         // UI CACHE ---------------------------------------------------------------------------------------------------
-
+        [System.NonSerialized]
         public HEU_InputNodeUICache _uiCache;
 
         internal void ClearUICache()
@@ -1719,6 +1719,7 @@ namespace HoudiniEngineUnity
         [FormerlySerializedAs("_scaleOverride")]
         public Vector3 _scaleOffset = Vector3.one;
 
+        [System.NonSerialized]
         public System.Type _inputInterfaceType;
 
         public void CopyTo(HEU_InputObjectInfo destObject)
