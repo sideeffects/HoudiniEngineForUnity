@@ -41,10 +41,10 @@ namespace HoudiniEngineUnity
         {
                 public const int HOUDINI_MAJOR			= 21;
                 public const int HOUDINI_MINOR			= 0;
-                public const int HOUDINI_BUILD			= 776;
+                public const int HOUDINI_BUILD			= 819;
                 public const int HOUDINI_PATCH			= 0;
 
-                public const string HOUDINI_VERSION_STRING = "21.0.776";
+                public const string HOUDINI_VERSION_STRING = "21.0.819";
 
                 public const int HOUDINI_ENGINE_MAJOR	= 8;
                 public const int HOUDINI_ENGINE_MINOR	= 0;
