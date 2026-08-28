@@ -265,13 +265,10 @@ namespace HoudiniEngineUnity
 
             int numMeshes = inputDataMeshes._inputMeshes.Count;
 
-            // Get the parent's world transform, so when there are multiple child meshes,
-            // can merge and apply their local transform after subtracting their parent's world transform
-            Matrix4x4 rootInvertTransformMatrix = Matrix4x4.identity;
-            if (numMeshes > 1)
-            {
-                rootInvertTransformMatrix = inputDataMeshes._inputObject.transform.worldToLocalMatrix;
-            }
+            // Get the parent's world transform, so when there are child meshes,
+            // we can merge and apply their local transform after subtracting their parent's world transform
+            Matrix4x4 rootInvertTransformMatrix = 
+                inputDataMeshes._inputObject.transform.worldToLocalMatrix;
 
             // Always using the first submesh topology. This doesn't support mixed topology (triangles and quads).
             MeshTopology meshTopology = inputDataMeshes._inputMeshes[0]._mesh.GetTopology(0);
@@ -306,7 +303,7 @@ namespace HoudiniEngineUnity
 
                     if (!reindexMap.ContainsKey(va))
                     {
-                        if (numMeshes > 1 && !inputDataMeshes._hasLOD)
+                        if (!inputDataMeshes._hasLOD)
                         {
                             // For multiple meshes that are not LODs, apply local transform on vertices to get the merged mesh.
                             uniqueVertices.Add(localToWorld.MultiplyPoint(va));
