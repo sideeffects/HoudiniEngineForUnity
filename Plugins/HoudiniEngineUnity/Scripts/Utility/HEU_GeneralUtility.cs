@@ -30,6 +30,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -1471,7 +1472,12 @@ namespace HoudiniEngineUnity
         public static System.Type GetSystemTypeByName(string typeName)
         {
 #if UNITY_EDITOR
-            System.Reflection.Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+#if UNITY_6000_0_OR_NEWER
+            System.Reflection.Assembly[] assemblies = UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies().ToArray();
+#else
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            Assembly[] assemblies = currentDomain.GetAssemblies();
+#endif
             foreach (System.Reflection.Assembly assembly in assemblies)
             {
                 System.Type[] types = assembly.GetTypes();

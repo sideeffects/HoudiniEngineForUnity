@@ -709,7 +709,7 @@ namespace HoudiniEngineUnity
 
             // Set the game object's name to the asset's name
 #if UNITY_6000_4_OR_NEWER
-            rootGO.name = string.Format("{0}{1}", rootName, rootGO.GetEntityId());
+            rootGO.name = string.Format("{0}{1}", rootName, rootGO.GetEntityId().ToString());
 #else
             rootGO.name = string.Format("{0}{1}", rootName, rootGO.GetInstanceID());
 #endif
@@ -805,7 +805,7 @@ namespace HoudiniEngineUnity
 
             // Set the game object's name to the asset's name
 #if UNITY_6000_4_OR_NEWER
-            HEU_GeneralUtility.RenameGameObject(rootGO, string.Format("{0}{1}", "GeoSync", rootGO.GetEntityId()));
+            HEU_GeneralUtility.RenameGameObject(rootGO, string.Format("{0}{1}", "GeoSync", rootGO.GetEntityId().ToString()));
 #else
             HEU_GeneralUtility.RenameGameObject(rootGO, string.Format("{0}{1}", "GeoSync", rootGO.GetInstanceID()));
 #endif

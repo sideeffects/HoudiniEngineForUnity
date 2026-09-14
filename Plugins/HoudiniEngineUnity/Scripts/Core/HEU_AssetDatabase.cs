@@ -1303,7 +1303,7 @@ namespace HoudiniEngineUnity
             else
             {
 #if UNITY_6000_4_OR_NEWER
-                assetPath += "::id::" + obj.GetEntityId();
+                assetPath += "::id::" + obj.GetEntityId().ToString();
 #else
                 assetPath += "::id::" + obj.GetInstanceID();
 #endif
@@ -1366,7 +1366,7 @@ namespace HoudiniEngineUnity
                                 }
                             }
 #if UNITY_6000_4_OR_NEWER
-                            else if (obj.GetEntityId() == assetID)
+                            else if (obj.GetEntityId().ToString() == assetID.ToString())
 #else
                             else if (obj.GetInstanceID() == assetID)
 #endif

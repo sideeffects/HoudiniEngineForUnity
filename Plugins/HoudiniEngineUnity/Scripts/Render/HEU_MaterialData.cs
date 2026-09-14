@@ -33,8 +33,8 @@ namespace HoudiniEngineUnity
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
-    using HAPI_PartId = System.Int32;
     using HAPI_ParmId = System.Int32;
+    using HAPI_PartId = System.Int32;
     using HAPI_StringHandle = System.Int32;
 
 
@@ -59,6 +59,143 @@ namespace HoudiniEngineUnity
         {
             get => _materialKey;
             set => _materialKey = value;
+        }
+
+        public static int FindMaterialTextureParameter(
+            HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters,
+            string paramName, string useParmName,
+            string paramTag, string useParmTag,
+            string CPMParamName, string useCPMParamName)
+        {
+            int FoundTextureParamId = -1;
+
+            // Search by param names
+            FoundTextureParamId = HEU_ParameterUtility.FindTextureParamByNameOrTag(
+                session, nodeID, parameters,
+                paramName, useParmName);
+
+            // Search by OGL Tags
+            if (FoundTextureParamId < 0)
+            {
+                FoundTextureParamId = HEU_ParameterUtility.FindTextureParamByNameOrTag(
+                    session, nodeID, parameters,
+                    paramTag, useParmTag);
+            }
+
+            // Search by COP Preview Material params
+            if (FoundTextureParamId < 0)
+            {
+                FoundTextureParamId = HEU_ParameterUtility.FindTextureParamByNameOrTag(
+                    session, nodeID, parameters,
+                    CPMParamName, useCPMParamName);
+            }
+
+            return FoundTextureParamId;
+        }
+
+        public static int FindMaterialConstantParam(
+            HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters,
+            string paramName, string paramTag,
+            string CPMParamName, string CPMParamDefault, string useCPMParamName)
+        {
+            // Attempt to get the parameter by name.
+            int outParmId = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeID, parameters, paramName);
+            if (outParmId >= 0)
+                return outParmId;
+
+            // Attempt to get the parameter by tag.
+            outParmId = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeID, parameters, paramTag);
+            if (outParmId >= 0)
+                return outParmId;
+
+            // Attempt to get the COP Preview Material constant parameter.
+            // First, check that the switch is set to 1.0.
+            // For some reason, in CPMs the switch parameter is a float, but it's used like a boolean.
+            // 0.0 means the source is either File or COP, and 1.0 means the source is Constant.
+            float CPMSwitchValue = 0.0f;
+            if (HEU_ParameterUtility.GetParameterFloatValue(session, nodeID, parameters, useCPMParamName, 0.0f, out CPMSwitchValue))
+            {
+                if (CPMSwitchValue != 0.0f)
+                {
+                    // CPM constant param is used, attempt to get the param with the CPM name
+                    outParmId = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeID, parameters, CPMParamName);
+                    if (outParmId >= 0)
+                        return outParmId;
+                }
+            }
+
+            // Attempt to get the COP Preview Material default parameter.
+            outParmId = HEU_ParameterUtility.GetParameterIndexFromNameOrTag(session, nodeID, parameters, CPMParamDefault);
+            if (outParmId >= 0)
+                return outParmId;
+
+            return -1;
+        }
+
+        public static bool GetMaterialParameterColor3Value(
+            HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters,
+            string paramName, string paramTag,
+            string CPMParamName, string useCPMParamName, string CPMParamDefault,
+            Color defaultValue, out Color outputColor)
+        {
+            int parameterIndex = FindMaterialConstantParam(
+                session, nodeID, parameters,
+                paramName, paramTag,
+                CPMParamName, CPMParamDefault, useCPMParamName);
+
+            if (parameterIndex < 0 || parameterIndex >= parameters.Length)
+            {
+                outputColor = defaultValue;
+                return false;
+            }
+
+            if (parameters[parameterIndex].size < 3)
+            {
+                HEU_Logger.LogError("Parameter size not large enough to be a Color3");
+                outputColor = defaultValue;
+                return false;
+            }
+
+            int valueIndex = parameters[parameterIndex].floatValuesIndex;
+            float[] value = new float[3];
+
+            if (session.GetParamFloatValues(nodeID, value, valueIndex, 3))
+            {
+                outputColor = new Color(value[0], value[1], value[2], 1f);
+                return true;
+            }
+
+            outputColor = defaultValue;
+            return false;
+        }
+
+        public static bool GetMaterialParameterFloatValue(
+            HEU_SessionBase session, HAPI_NodeId nodeID, HAPI_ParmInfo[] parameters,
+            string paramName, string paramTag,
+            string CPMParamName, string useCPMParamName, string CPMParamDefault, 
+            float defaultValue, out float returnValue)
+        {
+            int parameterIndex = FindMaterialConstantParam(
+                session, nodeID, parameters,
+                paramName, paramTag,
+                CPMParamName, CPMParamDefault, useCPMParamName);
+
+            if (parameterIndex < 0 || parameterIndex >= parameters.Length)
+            {
+                returnValue = defaultValue;
+                return false;
+            }
+
+            int valueIndex = parameters[parameterIndex].floatValuesIndex;
+            float[] value = new float[1];
+            if (valueIndex>= 0 && session.GetParamFloatValues(nodeID, value, valueIndex, 1))
+            {
+                returnValue = value[0];
+                return true;
+            }
+
+            returnValue = defaultValue;
+            return false;
         }
 
         /// <summary>
@@ -91,7 +228,6 @@ namespace HoudiniEngineUnity
             }
 
             // Assign transparency shader or non-transparent.
-
             bool isTransparent = IsTransparentMaterial(session, materialInfo.nodeId, parmInfos);
             if (isTransparent)
             {
@@ -107,14 +243,20 @@ namespace HoudiniEngineUnity
                 return UseLegacyShaders(materialInfo, assetCacheFolderPath, session, nodeInfo, parmInfos);
             }
 
+            // The diffuse constant color parameter on Principled Shaders is "basecolor", but COP Preview Material's diffuse texture parameter is also "basecolor".
+            // We search for parameters by name without checking the node type. If we're on a Principled Shader, then we would accidentally find the constant color parameter when we want a texture.
+            // So, we check if we're in a CPM by looking for the CPM Diffuse Switch parameter. If we aren't in a CPM, don't search for "basecolor".
+            bool bIsCPM = false;
+            int parameterIndex = HEU_ParameterUtility.GetParameterIndexFromName(session, parmInfos, HEU_Defines.MAT_CPM_BASECOLOR_TEX_ENABLED);
+            if (parameterIndex >= 0)
+                bIsCPM = true;
+
             // Diffuse texture - render & extract
-            int diffuseMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                HEU_Defines.MAT_OGL_TEX1_ATTR, HEU_Defines.MAT_OGL_TEX1_ATTR_ENABLED);
-            if (diffuseMapParmIndex < 0)
-            {
-                diffuseMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                    HEU_Defines.MAT_BASECOLOR_ATTR, HEU_Defines.MAT_BASECOLOR_ATTR_ENABLED);
-            }
+            int diffuseMapParmIndex = FindMaterialTextureParameter(
+                session, nodeInfo.id, parmInfos,
+                HEU_Defines.MAT_OGL_TEX1_ATTR, HEU_Defines.MAT_OGL_TEX1_ATTR_ENABLED,
+                HEU_Defines.MAT_BASECOLOR_ATTR, HEU_Defines.MAT_BASECOLOR_ATTR_ENABLED,
+                bIsCPM ? HEU_Defines.MAT_CPM_BASECOLOR_TEX : "", HEU_Defines.MAT_CPM_BASECOLOR_TEX_ENABLED);
 
             if (diffuseMapParmIndex >= 0 && diffuseMapParmIndex < parmInfos.Length)
             {
@@ -124,26 +266,24 @@ namespace HoudiniEngineUnity
                     parmInfos[diffuseMapParmIndex].id, diffuseTextureFileName, assetCacheFolderPath, false);
             }
 
+            // Diffuse color
             Color diffuseColor;
-            if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos,
-                    HEU_Defines.MAT_OGL_DIFF_ATTR, Color.white, out diffuseColor))
-            {
-                HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos,
-                    HEU_Defines.MAT_DIFF_ATTR, Color.white, out diffuseColor);
-            }
+            GetMaterialParameterColor3Value(
+                session, materialInfo.nodeId, parmInfos,
+                HEU_Defines.MAT_OGL_DIFF_ATTR, bIsCPM ? "" : HEU_Defines.MAT_DIFF_ATTR,
+                HEU_Defines.MAT_CPM_BASECOLOR, HEU_Defines.MAT_CPM_BASECOLOR_TEX_ENABLED, HEU_Defines.MAT_CPM_BASECOLOR_DEFAULT,
+                Color.white, out diffuseColor);
 
             float alpha;
             GetMaterialAlpha(session, materialInfo.nodeId, parmInfos, 1f, out alpha);
 
             if (isTransparent)
             {
-                int opacityMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id,
-                    parmInfos, HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR, HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR_ENABLED);
-                if (opacityMapParmIndex < 0)
-                {
-                    opacityMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id,
-                        parmInfos, HEU_Defines.MAT_OPACITY_MAP_ATTR, HEU_Defines.MAT_OPACITY_MAP_ATTR_ENABLED);
-                }
+                int opacityMapParmIndex = FindMaterialTextureParameter(
+                    session, nodeInfo.id, parmInfos,
+                    HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR, HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR_ENABLED,
+                    HEU_Defines.MAT_OPACITY_MAP_ATTR, HEU_Defines.MAT_OPACITY_MAP_ATTR_ENABLED,
+                    HEU_Defines.MAT_CPM_OPACITY_MAP, HEU_Defines.MAT_CPM_OPACITY_MAP_SWITCH);
 
                 if (opacityMapParmIndex >= 0 && opacityMapParmIndex < parmInfos.Length)
                 {
@@ -162,22 +302,19 @@ namespace HoudiniEngineUnity
             {
                 Color specular;
                 Color defaultSpecular = new Color(0.2f, 0.2f, 0.2f, 1);
-                if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos,
-                        HEU_Defines.MAT_OGL_SPEC_ATTR, defaultSpecular, out specular))
-                {
-                    HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos,
-                        HEU_Defines.MAT_SPEC_ATTR, defaultSpecular, out specular);
-                }
+                GetMaterialParameterColor3Value(
+                    session, materialInfo.nodeId, parmInfos,
+                    HEU_Defines.MAT_OGL_SPEC_ATTR, HEU_Defines.MAT_SPEC_ATTR,
+                    HEU_Defines.MAT_CPM_SPECULAR, HEU_Defines.MAT_CPM_SPECULAR_MAP_SWITCH, HEU_Defines.MAT_CPM_SPECULAR_DEFAULT,
+                    defaultSpecular, out specular);
 
                 _material.SetColor(HEU_Defines.UNITY_SHADER_SPEC_COLOR, specular);
 
-                int specMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                    HEU_Defines.MAT_OGL_SPEC_MAP_ATTR, HEU_Defines.MAT_OGL_SPEC_MAP_ATTR_ENABLED);
-                if (specMapParmIndex < 0)
-                {
-                    specMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                        HEU_Defines.MAT_SPEC_MAP_ATTR, HEU_Defines.MAT_SPEC_MAP_ATTR_ENABLED);
-                }
+                int specMapParmIndex = FindMaterialTextureParameter(
+                    session, nodeInfo.id, parmInfos,
+                    HEU_Defines.MAT_OGL_SPEC_MAP_ATTR, HEU_Defines.MAT_OGL_SPEC_MAP_ATTR_ENABLED,
+                    HEU_Defines.MAT_SPEC_MAP_ATTR, HEU_Defines.MAT_SPEC_MAP_ATTR_ENABLED,
+                    HEU_Defines.MAT_CPM_SPECULAR_MAP, HEU_Defines.MAT_CPM_SPECULAR_MAP_SWITCH);
 
                 if (specMapParmIndex >= 0 && specMapParmIndex < parmInfos.Length)
                 {
@@ -191,23 +328,19 @@ namespace HoudiniEngineUnity
             else
             {
                 float metallic = 0;
-                if (!HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos,
-                        HEU_Defines.MAT_OGL_METALLIC_ATTR, 0f, out metallic))
-                {
-                    HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos,
-                        HEU_Defines.MAT_METALLIC_ATTR, 0f, out metallic);
-                }
+                GetMaterialParameterFloatValue(
+                    session, materialInfo.nodeId, parmInfos,
+                    HEU_Defines.MAT_OGL_METALLIC_ATTR, HEU_Defines.MAT_METALLIC_ATTR,
+                    HEU_Defines.MAT_CPM_METALLIC, HEU_Defines.MAT_CPM_METALLIC_MAP_SWITCH, HEU_Defines.MAT_CPM_METALLIC_DEFAULT,
+                    0f, out metallic);
 
                 _material.SetFloat(HEU_Defines.UNITY_SHADER_METALLIC, metallic);
 
-                int metallicMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id,
-                    parmInfos, HEU_Defines.MAT_OGL_METALLIC_MAP_ATTR, HEU_Defines.MAT_OGL_METALLIC_MAP_ATTR_ENABLED);
-                if (metallicMapParmIndex < 0)
-                {
-                    metallicMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id,
-                        parmInfos, HEU_Defines.MAT_METALLIC_MAP_ATTR, HEU_Defines.MAT_METALLIC_MAP_ATTR_ENABLED);
-                }
-
+                int metallicMapParmIndex = FindMaterialTextureParameter(
+                    session, nodeInfo.id, parmInfos,
+                    HEU_Defines.MAT_OGL_METALLIC_MAP_ATTR, HEU_Defines.MAT_OGL_METALLIC_MAP_ATTR_ENABLED,
+                    HEU_Defines.MAT_METALLIC_MAP_ATTR, HEU_Defines.MAT_METALLIC_MAP_ATTR_ENABLED,
+                    HEU_Defines.MAT_CPM_METALLIC_MAP, HEU_Defines.MAT_CPM_METALLIC_MAP_SWITCH);
 
                 if (metallicMapParmIndex >= 0 && metallicMapParmIndex < parmInfos.Length)
                 {
@@ -220,13 +353,11 @@ namespace HoudiniEngineUnity
             }
 
             // Normal map - render & extract texture
-            int normalMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                HEU_Defines.MAT_NORMAL_ATTR, HEU_Defines.MAT_NORMAL_ATTR_ENABLED);
-            if (normalMapParmIndex < 0)
-            {
-                normalMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                    HEU_Defines.MAT_OGL_NORMAL_ATTR, "");
-            }
+            int normalMapParmIndex = FindMaterialTextureParameter(
+                session, nodeInfo.id, parmInfos,
+                HEU_Defines.MAT_NORMAL_ATTR, HEU_Defines.MAT_NORMAL_ATTR_ENABLED,
+                HEU_Defines.MAT_OGL_NORMAL_ATTR, "",
+                HEU_Defines.MAT_CPM_NORMAL_ATTR, "");
 
             if (normalMapParmIndex >= 0 && normalMapParmIndex < parmInfos.Length)
             {
@@ -243,22 +374,35 @@ namespace HoudiniEngineUnity
             // Emission
             Color emission;
             Color defaultEmission = new Color(0, 0, 0, 0);
-            if (!HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos,
-                    HEU_Defines.MAT_OGL_EMISSIVE_ATTR, defaultEmission, out emission))
+            if(GetMaterialParameterColor3Value(
+                session, materialInfo.nodeId, parmInfos,
+                HEU_Defines.MAT_OGL_EMISSIVE_ATTR, HEU_Defines.MAT_EMISSIVE_ATTR,
+                HEU_Defines.MAT_CPM_EMISSIVE, HEU_Defines.MAT_CPM_EMISSIVE_MAP_SWITCH, HEU_Defines.MAT_CPM_EMISSIVE_DEFAULT,
+                defaultEmission, out emission))
             {
-                HEU_ParameterUtility.GetParameterColor3Value(session, materialInfo.nodeId, parmInfos,
-                    HEU_Defines.MAT_EMISSIVE_ATTR, defaultEmission, out emission);
+                // Emissive intensity
+                float emiss_intensity;
+                float defaultEmissIntensity = 0.0f;
+                if (GetMaterialParameterFloatValue(
+                    session, materialInfo.nodeId, parmInfos,
+                    HEU_Defines.MAT_OGL_EMISSIVE_INTENSITY_ATTR, HEU_Defines.MAT_EMISSIVE_INTENSITY_ATTR,
+                    HEU_Defines.MAT_CPM_EMISSIVE_INTENSITY_MAP, HEU_Defines.MAT_CPM_EMISSIVE_INTENSITY_MAP_SWITCH, HEU_Defines.MAT_CPM_EMISSIVE_INTENSITY_DEFAULT,
+                    defaultEmissIntensity, out emiss_intensity))
+                {
+                    emiss_intensity = Mathf.Clamp01(emiss_intensity);
+                    defaultEmission.r *= emiss_intensity;
+                    defaultEmission.g *= emiss_intensity;
+                    defaultEmission.b *= emiss_intensity;
+                }
             }
 
             _material.SetColor(HEU_Defines.UNITY_SHADER_EMISSION_COLOR, emission);
 
-            int emissionMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                HEU_Defines.MAT_OGL_EMISSIVE_MAP_ATTR, HEU_Defines.MAT_OGL_EMISSIVE_MAP_ATTR_ENABLED);
-            if (emissionMapParmIndex < 0)
-            {
-                emissionMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                    HEU_Defines.MAT_EMISSIVE_MAP_ATTR, HEU_Defines.MAT_EMISSIVE_MAP_ATTR_ENABLED);
-            }
+            int emissionMapParmIndex = FindMaterialTextureParameter(
+                session, nodeInfo.id, parmInfos,
+                HEU_Defines.MAT_OGL_EMISSIVE_MAP_ATTR, HEU_Defines.MAT_OGL_EMISSIVE_MAP_ATTR_ENABLED,
+                HEU_Defines.MAT_EMISSIVE_MAP_ATTR, HEU_Defines.MAT_EMISSIVE_MAP_ATTR_ENABLED,
+                HEU_Defines.MAT_CPM_EMISSIVE_MAP, HEU_Defines.MAT_CPM_EMISSIVE_MAP_SWITCH);
 
             if (emissionMapParmIndex >= 0 && emissionMapParmIndex < parmInfos.Length)
             {
@@ -272,23 +416,20 @@ namespace HoudiniEngineUnity
             // Smoothness (need to invert roughness!)
             float roughness;
             float defaultRoughness = 0.5f;
-            if (!HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos,
-                    HEU_Defines.MAT_OGL_ROUGH_ATTR, defaultRoughness, out roughness))
-            {
-                HEU_ParameterUtility.GetParameterFloatValue(session, materialInfo.nodeId, parmInfos,
-                    HEU_Defines.MAT_ROUGH_ATTR, defaultRoughness, out roughness);
-            }
+            GetMaterialParameterFloatValue(
+                session, materialInfo.nodeId, parmInfos,
+                HEU_Defines.MAT_OGL_ROUGH_ATTR, HEU_Defines.MAT_ROUGH_ATTR,
+                HEU_Defines.MAT_CPM_ROUGHNESS, HEU_Defines.MAT_CPM_ROUGHNESS_MAP_SWITCH, HEU_Defines.MAT_CPM_ROUGHNESS_DEFAULT,
+                defaultRoughness, out roughness);
 
             // Clamp shininess to non-zero as results in very hard shadows. Unity's UI does not allow zero either.
             _material.SetFloat(HEU_Defines.UNITY_SHADER_SMOOTHNESS, Mathf.Max(0.03f, 1.0f - roughness));
 
-            int roughMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                HEU_Defines.MAT_OGL_ROUGH_MAP_ATTR, HEU_Defines.MAT_OGL_ROUGH_MAP_ATTR_ENABLED);
-            if (roughMapParmIndex < 0)
-            {
-                roughMapParmIndex = HEU_ParameterUtility.FindTextureParamByNameOrTag(session, nodeInfo.id, parmInfos,
-                    HEU_Defines.MAT_ROUGH_MAP_ATTR, HEU_Defines.MAT_ROUGH_MAP_ATTR_ENABLED);
-            }
+            int roughMapParmIndex = FindMaterialTextureParameter(
+                session, nodeInfo.id, parmInfos,
+                HEU_Defines.MAT_OGL_ROUGH_MAP_ATTR, HEU_Defines.MAT_OGL_ROUGH_MAP_ATTR_ENABLED,
+                HEU_Defines.MAT_ROUGH_MAP_ATTR, HEU_Defines.MAT_ROUGH_MAP_ATTR_ENABLED,
+                HEU_Defines.MAT_CPM_ROUGHNESS_MAP, HEU_Defines.MAT_CPM_ROUGHNESS_MAP_SWITCH);
 
             if (roughMapParmIndex >= 0 && roughMapParmIndex < parmInfos.Length)
             {
@@ -499,9 +640,23 @@ namespace HoudiniEngineUnity
         internal static bool IsTransparentMaterial(HEU_SessionBase session, HAPI_NodeId nodeID,
             HAPI_ParmInfo[] parameters)
         {
+            // see if we have an alpha value under 0.95
             float alpha;
             GetMaterialAlpha(session, nodeID, parameters, 1, out alpha);
-            return alpha < 0.95f;
+            if (alpha < 0.95f)
+                return true;
+
+            // if we don't look for an opacity map
+            int opacityMapParmIndex = FindMaterialTextureParameter(
+                session, nodeID, parameters,
+                HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR, HEU_Defines.MAT_OGL_OPACITY_MAP_ATTR_ENABLED,
+                HEU_Defines.MAT_OPACITY_MAP_ATTR, HEU_Defines.MAT_OPACITY_MAP_ATTR_ENABLED,
+                HEU_Defines.MAT_CPM_OPACITY_MAP, HEU_Defines.MAT_CPM_OPACITY_MAP_SWITCH);
+
+            if (opacityMapParmIndex >= 0 && opacityMapParmIndex < parameters.Length)
+                return true;
+
+            return false;
         }
 
         // Gets the alpha of the material
@@ -544,6 +699,13 @@ namespace HoudiniEngineUnity
                     HEU_Defines.MAT_OGL_TRANSPARENCY_ATTR, defaultValue, out alpha))
             {
                 alpha = 1 - alpha;
+                return true;
+            }
+
+            if (HEU_ParameterUtility.GetParameterFloatValue(
+                    session, nodeID, parameters, HEU_Defines.MAT_CPM_ALPHA,
+                    defaultValue, out alpha))
+            {
                 return true;
             }
 

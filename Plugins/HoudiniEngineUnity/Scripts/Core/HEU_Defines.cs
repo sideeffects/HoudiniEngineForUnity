@@ -202,11 +202,19 @@ namespace HoudiniEngineUnity
         public const string MAT_BASECOLOR_ATTR = "basecolor_texture";
         public const string MAT_BASECOLOR_ATTR_ENABLED = "basecolor_useTexture";
 
+        public const string MAT_CPM_BASECOLOR = "constantbasecolor";
+        public const string MAT_CPM_BASECOLOR_DEFAULT = "default_basecolor";
+        public const string MAT_CPM_BASECOLOR_TEX = "basecolor";
+        public const string MAT_CPM_BASECOLOR_TEX_ENABLED = "basecolorswitch";
+
+        // Normal
         public const string MAT_MAP_ATTR = "map";
 
         public const string MAT_OGL_NORMAL_ATTR = "ogl_normalmap";
         public const string MAT_NORMAL_ATTR = "baseNormal_texture";
         public const string MAT_NORMAL_ATTR_ENABLED = "baseBumpAndNormal_enable";
+
+        public const string MAT_CPM_NORMAL_ATTR = "normal_map";
 
         // Specular
         public const string MAT_OGL_SPEC_ATTR = "ogl_spec";
@@ -217,6 +225,11 @@ namespace HoudiniEngineUnity
         public const string MAT_SPEC_MAP_ATTR = "reflect_texture";
         public const string MAT_SPEC_MAP_ATTR_ENABLED = "reflect_useTexture";
 
+        public const string MAT_CPM_SPECULAR = "constantspecularcolor";
+        public const string MAT_CPM_SPECULAR_DEFAULT = "default_spec_color";
+        public const string MAT_CPM_SPECULAR_MAP = "specular";
+        public const string MAT_CPM_SPECULAR_MAP_SWITCH = "specularcolorswitch";
+
         // Roughness
         public const string MAT_OGL_ROUGH_ATTR = "ogl_rough";
         public const string MAT_ROUGH_ATTR = "rough";
@@ -226,6 +239,11 @@ namespace HoudiniEngineUnity
 
         public const string MAT_ROUGH_MAP_ATTR = "rough_texture";
         public const string MAT_ROUGH_MAP_ATTR_ENABLED = "rough_useTexture";
+
+        public const string MAT_CPM_ROUGHNESS = "constantspecularroughness";
+        public const string MAT_CPM_ROUGHNESS_DEFAULT = "default_specular_roughness";
+        public const string MAT_CPM_ROUGHNESS_MAP = "roughness";
+        public const string MAT_CPM_ROUGHNESS_MAP_SWITCH = "specularoughnessswitch";  // CPM misspelt this parameter
 
         // Metallic
         public const string MAT_OGL_METALLIC_ATTR = "ogl_metallic";
@@ -238,6 +256,11 @@ namespace HoudiniEngineUnity
 
         public const string MAT_METALLIC_MAP_ATTR_ENABLED = "metallic_useTexture";
 
+        public const string MAT_CPM_METALLIC = "constantmetalness";
+        public const string MAT_CPM_METALLIC_DEFAULT = "default_metalness";
+        public const string MAT_CPM_METALLIC_MAP = "metalness";
+        public const string MAT_CPM_METALLIC_MAP_SWITCH = "metalnessswitch";
+
         // Emissive
         public const string MAT_OGL_EMISSIVE_ATTR = "ogl_emit";
         public const string MAT_EMISSIVE_ATTR = "emitcolor";
@@ -245,6 +268,18 @@ namespace HoudiniEngineUnity
         public const string MAT_OGL_EMISSIVE_MAP_ATTR_ENABLED = "ogl_use_emissionmap";
         public const string MAT_EMISSIVE_MAP_ATTR = "emitcolor_texture";
         public const string MAT_EMISSIVE_MAP_ATTR_ENABLED = "emitcolor_useTexture";
+
+        public const string MAT_CPM_EMISSIVE = "constantemissioncolor";
+        public const string MAT_CPM_EMISSIVE_DEFAULT = "default_emission_color";
+        public const string MAT_CPM_EMISSIVE_MAP = "emission_color";
+        public const string MAT_CPM_EMISSIVE_MAP_SWITCH = "emissioncolorswitch";
+
+        public const string MAT_OGL_EMISSIVE_INTENSITY_ATTR = "ogl_emit_intensity";
+        public const string MAT_EMISSIVE_INTENSITY_ATTR = "emitint";
+        public const string MAT_CPM_EMISSIVE_INTENSITY = "constantemissionamount";
+        public const string MAT_CPM_EMISSIVE_INTENSITY_DEFAULT = "default_emission_amount";
+        public const string MAT_CPM_EMISSIVE_INTENSITY_MAP = "emission";
+        public const string MAT_CPM_EMISSIVE_INTENSITY_MAP_SWITCH = "emissionamountswitch";
 
         // Alpha
         public const string MAT_OGL_ALPHA_ATTR = "ogl_alpha";
@@ -258,10 +293,19 @@ namespace HoudiniEngineUnity
         public const string MAT_OGL_TRANSPARENCY_ATTR = "ogl_transparency";
         public const string MAT_OGL_TRANSPARENCY_ATTR_ENABLED = "ogl_use_alpha_transparency";
 
+        public const string MAT_CPM_ALPHA = "constantopacity";
+        public const string MAT_CPM_ALPHA_DEFAULT = "default_opacity_amount";
+        public const string MAT_CPM_OPACITY_MAP = "opacity";
+        public const string MAT_CPM_OPACITY_MAP_SWITCH = "opacityswitch";
 
         // Occlusion (No regular occlusion, just maps)
         public const string MAT_OGL_OCCLUSION_MAP_ATTR = "ogl_occlusionmap";
         public const string MAT_OGL_OCCLUSION_MAP_ATTR_ENABLED = "ogl_use_occlusionmap";
+
+        public const string MAT_OCCLUSION_MAP_ATTR = "occlusion_texture";
+        public const string MAT_OCCLUSION_MAP_ATTR_ENABLED = "occlusion_useTexture";
+        
+        // No occlusion in CPM
 
         // Curve Parameters
         public const string CURVE_COORDS_PARAM = "coords";

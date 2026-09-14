@@ -31,29 +31,31 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Assemblies;
 
 namespace HoudiniEngineUnity
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
-    using HAPI_UInt8 = System.Byte;
-    using HAPI_Int8 = System.SByte;
+    using HAPI_AssetLibraryId = System.Int32;
+    using HAPI_ErrorCodeBits = System.Int32;
     using HAPI_Int16 = System.Int16;
     using HAPI_Int64 = System.Int64;
-    using HAPI_StringHandle = System.Int32;
-    using HAPI_ErrorCodeBits = System.Int32;
-    using HAPI_AssetLibraryId = System.Int32;
+    using HAPI_Int8 = System.SByte;
+    using HAPI_NodeFlagsBits = System.Int32;
     using HAPI_NodeId = System.Int32;
     using HAPI_NodeTypeBits = System.Int32;
-    using HAPI_NodeFlagsBits = System.Int32;
     using HAPI_ParmId = System.Int32;
     using HAPI_PartId = System.Int32;
-    using HAPI_PDG_WorkitemId = System.Int32;
     using HAPI_PDG_GraphContextId = System.Int32;
+    using HAPI_PDG_WorkitemId = System.Int32;
+    using HAPI_StringHandle = System.Int32;
+    using HAPI_UInt8 = System.Byte;
 
 
     public class HEU_SessionHAPI : HEU_SessionBase
@@ -275,8 +277,12 @@ namespace HoudiniEngineUnity
                 }
             }
 
+#if UNITY_6000_0_OR_NEWER
+            System.Reflection.Assembly[] assemblies = UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies().ToArray();
+#else
             AppDomain currentDomain = AppDomain.CurrentDomain;
             Assembly[] assemblies = currentDomain.GetAssemblies();
+#endif
             string assemblyList = "";
             foreach (Assembly assembly in assemblies)
             {
@@ -439,8 +445,12 @@ namespace HoudiniEngineUnity
                 }
             }
 
+#if UNITY_6000_0_OR_NEWER
+            System.Reflection.Assembly[] assemblies = UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies().ToArray();
+#else
             AppDomain currentDomain = AppDomain.CurrentDomain;
             Assembly[] assemblies = currentDomain.GetAssemblies();
+#endif
             string assemblyList = "";
             foreach (Assembly assembly in assemblies)
             {

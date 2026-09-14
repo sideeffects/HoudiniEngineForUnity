@@ -256,16 +256,36 @@ namespace HoudiniEngineUnity
             int foundUseParmId = GetParameterIndexFromNameOrTag(session, nodeID, parameters, useTextureParmName);
             if (foundUseParmId >= 0)
             {
-                // Found a valid "use" parameter. Check if it is disabled.
-                int[] useValue = new int[1];
-                int intValuesIndex = parameters[foundUseParmId].intValuesIndex;
-
-                if (session.GetParamIntValues(nodeID, useValue, parameters[foundUseParmId].intValuesIndex, 1))
+                if(parameters[foundUseParmId].intValuesIndex > 0)
                 {
-                    if (useValue.Length > 0 && useValue[0] == 0)
+                    // Found a valid "use" parameter. Check if it is disabled.
+                    int[] useValue = new int[1];
+                    int intValuesIndex = parameters[foundUseParmId].intValuesIndex;
+
+                    if (session.GetParamIntValues(nodeID, useValue, intValuesIndex, 1))
                     {
-                        // We found the texture, but the use tag is disabled, so don't use it!
-                        return -1;
+                        if (useValue.Length > 0 && useValue[0] == 0)
+                        {
+                            // We found the texture, but the use tag is disabled, so don't use it!
+                            return -1;
+                        }
+                    }
+                }
+                else if (parameters[foundUseParmId].floatValuesIndex > 0)
+                {
+                    // Found a valid "use" parameter. Check if it is disabled.
+                    float[] useValue = new float[1];
+                    int floatValuesIndex = parameters[foundUseParmId].floatValuesIndex;
+
+                    // For some reason, in CPMs the switch parameter is a float, but it's used like a boolean.
+                    // 0.0 means the source is either File or COP, and 1.0 means the source is Constant.
+                    if (session.GetParamFloatValues(nodeID, useValue, floatValuesIndex, 1))
+                    {
+                        if (useValue.Length > 0 && useValue[0] == 1.0f)
+                        {
+                            // We found the texture, but the use tag is disabled, so don't use it!
+                            return -1;
+                        }
                     }
                 }
             }

@@ -1417,7 +1417,7 @@ namespace HoudiniEngineUnity
             }
             //HEU_Logger.Log("Mesh Path: " + meshData._meshPath);
 
-            MeshRenderer meshRenderer = meshGameObject.GetComponent<MeshRenderer>();
+            Renderer meshRenderer = meshGameObject.GetComponent<Renderer>();
             if (meshRenderer != null)
             {
                 meshData._materials = meshRenderer.sharedMaterials;
