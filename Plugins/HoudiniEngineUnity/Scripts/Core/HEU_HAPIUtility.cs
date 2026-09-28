@@ -1425,7 +1425,6 @@ namespace HoudiniEngineUnity
                 if (objectCount <= 0)
                 {
                     // Since this asset is an object type and has 0 object as children, we use the object itself
-
                     objectInfos = new HAPI_ObjectInfo[1];
                     if (!session.GetObjectInfo(assetID, ref objectInfos[0]))
                     {
@@ -1439,7 +1438,6 @@ namespace HoudiniEngineUnity
                 else
                 {
                     // This object has children, so use GetComposedObjectList to get list of HAPI_ObjectInfos
-
                     int immediateSOP = 0;
                     session.ComposeChildNodeList(nodeInfo.id, (int)HAPI_NodeType.HAPI_NODETYPE_SOP, (int)HAPI_NodeFlags.HAPI_NODEFLAGS_DISPLAY, false,
                         ref immediateSOP);
@@ -1484,6 +1482,25 @@ namespace HoudiniEngineUnity
                         objectTransforms[objectCount] = new HAPI_Transform(true);
                     }
                 }
+            }
+            else if ((nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_COP) || (nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_COP2))
+            {
+                // For COP assets, we need to use the grand parent's IDs to get the object infos
+                // Parent COPnet
+                HAPI_NodeInfo ParentInfo = new HAPI_NodeInfo();
+                if (!session.GetNodeInfo(nodeInfo.parentId, ref ParentInfo))
+                    return false;
+                
+                // Get the object infos from the grandparent node.
+                objectInfos = new HAPI_ObjectInfo[1];
+                if (!session.GetObjectInfo(ParentInfo.parentId, ref objectInfos[0]))
+                {
+                    return false;
+                }
+
+                // Identity transform is always used for COPs
+                objectTransforms = new HAPI_Transform[1];
+                objectTransforms[0] = new HAPI_Transform(true);
             }
             else
             {
@@ -1561,7 +1578,8 @@ namespace HoudiniEngineUnity
             bool bGetEditableNodes,
             ref List<HAPI_GeoInfo> outGeoInfos)
         {
-            if (outGeoInfos == null) outGeoInfos = new List<HAPI_GeoInfo>();
+            if (outGeoInfos == null) 
+                outGeoInfos = new List<HAPI_GeoInfo>();
 
             if (objectInfo.nodeId < 0)
             {

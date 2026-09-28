@@ -37,21 +37,6 @@ namespace HoudiniEngineUnity
     {
         // SESSIONS ---------------------------------------------------------------------------------------------------
 
-#if (UNITY_EDITOR_64 || UNITY_64)
-        /* Commenting out In-Process sessions as its not recommended usage
-        // In-Process session is only available in 64-bit Houdini Engine library
-        [MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Create/" + HEU_EditorStrings.INPROCESS_SESSION, false, 0)]
-        public static void CreateInProcessSession()
-        {
-            bool bResult = HEU_SessionManager.CreateInProcessSession();
-            if (!bResult)
-            {
-                HEU_EditorUtility.DisplayErrorDialog("Create Session", HEU_SessionManager.GetLastSessionError(), "OK");
-            }
-        }
-        */
-#endif
-
         [MenuItem(HEU_Defines.HEU_PRODUCT_NAME + "/Session/Create/" + HEU_EditorStrings.RPC_PIPE_SESSION, false, 0)]
         public static void CreatePipeSession()
         {

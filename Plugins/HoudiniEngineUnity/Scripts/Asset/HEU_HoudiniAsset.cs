@@ -39,6 +39,9 @@ using UnityEngine;
 // Expose internal classes/functions
 #if UNITY_EDITOR
 using System.Runtime.CompilerServices;
+using UnityEditor.Experimental;
+using UnityEditor.VersionControl;
+using System;
 
 [assembly: InternalsVisibleTo("HoudiniEngineUnityEditor")]
 [assembly: InternalsVisibleTo("HoudiniEngineUnityEditorTests")]
@@ -48,16 +51,16 @@ using System.Runtime.CompilerServices;
 
 namespace HoudiniEngineUnity
 {
+    using HAPI_AssetLibraryId = System.Int32;
+    using HAPI_ErrorCodeBits = System.Int32;
+    using HAPI_NodeFlagsBits = System.Int32;
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
-    using HAPI_AssetLibraryId = System.Int32;
-    using HAPI_StringHandle = System.Int32;
-    using HAPI_ErrorCodeBits = System.Int32;
     using HAPI_NodeTypeBits = System.Int32;
-    using HAPI_NodeFlagsBits = System.Int32;
     using HAPI_ParmId = System.Int32;
     using HAPI_PartId = System.Int32;
+    using HAPI_StringHandle = System.Int32;
 
     /// <summary>
     /// Represents a Houdini Digital Asset in Unity.
@@ -1023,7 +1026,8 @@ namespace HoudiniEngineUnity
                         bakedAssetPath = HEU_AssetDatabase.CreateUniqueBakePath(_assetName);
                     }
 
-                    string prefabPath = HEU_AssetDatabase.AppendPrefabPath(bakedAssetPath, _assetName);
+                    string cleanAssetName = HEU_AssetDatabase.MakeValidFileName(_assetName);
+                    string prefabPath = HEU_AssetDatabase.AppendPrefabPath(bakedAssetPath, cleanAssetName);
                     GameObject prefabGO = HEU_EditorUtility.SaveAsPrefabAsset(prefabPath, newClonedRoot);
                     if (prefabGO != null)
                     {
@@ -2331,6 +2335,23 @@ namespace HoudiniEngineUnity
             // Cache asset info
             string realName = HEU_SessionManager.GetString(_assetInfo.nameSH, session);
 
+            // If necessary - strip the version from the asset name
+            if (realName.Contains("::"))
+            {
+                string[] versionDelimiter = new string[]{"::"};
+                string[] splitName = realName.Split(versionDelimiter, StringSplitOptions.RemoveEmptyEntries);
+                if(splitName.Length == 2)
+                {
+                    // name::version
+                    realName = splitName[0];
+                }
+                else if(splitName.Length > 2)
+                {
+                    // type::name::version
+                    realName = splitName[1];
+                }
+            }
+
             if (!HEU_PluginSettings.ShortenFolderPaths || realName.Length < 3)
             {
                 _assetName = realName;
@@ -3343,7 +3364,7 @@ namespace HoudiniEngineUnity
                 //   that AssetDatabase can load as object, then get the real local path to pass to Houdini
 
                 validAssetPath = HEU_AssetDatabase.GetValidAssetPath(validAssetPath);
-                _assetFileObject = HEU_AssetDatabase.LoadAssetAtPath(validAssetPath, typeof(Object));
+                _assetFileObject = HEU_AssetDatabase.LoadAssetAtPath(validAssetPath, typeof(UnityEngine.Object));
 
                 // Update the load path from _assetFileObject to get local path
                 if (_assetFileObject != null)
@@ -3747,6 +3768,37 @@ namespace HoudiniEngineUnity
             HAPI_ObjectInfo[] objectInfos = null;
             HAPI_Transform[] objectTransforms = null;
 
+            // Take care of COP nodes here since they won't have any geos
+            if (_nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_COP 
+                || _nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_COP)
+            {
+                int NumOutputs = _nodeInfo.outputCount;
+
+                // For COP assets, we need to use the grand parent IDs to get the object info
+                // the parent ID for the geo infos (COPnet)
+                HAPI_NodeInfo ParentInfo = new HAPI_NodeInfo();
+                if (!session.GetNodeInfo(_nodeInfo.parentId, ref ParentInfo))
+                    return false;
+
+                // Grandparent GEO
+                objectInfos = new HAPI_ObjectInfo[1];
+                if (!session.GetObjectInfo(ParentInfo.parentId, ref objectInfos[0]))
+                    return false;
+
+                // Identity transform will be used for COP assets, not need to query a transform
+                objectTransforms = new HAPI_Transform[1];
+                objectTransforms[0] = new HAPI_Transform(true);
+
+                // Add a "fake" object node
+                HEU_ObjectNode objectNode = ScriptableObject.CreateInstance<HEU_ObjectNode>();
+                objectNode.InitializeForCOP(
+                    session, objectInfos[0], objectTransforms[0], this, ParentInfo, _nodeInfo );
+
+                _objectNodes.Add(objectNode);
+
+                return true;
+            }
+
             if (!HEU_HAPIUtility.GetObjectInfos(session, _assetID, ref _nodeInfo, out objectInfos, out objectTransforms))
             {
                 return false;
@@ -3776,11 +3828,13 @@ namespace HoudiniEngineUnity
             // Fill in latest object infos and transforms based on node type and number of child objects
             HAPI_ObjectInfo[] objectInfos = null;
             HAPI_Transform[] objectTransforms = null;
-
             if (!HEU_HAPIUtility.GetObjectInfos(session, _assetID, ref _nodeInfo, out objectInfos, out objectTransforms))
             {
                 return;
             }
+
+            // See if we are a COP HDA - as we'll need to update things differently if that's the case
+            bool bIsCOPHDA = (_nodeInfo.type == HAPI_NodeType.HAPI_NODETYPE_COP);
 
             // We need to go through the new list of object infos and 
             // check against our internal state. 
@@ -3868,7 +3922,7 @@ namespace HoudiniEngineUnity
             // Now refresh all object nodes
             foreach (HEU_ObjectNode objNode in _objectNodes)
             {
-                objNode.UpdateObject(session, true);
+                objNode.UpdateObject(session, true, bIsCOPHDA, _nodeInfo);
             }
         }
 

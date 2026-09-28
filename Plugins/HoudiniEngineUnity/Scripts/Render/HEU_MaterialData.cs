@@ -262,7 +262,7 @@ namespace HoudiniEngineUnity
             {
                 string diffuseTextureFileName =
                     GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[diffuseMapParmIndex]);
-                _material.mainTexture = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                _material.mainTexture = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                     parmInfos[diffuseMapParmIndex].id, diffuseTextureFileName, assetCacheFolderPath, false);
             }
 
@@ -290,7 +290,7 @@ namespace HoudiniEngineUnity
                     string opacityTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId,
                         parmInfos[opacityMapParmIndex]);
                     _material.SetTexture(HEU_Defines.UNITY_SHADER_OPACITY_MAP,
-                        HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                        HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                             parmInfos[opacityMapParmIndex].id, opacityTextureFileName, assetCacheFolderPath, false));
                 }
             }
@@ -321,7 +321,7 @@ namespace HoudiniEngineUnity
                     string specTextureFileName =
                         GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[specMapParmIndex]);
                     _material.SetTexture(HEU_Defines.UNITY_SHADER_SPEC_MAP,
-                        HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                        HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                             parmInfos[specMapParmIndex].id, specTextureFileName, assetCacheFolderPath, false));
                 }
             }
@@ -347,7 +347,7 @@ namespace HoudiniEngineUnity
                     string metallicTextureFileName = GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId,
                         parmInfos[metallicMapParmIndex]);
                     _material.SetTexture(HEU_Defines.UNITY_SHADER_METALLIC_MAP,
-                        HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                        HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                             parmInfos[metallicMapParmIndex].id, metallicTextureFileName, assetCacheFolderPath, false));
                 }
             }
@@ -363,7 +363,7 @@ namespace HoudiniEngineUnity
             {
                 string normalTextureFileName =
                     GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[normalMapParmIndex]);
-                Texture2D normalMap = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                Texture2D normalMap = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                     parmInfos[normalMapParmIndex].id, normalTextureFileName, assetCacheFolderPath, true);
                 if (normalMap != null)
                 {
@@ -409,7 +409,7 @@ namespace HoudiniEngineUnity
                 string emissionTextureFileName =
                     GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[emissionMapParmIndex]);
                 _material.SetTexture(HEU_Defines.UNITY_SHADER_EMISSION_MAP,
-                    HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                    HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                         parmInfos[emissionMapParmIndex].id, emissionTextureFileName, assetCacheFolderPath, false));
             }
 
@@ -436,7 +436,7 @@ namespace HoudiniEngineUnity
                 string roughTextureFileName =
                     GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[roughMapParmIndex]);
                 _material.SetTexture(HEU_Defines.UNITY_SHADER_SMOOTHNESS_MAP,
-                    HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                    HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                         parmInfos[roughMapParmIndex].id, roughTextureFileName, assetCacheFolderPath, false,
                         invertTexture: true));
             }
@@ -450,7 +450,7 @@ namespace HoudiniEngineUnity
                 string occlusionTextureFileName =
                     GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[occlusionMapParmIndex]);
                 _material.SetTexture(HEU_Defines.UNITY_SHADER_OCCLUSION_MAP,
-                    HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                    HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                         parmInfos[occlusionMapParmIndex].id, occlusionTextureFileName, assetCacheFolderPath, false));
             }
 
@@ -504,7 +504,7 @@ namespace HoudiniEngineUnity
             {
                 string diffuseTextureFileName =
                     GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[diffuseMapParmIndex]);
-                _material.mainTexture = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                _material.mainTexture = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                     parmInfos[diffuseMapParmIndex].id, diffuseTextureFileName, assetCacheFolderPath, false);
             }
 
@@ -521,7 +521,7 @@ namespace HoudiniEngineUnity
             {
                 string normalTextureFileName =
                     GetTextureFileNameFromMaterialParam(session, materialInfo.nodeId, parmInfos[normalMapParmIndex]);
-                Texture2D normalMap = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo,
+                Texture2D normalMap = HEU_MaterialFactory.RenderAndExtractImageToTexture(session, materialInfo.nodeId,
                     parmInfos[normalMapParmIndex].id, normalTextureFileName, assetCacheFolderPath, true);
                 if (normalMap != null)
                 {

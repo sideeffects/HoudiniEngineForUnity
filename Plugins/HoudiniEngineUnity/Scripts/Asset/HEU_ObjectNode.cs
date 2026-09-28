@@ -250,10 +250,32 @@ namespace HoudiniEngineUnity
 
             HEU_HAPIUtility.GatherAllAssetGeoInfos(session, parentAsset.AssetInfo, objectInfo, bUseOutputNodes, bGetEditableNodes,
                 ref geoInfos);
+
             int numGeoInfos = geoInfos.Count;
             for (int i = 0; i < numGeoInfos; ++i)
                 // Create GeoNode for each
                 _geoNodes.Add(CreateGeoNode(session, geoInfos[i]));
+        }
+
+        internal void InitializeForCOP(
+            HEU_SessionBase session, 
+            HAPI_ObjectInfo objectInfo, HAPI_Transform objectTranform, HEU_HoudiniAsset parentAsset,
+            HAPI_NodeInfo GeoNodeInfo, HAPI_NodeInfo COPNodeInfo)
+        {
+            _objectInfo = objectInfo;
+            _objectTransform = objectTranform;
+            _parentAsset = parentAsset;
+
+            SyncWithObjectInfo(session);
+
+            // COP HDAs don't have geos, so we need to create a fake one to extract the parts (texture outputs)
+            HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
+            geoInfo.type = HAPI_GeoType.HAPI_GEOTYPE_DEFAULT;
+            geoInfo.nodeId = GeoNodeInfo.id;
+            geoInfo.partCount = COPNodeInfo.outputCount;
+
+           // Create a geoNode for the COP
+           _geoNodes.Add(CreateGeoNodeForCOP(session, geoInfo, COPNodeInfo));
         }
 
         // This is the old way of getting outputs. Keep it for now for legacy. TODO: Remove this later
@@ -364,6 +386,14 @@ namespace HoudiniEngineUnity
             return geoNode;
         }
 
+        private HEU_GeoNode CreateGeoNodeForCOP(HEU_SessionBase session, HAPI_GeoInfo geoInfo, HAPI_NodeInfo COPNodeInfo)
+        {
+            HEU_GeoNode geoNode = ScriptableObject.CreateInstance<HEU_GeoNode>();
+            geoNode.Initialize(session, geoInfo, this);
+            geoNode.UpdateGeoForCOP(session, COPNodeInfo);
+            return geoNode;
+        }
+
         /// <summary>
         /// Get debug info for this object
         /// </summary>
@@ -390,12 +420,15 @@ namespace HoudiniEngineUnity
         /// Geo nodes are then refreshed to be in sync with Houdini session.
         /// </summary>
         /// <returns>True if internal state has changed (including geometry).</returns>
-        internal void UpdateObject(HEU_SessionBase session, bool bForceUpdate)
+        internal void UpdateObject(HEU_SessionBase session, 
+            bool bForceUpdate, bool bIsCOP, HAPI_NodeInfo nodeInfo)
         {
-            if (ParentAsset == null) return;
+            if (ParentAsset == null)
+                return;
 
             // Update the geo info
-            if (!session.GetObjectInfo(ObjectID, ref _objectInfo)) return;
+            if (!session.GetObjectInfo(ObjectID, ref _objectInfo)) 
+                return;
 
             SyncWithObjectInfo(session);
 
@@ -410,24 +443,39 @@ namespace HoudiniEngineUnity
 
             if (_objectInfo.haveGeosChanged || bForceUpdate)
             {
-                // Indicates that the geometry nodes have changed
-                //HEU_Logger.Log("Geos have changed!");
-
                 // Form a list of geo infos that are now present after cooking
                 List<HAPI_GeoInfo> postCookGeoInfos = new List<HAPI_GeoInfo>();
 
-
                 bool useOutputNodes = true;
                 bool getEditableNodes = true;
-
                 if (ParentAsset)
                 {
                     useOutputNodes = ParentAsset.UseOutputNodes;
                     getEditableNodes = ParentAsset.EditableNodesToolsEnabled;
                 }
 
-                HEU_HAPIUtility.GatherAllAssetGeoInfos(session, ParentAsset.AssetInfo, _objectInfo, useOutputNodes, getEditableNodes,
-                    ref postCookGeoInfos);
+                if (!bIsCOP)
+                {
+                    HEU_HAPIUtility.GatherAllAssetGeoInfos(session,
+                        ParentAsset.AssetInfo, _objectInfo,
+                        useOutputNodes, getEditableNodes,
+                        ref postCookGeoInfos);
+                }
+                else
+                {
+                    // COP HDAs don't have geos, so we need to create a fake one
+                    HAPI_GeoInfo geoInfo = new HAPI_GeoInfo();
+                    geoInfo.type = HAPI_GeoType.HAPI_GEOTYPE_DEFAULT;
+
+                    HAPI_NodeInfo ParentInfo = new HAPI_NodeInfo();
+                    if (!session.GetNodeInfo(nodeInfo.parentId, ref ParentInfo))
+                        return;
+
+                    geoInfo.nodeId = ParentInfo.id;
+                    geoInfo.partCount = nodeInfo.outputCount;
+
+                    postCookGeoInfos.Add(geoInfo);
+                }
 
                 // Now for each geo node that are present after cooking, we check if its
                 // new or whether we already have it prior to cooking.
@@ -440,7 +488,6 @@ namespace HoudiniEngineUnity
                     for (int j = 0; j < _geoNodes.Count; j++)
                     {
                         string oldGeoName = _geoNodes[j].GeoName;
-
                         if (geoName.Equals(oldGeoName)
                             // Fixes Bug #124004
                             // Newly created curves all use "curve" for their geo name, 
@@ -458,12 +505,14 @@ namespace HoudiniEngineUnity
                         }
                     }
 
-                    if (!bFound) newGeoInfosToCreate.Add(postCookGeoInfos[i]);
+                    if (!bFound) 
+                        newGeoInfosToCreate.Add(postCookGeoInfos[i]);
                 }
 
                 // Whatever is left in _geoNodes is no longer needed so clean up
                 int numCurrentGeos = _geoNodes.Count;
-                for (int i = 0; i < numCurrentGeos; ++i) _geoNodes[i].DestroyAllData();
+                for (int i = 0; i < numCurrentGeos; ++i) 
+                    _geoNodes[i].DestroyAllData();
             }
             else
             {
@@ -477,7 +526,10 @@ namespace HoudiniEngineUnity
                 bool bGeoChanged = bForceUpdate || geoNode.HasGeoNodeChanged(session);
                 if (bGeoChanged)
                 {
-                    geoNode.UpdateGeo(session);
+                    if(!bIsCOP)
+                        geoNode.UpdateGeo(session);
+                    else
+                        geoNode.UpdateGeoForCOP(session, nodeInfo);
                 }
                 else
                 {
@@ -495,14 +547,18 @@ namespace HoudiniEngineUnity
 
             // Create the new geo infos and add to our keep list
             foreach (HAPI_GeoInfo newGeoInfo in newGeoInfosToCreate)
-                geoNodesToKeep.Add(CreateGeoNode(session, newGeoInfo));
+            {
+                if(!bIsCOP)
+                    geoNodesToKeep.Add(CreateGeoNode(session, newGeoInfo));
+                else
+                    geoNodesToKeep.Add(CreateGeoNodeForCOP(session, newGeoInfo, nodeInfo));
+            }
 
             // Overwrite the old list with new
             _geoNodes = geoNodesToKeep;
 
-            // Updating the trasform is done in GenerateGeometry
+            // Updating the transform is done in GenerateGeometry
         }
-
         internal void GenerateGeometry(HEU_SessionBase session, bool bRebuild)
         {
             // Volumes could come in as a geonode + part for each heightfield layer.
@@ -511,6 +567,7 @@ namespace HoudiniEngineUnity
             bool bResult = false;
 
             List<HEU_PartData> meshParts = new List<HEU_PartData>();
+            List<HEU_PartData> textureParts = new List<HEU_PartData>();
             List<HEU_PartData> volumeParts = new List<HEU_PartData>();
 
             List<HEU_PartData> partsToDestroy = new List<HEU_PartData>();
@@ -522,7 +579,7 @@ namespace HoudiniEngineUnity
 
             foreach (HEU_GeoNode geoNode in _geoNodes)
             {
-                geoNode.GetPartsByOutputType(meshParts, volumeParts);
+                geoNode.GetPartsByOutputType(meshParts, volumeParts, textureParts);
 
                 if (volumeParts.Count > 0)
                 {
@@ -549,6 +606,17 @@ namespace HoudiniEngineUnity
                     partsToDestroy.Add(part);
                     _recentlyDestroyedParts.Add(part.PartID);
                 }
+            }
+
+            // Textures
+            List<HEU_PartData> failedParts = new List<HEU_PartData>();
+            GenerateTexturesAndMaterials(session, textureParts, failedParts);
+
+            foreach (HEU_PartData part in failedParts)
+            {
+                // Destroy failed parts
+                partsToDestroy.Add(part);
+                _recentlyDestroyedParts.Add(part.PartID);
             }
 
             int numPartsToDestroy = partsToDestroy.Count;
@@ -591,6 +659,113 @@ namespace HoudiniEngineUnity
         internal void GenerateAttributesStore(HEU_SessionBase session)
         {
             foreach (HEU_GeoNode geoNode in _geoNodes) geoNode.GenerateAttributesStore(session);
+        }
+
+
+        /// <summary>
+        /// Processs and build the COP textures, materials and output GameObject for this part.
+        /// </summary>
+        /// <param name="session">Active session to use.</param>
+        /// <returns>True if successfully built the texture.</returns>
+        internal bool GenerateTexturesAndMaterials(HEU_SessionBase session,
+            List<HEU_PartData> textureParts, List<HEU_PartData> failedParts)
+        {
+            Material mainMaterial = null;
+            int PositionOffset = 0;
+            foreach (HEU_PartData part in textureParts)
+            {
+                // This returns null when there is no valid textures
+                Texture2D generatedTexture = part.GenerateTexture(session);
+                if (generatedTexture == null)
+                {
+                    failedParts.Add(part);
+                    continue;
+                }
+
+                // Generate a material and quad for this texture
+                // This first material will be reused if necessary to use other specific textures (normal, emissive etc..)
+                // But each generated texture gets its own display quad
+                Material currentMaterial = part.GenerateMaterial(PositionOffset);
+                if (currentMaterial == null)
+                {
+                    failedParts.Add(part);
+                    continue;
+                }
+
+                PositionOffset++;
+                if (mainMaterial == null)
+                {
+                    // This part will be used for our "main" material
+                    mainMaterial = currentMaterial;
+
+                    // Indicate that in the name
+                    string newName = "cop_texture_main_" + part.PartName;
+                    HEU_GeneralUtility.RenameGameObject(part.OutputGameObject.gameObject, newName);
+                }
+
+                if (part.PartName.Contains("normal"))
+                {
+                    // normal map
+                    mainMaterial.SetTexture(HEU_Defines.UNITY_SHADER_BUMP_MAP, generatedTexture);
+                }
+                else if (part.PartName.Contains("specular"))
+                {
+                    // Specular map
+                    mainMaterial.SetTexture(HEU_Defines.UNITY_SHADER_SPEC_MAP, generatedTexture);
+                }
+                else if (part.PartName.Contains("roughness"))
+                {
+                    // roughness map
+                    mainMaterial.SetTexture(HEU_Defines.UNITY_SHADER_SMOOTHNESS_MAP, generatedTexture);
+                }
+                else if (part.PartName.Contains("emissive"))
+                {
+                    // emissive map
+                    mainMaterial.SetTexture(HEU_Defines.UNITY_SHADER_EMISSION_MAP, generatedTexture);
+                }
+                else if (part.PartName.Contains("opacity")
+                    || part.PartName.Contains("alpha"))
+                {
+                    // opacity map
+                    mainMaterial.SetTexture(HEU_Defines.UNITY_SHADER_OPACITY_MAP, generatedTexture);
+                }
+                else if (part.PartName.Contains("occlusion")
+                    || part.PartName.Contains("ao"))
+                {
+                    // occlusion map
+                    mainMaterial.SetTexture(HEU_Defines.UNITY_SHADER_OCCLUSION_MAP, generatedTexture);
+                }
+                else if (part.PartName.Contains("metal"))
+                {
+                    // metal map
+                    mainMaterial.SetTexture(HEU_Defines.UNITY_SHADER_METALLIC_MAP, generatedTexture);
+                }
+                /*
+                else if (part.PartName.Contains("displacement") || part.PartName.Contains("height"))
+                {
+                    // displacement map - NOT SUPPORTED
+                }
+                else if (part.PartName.Contains("rma") || part.PartName.Contains("compact"))
+                {
+                    // RMA compound map - NOT SUPPORTED
+                }
+                */
+                else
+                {
+                    // not a special map - assume it to be the main texture
+                    if (mainMaterial.mainTexture == null)
+                        mainMaterial.mainTexture = generatedTexture;
+                }
+
+                // Assign the texture to the current material
+                if(currentMaterial != mainMaterial)
+                    currentMaterial.mainTexture = generatedTexture;
+            }
+
+            if (failedParts.Count == textureParts.Count)
+                return false;
+            else
+                return true;
         }
 
         /// <summary>

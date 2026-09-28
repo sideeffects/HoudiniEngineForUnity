@@ -33,6 +33,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using System.IO;
 
 // Expose internal classes/functions
 #if UNITY_EDITOR
@@ -48,8 +49,8 @@ namespace HoudiniEngineUnity
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Typedefs (copy these from HEU_Common.cs)
     using HAPI_NodeId = System.Int32;
-    using HAPI_PartId = System.Int32;
     using HAPI_ParmId = System.Int32;
+    using HAPI_PartId = System.Int32;
     using HAPI_StringHandle = System.Int32;
 
 
@@ -76,6 +77,7 @@ namespace HoudiniEngineUnity
         public string PartName
         {
             get { return _partName; }
+            set { _partName = value; }
         }
 
         /// <inheritdoc />
@@ -173,7 +175,8 @@ namespace HoudiniEngineUnity
             MESH,
             VOLUME,
             CURVE,
-            INSTANCER
+            INSTANCER,
+            TEXTURE
         }
 
         [SerializeField] private PartOutputType _partOutputType;
@@ -275,6 +278,12 @@ namespace HoudiniEngineUnity
         public bool IsPartMesh()
         {
             return _partOutputType == PartOutputType.MESH;
+        }
+
+        /// <inheritdoc />
+        public bool IsPartTexture()
+        {
+            return _partOutputType == PartOutputType.TEXTURE;
         }
 
         /// <inheritdoc />
@@ -593,8 +602,9 @@ namespace HoudiniEngineUnity
 
                 HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransformVolume, outputGO.transform);
             }
-            else
+            else if (!IsPartTexture())
             {
+                // Apply the HAPI transform for other part types - except for COP textures
                 HEU_HAPIUtility.ApplyLocalTransfromFromHoudiniToUnity(ref hapiTransform, outputGO.transform);
             }
         }
@@ -2286,6 +2296,126 @@ namespace HoudiniEngineUnity
 
                 return bResult;
             }
+        }
+
+        /// <summary>
+        /// Processs and build the textures for this part.
+        /// </summary>
+        /// <param name="session">Active session to use.</param>
+        /// <returns>True if successfully built the texture.</returns>
+        internal Texture2D GenerateTexture(HEU_SessionBase session)
+        {
+            if (OutputGameObject == null || ParentAsset == null)
+                return null;
+
+            // Get the geometry and material information from Houdini
+            HEU_HoudiniAsset asset = ParentAsset;
+            if (asset == null)
+            {
+                HEU_Logger.LogErrorFormat("Parent Asset not found. Unable to generate texture for part {0}!", _partName);
+                return null;
+            }
+
+            Texture2D textureOutput = HEU_MaterialFactory.RenderAndExtractCOPOutputToTexture(session,
+                ParentAsset.AssetID,
+                _partName,
+                asset.GetValidAssetCacheFolderPath(),
+                _partName,
+                false,
+                false);
+
+            if (textureOutput == null)
+            {
+                // Failed to generate the texture
+                return null;
+            }
+
+            return textureOutput;
+        }
+
+        /// <summary>
+        /// Creates a material and quad output object for this part
+        /// </summary>
+        /// <param name="PositionOffset">The position offset to be used for the output quad.</param>
+        /// <returns>null if failed to generate the material and output object.</returns>
+        internal Material GenerateMaterial(int PositionOffset)
+        {
+            if (OutputGameObject == null || ParentAsset == null)
+                return null;
+            /*
+            // Get the appropriate non specular shader
+            string shaderPath = "";
+            {
+	            HEU_PipelineType pipeline = HEU_RenderingPipelineDefines.GetPipeline();
+                if (pipeline == HEU_PipelineType.HDRP)
+                {
+                    shaderPath = HEU_Defines.DEFAULT_STANDARD_SHADER_HDRP;
+                }
+                else if (pipeline == HEU_PipelineType.URP)
+                {
+                    shaderPath = HEU_Defines.DEFAULT_STANDARD_SHADER_URP;
+                }
+                else
+                {
+                    shaderPath = HEU_PluginSettings.UseLegacyShaders
+                        ? HEU_Defines.DEFAULT_STANDARD_SHADER_SPECULAR_LEGACY
+                        : HEU_Defines.DEFAULT_STANDARD_SHADER;
+                }
+
+                string ogPath = System.String.Copy(shaderPath);
+                HEU_PluginStorage.Instance.Get("HAPI_DefaultStandardShader", out shaderPath, shaderPath);
+
+                // To keep backwards compatiblity, add in "Houdini/" prefix if not found for shipped shaders
+                if (shaderPath.Equals(ogPath))
+                {
+                    shaderPath = HEU_Defines.HOUDINI_SHADER_PREFIX + shaderPath;
+                }
+            }
+            Shader shader = HEU_MaterialFactory.FindPluginShader(shaderPath); 
+            */
+
+            // Use the default shader
+            Shader shader = HEU_MaterialFactory.FindPluginShader(HEU_PluginSettings.DefaultStandardShader);
+            if (shader == null)
+                return null;
+
+            // Create a new material and assign the texture
+            Material generatedMaterial = new Material(shader);
+
+            // Create a quad to display the generated texture in the scene
+            // Use a temporary quad primitive to copy its mesh filter
+            GameObject tempQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+
+            // Assign the quad's MeshFilter to our output GO
+            MeshFilter OutputMeshFilter = OutputGameObject.AddComponent<MeshFilter>();
+            OutputMeshFilter.mesh = tempQuad.GetComponent<MeshFilter>().sharedMesh;
+
+            // We no longer need the temp quad
+            DestroyImmediate(tempQuad);
+
+            // Add a MeshRenderer and assign our generated material
+            MeshRenderer quadRenderer = OutputGameObject.AddComponent<MeshRenderer>();
+            if (quadRenderer != null && generatedMaterial != null)
+                quadRenderer.material = generatedMaterial;
+
+            // TODO! Generate a MaterialData to update the material cache?
+            //HEU_MaterialData MatData;
+            //List<HEU_MaterialData> materialCache = asset.MaterialCache;
+
+            // Update the output GO's name
+            OutputGameObject.name = "cop_texture_" + _partName;
+
+            // Use the partId to offset the texture quad's position for each output
+            OutputGameObject.transform.localPosition = new Vector3(PositionOffset, 0, 0);
+            OutputGameObject.transform.localRotation = Quaternion.identity;
+            OutputGameObject.transform.localScale = Vector3.one;
+
+            // Update the output data's render material
+            Material[] outputMaterials = new Material[1];
+            outputMaterials[0] = generatedMaterial;
+            _generatedOutput._outputData._renderMaterials = outputMaterials;
+
+            return generatedMaterial;
         }
 
         internal void ProcessCurvePart(HEU_SessionBase session, HAPI_PartId partId)

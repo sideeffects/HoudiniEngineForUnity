@@ -140,9 +140,97 @@ namespace HoudiniEngineUnity
             HEU_AssetDatabase.DeleteAsset(material);
         }
 
-        public static Texture2D RenderAndExtractImageToTexture(HEU_SessionBase session, HAPI_MaterialInfo materialInfo,
-            HAPI_ParmId textureParmID, string textureName, string assetCacheFolderPath, bool isNormalMap,
+        public static Texture2D ExtractImageToTexture(
+            HEU_SessionBase session,
+            HAPI_NodeId materialNodeId,
+            string textureName,
+            string assetCacheFolderPath,
+            bool isNormalMap,
             bool invertTexture = false)
+        {
+            // Query the image buffer we just rendered via HAPI
+            // Next we convert to PNG, and write out to file in our Assets directory
+            // The reason for querying as a buffer is to workaround a bug with ExtractHoudiniImageToTextureFile 
+            // Note: intentionly ignoring any errors as sometimes there aren't any textures
+            Texture2D texture = HEU_MaterialFactory.ExtractHoudiniImageToTexturePNGJPEG(session, materialNodeId, "C A");
+
+            // .. if it fails, use RAW formats instead
+            if (texture == null)
+                texture = HEU_MaterialFactory.ExtractHoudiniImageToTextureRaw(session, materialNodeId, "C A");
+
+            if (texture != null)
+            {
+                texture.name = textureName;
+
+                // Note: Should I make this a plugin option for roughness?
+                if (invertTexture)
+                {
+                    Color[] pixels = texture.GetPixels();
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        pixels[i].r = 1 - pixels[i].r;
+                        pixels[i].g = 1 - pixels[i].g;
+                        pixels[i].b = 1 - pixels[i].b;
+                    }
+
+                    texture.SetPixels(pixels);
+
+                    texture.Apply();
+                }
+
+                // Get the Textures folder in the assetCacheFolderPath. Make sure it exists.
+                assetCacheFolderPath = HEU_AssetDatabase.AppendTexturesPathToAssetFolder(assetCacheFolderPath);
+                HEU_AssetDatabase.CreatePathWithFolders(assetCacheFolderPath);
+
+                // We are defaulting to PNG here if no extension already set. This forces it to use PNG format below.
+                if (!textureName.EndsWith(".png") && !textureName.EndsWith(".jpg") &&
+                    !textureName.EndsWith(".tga") && !textureName.EndsWith(".exr"))
+                {
+                    textureName = textureName + ".png";
+                }
+
+                string textureFileName =
+                    HEU_Platform.BuildPath(assetCacheFolderPath, string.Format("{0}", textureName));
+
+                byte[] encodedBytes;
+                if (textureName.EndsWith(".jpg"))
+                {
+                    encodedBytes = texture.EncodeToJPG();
+                }
+                else if (textureName.EndsWith(".tga"))
+                {
+                    encodedBytes = texture.EncodeToTGA();
+                }
+                else if (textureName.EndsWith(".exr"))
+                {
+                    encodedBytes = texture.EncodeToEXR();
+                }
+                else // Use PNG otherwise
+                {
+                    encodedBytes = texture.EncodeToPNG();
+                }
+
+                HEU_Platform.WriteBytes(textureFileName, encodedBytes);
+
+                // Re-import for project to recognize the new texture file
+                HEU_AssetDatabase.ImportAsset(textureFileName, HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
+
+                if (isNormalMap)
+                {
+                    HEU_EditorUtility.SetTextureToNormalMap(textureFileName);
+                }
+
+                // Load the new texture file
+                texture = HEU_AssetDatabase.LoadAssetAtPath(textureFileName, typeof(Texture2D)) as Texture2D;
+            }
+
+            return texture;
+        }
+
+        public static Texture2D RenderAndExtractImageToTexture(HEU_SessionBase session, 
+            HAPI_NodeId materialNodeId, HAPI_ParmId textureParmID,
+            string textureName, string assetCacheFolderPath, 
+            bool isNormalMap, bool invertTexture = false)
         {
             //HEU_Logger.LogFormat("Rendering texture {0} with name {1} for material {2} at path {3}", textureParmID, textureName, materialInfo.nodeId, assetCacheFolderPath);
 
@@ -152,94 +240,42 @@ namespace HoudiniEngineUnity
             // Next we convert to PNG, and write out to file in our Assets directory
             // The reason for querying as a buffer is to workaround a bug with ExtractHoudiniImageToTextureFile 
             // Note: intentionly ignoring any errors as sometimes there aren't any textures
-            if (session.RenderTextureToImage(materialInfo.nodeId, textureParmID, false))
+            if (session.RenderTextureToImage(materialNodeId, textureParmID, false))
             {
-                // Attempt to extract the texture as PNG/JPEG for COPS
-                texture = HEU_MaterialFactory.ExtractHoudiniImageToTexturePNGJPEG(session, materialInfo, "C A");
+                texture = ExtractImageToTexture(session, materialNodeId, textureName, assetCacheFolderPath, isNormalMap, invertTexture);
+            }
 
-                // .. if it fails, use RAW formats instead
-                if(texture == null)
-                    texture = HEU_MaterialFactory.ExtractHoudiniImageToTextureRaw(session, materialInfo, "C A");
-
-                if (texture != null)
-                {
-                    texture.name = textureName;
-
-                    // Note: Should I make this a plugin option for roughness?
-                    if (invertTexture)
-                    {
-                        Color[] pixels = texture.GetPixels();
-                        for (int i = 0; i < pixels.Length; i++)
-                        {
-                            pixels[i].r = 1 - pixels[i].r;
-                            pixels[i].g = 1 - pixels[i].g;
-                            pixels[i].b = 1 - pixels[i].b;
-                        }
-
-                        texture.SetPixels(pixels);
-
-                        texture.Apply();
-                    }
-
-                    // Get the Textures folder in the assetCacheFolderPath. Make sure it exists.
-                    assetCacheFolderPath = HEU_AssetDatabase.AppendTexturesPathToAssetFolder(assetCacheFolderPath);
-                    HEU_AssetDatabase.CreatePathWithFolders(assetCacheFolderPath);
-
-                    // We are defaulting to PNG here if no extension already set. This forces it to use PNG format below.
-                    if (!textureName.EndsWith(".png") && !textureName.EndsWith(".jpg") &&
-                        !textureName.EndsWith(".tga") && !textureName.EndsWith(".exr"))
-                    {
-                        textureName = textureName + ".png";
-                    }
-
-                    string textureFileName =
-                        HEU_Platform.BuildPath(assetCacheFolderPath, string.Format("{0}", textureName));
-
-                    byte[] encodedBytes;
-                    if (textureName.EndsWith(".jpg"))
-                    {
-                        encodedBytes = texture.EncodeToJPG();
-                    }
-                    else if (textureName.EndsWith(".tga"))
-                    {
-                        encodedBytes = texture.EncodeToTGA();
-                    }
-                    else if (textureName.EndsWith(".exr"))
-                    {
-                        encodedBytes = texture.EncodeToEXR();
-                    }
-                    else // Use PNG otherwise
-                    {
-                        encodedBytes = texture.EncodeToPNG();
-                    }
-
-                    HEU_Platform.WriteBytes(textureFileName, encodedBytes);
-
-                    // Re-import for project to recognize the new texture file
-                    HEU_AssetDatabase.ImportAsset(textureFileName, HEU_AssetDatabase.HEU_ImportAssetOptions.Default);
-
-                    if (isNormalMap)
-                    {
-                        HEU_EditorUtility.SetTextureToNormalMap(textureFileName);
-                    }
-
-                    // Load the new texture file
-                    texture = HEU_AssetDatabase.LoadAssetAtPath(textureFileName, typeof(Texture2D)) as Texture2D;
-                }
-
-                //texture = HEU_MaterialFactory.ExtractHoudiniImageToTextureFile(session, materialInfo, "C A", assetCacheFolderPath);
+            return texture;
+        }
+        public static Texture2D RenderAndExtractCOPOutputToTexture(
+            HEU_SessionBase session, 
+            HAPI_NodeId COPNodeId,
+            string COPOutputName,
+            string assetCacheFolderPath,
+            string textureName,
+            bool isNormalMap,
+            bool invertTexture = false)
+        {
+            Texture2D texture = null;
+            // First we get Houdini to render the texture to an image buffer, then query the buffer over HAPI
+            // Next we convert to PNG, and write out to file in our Assets directory
+            // The reason for querying as a buffer is to workaround a bug with ExtractHoudiniImageToTextureFile 
+            // Note: intentionally ignoring any errors as sometimes there aren't any textures
+            if (session.RenderCOPOutputToImage(COPNodeId, COPOutputName))
+            {
+                texture = ExtractImageToTexture(session, COPNodeId, textureName, assetCacheFolderPath, isNormalMap, invertTexture);
             }
 
             return texture;
         }
 
         private static Texture2D ExtractHoudiniImageToTexturePNGJPEG(HEU_SessionBase session,
-            HAPI_MaterialInfo materialInfo, string imagePlanes)
+            HAPI_NodeId materialNodeId, string imagePlanes)
         {
             Texture2D textureResult = null;
 
             HAPI_ImageInfo imageInfo = new HAPI_ImageInfo();
-            if (!session.GetImageInfo(materialInfo.nodeId, ref imageInfo))
+            if (!session.GetImageInfo(materialNodeId, ref imageInfo))
             {
                 return null;
             }
@@ -255,13 +291,13 @@ namespace HoudiniEngineUnity
             imageInfo.interleaved = true;
             imageInfo.packing = HAPI_ImagePacking.HAPI_IMAGE_PACKING_RGBA;
             imageInfo.gamma = HEU_PluginSettings.ImageGamma;
-            session.SetImageInfo(materialInfo.nodeId, ref imageInfo);
+            session.SetImageInfo(materialNodeId, ref imageInfo);
 
 
             // Download the image into memory buffer
             byte[] imageData = null;
             // if (!session.ExtractImageToMemory(materialInfo.nodeId, "PNG", imagePlanes, out imageData))
-            if (!session.ExtractImageToMemory(materialInfo.nodeId, desiredFileFormatName, imagePlanes, out imageData))
+            if (!session.ExtractImageToMemory(materialNodeId, desiredFileFormatName, imagePlanes, out imageData))
             {
                 HEU_Logger.LogError("Failed to extract image using non-raw format.");
                 return null;
@@ -276,12 +312,12 @@ namespace HoudiniEngineUnity
         }
 
         private static Texture2D ExtractHoudiniImageToTextureRaw(HEU_SessionBase session,
-            HAPI_MaterialInfo materialInfo, string imagePlanes)
+            HAPI_NodeId materialNodeId, string imagePlanes)
         {
             Texture2D textureResult = null;
 
             HAPI_ImageInfo imageInfo = new HAPI_ImageInfo();
-            if (!session.GetImageInfo(materialInfo.nodeId, ref imageInfo))
+            if (!session.GetImageInfo(materialNodeId, ref imageInfo))
             {
                 return textureResult;
             }
@@ -291,11 +327,11 @@ namespace HoudiniEngineUnity
             imageInfo.packing = HAPI_ImagePacking.HAPI_IMAGE_PACKING_RGBA;
             imageInfo.gamma = HEU_PluginSettings.ImageGamma;
 
-            session.SetImageInfo(materialInfo.nodeId, ref imageInfo);
+            session.SetImageInfo(materialNodeId, ref imageInfo);
 
             // Extract image to buffer
             byte[] imageData = null;
-            if (!session.ExtractImageToMemory(materialInfo.nodeId, HEU_HAPIConstants.HAPI_RAW_FORMAT_NAME, imagePlanes,
+            if (!session.ExtractImageToMemory(materialNodeId, HEU_HAPIConstants.HAPI_RAW_FORMAT_NAME, imagePlanes,
                     out imageData))
             {
                 return textureResult;

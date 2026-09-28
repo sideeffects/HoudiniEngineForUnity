@@ -1240,8 +1240,84 @@ namespace HoudiniEngineUnity
         public override bool CreateNode(HAPI_StringHandle parentNodeID, string operatorName, string nodeLabel, bool bCookOnCreation,
             out HAPI_NodeId newNodeID)
         {
-            HAPI_Result result = HEU_HAPIFunctions.HAPI_CreateNode(ref _sessionData._HAPISession, parentNodeID, operatorName.AsByteArray(),
-                nodeLabel.AsByteArray(), bCookOnCreation, out newNodeID);
+            bool bTryCOPNet = false;
+            if (operatorName.Contains("::Cop/"))
+                bTryCOPNet = true;
+
+            newNodeID = -1;
+            HAPI_Result result = HAPI_Result.HAPI_RESULT_FAILURE;
+            if (bTryCOPNet)
+            {
+                // If the asset is a cop node, we need to create obj/geo/cop subnet
+                // in order to be able to instantiate it properly
+
+                // Extract the operator name, as we've just created the appropriate subnets
+                string opName = operatorName;
+                int opNameStart = operatorName.IndexOf("/");
+                if (opNameStart > 0)
+                {
+                    opName = operatorName.Substring(opNameStart + 1);
+                }
+
+                // Create an OBJ node
+                HAPI_NodeId ContentNodeId = -1;
+                string tempOpName = "Object/subnet";
+                result = HEU_HAPIFunctions.HAPI_CreateNode(
+                    ref _sessionData._HAPISession, -1, tempOpName.AsByteArray(), opName.AsByteArray(), true, out ContentNodeId);
+
+                // Create a geo "grandparent" node 
+                HAPI_NodeId GrandParentGEOId = -1;
+                if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
+                {
+                    tempOpName = "geo";
+                    result = HEU_HAPIFunctions.HAPI_CreateNode(
+                        ref _sessionData._HAPISession, ContentNodeId, tempOpName.AsByteArray(), opName.AsByteArray(), true, out GrandParentGEOId);
+                }
+
+                // And a parent COP network
+                HAPI_NodeId ParentCOPId = -1;
+                if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
+                {
+                    // Create the node and wait for the ready status
+                    tempOpName = "copnet";
+                    result = HEU_HAPIFunctions.HAPI_CreateNode(
+                        ref _sessionData._HAPISession, GrandParentGEOId, tempOpName.AsByteArray(), opName.AsByteArray(), true, out ParentCOPId);
+                }
+
+                if (result == HAPI_Result.HAPI_RESULT_SUCCESS && ParentCOPId >= 0)
+                {
+                    // Attempt to create the HDA in the copnet we just created
+                    result = HEU_HAPIFunctions.HAPI_CreateNode(
+                        ref _sessionData._HAPISession,
+                        ParentCOPId,
+                        opName.AsByteArray(),
+                        nodeLabel.AsByteArray(),
+                        bCookOnCreation,
+                        out newNodeID);
+                }
+
+                if (result != HAPI_Result.HAPI_RESULT_SUCCESS)
+                {
+                    // Failed - clean up any parent node we might have created
+                    if (ParentCOPId >= 0)
+                        HEU_HAPIFunctions.HAPI_DeleteNode(ref _sessionData._HAPISession, ParentCOPId);
+
+                    if (GrandParentGEOId >= 0)
+                        HEU_HAPIFunctions.HAPI_DeleteNode(ref _sessionData._HAPISession, GrandParentGEOId);
+
+                    if (ContentNodeId >= 0)
+                        HEU_HAPIFunctions.HAPI_DeleteNode(ref _sessionData._HAPISession, ContentNodeId);
+                }
+            }
+
+            if(result == HAPI_Result.HAPI_RESULT_FAILURE)
+            {
+                // Create the node normally
+                result = HEU_HAPIFunctions.HAPI_CreateNode(
+                    ref _sessionData._HAPISession, parentNodeID, operatorName.AsByteArray(),
+                    nodeLabel.AsByteArray(), bCookOnCreation, out newNodeID);
+            }
+
             HandleStatusResult(result, "Create Node", false, true);
             return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
         }
@@ -2321,6 +2397,27 @@ namespace HoudiniEngineUnity
         {
             HAPI_Result result = HEU_HAPIFunctions.HAPI_RenderCOPToImage(ref _sessionData._HAPISession, copNodeID);
             HandleStatusResult(result, "Rendering COP To Image", false, true);
+            return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+        }
+
+        public override bool RenderCOPOutputToImage(HAPI_NodeId copNodeID, string outputName)
+        {
+            HAPI_Result result = HEU_HAPIFunctions.HAPI_RenderCOPOutputToImage(ref _sessionData._HAPISession, copNodeID, outputName.AsByteArray());
+            HandleStatusResult(result, "Rendering COP Output To Image", false, true);
+            return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
+        }
+
+        public override bool GetNodeOutputName(HAPI_NodeId copNodeID, int OutputIdx, out string outputName)
+        {
+            outputName = null;
+            HAPI_StringHandle outputNameSH;
+            HAPI_Result result = HEU_HAPIFunctions.HAPI_GetNodeOutputName(ref _sessionData._HAPISession, copNodeID, OutputIdx, out outputNameSH);
+            if (result == HAPI_Result.HAPI_RESULT_SUCCESS)
+            {
+                outputName = HEU_SessionManager.GetString(outputNameSH);
+            }
+
+            HandleStatusResult(result, "GetNodeOutputName", false, true);
             return (result == HAPI_Result.HAPI_RESULT_SUCCESS);
         }
 

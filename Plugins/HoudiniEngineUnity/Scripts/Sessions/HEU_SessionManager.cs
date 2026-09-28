@@ -281,7 +281,11 @@ namespace HoudiniEngineUnity
             {
                 _defaultSession.UserNotifiedSessionInvalid = true;
 
-                HEU_EditorUtility.DisplayErrorDialog(HEU_Defines.HEU_ERROR_TITLE, HEU_SessionManager.GetLastSessionError(), "OK");
+                string lastSessionError = HEU_SessionManager.GetLastSessionError();
+                if (lastSessionError == "")
+                    lastSessionError = HEU_Defines.NO_EXISTING_SESSION;
+
+                HEU_EditorUtility.DisplayErrorDialog(HEU_Defines.HEU_ERROR_TITLE, lastSessionError, "OK");
                 HEU_EditorUtility.DisplayDialog(HEU_Defines.HEU_INSTALL_INFO, HEU_HAPIUtility.GetHoudiniEngineInstallationInfo(), "OK");
             }
 

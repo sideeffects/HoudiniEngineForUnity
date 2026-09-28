@@ -28,6 +28,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using System.Text.RegularExpressions;
+
+using Codice.CM.Common;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -438,6 +441,13 @@ namespace HoudiniEngineUnity
             }
 
             string fileName = HEU_Platform.GetFileNameWithoutExtension(suggestedAssetPath);
+
+            // HDA versions etc.. can add extra "." to the filename
+            // make sure we remove all dots in the filename, not just the extension one,
+            // as they can confuse GenerateUniqueAssetPath() afterwards
+            //fileName = fileName.Replace(".", "_");
+            fileName = MakeValidFileName(fileName);
+
             if (string.IsNullOrEmpty(fileName))
             {
                 fileName = "AssetCache";
@@ -861,8 +871,11 @@ namespace HoudiniEngineUnity
             // Make sure subfolders exist
             HEU_AssetDatabase.CreatePathWithFolders(subFolderPath);
 
+            // Clean up the filename
+            string cleanFilename = MakeValidFileName(assetFileName);
+
             // Add file name
-            string finalAssetPath = HEU_Platform.BuildPath(subFolderPath, assetFileName);
+            string finalAssetPath = HEU_Platform.BuildPath(subFolderPath, cleanFilename);
 
             if (HEU_Platform.DoesFileExist(finalAssetPath) && !bOverwriteExisting)
             {
@@ -1327,6 +1340,22 @@ namespace HoudiniEngineUnity
             }
 #endif
             return true;
+        }
+
+        public static string MakeValidFileName(string name)
+        {
+            // 1. Get a list of evil characters from the OS
+            char[] badCharacters = System.IO.Path.GetInvalidFileNameChars();
+
+            // 2. Escape them so they safely format into a Regex pattern
+            string escapedInvalidChars = Regex.Escape(new string(badCharacters));
+            string invalidRegexPattern = string.Format(@"([{0}]|\s)+", escapedInvalidChars);
+
+            // 3. Replace invalid characters and whitespace with an underscore
+            string cleanName = Regex.Replace(name, invalidRegexPattern, "_");
+
+            // 4. Optional: Trim any leading/trailing underscores or spaces
+            return cleanName.Trim('_');
         }
 
         public static T LoadUnityAssetFromUniqueAssetPath<T>(string assetPath) where T : UnityEngine.Object

@@ -1380,6 +1380,17 @@ namespace HoudiniEngineUnity
             return false;
         }
 
+        public virtual bool RenderCOPOutputToImage(HAPI_NodeId copNodeID, string outputName)
+        {
+            return false;
+        }
+
+        public virtual bool GetNodeOutputName(HAPI_NodeId copNodeID, int OutputIdx, out string outputName)
+        {
+            outputName = null;
+            return false;
+        }
+
         public virtual bool ExtractImageToMemory(HAPI_NodeId nodeID, string fileFormat, string imagePlanes, out byte[] buffer)
         {
             buffer = new byte[0];
