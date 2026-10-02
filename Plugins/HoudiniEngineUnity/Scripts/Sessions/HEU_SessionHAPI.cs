@@ -277,11 +277,10 @@ namespace HoudiniEngineUnity
                 }
             }
 
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_6_OR_NEWER
             System.Reflection.Assembly[] assemblies = UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies().ToArray();
 #else
-            AppDomain currentDomain = AppDomain.CurrentDomain;
-            Assembly[] assemblies = currentDomain.GetAssemblies();
+            System.Reflection.Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
 #endif
             string assemblyList = "";
             foreach (Assembly assembly in assemblies)
@@ -445,11 +444,10 @@ namespace HoudiniEngineUnity
                 }
             }
 
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_6_OR_NEWER
             System.Reflection.Assembly[] assemblies = UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies().ToArray();
 #else
-            AppDomain currentDomain = AppDomain.CurrentDomain;
-            Assembly[] assemblies = currentDomain.GetAssemblies();
+            System.Reflection.Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
 #endif
             string assemblyList = "";
             foreach (Assembly assembly in assemblies)
