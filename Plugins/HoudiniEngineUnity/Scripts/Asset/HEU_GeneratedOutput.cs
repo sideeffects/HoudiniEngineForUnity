@@ -65,16 +65,13 @@ namespace HoudiniEngineUnity
         /// </summary>
         public static void ResetMaterialOverrides(HEU_GeneratedOutput output)
         {
+            ResetMaterialOverrides(output._outputData);
             if (HasLODGroup(output))
             {
                 foreach (HEU_GeneratedOutputData child in output._childOutputs)
                 {
                     ResetMaterialOverrides(child);
                 }
-            }
-            else
-            {
-                ResetMaterialOverrides(output._outputData);
             }
         }
 

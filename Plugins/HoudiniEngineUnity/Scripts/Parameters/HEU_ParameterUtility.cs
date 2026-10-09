@@ -248,9 +248,12 @@ namespace HoudiniEngineUnity
         {
             int outParmId = GetParameterIndexFromNameOrTag(session, nodeID, parameters, parameterName);
             if (outParmId < 0)
-            {
                 return outParmId;
-            }
+
+            // Some texture parameters share name between textures/value (ie opacity)
+            // Make sure we found a valid texture param - in which case it would be a string attr
+            if (parameters[outParmId].stringValuesIndex < 0)
+                return -1;
 
             // Check if the matching "use" parameter exists.
             int foundUseParmId = GetParameterIndexFromNameOrTag(session, nodeID, parameters, useTextureParmName);

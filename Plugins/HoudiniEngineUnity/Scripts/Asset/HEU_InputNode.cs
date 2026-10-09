@@ -731,6 +731,11 @@ namespace HoudiniEngineUnity
             newInput._inputNodeType = inputNodeType;
             newInput._parentAsset = parentAsset;
 
+            // Add empty objects to both input modes so they can start
+            // ready for assignment without requiring an Add Slot.
+            newInput._inputObjects.Add(new HEU_InputObjectInfo());
+            newInput._inputAssetInfos.Add(new HEU_InputHDAInfo());
+
             newInput._requiresUpload = false;
             newInput._requiresCook = false;
 

@@ -631,6 +631,11 @@ namespace HoudiniEngineUnity
                 if (part.IsPartTexture())
                     continue;
 
+                if (part.UsesScopedOutputAttributes(session))
+                {
+                    part.ApplyScopedOutputScripts(session);
+                    continue;
+                }
                 GameObject outputGO = part.OutputGameObject;
                 if (outputGO != null)
                 {
@@ -873,7 +878,9 @@ namespace HoudiniEngineUnity
                 partTransform.parent = parentAsset.RootGameObject.transform;
             }
 
-            HEU_GeneralUtility.CopyFlags(partTransform.parent.gameObject, partData.OutputGameObject, true);
+            // Existing instances may retain prototype flags across a cook. Only reset their container.
+            HEU_GeneralUtility.CopyFlags(partTransform.parent.gameObject, partData.OutputGameObject,
+                !partData.IsPartInstancer() && !partData.IsAttribInstancer());
 
             // Reset to origin
             partTransform.localPosition = Vector3.zero;
@@ -1181,6 +1188,11 @@ namespace HoudiniEngineUnity
                     if (_parts[i].IsPartTexture())
                         continue;
 
+                    if (_parts[i].UsesScopedOutputAttributes(session))
+                    {
+                        _parts[i].ApplyScopedOutputModifiers(session);
+                        continue;
+                    }
                     HEU_GeneralUtility.AssignUnityTag(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
                     HEU_GeneralUtility.AssignUnityLayer(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);
                     HEU_GeneralUtility.MakeStaticIfHasAttribute(session, GeoID, _parts[i].PartID, _parts[i].OutputGameObject);

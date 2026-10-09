@@ -799,7 +799,8 @@ namespace HoudiniEngineUnity
                     }
                     else
                     {
-                        materialMap.Add(materialData._materialKey, materialData);
+                        if(!materialMap.ContainsKey(materialData._materialKey))
+                            materialMap.Add(materialData._materialKey, materialData);
                     }
                 }
             }
