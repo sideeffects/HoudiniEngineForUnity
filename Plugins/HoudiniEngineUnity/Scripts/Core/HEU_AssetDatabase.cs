@@ -1366,7 +1366,7 @@ namespace HoudiniEngineUnity
                                 }
                             }
 #if UNITY_6000_4_OR_NEWER
-                            else if (obj.GetEntityId() == assetID)
+                            else if (unchecked((int)(uint)EntityId.ToULong(obj.GetEntityId())) == assetID)
 #else
                             else if (obj.GetInstanceID() == assetID)
 #endif

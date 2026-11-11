@@ -1312,11 +1312,7 @@ namespace HoudiniEngineUnity
                 {
                     if (meshFilter.sharedMesh != null)
                     {
-#if UNITY_6000_4_OR_NEWER
-                        string possibleObjectPath = GetObjectParentFolderHelper(meshFilter.sharedMesh.GetEntityId());
-#else
-                        string possibleObjectPath = GetObjectParentFolderHelper(meshFilter.sharedMesh.GetInstanceID());
-#endif
+                        string possibleObjectPath = GetObjectParentFolderHelper(meshFilter.sharedMesh);
                         if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
                         {
                             possiblePaths.Add(possibleObjectPath);
@@ -1337,11 +1333,7 @@ namespace HoudiniEngineUnity
                         {
                             continue;
                         }
-#if UNITY_6000_4_OR_NEWER
-                        string possibleObjectPath = GetObjectParentFolderHelper(materials[i].GetEntityId());
-#else
-                        string possibleObjectPath = GetObjectParentFolderHelper(materials[i].GetInstanceID());
-#endif
+                        string possibleObjectPath = GetObjectParentFolderHelper(materials[i]);
 
                         if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
                         {
@@ -1358,11 +1350,7 @@ namespace HoudiniEngineUnity
                 {
                     if (terrain.terrainData != null)
                     {
-#if UNITY_6000_4_OR_NEWER
-                        string possibleObjectPath = GetObjectParentFolderHelper(terrain.terrainData.GetEntityId());
-#else
-                        string possibleObjectPath = GetObjectParentFolderHelper(terrain.terrainData.GetInstanceID());
-#endif
+                        string possibleObjectPath = GetObjectParentFolderHelper(terrain.terrainData);
                         if (possibleObjectPath != null && possibleObjectPath != "" && !possiblePaths.Contains(possibleObjectPath))
                         {
                             possiblePaths.Add(possibleObjectPath);
@@ -1383,31 +1371,16 @@ namespace HoudiniEngineUnity
                         return targetAssetPath;
         }
 
-#if UNITY_6000_4_OR_NEWER
-        private static string GetObjectParentFolderHelper(EntityId EntityID)
+        private static string GetObjectParentFolderHelper(UnityEngine.Object obj)
         {
 #if UNITY_EDITOR
-            string currentObjectPath = AssetDatabase.GetAssetPath(EntityID);
+            string currentObjectPath = AssetDatabase.GetAssetPath(obj);
 #else
             string currentObjectPath = "";
 #endif
             return GetObjectParentFolderHelper(currentObjectPath);
         }
-#endif
 
-        private static string GetObjectParentFolderHelper(int instanceID)
-        {
-#if UNITY_EDITOR
-#if UNITY_6000_3_OR_NEWER
-            string currentObjectPath = AssetDatabase.GetAssetPath((EntityId)instanceID);
-#else
-            string currentObjectPath = AssetDatabase.GetAssetPath(instanceID);
-#endif
-#else
-            string currentObjectPath = "";
-#endif
-            return GetObjectParentFolderHelper(currentObjectPath);
-        }
         private static string GetObjectParentFolderHelper(string currentObjectPath)
         {
             string targetAssetPath = "";
