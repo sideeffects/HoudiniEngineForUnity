@@ -30,8 +30,6 @@ using System.IO;
 using UnityEngine;
 using System.Text.RegularExpressions;
 
-using Codice.CM.Common;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -1316,7 +1314,7 @@ namespace HoudiniEngineUnity
             else
             {
 #if UNITY_6000_4_OR_NEWER
-                assetPath += "::id::" + obj.GetEntityId().ToString();
+                assetPath += "::id::" + obj.GetEntityId();
 #else
                 assetPath += "::id::" + obj.GetInstanceID();
 #endif
@@ -1395,7 +1393,7 @@ namespace HoudiniEngineUnity
                                 }
                             }
 #if UNITY_6000_4_OR_NEWER
-                            else if (obj.GetEntityId().ToString() == assetID.ToString())
+                            else if (unchecked((int)(uint)EntityId.ToULong(obj.GetEntityId())) == assetID)
 #else
                             else if (obj.GetInstanceID() == assetID)
 #endif
