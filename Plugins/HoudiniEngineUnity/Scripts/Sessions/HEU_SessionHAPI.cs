@@ -24,7 +24,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if (UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_LINUX)
+#if (UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_LINUX)
 #define HOUDINIENGINEUNITY_ENABLED
 #endif
 
@@ -746,8 +746,13 @@ namespace HoudiniEngineUnity
                 return CreateInProcessSession(true);
             }
 
-            // Default session. On Linux use socket due to issues with pipe.
-#if UNITY_STANDALONE_LINUX
+#if UNITY_EDITOR_LINUX
+            return CreateThriftPipeSession(true, HEU_PluginSettings.Session_PipeName, HEU_PluginSettings.Session_AutoClose,
+                HEU_PluginSettings.Session_Timeout, true,
+                HEU_PluginSettings.Session_UseSharedMemoryDataTransfer, HEU_PluginSettings.Session_SharedMemoryBufferSize);
+            
+        // Default session. On Linux use socket due to issues with pipe.
+#elif UNITY_STANDALONE_LINUX
 			return CreateThriftSocketSession(true, HEU_PluginSettings.Session_Localhost, HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
 #else
             return CreateThriftPipeSession(true, HEU_PluginSettings.Session_PipeName, HEU_PluginSettings.Session_AutoClose,
