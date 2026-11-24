@@ -752,7 +752,7 @@ namespace HoudiniEngineUnity
                 HEU_PluginSettings.Session_UseSharedMemoryDataTransfer, HEU_PluginSettings.Session_SharedMemoryBufferSize);
             
         // Default session. On Linux use socket due to issues with pipe.
-#else if UNITY_STANDALONE_LINUX
+#elif UNITY_STANDALONE_LINUX
 			return CreateThriftSocketSession(true, HEU_PluginSettings.Session_Localhost, HEU_PluginSettings.Session_Port, HEU_PluginSettings.Session_AutoClose, HEU_PluginSettings.Session_Timeout, true);
 #else
             return CreateThriftPipeSession(true, HEU_PluginSettings.Session_PipeName, HEU_PluginSettings.Session_AutoClose,
